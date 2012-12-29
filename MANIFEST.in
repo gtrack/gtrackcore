@@ -1,0 +1,4 @@
+include README.md
+include INSTALL
+include LICENSE
+recursive-include . *.py

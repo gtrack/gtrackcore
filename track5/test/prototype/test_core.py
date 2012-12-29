@@ -2,8 +2,8 @@ import random
 
 import numpy as np
 
-from prototype import Track5
-from prototype_test import Track5Test
+from track5.prototype import Track5
+from track5.test.prototype import Track5Test
 
 
 class CoreTest(Track5Test):

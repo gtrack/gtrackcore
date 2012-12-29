@@ -1,5 +1,4 @@
-from core import Track5
-from track5.core import GENOMES
+from prototype.core import Track5, GENOMES
 
 def _strconv(x, genome):
     return str(x)
