@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from track5.core import Track5, GENOMES
+from prototype.core import Track5, GENOMES
 
 class Track5Test(unittest.TestCase):
 

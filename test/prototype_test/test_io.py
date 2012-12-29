@@ -1,5 +1,5 @@
-from track5.io import load_bedgraph
-from track5_test import Track5Test
+from prototype.io import load_bedgraph
+from prototype_test import Track5Test
 
 
 class IoTest(Track5Test):
