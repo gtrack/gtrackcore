@@ -2,14 +2,13 @@ import random
 
 import numpy as np
 
-from track5.prototype import Track5
-from track5.test.prototype import Track5Test
-
+from track5.prototype.core import Track5
+from track5.test.prototype.common import Track5Test
 
 class CoreTest(Track5Test):
         
     def test_empty_track(self):
-        track = self.get_test_track()   
+        track = self.get_track()   
         self.assertEquals(5, len(list(track.h5)))
         self.assertFalse(len(track.h5.getNode(Track5.ROOT + Track5.NODES)))
         self.assertFalse(len(track.h5.getNode(Track5.ROOT + Track5.LINKS)))
@@ -18,7 +17,7 @@ class CoreTest(Track5Test):
         track.close()
         
     def test_paths_of_sealing(self):
-        track = self.get_test_track()
+        track = self.get_track()
         self.assertTrue(track._is_sealed())
         track.unseal()
         self.assertFalse(track._is_sealed())
@@ -31,7 +30,7 @@ class CoreTest(Track5Test):
         track.close()
         
     def test_sealed_default(self):
-        t1 = self.get_test_track()  
+        t1 = self.get_track()  
         fn = t1.h5.filename
         t1.close()
         t2 = Track5(fn)
@@ -42,7 +41,7 @@ class CoreTest(Track5Test):
         t2.close()
         
     def test_leniter(self):
-        t = self.get_test_track()
+        t = self.get_track()
         self.assertEquals(0, len(t))
         self.assertEquals([], list(t))
         t.unseal()
@@ -51,7 +50,7 @@ class CoreTest(Track5Test):
         t.close()
         
     def test_add_earray(self):
-        t = self.get_test_track()
+        t = self.get_track()
         self.assertRaises(ValueError, t.add_node_values, "dummy")
         self.assertRaises(ValueError, t.add_link_values, "dummy")
         t.unseal()
@@ -70,11 +69,9 @@ class CoreTest(Track5Test):
         self.assertRaises(ValueError, t.seal)
         t.add_links(2 * [(1, 2)])
         t.close()
-        
-    
     
     def xtest_append(self):
-        track = self.get_test_track()
+        track = self.get_track()
         # list
         nodes = [tuple(i) for i in np.random.randint(900000000, 1000000000, size=30).reshape((10,3))]
         track.add_nodes(nodes)
@@ -94,10 +91,7 @@ class CoreTest(Track5Test):
         t19 = list(track)[19]
         self.assertEquals(tuple(int(i) for i in t19), tuple(int(i) for i in a[9]))
         track.close()
-        
-        
-        
-        
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
