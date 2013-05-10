@@ -1,5 +1,6 @@
 *.py[co]
 ~*
+*~
 \#*
 
 # Packages
@@ -27,6 +28,9 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#Komodo
+*.komodoproject
 
 #Track5 specific
 test_output
