@@ -4,11 +4,12 @@ setup(
 
 name='track5',
 version='0.1.0',
-packages=find_packages(),
+packages = find_packages(),
+package_data={'track5': ['data/*\.*', 'data/gtrack/*', 'data/GESourceTracks/*/*']},
 
 author='Sveinung Gundersen, Marcin Cieslik, Stephen Hoang, Tobias G. Waaler',
 author_email='sveinugu@gmail.com',
 test_suite='nose.collector',
-test_requires=['Nose']
+setup_requires=['nose>=1.0', 'tables>=2.4.0']
 
 )
