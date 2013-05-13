@@ -71,7 +71,7 @@ class BedGenomeElementSource(GenomeElementSource):
             val = int(cols[4])
             if val < 0 or val > 1000:
                 raise InvalidFormatError("Error: BED score column must be an integer between 0 and 1000: %s. Perhaps you instead " + \
-                                         "should use the file formats 'marked.bed' or 'gtrack'?")
+                                         "should use the file formats 'valued.bed' or 'gtrack'?")
             ge.val = val
 
     def getValDataType(self):

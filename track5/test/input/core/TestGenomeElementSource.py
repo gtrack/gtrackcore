@@ -1334,15 +1334,15 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 'float64',
                 1)
         
-        self.cases['marked.bed'] = \
+        self.cases['valued.bed'] = \
             Case(None,
                  'TestGenome',
                 [],
                 ['\t'.join(['chrM','71','72','a','0.2','+']),
                  '\t'.join(['chrM','103','105','b','1','+']),
                  '\t'.join(['chr21','3','13','c','-1.23e-3','-'])],
-                '.marked.bed',
-                ['My','marked-bed-track'],
+                '.valued.bed',
+                ['My','valued-bed-track'],
                 [GenomeElement('TestGenome', 'chrM', start=71, end=72, val=0.2, strand=True, name='a'),
                  GenomeElement('TestGenome', 'chrM', start=103, end=105, val=1, strand=True, name='b'),
                  GenomeElement('TestGenome', 'chr21', start=3, end=13, val=-0.00123, strand=False, name='c')],
