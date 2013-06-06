@@ -14,7 +14,7 @@ from track5.input.core.GenomeElementSource import GenomeElementSource, BoundingR
 from track5.metadata.GenomeInfo import GenomeInfo
 from track5.track.core.GenomeRegion import GenomeRegion
 from track5.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
-from track5.util.CommonFunctions import getStringFromStrand
+from track5.util.CommonFunctions import getStringFromStrand, smartRecursiveEquals
 from track5.util.CommonConstants import BINARY_MISSING_VAL
 
 class GtrackGenomeElementSource(GenomeElementSource):
@@ -1036,7 +1036,7 @@ class GtrackGenomeElementSource(GenomeElementSource):
             weight = weights[index] if weights else ''
                 
             if id in self._complementEdgeWeightDict and edgeId in self._complementEdgeWeightDict[id]:
-                if self._complementEdgeWeightDict[id][edgeId] != weight:
+                if not smartRecursiveEquals(self._complementEdgeWeightDict[id][edgeId], weight):
                     raise InvalidFormatError("Error: edge ('%s' <-> '%s') is not undirected. The weight must be equal in both directions (%s != %s)" % (edgeId, id, self._complementEdgeWeightDict[id][edgeId], weights[index]))
                 del self._complementEdgeWeightDict[id][edgeId]
                 if len(self._complementEdgeWeightDict[id]) == 0:
@@ -1047,7 +1047,8 @@ class GtrackGenomeElementSource(GenomeElementSource):
                     raise ShouldNotOccurError('Error: the complementary edge(%s) has already been added to self._complementEdgeWeightDict["%s"] ... ' % (id, edgeId))
                 self._complementEdgeWeightDict[edgeId][id] = weight
             else:
-                self._complementEdgeWeightDict[edgeId]={id:weight}
+                if id != edgeId:
+                    self._complementEdgeWeightDict[edgeId]={id:weight}
 
     def _checkUndirectedEdges(self):            
         if self._headerDict['undirected edges']:

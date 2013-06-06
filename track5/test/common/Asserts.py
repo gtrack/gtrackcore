@@ -6,6 +6,7 @@ from copy import copy
 from track5.input.core.GenomeElement import GenomeElement
 from track5.input.core.GenomeElementSource import BoundingRegionTuple
 from track5.track.core.GenomeRegion import GenomeRegion
+from track5.util.CommonFunctions import smartRecursiveAssertList, isListType
 
 def AssertList(list1, list2, assertFunc=None):
     if not (len(list1) == len(list2)):
@@ -14,42 +15,6 @@ def AssertList(list1, list2, assertFunc=None):
         assert(False)
     for x,y in zip(list1, list2):
         assertFunc(x, y)
-
-def _isListType(x):
-    return type(x) == list or type(x) == tuple or isinstance(x, numpy.ndarray) or isinstance(x, dict)
-
-def _isListType(x):
-    return type(x) == list or type(x) == tuple or isinstance(x, numpy.ndarray) or isinstance(x, dict)
-
-def _ifDictConvertToList(d):
-    return [(x, d[x]) for x in sorted(d.keys())] if isinstance(d, dict) else d
-
-def smartRecursiveAssertList(x, y, assertEqualFunc, assertAlmostEqualFunc):
-    if _isListType(x):
-        if isinstance(x, numpy.ndarray):
-            try:
-                assertEqualFunc(x.shape, y.shape)
-            except Exception, e:
-                raise AssertionError(str(e) + ' on shape of lists: ' + str(x) + ' and ' + str(y))
-                
-            try:
-                assertEqualFunc(x.dtype, y.dtype)
-            except Exception, e:
-                raise AssertionError(str(e) + ' on datatypes of lists: ' + str(x) + ' and ' + str(y))
-        else:
-            try:
-                assertEqualFunc(len(x), len(y))
-            except Exception, e:
-                raise AssertionError(str(e) + ' on length of lists: ' + str(x) + ' and ' + str(y))
-
-        for el1,el2 in zip(*[_ifDictConvertToList(x) for x in [x, y]]):
-            smartRecursiveAssertList(el1, el2, assertEqualFunc, assertAlmostEqualFunc)
-            
-    else:
-        try:
-            assertAlmostEqualFunc(x, y)
-        except TypeError:
-            assertEqualFunc(x, y)
 
 class TestCaseWithImprovedAsserts(unittest.TestCase):
     def assertEqual(self, a, b):
@@ -61,11 +26,12 @@ class TestCaseWithImprovedAsserts(unittest.TestCase):
             return unittest.TestCase.assertAlmostEqual(self, a, b, places=5)
     
     def assertAlmostEquals(self, a, b):
-        return unittest.TestCase.assertAlmostEquals(self, a, b, places=5)
+        if not self._assertIsNan(a, b):
+            return unittest.TestCase.assertAlmostEquals(self, a, b, places=5)
     
     def _assertIsNan(self, a, b):
         try:
-            if not any(_isListType(x) for x in [a,b]):
+            if not any(isListType(x) for x in [a,b]):
                 if numpy.isnan(a):
                     self.assertTrue(b is not None and numpy.isnan(b))
                     return True

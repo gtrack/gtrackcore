@@ -201,9 +201,17 @@ class PreProcessUtils(object):
             weight = weights[index] if weights is not None else ''
                 
             if id in complementEdgeWeightDict and edgeId in complementEdgeWeightDict[id]:
-                check = (complementEdgeWeightDict[id][edgeId] != weight)
-                if (type(check) == bool and check) or (type(check) != bool and check.all()):
+                complWeight = complementEdgeWeightDict[id][edgeId]
+                try:
+                    equal = numpy.all(complWeight == weight | numpy.isnan(complWeight) & numpy.isnan(weight))
+                except TypeError:
+                    try:
+                        equal = (complWeight == weight) or (numpy.isnan(complWeight) and numpy.isnan(weight))
+                    except (TypeError, ValueError):
+                        equal = numpy.all(complWeight == weight)
+                if not equal:
                     raise InvalidFormatError("Error: edge ('%s' <-> '%s') is not undirected. The weight must be equal in both directions (%s != %s)" % (edgeId, id, complementEdgeWeightDict[id][edgeId], weights[index]))
+                
                 del complementEdgeWeightDict[id][edgeId]
                 if len(complementEdgeWeightDict[id]) == 0:
                     del complementEdgeWeightDict[id]
@@ -213,5 +221,6 @@ class PreProcessUtils(object):
                     raise ShouldNotOccurError('Error: the complementary edge(%s) has already been added to complementEdgeWeightDict["%s"] ... ' % (id, edgeId))
                 complementEdgeWeightDict[edgeId][id] = weight
             else:
-                complementEdgeWeightDict[edgeId] = {id: weight}
+                if id != edgeId:
+                   complementEdgeWeightDict[edgeId] = {id: weight}
     

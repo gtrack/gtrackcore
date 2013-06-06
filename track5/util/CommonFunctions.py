@@ -99,12 +99,71 @@ def listStartsWith(a, b):
     return len(a) > len(b) and a[:len(b)] == b
 
 def isNan(a):
-    import numpy    
+    import numpy
     
     try:
         return numpy.isnan(a)
     except (TypeError, NotImplementedError):
         return False
+        
+def isListType(x):
+    import numpy
+    return type(x) == list or type(x) == tuple or isinstance(x, numpy.ndarray) or isinstance(x, dict)
+
+def ifDictConvertToList(d):
+    return [(x, d[x]) for x in sorted(d.keys())] if isinstance(d, dict) else d
+
+def smartRecursiveAssertList(x, y, assertEqualFunc, assertAlmostEqualFunc):
+    import numpy
+    
+    if isListType(x):
+        if isinstance(x, numpy.ndarray):
+            try:
+                if not assertEqualFunc(x.shape, y.shape):
+                    return False
+            except Exception, e:
+                raise AssertionError(str(e) + ' on shape of lists: ' + str(x) + ' and ' + str(y))
+                
+            try:
+                if not assertEqualFunc(x.dtype, y.dtype):
+                    return False
+            except Exception, e:
+                raise AssertionError(str(e) + ' on datatypes of lists: ' + str(x) + ' and ' + str(y))
+        else:
+            try:
+                if not assertEqualFunc(len(x), len(y)):
+                    return False
+            except Exception, e:
+                raise AssertionError(str(e) + ' on length of lists: ' + str(x) + ' and ' + str(y))
+
+        for el1,el2 in zip(*[ifDictConvertToList(x) for x in [x, y]]):
+            if not smartRecursiveAssertList(el1, el2, assertEqualFunc, assertAlmostEqualFunc):
+                return False
+        return True
+            
+    else:
+        try:
+            return assertAlmostEqualFunc(x, y)
+        except TypeError:
+            return assertEqualFunc(x, y)
+
+def bothIsNan(a, b):
+    import numpy
+    
+    try:
+        if not any(isListType(x) for x in [a,b]):
+            return numpy.isnan(a) and numpy.isnan(b)
+    except (TypeError, NotImplementedError):
+        pass
+    return False
+    
+def smartEquals(a, b):
+    if bothIsNan(a, b):
+        return True
+    return a == b
+        
+def smartRecursiveEquals(a, b):
+    return smartRecursiveAssertList(a, b, smartEquals, smartEquals)
         
 def reorderTrackNameListFromTopDownToBottomUp(trackNameSource):
     prevTns = []
