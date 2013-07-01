@@ -1,4 +1,0 @@
-track type=bedGraph
-chr21	100	200	1
-chr21	500	800	0
-chrM	900	950	1
