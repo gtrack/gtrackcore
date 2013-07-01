@@ -1,4 +1,4 @@
-track5
+GTrackCore
 ======
 
-Track5: HDF5 library for genomic tracks.
+gtrackcore: HDF5 library for genomic tracks.
