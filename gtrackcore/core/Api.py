@@ -7,7 +7,8 @@ def importFile(fileName, genome, trackName):
     
     from gtrackcore.util.CommonFunctions import createOrigPath, ensurePathExists
     origFn = createOrigPath(genome, trackName, os.path.basename(fileName))
-    shutil.rmtree(os.path.dirname(origFn))
+    if os.path.exists(origFn):
+        shutil.rmtree(os.path.dirname(origFn))
     ensurePathExists(origFn)
     shutil.copy(fileName, origFn)
     os.chmod(origFn, 0664)
