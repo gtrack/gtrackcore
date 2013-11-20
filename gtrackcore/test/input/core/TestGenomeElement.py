@@ -80,6 +80,37 @@ class TestGenomeElement(unittest.TestCase):
         self.assertFalse(GenomeElement('TestGenome','chr21',10,100).overlaps( \
                         GenomeElement('TestGenome','chrM',20,80)))
 
+    def testTouches(self):
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',10,100)))
+        
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',20,80)))
+        
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',10,101)))
+        
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',9,100)))
+        
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',9,101)))
+        
+        self.assertTrue(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',0,10)))
+
+        self.assertTrue(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',100,110)))
+        
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',0,9)))
+
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chr21',101,110)))
+
+        self.assertFalse(GenomeElement('TestGenome','chr21',10,100).touches( \
+                        GenomeElement('TestGenome','chrM',20,80)))
+
     def testExclude(self):
         self.assertEqual([GenomeElement('TestGenome','chr21',100,200)],\
                          GenomeElement('TestGenome','chr21',100,200).exclude( GenomeElement('TestGenome','chr21',90,100) ))

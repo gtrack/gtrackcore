@@ -60,6 +60,23 @@ class GenomeRegion(object):
     def strWithCentromerInfo(self):
         return str(self) + (' (intersects centromere)' if GenomeInfo.regIntersectsCentromer(self) else '')
                 
+    def _shortenPosition(self, pos, addOne):
+        if pos is None:
+            return ''
+        
+        if pos % 1000000 == 0:
+            return str(pos / 1000000) + 'm'
+        
+        if pos % 1000 == 0:
+            return str(pos / 1000) + 'k'
+            
+        return str(pos+1) if addOne else str(pos)
+                
+    def strShort(self):
+        shortStart = self._shortenPosition(self.start, addOne=True)
+        shortEnd = self._shortenPosition(self.end, addOne=False)
+        return str(self.chr) + ':' + shortStart + '-' + shortEnd
+                
     def contains(self, region):
         'Whether this region contains another region. Does not consider strand.'
         assert( self.validAsRegion() )
@@ -79,6 +96,16 @@ class GenomeRegion(object):
             return False            
 
         return False if self.start >= region.end or self.end <= region.start else True
+        
+    def touches(self, region):
+        'Whether this region touches another region without overlapping. Does not consider strand.'
+        assert( self.validAsRegion() )
+        assert( region.validAsRegion() )
+        
+        if [self.genome, self.chr] != [region.genome, region.chr]:
+            return False            
+
+        return True if self.start == region.end or self.end == region.start else False
         
     def extend(self, extensionSize, ensureValidity=True):
         if extensionSize >= 0:
