@@ -299,6 +299,11 @@ class GtrackGenomeElementSource(GenomeElementSource):
     def urlQuote(cls, phrase):
         return urllib.quote(phrase, safe=' ')
     
+    @classmethod
+    def convertPhraseToAllowed(cls, phrase):
+        return ''.join([x if x in cls.ALLOWED_CHARS and x not in '#\t' \
+                        else '%' + '{:0>2X}'.format(ord(x)) for x in phrase])
+    
     # Parsing of header lines
     
     def _parseHeaderLine(self, line):
@@ -513,8 +518,8 @@ class GtrackGenomeElementSource(GenomeElementSource):
         self._assertHeaderValueLargerThan('data line size', 1, equal=True)
         self._assertHeaderValueInList('subtype adherence', ['strict', 'extensible', 'redefinable', 'reorderable', 'free'])
         
-        self._fixNoOverlappingElements()
         self._assertFixedGapSize()
+        self._fixNoOverlappingElements()
         
         if not self._subtype:
             self._checkTrackType()
@@ -866,7 +871,10 @@ class GtrackGenomeElementSource(GenomeElementSource):
                 if hasWeights:
                     if not '=' in edgeSpec:
                         raise InvalidFormatError("Error: edges with weights must include an equals sign '='. Maybe the header variable 'edge weight' has the wrong value? Edge: " + edgeSpec)
-                    edge, weight = edgeSpec.split('=')
+                    edgeParts = edgeSpec.split('=')
+                    if len(edgeParts) != 2:
+                        raise InvalidFormatError("Error: edges with weights must include only one equals sign '='. Edge: " + edgeSpec)
+                    edge, weight = edgeParts
                     weights.append(self._getValInCorrectType(weight, 'edge weight'))
                 else:
                     if '=' in edgeSpec:

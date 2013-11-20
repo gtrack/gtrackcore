@@ -74,7 +74,7 @@ class GtrackHeaderExpanderGenomeElementSource(GtrackGenomeElementSource):
     def _parseEdges(self, edgeStr):
         if edgeStr != '.':
             for edgeSpec in edgeStr.split(';'):
-                if '=' in edgeStr:
+                if '=' in edgeSpec:
                     if not self._headerDict['edge weights']:
                         self._headerDict['edge weights'] = True
                     self._getValInCorrectType(edgeSpec.split('=')[1], 'edge weight')
@@ -82,6 +82,8 @@ class GtrackHeaderExpanderGenomeElementSource(GtrackGenomeElementSource):
         return GtrackGenomeElementSource._parseEdges(self, edgeStr)
         
     def _getValInCorrectType(self, val, valueOrEdgeWeight='value', isEmptyElement=False):
+        headerDictInFile = self.getHeaderDictInFile()
+        
         valTypeList = ['binary', 'number', 'category', 'character']
         for i,valueType in enumerate(valTypeList):
             if valueOrEdgeWeight in self._valTypeIndexDict and self._valTypeIndexDict[valueOrEdgeWeight] > i:
@@ -95,9 +97,9 @@ class GtrackHeaderExpanderGenomeElementSource(GtrackGenomeElementSource):
 
                 valueDim = self._getGtrackValueDim(val, valTypeInfo, valueOrEdgeWeight)
 
-                if not '%s type' % valueOrEdgeWeight in self.getHeaderDictInFile():
+                if not '%s type' % valueOrEdgeWeight in headerDictInFile:
                     self._headerDict['%s type' % valueOrEdgeWeight] = valTypeList[i]
-                if not '%s dimension' % valueOrEdgeWeight in self.getHeaderDictInFile():
+                if not '%s dimension' % valueOrEdgeWeight in headerDictInFile:
                     self._headerDict['%s dimension' % valueOrEdgeWeight] = valueDim
                 
                 return GtrackGenomeElementSource._getValInCorrectType(self, val, valueOrEdgeWeight, isEmptyElement)
