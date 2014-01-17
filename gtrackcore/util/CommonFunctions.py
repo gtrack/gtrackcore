@@ -21,7 +21,7 @@ from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 #from gtrackcore.application.SignatureDevianceLogging import takes,returns
 #from third_party.decorator import decorator
 #
-def ensurePathExists(fn):
+def createPath(fn):
     "Assumes that fn consists of a basepath (folder) and a filename, and ensures that the folder exists."
     path = os.path.split(fn)[0]
     
@@ -305,9 +305,9 @@ def convertTNstrToTNListFormat(tnStr, doUnquoting=False):
 #        return fn(*v, **k)
 #    return wrapped
 #
-def createDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Config.PROCESSED_DATA_PATH):
+def getDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Config.PROCESSED_DATA_PATH):
     """
-    >>> createDirPath(['trackname'],'genome','chr1')
+    >>> getDirPath(['trackname'],'genome','chr1')
     '/100000/noOverlaps/genome/trackname/chr1'
     """
     from gtrackcore.util.CompBinManager import CompBinManager

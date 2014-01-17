@@ -17,7 +17,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.core.TrackView import AutonomousTrackElement
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.util.CommonFunctions import createDirPath
+from gtrackcore.util.CommonFunctions import getDirPath
 
 PreProcessAllTracksJob.PASS_ON_EXCEPTIONS = True
 
@@ -27,8 +27,8 @@ class TestTrackPreProcessor(ProfiledIntegrationTest, TestWithGeSourceData):
     def _preProcess(self, trackName, noOverlapsFileCount=None, withOverlapsFileCount=None, \
                     noOverlapsChrElCount=None, withOverlapsChrElCount=None, customBins={}):
         trackName = self.TRACK_NAME_PREFIX + trackName
-        noOverlapsPath = createDirPath(trackName, self.GENOME, allowOverlaps=False)
-        withOverlapsPath = createDirPath(trackName, self.GENOME, allowOverlaps=True)
+        noOverlapsPath = getDirPath(trackName, self.GENOME, allowOverlaps=False)
+        withOverlapsPath = getDirPath(trackName, self.GENOME, allowOverlaps=True)
         self._removeDir(noOverlapsPath, trackName)
         self._removeDir(withOverlapsPath, trackName)
         

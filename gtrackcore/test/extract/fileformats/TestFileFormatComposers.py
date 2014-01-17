@@ -16,7 +16,7 @@ from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.input.userbins.UserBinSource import GlobalBinSource
 from gtrackcore.input.wrappers.GEDependentAttributesHolder import GEDependentAttributesHolder
 from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
-from gtrackcore.util.CommonFunctions import createDirPath
+from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.test.common.Asserts import TestCaseWithImprovedAsserts
 from gtrackcore.test.common.TestWithGeSourceData import TestWithGeSourceData
 
@@ -34,8 +34,8 @@ class TestFileFormatComposers(TestWithGeSourceData, TestCaseWithImprovedAsserts)
         sys.stdout = self.stdout
     
     def _preProcess(self, trackName):
-        self._removeDir(createDirPath(trackName, self.GENOME, allowOverlaps=False), trackName)
-        self._removeDir(createDirPath(trackName, self.GENOME, allowOverlaps=True), trackName)
+        self._removeDir(getDirPath(trackName, self.GENOME, allowOverlaps=False), trackName)
+        self._removeDir(getDirPath(trackName, self.GENOME, allowOverlaps=True), trackName)
         PreProcessAllTracksJob(self.GENOME, trackName, username="Test").process()
 
     #def testGtrackComposer(self):

@@ -5,12 +5,12 @@ import shutil
 from gtrackcore.input.core.GenomeElementSource import BoundingRegionTuple
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve, BoundingRegionInfo
-from gtrackcore.util.CommonFunctions import createDirPath
+from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, OutsideBoundingRegionError
 
 class TestBoundingRegionShelve(unittest.TestCase):
     def setUp(self):
-        self._path = createDirPath(['testBoundingRegionShelve'], 'TestGenome', allowOverlaps=False)
+        self._path = getDirPath(['testBoundingRegionShelve'], 'TestGenome', allowOverlaps=False)
         self._fn = self._path + os.sep + 'boundingRegions.shelve'
         
     def _setUpShelve(self):

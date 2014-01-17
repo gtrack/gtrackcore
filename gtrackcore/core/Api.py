@@ -5,11 +5,11 @@ def importFile(fileName, genome, trackName):
 
     trackName = _convertTrackName(trackName)
 
-    from gtrackcore.util.CommonFunctions import createOrigPath, ensurePathExists
+    from gtrackcore.util.CommonFunctions import createOrigPath, createPath
     origFn = createOrigPath(genome, trackName, os.path.basename(fileName))
     if os.path.exists(origFn):
         shutil.rmtree(os.path.dirname(origFn))
-    ensurePathExists(origFn)
+    createPath(origFn)
     shutil.copy(fileName, origFn)
     os.chmod(origFn, 0664)
 
@@ -28,9 +28,9 @@ def _trackNameExists(genome, trackName):
     return True
 
 def _getDirPath(genome=''):
-    from gtrackcore.util.CommonFunctions import createDirPath, ensurePathExists
-    dirPath = createDirPath([], '')
-    ensurePathExists(dirPath)
+    from gtrackcore.util.CommonFunctions import getDirPath, createPath
+    dirPath = getDirPath([], '')
+    createPath(dirPath)
     return dirPath
 
 def listAvailableGenomes():
@@ -105,7 +105,7 @@ def getTrackData(genome, trackName, chr, allowOverlaps):
 
     from gtrackcore.track.memmap.TrackSource import TrackSource
     trackSource = TrackSource()
-    return trackSource.getTrackData(trackName, genome, chr, allowOverlaps.lower() in ('yes', 'true', 't', '1'))
+    return trackSource.getTrackData(trackName, genome, chr, allowOverlaps)
 
 
 def getTrackElementCount(trackData):

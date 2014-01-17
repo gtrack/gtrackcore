@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from gtrackcore.preprocess.memmap.OutputDirectory import OutputDirectory
 from gtrackcore.util.CustomExceptions import AbstractClassError
-from gtrackcore.util.CommonFunctions import createDirPath
+from gtrackcore.util.CommonFunctions import getDirPath
 
 class OutputManager(object):
     def __new__(cls, genome, trackName, allowOverlaps, geSourceManager):
@@ -14,7 +14,7 @@ class OutputManager(object):
                                                     allowOverlaps, geSourceManager)
 
     def _createOutputDirectory(self, genome, chr, trackName, allowOverlaps, geSourceManager):
-        dirPath = createDirPath(trackName, genome, chr, allowOverlaps)
+        dirPath = getDirPath(trackName, genome, chr, allowOverlaps)
         
         from gtrackcore.metadata.GenomeInfo import GenomeInfo
         return  OutputDirectory(dirPath, geSourceManager.getPrefixList(), \

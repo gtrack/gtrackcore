@@ -5,7 +5,7 @@ import pstats
 import hotshot, hotshot.stats
 
 #from gtrackcore.util.StaticFile import GalaxyRunSpecificFile
-from gtrackcore.util.CommonFunctions import ensurePathExists
+from gtrackcore.util.CommonFunctions import createPath
 from gtrackcore.util.HtmlCore import HtmlCore
 
 class Profiler:

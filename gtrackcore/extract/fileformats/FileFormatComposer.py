@@ -4,7 +4,7 @@ from cStringIO import StringIO
 from gtrackcore.core.Config import Config
 from gtrackcore.input.wrappers.GEDependentAttributesHolder import GEDependentAttributesHolder
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
-from gtrackcore.util.CommonFunctions import isNan, ensurePathExists
+from gtrackcore.util.CommonFunctions import isNan, createPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, AbstractClassError, NotIteratedYetError
 
 MatchResult = namedtuple('MatchResult', ['match', 'trackFormatName'])
@@ -55,7 +55,7 @@ class FileFormatComposer(object):
         return MatchResult(match=False, trackFormatName=trackFormat.getFormatName())
 
     def composeToFile(self, fn, ignoreEmpty=False, **kwArgs):
-        ensurePathExists(fn)
+        createPath(fn)
         f = open(fn, 'w')
         ok = self._composeCommon(f, ignoreEmpty, **kwArgs)
         f.close()

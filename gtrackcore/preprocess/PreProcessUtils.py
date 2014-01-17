@@ -13,7 +13,7 @@ from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
 from gtrackcore.track.memmap.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
-from gtrackcore.util.CommonFunctions import createDirPath
+from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 
 class PreProcessUtils(object):
@@ -48,7 +48,7 @@ class PreProcessUtils(object):
         collector = PreProcMetaDataCollector(genome, trackName)
         preProcFilesExist = collector.preProcFilesExist(allowOverlaps)
         if preProcFilesExist is None:
-            dirPath = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+            dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
             if BoundingRegionShelve(genome, trackName, allowOverlaps).fileExists():
                 preProcFilesExist = True
                 #    any( fn.split('.')[0] in ['start', 'end', 'val', 'edges'] \
@@ -93,7 +93,7 @@ class PreProcessUtils(object):
         collector = PreProcMetaDataCollector(genome, trackName)
         if PreProcessUtils.preProcFilesExist(genome, trackName, allowOverlaps) and not \
             collector.hasRemovedPreProcFiles(allowOverlaps):
-                dirPath = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+                dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
                 
                 assert dirPath.startswith(Config.PROCESSED_DATA_PATH), \
                     "Processed data path '%s' does not start with '%s'" % \
@@ -136,7 +136,7 @@ class PreProcessUtils(object):
     def removeChrMemmapFolders(genome, trackName, allowOverlaps):
         chrList = PreProcMetaDataCollector(genome, trackName).getPreProcessedChrs(allowOverlaps)
         for chr in chrList:
-            path = createDirPath(trackName, genome, chr, allowOverlaps)
+            path = getDirPath(trackName, genome, chr, allowOverlaps)
             assert os.path.exists(path), 'Path does not exist: ' + path
             assert os.path.isdir(path), 'Path is not a directory: ' + path
             shutil.rmtree(path)

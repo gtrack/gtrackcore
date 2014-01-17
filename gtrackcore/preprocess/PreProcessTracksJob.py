@@ -17,7 +17,7 @@ from gtrackcore.track.hierarchy.ExternalTrackManager import ExternalTrackManager
 from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
 from gtrackcore.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
-from gtrackcore.util.CommonFunctions import createOrigPath, createDirPath, prettyPrintTrackName, \
+from gtrackcore.util.CommonFunctions import createOrigPath, getDirPath, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
 from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning, ShouldNotOccurError
@@ -164,7 +164,7 @@ class PreProcessTracksJob(object):
     def _renameTrackNameIfIllegal(self, trackName):
         legalTrackName = [replaceIllegalElementsInTrackNames(x) for x in trackName]
 
-        if legalTrackName != trackName and os.path.exists(createDirPath(trackName, self._genome)):
+        if legalTrackName != trackName and os.path.exists(getDirPath(trackName, self._genome)):
             renameTrack(self._genome, trackName, legalTrackName)
 
         return legalTrackName
