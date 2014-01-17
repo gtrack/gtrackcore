@@ -97,20 +97,24 @@ def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOver
     _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps, bins)
 
 
-def _getTrackData(genome, trackName, chr, allowOverlaps):
+def getTrackData(genome, trackName, chr, allowOverlaps):
+    trackName = _convertTrackName(trackName)
+    if not _trackNameExists(genome, trackName):
+        print 'There is no track %s for genome %s. Import it by using importFile()' % (trackName, genome)
+        sys.exit(0)
+
     from gtrackcore.track.memmap.TrackSource import TrackSource
     trackSource = TrackSource()
     return trackSource.getTrackData(trackName, genome, chr, allowOverlaps.lower() in ('yes', 'true', 't', '1'))
 
 
-def countTrackElements(genome, trackName, chr, allowOverlaps):
-    trackName = _convertTrackName(trackName)
-    if not _trackNameExists(genome, trackName):
-        print 'There is no track %s for genome %s' % (trackName, genome)
-        return
-    trackData = _getTrackData(genome, trackName, chr, allowOverlaps)
+def getTrackElementCount(trackData):
+    from gtrackcore.track.tools.TrackTools import countElements
 
-    print numpy.shape(trackData['start'])[0]
+    return countElements(trackData)
+
+def getTracksIntersection(trackData1, trackData2):
+    raise NotImplementedError
 
 
 def _usage():
