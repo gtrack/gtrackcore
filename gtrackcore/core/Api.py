@@ -1,7 +1,26 @@
 import shutil, os, sys, numpy
 
+#TODO: Confirm docstring
 def importFile(fileName, genome, trackName):
-    """fileName genome trackName"""
+    """
+    Generate gtrackcore data from a textual genomic track.
+
+    The genomic track is converted to SmartMemmaps, which are
+    placed in a path created from the track id (genome and
+    trackName). The path is prepended by a base directory that
+    is specified in the configuration.
+
+    The original track data is also persisted.
+
+    Parameters
+    ----------
+    fileName : string
+        Name of genomic track (input file).
+    genome : string
+        Genome id.
+    trackName : string
+        Name of track.
+    """
 
     trackName = _convertTrackName(trackName)
 
@@ -16,33 +35,95 @@ def importFile(fileName, genome, trackName):
     from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
     PreProcessAllTracksJob(genome, trackName).process()
 
+#TODO: Confirm docstring
 def _convertTrackName(trackName):
+    """
+    Convert trackName to list of ...
+
+    Parameters
+    ----------
+    trackName : string
+        Name of the track.
+
+    Returns
+    -------
+    list of strings
+        Converted trackname in list format.
+    """
     from gtrackcore.util.CommonFunctions import convertTNstrToTNListFormat
     return convertTNstrToTNListFormat(trackName, doUnquoting=True)
 
-def _trackNameExists(genome, trackName):
+#TODO: Confirm docstring
+def _isValidTrack(genome, trackName):
+    """
+    Check if track exists and is valid.
+
+    Parameters
+    ----------
+    genome : string
+        Genome id.
+    trackName : list of strings
+        Name of track.
+
+    Returns
+    -------
+    bool
+        Whether the track is valid or not.
+
+    """
     from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
     if not ProcTrackOptions.isValidTrack(genome, trackName):
         print 'Track "%s" of genome "%s" is not valid.' % (':'.join(trackName), genome)
         return False
     return True
 
+#TODO: Confirm docstring
 def _getDirPath(genome=''):
+    """
+    Get directory path for ...
+
+    Paramters
+    ---------
+    genome : string
+        ???
+
+    Returns
+    -------
+    dirPath : string
+        The found directory path.
+
+    """
     from gtrackcore.util.CommonFunctions import getDirPath, createPath
     dirPath = getDirPath([], '')
     createPath(dirPath)
     return dirPath
 
+#TODO: Confirm docstring
 def listAvailableGenomes():
-    ""
+    """
+    List available genomes found in path.
+
+    """
     print 'List of available genomes:'
     dirPath = _getDirPath()
     for dir in os.listdir(dirPath):
         if dir[0] != '.':
             print '    ' + dir
 
+#TODO: Confirm docstring
 def listAvailableTracks(genome):
-    "genome"
+    """
+    List available tracks for genome found in path.
+
+    Print in the form <category:trackname>, where
+    'category' is ...
+
+    Parameters
+    ----------
+    genome : string
+        Genome one want to list tracks for.
+
+    """
     print 'List of available tracks for genome "%s":' % genome
     _getDirPath(genome)
 
@@ -50,11 +131,20 @@ def listAvailableTracks(genome):
     for trackName in ProcTrackNameSource(genome):
         print '    ' + ':'.join(trackName)
 
+#TODO: Learn
 def getExtractionOptions(genome, trackName):
-    """genome trackName"""
+    """
+    Paramters
+    ---------
+    genome : string
+        Genome id.
+    trackName : string
+        Track id (<category:trackname>).
+    """
+
 
     trackName = _convertTrackName(trackName)
-    if not _trackNameExists(genome, trackName):
+    if not _isValidTrack(genome, trackName):
         return
 
     print
@@ -70,7 +160,7 @@ def getExtractionOptions(genome, trackName):
 
 def _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps, bins):
     trackName = _convertTrackName(trackName)
-    if not _trackNameExists(genome, trackName):
+    if not _isValidTrack(genome, trackName):
         return
 
     outFileName = os.path.abspath(outFileName)
@@ -80,16 +170,51 @@ def _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverl
                                                     globalCoords=True, asOriginal=False, \
                                                     allowOverlaps=allowOverlaps)
 
+#TODO: Confirm docstring
 def exportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps):
-    """outFileName genome trackName fileFormatName allowOverlaps"""
+    """
+    Generate textual genomic track from gtrackcore data.
+
+    Paramters
+    ---------
+    outFileName : string
+        Name of output textual genomic track.
+    genome : string
+        Genome id.
+    trackName : string
+        Track id (<category:trackname>).
+    fileFormatName : string
+        Textual file format of output (genomic track type). E.g. GTrack, GFF, BED, etc.
+    allowOverlaps : bool
+        ???
+
+    """
 
     from gtrackcore.input.userbins.UserBinSource import UserBinSource
     bins = UserBinSource('*', '*', genome, includeExtraChrs=True)
 
     _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps, bins)
 
+#TODO: Confirm docstring
 def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOverlaps, region):
-    """outFileName genome trackName fileFormatName allowOverlaps region (e.g. chr21:1m-2m)"""
+    """
+    Generate textual genomic track from gtrackcore data in a specific region.
+
+    Paramters
+    ---------
+    outFileName : string
+        Name of output textual genomic track.
+    genome : string
+        Genome id.
+    trackName : string
+        Track id (<category:trackname>).
+    fileFormatName : string
+        Textual file format of output (genomic track type). E.g. GTrack, GFF, BED, etc.
+    allowOverlaps : bool
+        ???
+    region :
+
+"""
 
     from gtrackcore.input.userbins.UserBinSource import UserBinSource
     bins = UserBinSource(region, '*', genome, includeExtraChrs=True)
@@ -99,7 +224,7 @@ def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOver
 
 def getTrackData(genome, trackName, chr, allowOverlaps):
     trackName = _convertTrackName(trackName)
-    if not _trackNameExists(genome, trackName):
+    if not _isValidTrack(genome, trackName):
         print 'There is no track %s for genome %s. Import it by using importFile()' % (trackName, genome)
         sys.exit(0)
 
