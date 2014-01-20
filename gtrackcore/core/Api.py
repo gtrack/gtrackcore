@@ -2,7 +2,7 @@ import shutil, os, sys, numpy
 
 #TODO: Confirm docstring
 def importFile(fileName, genome, trackName):
-    """
+    """ ?!
     Generate gtrackcore data from a textual genomic track.
 
     The genomic track is converted to SmartMemmaps, which are
@@ -37,8 +37,8 @@ def importFile(fileName, genome, trackName):
 
 #TODO: Confirm docstring
 def _convertTrackName(trackName):
-    """
-    Convert trackName to list of ...
+    """ ?!
+    Convert trackName to list of ??
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def _convertTrackName(trackName):
 
 #TODO: Confirm docstring
 def _isValidTrack(genome, trackName):
-    """
+    """ ?!
     Check if track exists and is valid.
 
     Parameters
@@ -80,12 +80,12 @@ def _isValidTrack(genome, trackName):
 #TODO: Confirm docstring
 def _getDirPath(genome=''):
     """
-    Get directory path for ...
+    Get directory path for ??
 
     Paramters
     ---------
     genome : string
-        ???
+        ??
 
     Returns
     -------
@@ -100,7 +100,7 @@ def _getDirPath(genome=''):
 
 #TODO: Confirm docstring
 def listAvailableGenomes():
-    """
+    """ ?!
     List available genomes found in path.
 
     """
@@ -112,11 +112,11 @@ def listAvailableGenomes():
 
 #TODO: Confirm docstring
 def listAvailableTracks(genome):
-    """
+    """ ?!
     List available tracks for genome found in path.
 
     Print in the form <category:trackname>, where
-    'category' is ...
+    'category' is ??
 
     Parameters
     ----------
@@ -133,7 +133,7 @@ def listAvailableTracks(genome):
 
 #TODO: Learn
 def getExtractionOptions(genome, trackName):
-    """
+    """ ??
     Paramters
     ---------
     genome : string
@@ -172,7 +172,7 @@ def _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverl
 
 #TODO: Confirm docstring
 def exportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps):
-    """
+    """ ?!
     Generate textual genomic track from gtrackcore data.
 
     Paramters
@@ -186,7 +186,7 @@ def exportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps):
     fileFormatName : string
         Textual file format of output (genomic track type). E.g. GTrack, GFF, BED, etc.
     allowOverlaps : bool
-        ???
+        ??
 
     """
 
@@ -197,7 +197,7 @@ def exportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps):
 
 #TODO: Confirm docstring
 def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOverlaps, region):
-    """
+    """ ??
     Generate textual genomic track from gtrackcore data in a specific region.
 
     Paramters
@@ -211,7 +211,7 @@ def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOver
     fileFormatName : string
         Textual file format of output (genomic track type). E.g. GTrack, GFF, BED, etc.
     allowOverlaps : bool
-        ???
+        ??
     region :
 
 """
