@@ -200,6 +200,30 @@ class PreProcessTracksJob(object):
             print os.linesep + '--- END ERROR ---' + os.linesep
 
 class PreProcessAllTracksJob(PreProcessTracksJob):
+    """
+    Handles preprocessing of tracks
+
+
+    Parameters
+    ----------
+    genome : string
+        Genome id.
+    trackNameFilter : list
+        ??
+    username : string
+        ??
+    mergeChrFolders : bool
+        ??
+
+    Attributes
+    ----------
+    _trackNameFilter : list
+        ??
+    _mergeChrFolders : bool
+        ??
+
+    """
+
     def __init__(self, genome, trackNameFilter=[], username='', mergeChrFolders=True, **kwArgs):
         PreProcessTracksJob.__init__(self, genome, username=username, **kwArgs)
         if trackNameFilter == ['']:

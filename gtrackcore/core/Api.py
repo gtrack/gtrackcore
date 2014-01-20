@@ -19,7 +19,8 @@ def importFile(fileName, genome, trackName):
     genome : string
         Genome id.
     trackName : string
-        Name of track.
+       An id that uniquely represents a track. E.g. 'Genes and gene subsets:Genes:Refseq'. Each part of the
+        trackName may be separated by ':', '^', or '|'.
     """
 
     trackName = _convertTrackName(trackName)
@@ -38,17 +39,18 @@ def importFile(fileName, genome, trackName):
 #TODO: Confirm docstring
 def _convertTrackName(trackName):
     """ ?!
-    Convert trackName to list of ??
+    Convert a trackName string to a list.
 
     Parameters
     ----------
     trackName : string
-        Name of the track.
+       An id that uniquely represents a track. E.g. 'Genes and gene subsets:Genes:Refseq'. Each part of the
+        trackName may be separated by ':', '^', or '|'.
 
     Returns
     -------
     list of strings
-        Converted trackname in list format.
+        Track id converted to list format.
     """
     from gtrackcore.util.CommonFunctions import convertTNstrToTNListFormat
     return convertTNstrToTNListFormat(trackName, doUnquoting=True)
@@ -56,14 +58,14 @@ def _convertTrackName(trackName):
 #TODO: Confirm docstring
 def _isValidTrack(genome, trackName):
     """ ?!
-    Check if track exists and is valid.
+    Check if the track exists, and is valid.
 
     Parameters
     ----------
     genome : string
         Genome id.
     trackName : list of strings
-        Name of track.
+        Track id in list format.
 
     Returns
     -------
@@ -85,7 +87,7 @@ def _getDirPath(genome=''):
     Paramters
     ---------
     genome : string
-        ??
+        Genome id.
 
     Returns
     -------
@@ -113,15 +115,14 @@ def listAvailableGenomes():
 #TODO: Confirm docstring
 def listAvailableTracks(genome):
     """ ?!
-    List available tracks for genome found in path.
+    List available tracks for the genome found in the path.
 
-    Print in the form <category:trackname>, where
-    'category' is ??
+    Prints in the form <...category:trackname>
 
     Parameters
     ----------
     genome : string
-        Genome one want to list tracks for.
+        Genome that one want to list tracks for.
 
     """
     print 'List of available tracks for genome "%s":' % genome
@@ -139,7 +140,8 @@ def getExtractionOptions(genome, trackName):
     genome : string
         Genome id.
     trackName : string
-        Track id (<category:trackname>).
+       An id that uniquely represents a track. E.g. 'Genes and gene subsets:Genes:Refseq'. Each part of the
+        trackName may be separated by ':', '^', or '|'.
     """
 
 
@@ -173,7 +175,7 @@ def _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverl
 #TODO: Confirm docstring
 def exportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps):
     """ ?!
-    Generate textual genomic track from gtrackcore data.
+    Generate a textual genomic track from gtrackcore data.
 
     Paramters
     ---------
@@ -182,7 +184,8 @@ def exportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps):
     genome : string
         Genome id.
     trackName : string
-        Track id (<category:trackname>).
+       An id that uniquely represents a track. E.g. 'Genes and gene subsets:Genes:Refseq'. Each part of the
+        trackName may be separated by ':', '^', or '|'.
     fileFormatName : string
         Textual file format of output (genomic track type). E.g. GTrack, GFF, BED, etc.
     allowOverlaps : bool
@@ -198,7 +201,7 @@ def exportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps):
 #TODO: Confirm docstring
 def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOverlaps, region):
     """ ??
-    Generate textual genomic track from gtrackcore data in a specific region.
+    Generate a textual genomic track from gtrackcore data in a specific region.
 
     Paramters
     ---------
@@ -207,12 +210,13 @@ def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOver
     genome : string
         Genome id.
     trackName : string
-        Track id (<category:trackname>).
+       An id that uniquely represents a track. E.g. 'Genes and gene subsets:Genes:Refseq'. Each part of the
+        trackName may be separated by ':', '^', or '|'.
     fileFormatName : string
         Textual file format of output (genomic track type). E.g. GTrack, GFF, BED, etc.
     allowOverlaps : bool
         ??
-    region :
+    region : ??
 
 """
 
