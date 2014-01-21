@@ -200,8 +200,8 @@ class PreProcessTracksJob(object):
             print os.linesep + '--- END ERROR ---' + os.linesep
 
 class PreProcessAllTracksJob(PreProcessTracksJob):
-    """
-    Handles preprocessing of tracks
+    """ ??
+    Handles preprocessing of tracks stored in the location specified by the trackNameFilter
 
 
     Parameters
@@ -209,16 +209,17 @@ class PreProcessAllTracksJob(PreProcessTracksJob):
     genome : string
         Genome id.
     trackNameFilter : list
-        ??
+        ?! Track id in list format.
     username : string
         ??
     mergeChrFolders : bool
-        ??
+        ?! Specifies whether chromosome folders should be merged into one.
 
     Attributes
     ----------
     _trackNameFilter : list
-        ??
+        Track name in list format.
+
     _mergeChrFolders : bool
         ??
 

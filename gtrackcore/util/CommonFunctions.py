@@ -391,6 +391,19 @@ def getFileSuffix(fn):
 #    return el[2], tuple(el[3:-1]), el[-1]
 #
 def extractTrackNameFromOrigPath(path):
+    """
+    Convert a absolute trackName path to a trackName list .
+
+    Parameters
+    ==========
+    path : string
+        The absolute path of a track.
+
+    Returns
+    =======
+    list
+        The trackName list that has been extracted from the path.
+    """
     excludeEl = None if os.path.isdir(path) else -1
     path = path[len(Config.ORIG_DATA_PATH):]
     path = path.replace('//','/')
