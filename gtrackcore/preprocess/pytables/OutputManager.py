@@ -15,24 +15,23 @@ class OutputManager(object):
                                                     allowOverlaps, geSourceManager)
 
 
-    def _create_database(self, genome, chr, track_name, allow_overlaps, geSourceManager):
+    def _create_single_track_database(self, genome, chr, track_name, allow_overlaps, geSourceManager):
 
-        self.database_filename = getDirPath(track_name, genome, chr, allow_overlaps) + track_name[-1] + '.h5'
+        database_filename = getDirPath(track_name, genome, chr, allow_overlaps) + track_name[-1] + '.h5'
 
-        self._h5file = tables.open_file(self._database_filename, mode = "w", title = track_name[-1])
+        self._h5file = tables.open_file(database_filename, mode = "w", title = track_name[-1])
 
-        group = self._h5file.create_group(self._h5file.root, track_name[0], track_name[0])
         #Create all groups
+        group = self._h5file.create_group(self._h5file.root, track_name[0], track_name[0])
         for track_name_part in track_name[1:-1]:
             group = self._h5file.create_group(group, track_name_part, track_name_part)
 
         column_descriptions = self._create_column_dictionary(geSourceManager, chr)
-        print column_descriptions
 
         self._table = self._h5file.create_table(group, track_name[-1], column_descriptions, track_name[-1])
 
 
-    def _create_column_dictionary(geSourceManager, chr):
+    def _create_column_dictionary(self, geSourceManager, chr):
         max_string_lengths = geSourceManager.getMaxStrLensForChr(chr)
         datatype_dict = {}
 
@@ -56,10 +55,12 @@ class OutputManager(object):
 
         return datatype_dict
 
-    def _create_table(self, genome, chr, trackName, allowOverlaps, geSourceManager):
+    def _addElementAsRow(genomeElement):
+        """how to get contents of a genomeElement? Inspect OutputFile.py..."""
+        pass
 
-        from gtrackcore.metadata.GenomeInfo import GenomeInfo
-        GenomeInfo.getChrLen(genome, chr)
+    def _closeAndFlushDBfile(self):
+        self._h5file.close()
 
     def writeElement(self, genomeElement):
         raise AbstractClassError()
@@ -74,23 +75,24 @@ class OutputManagerSingleChr(OutputManager):
     def __new__(cls, *args, **kwArgs):
         return object.__new__(cls)
 
-    def __init__(self, genome, trackName, allowOverlaps, geSourceManager):
+    def __init__(self, genome, track_name, allow_overlaps, geSourceManager):
         allChrs = geSourceManager.getAllChrs()
         assert len(allChrs) == 1
-
-        self._create_table(genome, allChrs[0], trackName, allowOverlaps, geSourceManager)
+        self._create_single_track_database(genome, allChrs[0], track_name, allow_overlaps, geSourceManager)
 
     def writeElement(self, genomeElement):
-        self._outputDir.writeElement(genomeElement)
+        self._addElementAsRow(genomeElement)
 
     def writeRawSlice(self, genomeElement):
+        """What's the purpose of this?"""
         self._outputDir.writeRawSlice(genomeElement)
 
     def close(self):
-        self._outputDir.close()
+        self._closeAndFlushDBfile()
 
 
 class OutputManagerSeveralChrs(OutputManager):
+    """Check if we need this class.  will we get a performance boost if each chromosome is in its own table? """
     def __new__(cls, *args, **kwArgs):
         return object.__new__(cls)
 
