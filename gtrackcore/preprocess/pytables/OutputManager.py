@@ -17,7 +17,7 @@ class OutputManager(object):
 
     def _create_database(self, genome, chr, track_name, allow_overlaps, geSourceManager):
 
-        database_filename = getDirPath(track_name, genome, chr, allow_overlaps) + track_name[-1] + '.h5'
+        self.database_filename = getDirPath(track_name, genome, chr, allow_overlaps) + track_name[-1] + '.h5'
 
         self._h5file = tables.open_file(self._database_filename, mode = "w", title = track_name[-1])
 
@@ -26,15 +26,15 @@ class OutputManager(object):
         for track_name_part in track_name[1:-1]:
             group = self._h5file.create_group(group, track_name_part, track_name_part)
 
-        datatype_dict = _create_columns_dictionary(geSourceManager, chr)
-        print datatype_dict
+        column_descriptions = self._create_column_dictionary(geSourceManager, chr)
+        print column_descriptions
 
-        self._table = self._h5file.create_table(group, track_name[-1], datatype_dict, track_name[-1])
+        self._table = self._h5file.create_table(group, track_name[-1], column_descriptions, track_name[-1])
 
 
-    def _create_columns_dictionary(geSourceManager, chr):
-        datatype_dict = {}
+    def _create_column_dictionary(geSourceManager, chr):
         max_string_lengths = geSourceManager.getMaxStrLensForChr(chr)
+        datatype_dict = {}
 
         for column in geSourceManager.getPrefixList():
             if column in ['start', 'end']:
