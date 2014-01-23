@@ -7,12 +7,15 @@ from gtrackcore.preprocess.memmap.OutputFile import OutputFile
 from gtrackcore.preprocess.memmap.OutputIndexFilePair import OutputIndexFilePair
 
 class OutputDirectory(object):
+    """ ?!
+    Contains OutputFile objects that,
+    """
     def __init__(self, path, prefixList, fileArraySize, chrSize, valDataType='float64', valDim=1, \
                  weightDataType='float64', weightDim=1, maxNumEdges=0, maxStrLens={}, elementsAreSorted=False):
         self._files = OrderedDict()
         if not os.path.exists(path):
             os.makedirs(path)
-            
+
         for prefix in prefixList:
             self._files[prefix] = OutputFile(path, prefix, fileArraySize, valDataType, valDim, weightDataType, weightDim, maxNumEdges, maxStrLens)
         

@@ -118,24 +118,37 @@ class PreProcessTracksJob(object):
     def _allTrackNames(self):
         raise AbstractClassError
 
-    def _allGESourceManagers(self, trackName, allowOverlaps):
-        collector = PreProcMetaDataCollector(self._genome, trackName)
+    def _allGESourceManagers(self, trackNameList, allowOverlaps):
+        """ ??
+        Generator that return all the GESourceManagers.
+
+        Basically returns one SourceManager that handle overlaps, and one where overlaps are merged
+
+        Parameters
+        ----------
+        trackNameList : list
+            Track name/id in list format.
+        allowOverlaps : bool
+            Whether overlaps are allowed or not.
+        """
+        collector = PreProcMetaDataCollector(self._genome, trackNameList)
+
+        #If there should be no overlaps
         if allowOverlaps == False and collector.overlapRuleHasBeenFinalized(True):
-            for i in range(1):
-                self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackName) + \
-                                (' (allowOverlaps: %s)' % allowOverlaps)
-                yield self._getGESourceManagerFromTrack(trackName)
+            self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackNameList) + \
+                (' (allowOverlaps: %s)' % allowOverlaps)
+            yield self._getGESourceManagerFromTrack(trackNameList)
         else:
-            for geSource in self._allGESources(trackName):
+            for geSource in self._allGESources(trackNameList):
                 if allowOverlaps == True:
                     tf = TrackFormat.createInstanceFromGeSource(geSource)
                     if tf.isDense() or geSource.hasNoOverlappingElements():
                         return
 
-                self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackName) + \
+                self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackNameList) + \
                                 (' (filename: "%s")' % geSource.getFileName() if geSource.hasOrigFile() else '') + \
                                 (' (allowOverlaps: %s)' % allowOverlaps)
-                if PreProcessUtils.shouldPreProcessGESource(trackName, geSource, allowOverlaps):
+                if PreProcessUtils.shouldPreProcessGESource(trackNameList, geSource, allowOverlaps):
                     yield self._getGESourceManagerFromGESource(geSource)
 
     def _allGESources(self, trackName):

@@ -5,6 +5,9 @@ from gtrackcore.util.CustomExceptions import AbstractClassError
 from gtrackcore.util.CommonFunctions import getDirPath
 
 class OutputManager(object):
+    """ ??
+    Abstract class that handles output of genome data
+    """
     def __new__(cls, genome, trackName, allowOverlaps, geSourceManager):
         if len(geSourceManager.getAllChrs()) == 1:
             return OutputManagerSingleChr.__new__(OutputManagerSingleChr, genome, trackName, \
@@ -14,10 +17,13 @@ class OutputManager(object):
                                                     allowOverlaps, geSourceManager)
 
     def _createOutputDirectory(self, genome, chr, trackName, allowOverlaps, geSourceManager):
+        """ ??
+        Get an OutputDirectory object, from a track path
+        """
         dirPath = getDirPath(trackName, genome, chr, allowOverlaps)
         
         from gtrackcore.metadata.GenomeInfo import GenomeInfo
-        return  OutputDirectory(dirPath, geSourceManager.getPrefixList(), \
+        return OutputDirectory(dirPath, geSourceManager.getPrefixList(), \
                                 geSourceManager.getNumElementsForChr(chr), \
                                 GenomeInfo.getChrLen(genome, chr), \
                                 geSourceManager.getValDataType(), \
@@ -65,6 +71,7 @@ class OutputManagerSeveralChrs(OutputManager):
     
     def __init__(self, genome, trackName, allowOverlaps, geSourceManager):
         allChrs = geSourceManager.getAllChrs()
+        assert len(allChrs) > 1
 
         self._outputDirs = OrderedDict()
         for chr in allChrs:
