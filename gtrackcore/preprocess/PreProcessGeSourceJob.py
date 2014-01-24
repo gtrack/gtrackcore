@@ -23,7 +23,6 @@ class PreProcessGeSourceJob(object):
         genome = geSource.genome
         
         collector = PreProcMetaDataCollector(genome, self._trackName)
-        
         collector.updateMetaDataForFinalization(geSource.getFileSuffix(), geSource.getPrefixList(), \
                                                 geSource.getValDataType(), geSource.getValDim(), \
                                                 geSource.getEdgeWeightDataType(), geSource.getEdgeWeightDim(), \
