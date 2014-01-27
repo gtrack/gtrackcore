@@ -5,6 +5,7 @@ from stat import S_IRWXU, S_IRWXG, S_IROTH
 from collections import OrderedDict
 from gtrackcore.util.CustomExceptions import AbstractClassError
 from gtrackcore.util.CommonFunctions import getDirPath
+from gtrackcore.track.pytables.DatabaseTrackHandler import DatabaseTrackHandler
 
 class OutputManager(object):
 
@@ -18,25 +19,18 @@ class OutputManager(object):
 
 
     def _create_single_track_database(self, genome, chr, track_name, allow_overlaps, geSourceManager):
+        dir_path = getDirPath(track_name, genome, chr, allow_overlaps)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        self._database_filename = dir_path + os.sep + track_name[-1] + '.h5'
 
-        self._database_filename = getDirPath(track_name, genome, chr, allow_overlaps) + track_name[-1] + '.h5'
+        # Create and open db
+        self._db_handler = DatabaseTrackHandler(track_name, genome, chr, allow_overlaps)
+        self._db_handler.open(mode="w")
 
-        self._h5file = tables.open_file(self._database_filename, mode="w", title=track_name[-1])
-
-        #Create all groups
-        group = self._h5file.create_group(self._h5file.root, track_name[0], track_name[0])
-        for track_name_part in track_name[1:-1]:
-            group = self._h5file.create_group(group, track_name_part, track_name_part)
-
-        #Setup table
-        self._column_descriptions = self._create_column_dictionary(geSourceManager, chr)
-        self._table = self._h5file.create_table(group, track_name[-1], self.column_descriptions, track_name[-1], \
-                                                expectedrows=geSourceManager.getNumElements())
-
-        #Create index for start and end columns
-        self._table.cols.start.create_index()
-        self._table.cols.end.create_index()
-
+        # Create track table
+        table_description = self._create_column_dictionary(geSourceManager, chr)
+        self._db_handler.create_table(table_description, expectedrows=geSourceManager.getNumElements())
 
     def _create_column_dictionary(self, geSourceManager, chr):
         max_string_lengths = geSourceManager.getMaxStrLensForChr(chr)
@@ -63,15 +57,14 @@ class OutputManager(object):
         return datatype_dict
 
     def _add_element_as_row(self, genome_element):
-        """can probably be optimized"""
         row = self._table.row
         for column in self._column_descriptions.keys():
             row[column] = genome_element.__dict__[column]
 
         row.append()
 
-    def _close_and_flush_DB_file(self):
-        self._h5file.close()
+    def _close(self):
+        self._db_handler.close()
         os.chmod(self._database_filename, S_IRWXU|S_IRWXG|S_IROTH)
 
     def writeElement(self, genomeElement):
@@ -93,7 +86,6 @@ class OutputManagerSingleChr(OutputManager):
         self._create_single_track_database(genome, allChrs[0], track_name, allow_overlaps, geSourceManager)
 
     def writeElement(self, genomeElement):
-        print "writeElement"
         self._add_element_as_row(genomeElement)
 
     def writeRawSlice(self, genomeElement):
@@ -102,7 +94,7 @@ class OutputManagerSingleChr(OutputManager):
         #self._outputDir.writeRawSlice(genomeElement)
 
     def close(self):
-        self._close_and_flush_DB_file()
+        self._close()
 
 
 class OutputManagerSeveralChrs(OutputManager):

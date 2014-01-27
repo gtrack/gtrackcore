@@ -1,6 +1,6 @@
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore.preprocess.PreProcessUtils import PreProcessUtils
-from gtrackcore.preprocess.memmap.OutputManager import OutputManager
+from gtrackcore.preprocess.pytables.OutputManager import OutputManager
 
 class PreProcessGeSourceJob(object):
     VERSION = '0.95'
