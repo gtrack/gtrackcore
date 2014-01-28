@@ -2,7 +2,7 @@ from gtrackcore.metadata.TrackInfo import TrackInfo
 from gtrackcore.track.hierarchy.ExternalTrackManager import ExternalTrackManager
 from gtrackcore.track.format.AllFormatConverters import getFormatConverters, getFormatConverterByName
 from gtrackcore.track.format.TrackFormat import TrackFormatReq, NeutralTrackFormatReq, TrackFormat
-from gtrackcore.track.memmap.TrackSource import TrackSource
+from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.track.memmap.TrackViewLoader import TrackViewLoader 
 from gtrackcore.util.CommonFunctions import getClassName, prettyPrintTrackName
 from gtrackcore.util.CustomExceptions import IncompatibleTracksError

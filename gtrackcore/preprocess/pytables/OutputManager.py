@@ -4,7 +4,7 @@ import os
 from stat import S_IRWXU, S_IRWXG, S_IROTH
 from collections import OrderedDict
 from gtrackcore.util.CustomExceptions import AbstractClassError
-from gtrackcore.util.CommonFunctions import getDirPath
+from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
 from gtrackcore.track.pytables.DatabaseTrackHandler import DatabaseTrackHandler
 
 class OutputManager(object):
@@ -19,18 +19,17 @@ class OutputManager(object):
 
 
     def _create_single_track_database(self, genome, chr, track_name, allow_overlaps, geSourceManager):
-        dir_path = getDirPath(track_name, genome, chr, allow_overlaps)
+        dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        self._database_filename = dir_path + os.sep + track_name[-1] + '.h5'
+        self._database_filename = getDatabaseFilename(dir_path, track_name)
 
-        # Create and open db
         self._db_handler = DatabaseTrackHandler(track_name, genome, chr, allow_overlaps)
-        self._db_handler.open(mode="w")
 
-        # Create track table
-        table_description = self._create_column_dictionary(geSourceManager, chr)
-        self._db_handler.create_table(table_description, expectedrows=geSourceManager.getNumElements())
+        # Open db and create track table
+        self._table_description = self._create_column_dictionary(geSourceManager, chr)
+        self._table = self._db_handler.create_table(self._table_description, \
+                                                    expectedrows=geSourceManager.getNumElements())
 
     def _create_column_dictionary(self, geSourceManager, chr):
         max_string_lengths = geSourceManager.getMaxStrLensForChr(chr)
@@ -58,7 +57,7 @@ class OutputManager(object):
 
     def _add_element_as_row(self, genome_element):
         row = self._table.row
-        for column in self._column_descriptions.keys():
+        for column in self._table_description.keys():
             row[column] = genome_element.__dict__[column]
 
         row.append()

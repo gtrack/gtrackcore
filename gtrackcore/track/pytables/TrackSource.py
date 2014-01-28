@@ -18,11 +18,11 @@ class TrackSource:
 
         db_handler = DatabaseTrackHandler(trackName, genome, chr, allowOverlaps)
         db_handler.open()
-
-        for column in db_handler.column_names():
-            track_data[column] = TrackColumnWrapper(column, db_handler)
-
+        column_names = db_handler.get_column_names()
         db_handler.close()
+
+        for column in column_names:
+            track_data[column] = TrackColumnWrapper(column, db_handler)
 
         return track_data
 

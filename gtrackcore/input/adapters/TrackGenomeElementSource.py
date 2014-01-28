@@ -9,7 +9,7 @@ from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollec
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.track.memmap.TrackSource import TrackSource
+from gtrackcore.track.pytables.TrackSource import TrackSource
 
 class TrackGenomeElementSource(GenomeElementSource):
     FILE_FORMAT_NAME = 'Track'

@@ -35,17 +35,18 @@ class TrackViewLoader:
         trackData : see TrackSource.getTrackData {'id' : smartmemmap}
         region : see GenomeRegion
         """
-        #brShelve = BoundingRegionShelve(region.genome, trackName, allowOverlaps)
-        brShelve = trackData.boundingRegionShelve
-        brInfo = brShelve.getBoundingRegionInfo(region) if brShelve is not None else None
         
         extraArrayNames = [arrayName for arrayName in trackData if arrayName not in \
                            RESERVED_PREFIXES.keys() + ['leftIndex', 'rightIndex']]
-        
-        reservedArrays = [TrackViewLoader._getArray(trackData, arrayName, brInfo) for arrayName in RESERVED_PREFIXES]
-        extraArrays = [TrackViewLoader._getArray(trackData, arrayName, brInfo) for arrayName in extraArrayNames]
+
+        # [<TrackColumnWrapper> ...]
+        reservedArrays = [TrackViewLoader._getArray(trackData, arrayName) for arrayName in RESERVED_PREFIXES]
+        extraArrays = [TrackViewLoader._getArray(trackData, arrayName,) for arrayName in extraArrayNames]
         trackFormat = TrackFormat( *(reservedArrays + [OrderedDict(zip(extraArrayNames, extraArrays))]) )
-        
+        #left/right index: array hvor hver index representerer en bin, og value er index til forste element
+        # etter start paa bin-en. F.eks track som inneholder 1200-1500 og 1400-1600. Med bin size 1k vil
+        # left_index[1] vaere lik 0
+
         if trackFormat.reprIsDense():
             if brInfo is None:
                 leftIndex = region.start

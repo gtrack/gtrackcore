@@ -5,7 +5,7 @@ import sys
 
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore.track.memmap.CommonMemmapFunctions import createMemmapFileFn, parseMemmapFileFn, findEmptyVal
-from gtrackcore.track.memmap.TrackSource import TrackSource
+from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import EmptyGESourceError
 

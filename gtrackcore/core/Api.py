@@ -232,7 +232,7 @@ def getTrackData(genome, trackName, chr, allowOverlaps):
         print 'There is no track %s for genome %s. Import it by using importFile()' % (trackName, genome)
         sys.exit(0)
 
-    from gtrackcore.track.memmap.TrackSource import TrackSource
+    from gtrackcore.track.pytables.TrackSource import TrackSource
     trackSource = TrackSource()
     return trackSource.getTrackData(trackName, genome, chr, allowOverlaps)
 

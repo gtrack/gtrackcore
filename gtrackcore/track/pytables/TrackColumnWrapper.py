@@ -2,6 +2,12 @@ class TrackColumnWrapper(object):
     def __init__(self, column_name, db_handler):
         self._column_name = column_name
         self._db_handler = db_handler
+        self._db_handler.open()
+        column = self._db_handler.get_column(self._column_name)
+        self._shape = column.shape
+        self._dtype = column.dtype
+        self._db_handler.close()
+
 
     def __getslice__(self, i, j):
         self._db_handler.open()
@@ -18,10 +24,10 @@ class TrackColumnWrapper(object):
         return column_item
 
     def getShape(self):
-        return self._column.shape
+        return self._shape
 
     def getDType(self):
-        return self._column.dtype
+        return self._dtype
 
     def getFilename(self):
         raise NotImplementedError

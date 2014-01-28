@@ -11,7 +11,7 @@ from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
-from gtrackcore.track.memmap.TrackSource import TrackSource
+from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
