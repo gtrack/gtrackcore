@@ -2,93 +2,75 @@ import tables
 import os
 
 from stat import S_IRWXU, S_IRWXG, S_IROTH
-from collections import OrderedDict
-from gtrackcore.util.CustomExceptions import AbstractClassError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
-from gtrackcore.track.pytables.DatabaseTrackHandler import DatabaseTrackHandler
+from gtrackcore.track.pytables.DatabaseHandler import DatabaseCreationHandler
 
 class OutputManager(object):
 
-    def __new__(cls, genome, trackName, allowOverlaps, geSourceManager):
-        if len(geSourceManager.getAllChrs()) == 1:
-            return OutputManagerSingleChr.__new__(OutputManagerSingleChr, genome, trackName, \
-                                                  allowOverlaps, geSourceManager)
-        else:
-            return OutputManagerSeveralChrs.__new__(OutputManagerSeveralChrs, genome, trackName, \
-                                                    allowOverlaps, geSourceManager)
+    def __init__(self, genome, trackName, allowOverlaps, geSourceManager):
+
+        self._create_single_track_database(genome, trackName, allowOverlaps, geSourceManager)
 
 
-    def _create_single_track_database(self, genome, chromosome, track_name, allow_overlaps, geSourceManager):
+    def _create_single_track_database(self, genome, track_name, allow_overlaps, geSourceManager):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         self._database_filename = getDatabaseFilename(dir_path, track_name)
 
-        self._db_handler = DatabaseTrackHandler(track_name, genome, allow_overlaps)
+        self._db_handler = DatabaseCreationHandler(track_name, genome, allow_overlaps)
 
         # Open db and create track table
-        self._table_description = self._create_column_dictionary(geSourceManager, chromosome)
-        self._db_handler.create_table(self._table_description, chromosome, \
+        self._table_description = self._create_column_dictionary(geSourceManager)
+        self._db_handler.create_table(self._table_description, \
                                                     expectedrows=geSourceManager.getNumElements())
 
-    def _create_column_dictionary(self, geSourceManager, chr):
-        max_string_lengths = geSourceManager.getMaxStrLensForChr(chr)
-        datatype_dict = {}
+    def _create_column_dictionary(self, ge_source_manager):
+        max_string_lengths = self._get_max_str_lens_over_all_chromosomes(ge_source_manager)
+        data_type_dict = {}
 
-        for column in geSourceManager.getPrefixList():
+        for column in ge_source_manager.getPrefixList():
             if column in ['start', 'end']:
-                datatype_dict[column] = tables.UInt32Col()
+                data_type_dict[column] = tables.UInt32Col()
             elif column is 'strand':
-                datatype_dict[column] = tables.UInt8Col()
+                data_type_dict[column] = tables.UInt8Col()
             elif column in ['id', 'edges']:
-                datatype_dict[column] = tables.StringCol(max_string_lengths[column])
-            elif column is 'val':
-                if geSourceManager.getValDataType() == 'S':
-                    datatype_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
-                else:
-                    datatype_dict[column] = tables.Float64Col()
-            elif column is 'weights':
-                if geSourceManager.getEdgeWeightDataType() == 'S':
-                    datatype_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
-                else:
-                    datatype_dict[column] = tables.Float64Col()
-            else:
-                datatype_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
+                data_type_dict[column] = tables.StringCol(max_string_lengths[column])
+            elif column in ['val', 'weights']:
+                if column is 'val':
+                    data_type = ge_source_manager.getValDataType()
+                elif column is 'weights':
+                    data_type = ge_source_manager.getEdgeWeigthDataType()
 
-        return datatype_dict
+                {
+                    'int8': tables.Int8Col(),
+                    'int32': tables.Int32Col(),
+                    'float32': tables.Float32Col(),
+                    'float64': tables.Float64Col(),
+                    'S': tables.StringCol(max(2, max_string_lengths[column]))
+                }.get(data_type, tables.Float64Col())  # Defaults to Float64Col
+            else:
+                data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
+
+        return data_type_dict
+
+    def _get_max_str_lens_over_all_chromosomes(self, ge_source_manager):
+        max_str_lens_dictionaries = [ge_source_manager.getMaxStrLensForChr(chr)\
+                                  for chr in ge_source_manager.getAllChrs()]
+        from collections import Counter
+        from operator import or_
+
+        max_string_lengths = reduce(or_, map(Counter, max_str_lens_dictionaries))
+        return max_string_lengths
 
     def _add_element_as_row(self, genome_element):
-        chromosome = genome_element.__dict__['chr']
-        row = self._db_handler.get_row(chromosome)
+        row = self._db_handler.get_row()
         for column in self._table_description.keys():
             if column in genome_element.__dict__ and column is not 'extra':
                 row[column] = genome_element.__dict__[column]
             else:  # Get extra column
                 row[column] = genome_element.__dict__['extra'][column]
-
         row.append()
-
-    def _close(self):
-        self._db_handler.close()
-        os.chmod(self._database_filename, S_IRWXU|S_IRWXG|S_IROTH)
-
-    def writeElement(self, genomeElement):
-        raise AbstractClassError()
-
-    def writeRawSlice(self, genomeElement):
-        raise AbstractClassError()
-
-    def close(self):
-        raise AbstractClassError()
-
-class OutputManagerSingleChr(OutputManager):
-    def __new__(cls, *args, **kwArgs):
-        return object.__new__(cls)
-
-    def __init__(self, genome, track_name, allow_overlaps, geSourceManager):
-        allChrs = geSourceManager.getAllChrs()
-        assert len(allChrs) == 1
-        self._create_single_track_database(genome, allChrs[0], track_name, allow_overlaps, geSourceManager)
 
     def writeElement(self, genomeElement):
         self._add_element_as_row(genomeElement)
@@ -99,29 +81,5 @@ class OutputManagerSingleChr(OutputManager):
         #self._outputDir.writeRawSlice(genomeElement)
 
     def close(self):
-        self._close()
-
-
-class OutputManagerSeveralChrs(OutputManager):
-    """Check if we need this class.  will we get a performance boost if each chromosome is in its own table? """
-    def __new__(cls, *args, **kwArgs):
-        return object.__new__(cls)
-
-    def __init__(self, genome, trackName, allowOverlaps, geSourceManager):
-        allChrs = geSourceManager.getAllChrs()
-        assert len(allChrs) > 1
-
-        self._outputDirs = OrderedDict()
-        for chr in allChrs:
-            self._outputDirs[chr] = self._create_table \
-                    (genome, chr, trackName, allowOverlaps, geSourceManager)
-
-    def writeElement(self, genomeElement):
-        self._outputDirs[genomeElement.chr].writeElement(genomeElement)
-
-    def writeRawSlice(self, genomeElement):
-        self._outputDirs[genomeElement.chr].writeRawSlice(genomeElement)
-
-    def close(self):
-        for dir in self._outputDirs.values():
-            dir.close()
+        self._db_handler.close()
+        os.chmod(self._database_filename, S_IRWXU|S_IRWXG|S_IROTH)
