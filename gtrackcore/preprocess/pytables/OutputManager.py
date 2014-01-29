@@ -18,17 +18,17 @@ class OutputManager(object):
                                                     allowOverlaps, geSourceManager)
 
 
-    def _create_single_track_database(self, genome, chr, track_name, allow_overlaps, geSourceManager):
+    def _create_single_track_database(self, genome, chromosome, track_name, allow_overlaps, geSourceManager):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         self._database_filename = getDatabaseFilename(dir_path, track_name)
 
-        self._db_handler = DatabaseTrackHandler(track_name, genome, chr, allow_overlaps)
+        self._db_handler = DatabaseTrackHandler(track_name, genome, allow_overlaps)
 
         # Open db and create track table
-        self._table_description = self._create_column_dictionary(geSourceManager, chr)
-        self._table = self._db_handler.create_table(self._table_description, \
+        self._table_description = self._create_column_dictionary(geSourceManager, chromosome)
+        self._db_handler.create_table(self._table_description, chromosome, \
                                                     expectedrows=geSourceManager.getNumElements())
 
     def _create_column_dictionary(self, geSourceManager, chr):
@@ -52,13 +52,19 @@ class OutputManager(object):
                     datatype_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
                 else:
                     datatype_dict[column] = tables.Float64Col()
+            else:
+                datatype_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
 
         return datatype_dict
 
     def _add_element_as_row(self, genome_element):
-        row = self._table.row
+        chromosome = genome_element.__dict__['chr']
+        row = self._db_handler.get_row(chromosome)
         for column in self._table_description.keys():
-            row[column] = genome_element.__dict__[column]
+            if column in genome_element.__dict__ and column is not 'extra':
+                row[column] = genome_element.__dict__[column]
+            else:  # Get extra column
+                row[column] = genome_element.__dict__['extra'][column]
 
         row.append()
 

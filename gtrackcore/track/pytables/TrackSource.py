@@ -16,13 +16,13 @@ class TrackSource:
     def getTrackData(self, trackName, genome, chr, allowOverlaps, forceChrFolders=False):
         track_data = TrackData()
 
-        db_handler = DatabaseTrackHandler(trackName, genome, chr, allowOverlaps)
-        db_handler.open()
+        db_handler = DatabaseTrackHandler(trackName, genome, allowOverlaps)
+        db_handler.open(chr)
         column_names = db_handler.get_column_names()
         db_handler.close()
 
         for column in column_names:
-            track_data[column] = TrackColumnWrapper(column, db_handler)
+            track_data[column] = TrackColumnWrapper(column, db_handler, chr)
 
         return track_data
 

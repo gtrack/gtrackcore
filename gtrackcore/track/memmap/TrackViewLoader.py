@@ -9,8 +9,9 @@ from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 class TrackViewLoader:
     @staticmethod
     def _getArray(trackData, arrayName, brInfo, bin=None):
+
         array = trackData.get(arrayName)
-        
+        #brInfo ex.: BoundingRegionInfo(start=0, end=16571, startIdx=0, endIdx=3, startBinIdx=0, endBinIdx=1)
         if brInfo is not None and array is not None:
             #print arrayName
             #print 'bin: ', bin

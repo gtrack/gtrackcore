@@ -1,10 +1,10 @@
 import tables
-import os
 
+from gtrackcore.util.CustomExceptions import DBNotOpenError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
 
 class DatabaseTrackHandler(object):
-    def __init__(self, track_name, genome, chr, allow_overlaps):
+    def __init__(self, track_name, genome, allow_overlaps):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
 
         self._h5_filename = getDatabaseFilename(dir_path, track_name)
@@ -12,9 +12,9 @@ class DatabaseTrackHandler(object):
         self._h5_file = None
         self._table = None
 
-    def open(self, mode='r'):
+    def open(self, chromosome, mode='r'):
         self._h5_file = tables.open_file(self._h5_filename, mode, title=self._track_name[-1])
-        self._table = self._get_track_table()
+        self._table = self._get_track_table(chromosome)
 
     def close(self):
         self._h5_file.close()
@@ -32,36 +32,34 @@ class DatabaseTrackHandler(object):
 
         return self._table.colinstances[column_name]
 
-    #TODO: Ensure that group path exist
-    def _get_track_table(self):
-        assert self._h5_file is not None
-
-        print self.__class__.__name__, '', self._get_table_path()
-
-        for g in self._h5_file.walk_groups():
-            print self.__class__.__name__, g
-
-        return self._h5_file.get_node(self._get_table_path())
-
-    def _get_table_path(self):
-        return '/' + '/'.join(self._track_name) + '/' + self._track_name[-1]
-
-    def create_table(self, table_description, expectedrows):
+    def create_table(self, table_description, chromosome, expectedrows):
         self._h5_file = tables.open_file(self._h5_filename, mode='w', title=self._track_name[-1])
 
-        group = self._create_groups()
+        group = self._create_groups(chromosome)
         self._table = self._h5_file.create_table(group, self._track_name[-1], \
                                                 table_description, self._track_name[-1], \
                                                 expectedrows=expectedrows)
         self._create_indices()
 
-        return self._table
+    def get_row(self, chromosome):
+        return self._get_track_table(chromosome).row
 
-    def _create_groups(self):
+    def _get_track_table(self, chromosome):
+        try:
+            return self._h5_file.get_node(self._get_table_path(chromosome))
+        except AttributeError:
+            raise DBNotOpenError()
+
+    def _get_table_path(self, chromosome):
+        return '/%s/%s/%s' %  ('/'.join(self._track_name), chromosome, self._track_name[-1])
+
+    def _create_groups(self, chromosome):
         group = self._h5_file.create_group(self._h5_file.root, self._track_name[0], self._track_name[0])
 
         for track_name_part in self._track_name[1:]:
             group = self._h5_file.create_group(group, track_name_part, track_name_part)
+
+        group = self._h5_file.create_group(group, chromosome, chromosome)
         return group
 
     def _create_indices(self):
