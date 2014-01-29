@@ -43,6 +43,8 @@ class TrackViewLoader:
         reservedArrays = [TrackViewLoader._getArray(trackData, arrayName) for arrayName in RESERVED_PREFIXES]
         extraArrays = [TrackViewLoader._getArray(trackData, arrayName,) for arrayName in extraArrayNames]
         trackFormat = TrackFormat( *(reservedArrays + [OrderedDict(zip(extraArrayNames, extraArrays))]) )
+
+
         #left/right index: array hvor hver index representerer en bin, og value er index til forste element
         # etter start paa bin-en. F.eks track som inneholder 1200-1500 og 1400-1600. Med bin size 1k vil
         # left_index[1] vaere lik 0

@@ -71,6 +71,7 @@ class PreProcessTracksJob(object):
 
                     # Finalize overlapRule output if needed
                     if anyGeSourceManagers and self._shouldFinalize() and collector.preProcIsDirty():
+                        """ Henrik og Brynjar
                         if self._mode == 'Real' and self._shouldMergeChrFolders():
                             self._status = 'Trying to combine chromosome vectors into combined vectors.'
                             PreProcessUtils.createBoundingRegionShelve(self._genome, trackName, allowOverlaps)
@@ -78,7 +79,7 @@ class PreProcessTracksJob(object):
 
                             self._status = 'Trying to remove chromosome folders'
                             PreProcessUtils.removeChrMemmapFolders(self._genome, trackName, allowOverlaps)
-
+                        """
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)
                         PreProcessUtils.checkUndirectedEdges(self._genome, trackName, allowOverlaps)
