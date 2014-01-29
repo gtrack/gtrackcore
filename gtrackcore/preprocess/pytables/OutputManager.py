@@ -22,6 +22,7 @@ class OutputManager(object):
 
         # Open db and create track table
         self._table_description = self._create_column_dictionary(geSourceManager)
+        self._db_handler.open()
         self._db_handler.create_table(self._table_description, \
                                                     expectedrows=geSourceManager.getNumElements())
 
