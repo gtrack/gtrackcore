@@ -42,7 +42,7 @@ class OutputManager(object):
                 elif column is 'weights':
                     data_type = ge_source_manager.getEdgeWeigthDataType()
 
-                {
+                data_type_dict[column] = {
                     'int8': tables.Int8Col(),
                     'int32': tables.Int32Col(),
                     'float32': tables.Float32Col(),
