@@ -37,10 +37,12 @@ class TrackViewLoader:
         region : see GenomeRegion
         """
 
+        brShelve = trackData.boundingRegionShelve
+        brInfo = brShelve.getBoundingRegionInfo(region) if brShelve is not None else None
+
         extraArrayNames = [arrayName for arrayName in trackData if arrayName not in \
                                                                    RESERVED_PREFIXES.keys() + ['leftIndex', 'rightIndex']]
-
-        # [<TrackColumnWrapper> ...]
+    # [<TrackColumnWrapper> ...]
         reservedArrays = [TrackViewLoader._getArray(trackData, arrayName) for arrayName in RESERVED_PREFIXES]
         extraArrays = [TrackViewLoader._getArray(trackData, arrayName,) for arrayName in extraArrayNames]
         trackFormat = TrackFormat( *(reservedArrays + [OrderedDict(zip(extraArrayNames, extraArrays))]) )

@@ -51,6 +51,7 @@ class TrackViewLoader:
         # etter start paa bin-en. F.eks track som inneholder 1200-1500 og 1400-1600. Med bin size 1k vil
         # left_index[1] vaere lik 0
 
+        #Bounding region = ex. chromosome, scaffold(?), contig(?)
         if trackFormat.reprIsDense():
             if brInfo is None:
                 leftIndex = region.start

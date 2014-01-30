@@ -21,8 +21,8 @@ class TrackSource:
         column_names = db_handler.get_column_names()
         db_handler.close()
 
-        for column in column_names:
-            track_data[column] = TrackColumnWrapper(column, db_handler)
+        for column_name in column_names:
+            track_data[column_name] = TrackColumnWrapper(column_name, db_handler)
 
         return track_data
 
