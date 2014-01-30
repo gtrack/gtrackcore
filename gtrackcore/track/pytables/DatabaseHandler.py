@@ -45,21 +45,22 @@ class DatabaseReadHandler(DatabaseHandler):
         except AttributeError:
             raise DBNotOpenError()
 
+    def open(self):
+        super(DatabaseReadHandler, self).open('r')
+        self._table = self._get_track_table()
+
     def _get_track_table(self):
         try:
             return self._h5_file.get_node(self._get_table_path())
         except AttributeError:
             raise DBNotOpenError()
 
-    def open(self):
-        super(DatabaseReadHandler, self).open('r')
-        self._table = self._get_track_table()
-
 
 class DatabaseCreationHandler(DatabaseHandler):
 
     def __init__(self, track_name, genome, allow_overlaps):
         super(DatabaseCreationHandler, self).__init__(track_name, genome, allow_overlaps)
+        self._flush_counter = 0
 
     def create_table(self, table_description, expectedrows):
         group = self._create_groups()
@@ -77,6 +78,17 @@ class DatabaseCreationHandler(DatabaseHandler):
 
     def open(self):
         super(DatabaseCreationHandler, self).open('w')
+
+    def flush(self):
+        self._flush_counter += 1
+
+        from gtrackcore.util.DatabaseConstants import FLUSH_LIMIT
+        try:
+            if self._flush_counter == FLUSH_LIMIT:
+                self._table.flush()
+                self._flush_counter = 0
+        except AttributeError:
+            raise DBNotOpenError
 
     def _get_track_table(self):
         return self._h5_file.get_node(self._get_table_path())

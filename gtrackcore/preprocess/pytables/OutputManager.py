@@ -39,7 +39,6 @@ class OutputManager(object):
         data_type_dict = {}
 
         maxNumEdges = self._get_max_num_edges_over_all_chromosomes(ge_source_manager)
-
         for column in ge_source_manager.getPrefixList():
             if column in ['start', 'end']:
                 data_type_dict[column] = tables.UInt32Col()
@@ -92,6 +91,7 @@ class OutputManager(object):
             else:  # Get extra column
                 row[column] = genome_element.__dict__['extra'][column]
         row.append()
+        self._db_handler.flush()
 
     def writeElement(self, genomeElement):
         self._add_element_as_row(genomeElement)
