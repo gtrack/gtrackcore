@@ -38,7 +38,7 @@ class TrackViewLoader:
         """
 
         brShelve = trackData.boundingRegionShelve
-        brInfo = brShelve.getBoundingRegionInfo(region) if brShelve is not None else None
+        brInfo = brShelve.get_bounding_region_info(region) if brShelve is not None else None
 
         extraArrayNames = [arrayName for arrayName in trackData if arrayName not in \
                                                                    RESERVED_PREFIXES.keys() + ['leftIndex', 'rightIndex']]

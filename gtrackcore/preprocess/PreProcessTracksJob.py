@@ -73,10 +73,7 @@ class PreProcessTracksJob(object):
                     if anyGeSourceManagers and self._shouldFinalize() and collector.preProcIsDirty():
                         if self._mode == 'Real' and self._shouldMergeChrFolders():
                             self._status = 'Trying to combine chromosome vectors into combined vectors.'
-                            PreProcessUtils.createBoundingRegionShelve(self._genome, trackName, allowOverlaps) #rewrite
-
-                            self._status = 'Trying to remove chromosome folders'
-                            PreProcessUtils.removeChrMemmapFolders(self._genome, trackName, allowOverlaps)
+                            PreProcessUtils.create_bounding_region_table(self._genome, trackName, allowOverlaps) #rewrite
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)

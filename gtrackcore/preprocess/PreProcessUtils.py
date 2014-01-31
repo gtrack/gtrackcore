@@ -10,6 +10,7 @@ from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollec
 from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
+from gtrackcore.track.pytables.BoundingRegionContainer import BoundingRegionContainer
 from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
 from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
@@ -115,7 +116,18 @@ class PreProcessUtils(object):
         if mode == 'Real':
             ti = TrackInfo(genome, trackName)
             ti.resetTimeOfPreProcessing()
-                
+
+
+    @staticmethod
+    def create_bounding_region_table(genome, track_name, allow_overlaps):
+        collector = PreProcMetaDataCollector(genome, track_name)
+        bounding_region_tuples = collector.getBoundingRegionTuples(allow_overlaps)
+        if not collector.getTrackFormat().reprIsDense():
+            bounding_region_tuples = sorted(bounding_region_tuples)
+        ge_chr_list = collector.getPreProcessedChrs(allow_overlaps)
+
+        br_table = BoundingRegionContainer(genome, track_name, allow_overlaps)
+
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):
         collector = PreProcMetaDataCollector(genome, trackName)

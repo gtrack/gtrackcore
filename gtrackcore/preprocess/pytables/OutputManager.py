@@ -3,7 +3,7 @@ import os
 
 from stat import S_IRWXU, S_IRWXG, S_IROTH
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
-from gtrackcore.track.pytables.DatabaseHandler import DatabaseCreationHandler
+from gtrackcore.track.pytables.DatabaseHandler import TrackCreationDatabaseHandler
 
 class OutputManager(object):
 
@@ -18,7 +18,7 @@ class OutputManager(object):
             os.makedirs(dir_path)
         self._database_filename = getDatabaseFilename(dir_path, track_name)
 
-        self._db_handler = DatabaseCreationHandler(track_name, genome, allow_overlaps)
+        self._db_handler = TrackCreationDatabaseHandler(track_name, genome, allow_overlaps)
 
         # Open db and create track table
         self._table_description = self._create_column_dictionary(geSourceManager)
@@ -41,9 +41,9 @@ class OutputManager(object):
         max_num_edges = self._get_max_num_edges_over_all_chromosomes(ge_source_manager)
         for column in ge_source_manager.getPrefixList():
             if column in ['start', 'end']:
-                data_type_dict[column] = tables.UInt32Col()
+                data_type_dict[column] = tables.Int32Col()
             elif column is 'strand':
-                data_type_dict[column] = tables.UInt8Col()
+                data_type_dict[column] = tables.Int8Col()
             elif column is 'id':
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column])
             elif column is 'edges':
