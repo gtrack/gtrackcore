@@ -70,7 +70,8 @@ class OutputManager(object):
                 data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
         return data_type_dict
 
-    def _get_shape(self, max_num_edges, data_type_dim):
+    @staticmethod
+    def _get_shape(max_num_edges, data_type_dim):
         return tuple(([max(1, max_num_edges)] if max_num_edges is not None else []) +
                     ([data_type_dim] if data_type_dim > 1 else []))
 
@@ -84,7 +85,7 @@ class OutputManager(object):
         max_string_lengths = reduce(or_, map(Counter, max_str_lens_dictionaries))
         return max_string_lengths
 
-    @staticmethod
+    @staticmethod #bytt med den som finnes i ge_source_manager
     def _get_max_num_edges_over_all_chromosomes(ge_source_manager):
         return max(ge_source_manager.getMaxNumEdgesForChr(chr) for chr in ge_source_manager.getAllChrs())
 
