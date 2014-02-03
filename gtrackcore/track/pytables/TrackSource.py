@@ -1,5 +1,6 @@
 from gtrackcore.track.pytables.DatabaseHandler import DatabaseReadHandler
 from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
+from gtrackcore.track.pytables.BoundingRegionContainer import BoundingRegionContainer
 
 class TrackData(dict):
     def __init__(self, other=None):
@@ -7,6 +8,9 @@ class TrackData(dict):
             dict.__init__(self, other)
         else:
             dict.__init__(self)
+
+        self.bounding_region_container = None
+
 
 class TrackSource:
     def __init__(self):
@@ -16,8 +20,12 @@ class TrackSource:
     def getTrackData(self, trackName, genome, chr, allowOverlaps, forceChrFolders=False):
         track_data = TrackData()
 
+        br_container = BoundingRegionContainer(genome, trackName, allowOverlaps)
+
+
         db_handler = DatabaseReadHandler(trackName, genome, allowOverlaps)
         db_handler.open()
+
         column_names = db_handler.get_column_names()
         db_handler.close()
 
