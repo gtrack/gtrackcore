@@ -117,6 +117,22 @@ class PreProcessUtils(object):
             ti = TrackInfo(genome, trackName)
             ti.resetTimeOfPreProcessing()
 
+    @staticmethod
+    def sort_preprocessed_table(genome, track_name, allow_overlaps):
+
+        from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
+
+        dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
+        assert os.path.exists(dir_path)  # throw error
+
+
+        from gtrackcore.track.pytables.DatabaseHandler import DatabaseReadHandler
+
+        database_filename = getDatabaseFilename(dir_path, track_name)
+        db_handler = DatabaseReadHandler(track_name, genome, allow_overlaps)
+
+        ####  DO SORTING
+
 
     @staticmethod
     def create_bounding_region_table(genome, track_name, allow_overlaps):
