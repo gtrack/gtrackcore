@@ -54,11 +54,11 @@ class TrackViewLoader:
 
         if trackFormat.reprIsDense():
             if brInfo is None:
-                leftIndex = region.start
-                rightIndex = region.end
+                first_elem_index = region.start
+                last_elem_index = region.end
             else:
-                leftIndex = region.start - brInfo.start
-                rightIndex = region.end - brInfo.start
+                first_elem_index = region.start - brInfo.start
+                last_elem_index = region.end - brInfo.start
         else:
             leftBin = CompBinManager.getBinNumber(region.start)
             rightBin = CompBinManager.getBinNumber(region.end-1)
@@ -68,11 +68,11 @@ class TrackViewLoader:
             if trackData.get('leftIndex') is None or trackData.get('rightIndex') is None:
                 raise IOError('Preprocessed track not found. TrackData: ' + ', '.join(trackData.keys()))
 
-            leftIndex = TrackViewLoader._getArray(trackData, 'leftIndex', brInfo, leftBin)
-            rightIndex = TrackViewLoader._getArray(trackData, 'rightIndex', brInfo, rightBin)
+            first_elem_index = TrackViewLoader._getArray(trackData, 'leftIndex', brInfo, leftBin)
+            last_elem_index = TrackViewLoader._getArray(trackData, 'rightIndex', brInfo, rightBin)
 
-        slicedReservedArrays = [(array[leftIndex:rightIndex] if array is not None else None) for array in reservedArrays]
-        slicedExtraArrays = [(array[leftIndex:rightIndex] if array is not None else None) for array in extraArrays]
+        slicedReservedArrays = [(array[first_elem_index:last_elem_index] if array is not None else None) for array in reservedArrays]
+        slicedExtraArrays = [(array[first_elem_index:last_elem_index] if array is not None else None) for array in extraArrays]
 
         argList = [region] + slicedReservedArrays + [borderHandling, allowOverlaps] + [OrderedDict(zip(extraArrayNames, slicedExtraArrays))]
         tv = TrackView( *(argList) )

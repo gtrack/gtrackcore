@@ -139,10 +139,6 @@ class BoundingRegionContainer(object):
                 'seqid': tables.StringCol(100),
                 'start': tables.Int32Col(),
                 'end': tables.Int32Col(),
-                'start_idx': tables.Int32Col(),
-                'end_idx': tables.Int32Col(),
-                'start_bin_idx': tables.Int32Col(),
-                'end_bin_idx': tables.Int32Col()
                }
 
     def _update_contents_if_necessary(self, chr):
