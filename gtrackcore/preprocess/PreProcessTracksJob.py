@@ -51,6 +51,7 @@ class PreProcessTracksJob(object):
                     anyGeSourceManagers = False
                     for geSourceManager in self._allGESourceManagers(trackName, allowOverlaps):
                         anyGeSourceManagers = True
+                        should_be_sorted = geSourceManager.isSorted()
 
                         # PreProcess if needed
                         if self._shouldPreProcess():
@@ -72,7 +73,8 @@ class PreProcessTracksJob(object):
                     # Finalize overlapRule output if needed
                     if anyGeSourceManagers and self._shouldFinalize() and collector.preProcIsDirty():
                         if self._mode == 'Real' and self._shouldMergeChrFolders():
-                            PreProcessUtils.sort_preprocessed_table(self._genome, trackName, allowOverlaps)
+                            if should_be_sorted:
+                                PreProcessUtils.sort_preprocessed_table(self._genome, trackName, allowOverlaps)
                             PreProcessUtils.create_bounding_region_table(self._genome, trackName, allowOverlaps) #rewrite
 
                         self._status = 'Trying to check whether 3D data is correct'
