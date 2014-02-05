@@ -24,8 +24,21 @@ class DatabaseHandler(object):
         self._h5_file = None
         self._table = None
 
+    def get_columns(self):
+        try:
+            return self._table.colinstances
+        except AttributeError:
+            raise DBNotOpenError()
+
+
     def _get_table_path(self):
         return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])
+
+    def _get_track_table(self):
+        try:
+            return self._h5_file.get_node(self._get_table_path())
+        except AttributeError:
+            raise DBNotOpenError()
 
 
 class DatabaseReadHandler(DatabaseHandler):
@@ -49,11 +62,15 @@ class DatabaseReadHandler(DatabaseHandler):
         super(DatabaseReadHandler, self).open('r')
         self._table = self._get_track_table()
 
-    def _get_track_table(self):
-        try:
-            return self._h5_file.get_node(self._get_table_path())
-        except AttributeError:
-            raise DBNotOpenError()
+class DatabaseSortHandler(DatabaseHandler):
+
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(DatabaseSortHandler, self).__init__(track_name, genome, allow_overlaps)
+
+
+    def open(self):
+        super(DatabaseSortHandler, self).open('r+')
+        self._table = self._get_track_table()
 
 
 class TrackCreationDatabaseHandler(DatabaseHandler):

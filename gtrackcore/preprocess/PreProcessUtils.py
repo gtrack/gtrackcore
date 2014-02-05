@@ -16,6 +16,8 @@ from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
+from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
+from gtrackcore.track.pytables.DatabaseHandler import DatabaseSortHandler
 
 class PreProcessUtils(object):
     @staticmethod
@@ -119,20 +121,28 @@ class PreProcessUtils(object):
 
     @staticmethod
     def sort_preprocessed_table(genome, track_name, allow_overlaps):
-
-        from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
-
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         assert os.path.exists(dir_path)  # throw error
 
+        db_handler = DatabaseSortHandler(track_name, genome, allow_overlaps)
+        db_handler.open()
+        column_dict = db_handler.get_columns()
 
-        from gtrackcore.track.pytables.DatabaseHandler import DatabaseReadHandler
+        seqid_column = column_dict['seqid'][:]
+        start_column = column_dict['start'][:]
+        end_column = column_dict['end'][:]
 
-        database_filename = getDatabaseFilename(dir_path, track_name)
-        db_handler = DatabaseReadHandler(track_name, genome, allow_overlaps)
+        sort_order = numpy.lexsort((end_column, start_column, seqid_column))
 
-        ####  DO SORTING
+        column_dict['seqid'][:] = seqid_column[sort_order]
+        column_dict['start'][:] = start_column[sort_order]
+        column_dict['end'][:] = end_column[sort_order]
 
+        for column_name, column_val in column_dict.iteritems():
+            if column_name not in ['seqid', 'start', 'end']:
+                column_val[:] = column_val[:][sort_order]
+
+        db_handler.close()
 
     @staticmethod
     def create_bounding_region_table(genome, track_name, allow_overlaps):
