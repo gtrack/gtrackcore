@@ -51,7 +51,7 @@ class PreProcessTracksJob(object):
                     anyGeSourceManagers = False
                     for geSourceManager in self._allGESourceManagers(trackName, allowOverlaps):
                         anyGeSourceManagers = True
-                        should_be_sorted = geSourceManager.isSorted()
+                        should_be_sorted = not geSourceManager.isSorted()
 
                         # PreProcess if needed
                         if self._shouldPreProcess():
