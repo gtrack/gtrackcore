@@ -9,9 +9,6 @@ class TrackData(dict):
         else:
             dict.__init__(self)
 
-        self.bounding_region_container = None
-
-
 class TrackSource:
     def __init__(self):
         self._chrInUse = None
@@ -19,9 +16,6 @@ class TrackSource:
 
     def getTrackData(self, trackName, genome, chr, allowOverlaps, forceChrFolders=False):
         track_data = TrackData()
-
-        br_container = BoundingRegionContainer(genome, trackName, allowOverlaps)
-
 
         db_handler = DatabaseReadHandler(trackName, genome, allowOverlaps)
         db_handler.open()
