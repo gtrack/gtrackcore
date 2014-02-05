@@ -1,6 +1,6 @@
 from gtrackcore.track.pytables.DatabaseHandler import DatabaseReadHandler
 from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
-from gtrackcore.track.pytables.BoundingRegionContainer import BoundingRegionContainer
+from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 
 class TrackData(dict):
     def __init__(self, other=None):

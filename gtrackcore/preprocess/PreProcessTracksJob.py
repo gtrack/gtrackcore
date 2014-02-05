@@ -75,7 +75,7 @@ class PreProcessTracksJob(object):
                         if self._mode == 'Real' and self._shouldMergeChrFolders():
                             if should_be_sorted:
                                 PreProcessUtils.sort_preprocessed_table(self._genome, trackName, allowOverlaps)
-                            PreProcessUtils.create_bounding_region_table(self._genome, trackName, allowOverlaps) #rewrite
+                            PreProcessUtils.create_bounding_region_table(self._genome, trackName, allowOverlaps)
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)

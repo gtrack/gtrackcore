@@ -242,8 +242,8 @@ class TrackGenomeElementSource(GenomeElementSource):
 
 class FullTrackGenomeElementSource(TrackGenomeElementSource):
     def __init__(self, genome, trackName, allowOverlaps=False, *args, **kwArgs):
-        from gtrackcore.track.pytables.BoundingRegionContainer import BoundingRegionContainer
-        boundingRegions = list(BoundingRegionContainer(genome, trackName, allowOverlaps).get_all_bounding_regions())
+        from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
+        boundingRegions = list(BoundingRegionHandler(genome, trackName, allowOverlaps).get_all_bounding_regions())
         TrackGenomeElementSource.__init__(self, genome=genome, trackName=trackName, \
                                           boundingRegions=boundingRegions, globalCoords=True, \
                                           allowOverlaps=allowOverlaps, printWarnings=True)

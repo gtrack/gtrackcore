@@ -10,7 +10,7 @@ from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollec
 from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
-from gtrackcore.track.pytables.BoundingRegionContainer import BoundingRegionContainer
+from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
 from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
@@ -163,7 +163,13 @@ class PreProcessUtils(object):
             bounding_region_tuples = sorted(bounding_region_tuples)
         ge_chr_list = collector.getPreProcessedChrs(allow_overlaps)
 
-        br_table = BoundingRegionContainer(genome, track_name, allow_overlaps)
+        br_container = BoundingRegionHandler(genome, track_name, allow_overlaps)
+        br_container.store_bounding_regions(bounding_region_tuples, ge_chr_list, not collector.getTrackFormat().reprIsDense())
+
+        #Sanity check
+        if br_container.getTotalElementCount() != collector.getNumElements(allow_overlaps):
+            raise ShouldNotOccurError("Error: The total element count for all bounding regions is not equal to the total number of genome elements. %s != %s" % \
+                                      (br_container.getTotalElementCount(), collector.getNumElements(allow_overlaps)) )
 
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):
