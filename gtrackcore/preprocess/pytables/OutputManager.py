@@ -40,6 +40,10 @@ class OutputManager(object):
 
         max_num_edges = self._get_max_num_edges_over_all_chromosomes(ge_source_manager)
         for column in ge_source_manager.getPrefixList():
+            if column is 'seqid':
+                pass
+                #  Not to self: check getPrefixList in GESourceManager (seqid not there, so might
+                #  have to be added manually...)
             if column in ['start', 'end']:
                 data_type_dict[column] = tables.Int32Col()
             elif column is 'strand':
