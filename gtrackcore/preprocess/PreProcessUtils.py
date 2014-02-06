@@ -166,10 +166,10 @@ class PreProcessUtils(object):
         br_handler = BoundingRegionHandler(genome, track_name, allow_overlaps)
         br_handler.store_bounding_regions(bounding_region_tuples, ge_chr_list, not collector.getTrackFormat().reprIsDense())
 
-        #Sanity check
-        if br_handler.getTotalElementCount() != collector.getNumElements(allow_overlaps):
+        # Sanity check
+        if br_handler.get_total_element_count() != collector.getNumElements(allow_overlaps):
             raise ShouldNotOccurError("Error: The total element count for all bounding regions is not equal to the total number of genome elements. %s != %s" % \
-                                      (br_handler.getTotalElementCount(), collector.getNumElements(allow_overlaps)) )
+                                      (br_handler.get_total_element_count(), collector.getNumElements(allow_overlaps)) )
 
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):
