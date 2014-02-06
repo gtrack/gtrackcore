@@ -48,6 +48,7 @@ class PreProcessTracksJob(object):
                 trackName = self._renameTrackNameIfIllegal(trackName)
 
                 for allowOverlaps in [True, False]:
+
                     anyGeSourceManagers = False
                     for geSourceManager in self._allGESourceManagers(trackName, allowOverlaps):
                         anyGeSourceManagers = True

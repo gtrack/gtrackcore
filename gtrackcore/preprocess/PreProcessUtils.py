@@ -17,7 +17,7 @@ from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
-from gtrackcore.track.pytables.DatabaseHandler import DatabaseSortHandler
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter
 
 class PreProcessUtils(object):
     @staticmethod
@@ -124,7 +124,7 @@ class PreProcessUtils(object):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         assert os.path.exists(dir_path)  # throw error
 
-        db_handler = DatabaseSortHandler(track_name, genome, allow_overlaps)
+        db_handler = TrackTableReadWriter(track_name, genome, allow_overlaps)
         db_handler.open()
         column_dict = db_handler.get_columns()
 
@@ -167,9 +167,9 @@ class PreProcessUtils(object):
         br_handler.store_bounding_regions(bounding_region_tuples, ge_chr_list, not collector.getTrackFormat().reprIsDense())
 
         #Sanity check
-        if br_handler.getTotalElementCount() != collector.getNumElements(allow_overlaps):
+        if br_handler.get_total_element_count() != collector.getNumElements(allow_overlaps):
             raise ShouldNotOccurError("Error: The total element count for all bounding regions is not equal to the total number of genome elements. %s != %s" % \
-                                      (br_handler.getTotalElementCount(), collector.getNumElements(allow_overlaps)) )
+                                      (br_handler.get_total_element_count(), collector.getNumElements(allow_overlaps)) )
 
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):

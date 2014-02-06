@@ -1,4 +1,4 @@
-from gtrackcore.track.pytables.DatabaseHandler import DatabaseReadHandler
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
 from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 
@@ -17,14 +17,14 @@ class TrackSource:
     def getTrackData(self, trackName, genome, chr, allowOverlaps, forceChrFolders=False):
         track_data = TrackData()
 
-        db_handler = DatabaseReadHandler(trackName, genome, allowOverlaps)
-        db_handler.open()
+        table_reader = TrackTableReader(trackName, genome, allowOverlaps)
+        table_reader.open()
 
-        column_names = db_handler.get_column_names()
-        db_handler.close()
+        column_names = table_reader.get_column_names()
+        table_reader.close()
 
         for column_name in column_names:
-            track_data[column_name] = TrackColumnWrapper(column_name, db_handler)
+            track_data[column_name] = TrackColumnWrapper(column_name, table_reader)
 
         return track_data
 

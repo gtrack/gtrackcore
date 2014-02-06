@@ -1,9 +1,12 @@
+from abc import ABCMeta, abstractmethod
+
 import tables
-from tables.group import NoSuchNodeError
+from tables import ClosedFileError
 
 from gtrackcore.util.CustomExceptions import DBNotOpenError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
-from abc import ABCMeta, abstractmethod
+
+BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
 
 class DatabaseHandler(object):
     __metaclass__ = ABCMeta
@@ -13,7 +16,8 @@ class DatabaseHandler(object):
         self._h5_filename = getDatabaseFilename(dir_path, track_name)
         self._track_name = track_name
         self._h5_file = None
-        self._table = None
+        self._track_table = None
+        self._br_table = None
 
     @abstractmethod
     def open(self, mode='r'):
@@ -21,126 +25,111 @@ class DatabaseHandler(object):
 
     def close(self):
         self._h5_file.close()
-        self._h5_file = None
-        self._table = None
+        self._track_table = None
+        self._br_table = None
 
     def get_columns(self):
         try:
-            return self._table.colinstances
-        except AttributeError:
-            raise DBNotOpenError()
+            return self._track_table.colinstances
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
 
 
-    def _get_table_path(self):
+    def _get_track_table_path(self):
         return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])
 
     def _get_track_table(self):
         try:
-            return self._h5_file.get_node(self._get_table_path())
-        except AttributeError:
-            raise DBNotOpenError()
+            return self._h5_file.get_node(self._get_track_table_path())
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
+
+    def _get_track_br_path(self):
+        return '/%s/%s' % ('/'.join(self._track_name), BOUNDING_REGION_TABLE_NAME)
+
+    def _get_br_table(self):
+        try:
+            return self._h5_file.get_node(self._get_track_br_path())
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
+
+class TableReader(DatabaseHandler):
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(TableReader, self).__init__(track_name, genome, allow_overlaps)
+
+        def open(self):
+            super(TrackTableReader, self).open('r')
 
 
-class DatabaseReadHandler(DatabaseHandler):
+class TrackTableReader(TableReader):
 
     def __init__(self, track_name, genome, allow_overlaps):
-        super(DatabaseReadHandler, self).__init__(track_name, genome, allow_overlaps)
+        super(TrackTableReader, self).__init__(track_name, genome, allow_overlaps)
 
     def get_column(self, column_name):
         try:
-            return self._table.colinstances[column_name]
-        except AttributeError:
-            raise DBNotOpenError()
+            return self._track_table.colinstances[column_name]
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
 
     def get_column_names(self):
         try:
-            return self._table.colnames
-        except AttributeError:
-            raise DBNotOpenError()
+            return self._track_table.colnames
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
 
     def open(self):
-        super(DatabaseReadHandler, self).open('r')
-        self._table = self._get_track_table()
+        super(TrackTableReader, self).open()
+        self._track_table = self._get_track_table()
 
-class DatabaseSortHandler(DatabaseHandler):
-
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(DatabaseSortHandler, self).__init__(track_name, genome, allow_overlaps)
-
-
-    def open(self):
-        super(DatabaseSortHandler, self).open('r+')
-        self._table = self._get_track_table()
-
-
-class TrackCreationDatabaseHandler(DatabaseHandler):
-
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TrackCreationDatabaseHandler, self).__init__(track_name, genome, allow_overlaps)
-        self._flush_counter = 0
-
-    def create_table(self, table_description, expectedrows):
-        group = self._create_groups()
-
-        try:
-            self._table = self._h5_file.create_table(group, self._track_name[-1], \
-                                                     table_description, self._track_name[-1], \
-                                                     expectedrows=expectedrows)
-            self._create_indices()
-        except AttributeError:
-            raise DBNotOpenError()
-
-    def get_row(self):
-        return self._table.row
-
-    def open(self):
-        super(TrackCreationDatabaseHandler, self).open('w')
-
-    def flush(self):
-        self._flush_counter += 1
-
-        from gtrackcore.util.DatabaseConstants import FLUSH_LIMIT
-        try:
-            if self._flush_counter == FLUSH_LIMIT:
-                self._table.flush()
-                self._flush_counter = 0
-        except AttributeError:
+    @property
+    def track_table(self):
+        if self._track_table is None:
             raise DBNotOpenError
+        return self._track_table
 
-    def _create_groups(self):
-        group = self._h5_file.create_group(self._h5_file.root, self._track_name[0], self._track_name[0])
-
-        for track_name_part in self._track_name[1:]:
-            group = self._h5_file.create_group(group, track_name_part, track_name_part)
-
-        return group
-
-    def _create_indices(self):
-        self._table.cols.start.create_index()
-        self._table.cols.end.create_index()
-
-
-class BoundingRegionCreationDatabaseHandler(DatabaseHandler):
+class BrTableReader(TableReader):
 
     def __init__(self, track_name, genome, allow_overlaps):
-        super(BoundingRegionCreationDatabaseHandler, self).__init__(track_name, genome, allow_overlaps)
+        super(BrTableReader, self).__init__(track_name, genome, allow_overlaps)
 
-    def create_table(self, table_description, expectedrows):
+    def open(self):
+        super(BrTableReader, self).open()
+        self._br_table = self._get_br_table()
+
+    @property
+    def br_table(self):
+        if self._br_table is None:
+            raise DBNotOpenError
+        return self._br_table
+
+class TrackTableReadWriter(DatabaseHandler):
+
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(TrackTableReadWriter, self).__init__(track_name, genome, allow_overlaps)
+
+    def open(self):
+        super(TrackTableReadWriter, self).open('r+')
+        self._track_table = self._get_track_table()
+
+class TableCreator(DatabaseHandler):
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(TableCreator, self).__init__(track_name, genome, allow_overlaps)
+
+    def create_table(self, table_description, expectedrows, table_name):
         group = self._create_groups()
 
         try:
-            self._table = self._h5_file.create_table(group, 'bounding_regions',
-                                                     table_description, 'bounding_regions',
-                                                     expectedrows=expectedrows)
-            self._create_indices()
-        except AttributeError:
-            raise DBNotOpenError()
+            table = self._h5_file.create_table(group, table_name,
+                                                        table_description, table_name,
+                                                        expectedrows=expectedrows)
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
 
-    def get_row(self):
-        return self._table.row
+        return table
 
     def open(self):
-        super(BoundingRegionCreationDatabaseHandler, self).open('w')
+        super(TableCreator, self).open('w')
 
     def _create_groups(self):
         group = self._get_track_group()
@@ -161,7 +150,62 @@ class BoundingRegionCreationDatabaseHandler(DatabaseHandler):
     def _get_track_group_path(self):
         return '/%s' % ('/'.join(self._track_name))
 
+class TrackTableCreator(TableCreator):
+
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(TrackTableCreator, self).__init__(track_name, genome, allow_overlaps)
+        self._flush_counter = 0
+
+    def create_table(self, table_description, expectedrows):
+        self._track_table = super(TrackTableCreator, self).create_table(
+            table_description, expectedrows, self._track_name[-1])
+        self._create_indices()
+
+    def get_row(self):
+        return self._track_table.row
+
+    def open(self):
+        super(TrackTableCreator, self).open()
+
+    def flush(self):
+        self._flush_counter += 1
+
+        from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
+        try:
+            if self._flush_counter == FLUSH_LIMIT:
+                self._track_table.flush()
+                self._flush_counter = 0
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
+
+    def _create_groups(self):
+        group = self._h5_file.create_group(self._h5_file.root, self._track_name[0], self._track_name[0])
+
+        for track_name_part in self._track_name[1:]:
+            group = self._h5_file.create_group(group, track_name_part, track_name_part)
+
+        return group
+
+    def _create_indices(self):
+        self._track_table.cols.start.create_index()
+        self._track_table.cols.end.create_index()
+
+
+class BoundingRegionTableCreator(TableCreator):
+
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(BoundingRegionTableCreator, self).__init__(track_name, genome, allow_overlaps)
+
+    def create_table(self, table_description, expectedrows):
+        self._br_table = super(BoundingRegionTableCreator, self).create_table(
+            table_description, expectedrows, BOUNDING_REGION_TABLE_NAME)
+        self._create_indices()
+
+    def get_row(self):
+        return self._br_table.row
+
+    def open(self):
+        super(BoundingRegionTableCreator, self).open()
+
     def _create_indices(self):
         pass
-
-

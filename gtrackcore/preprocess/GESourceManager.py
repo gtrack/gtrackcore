@@ -192,6 +192,9 @@ class GESourceManager(object):
         self._calcStatisticsInExtraPass()
         return self._maxStrLens[chr]
 
+    def getMaxChrStrLen(self):
+        self._calcStatisticsInExtraPass()
+        return max(len(chr) for chr in self._maxStrLens.keys())
 
 class OverlapClusteringGESourceManager(GESourceManager):
     def __init__(self, genome, trackName, origBrTuples):
