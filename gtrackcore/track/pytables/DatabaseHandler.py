@@ -8,6 +8,7 @@ from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
 
 BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
 
+
 class DatabaseHandler(object):
     __metaclass__ = ABCMeta
 
@@ -53,12 +54,13 @@ class DatabaseHandler(object):
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
+
 class TableReader(DatabaseHandler):
     def __init__(self, track_name, genome, allow_overlaps):
         super(TableReader, self).__init__(track_name, genome, allow_overlaps)
 
-        def open(self):
-            super(TrackTableReader, self).open('r')
+    def open(self):
+        super(TableReader, self).open('r')
 
 
 class TrackTableReader(TableReader):
@@ -88,6 +90,7 @@ class TrackTableReader(TableReader):
             raise DBNotOpenError
         return self._track_table
 
+
 class BrTableReader(TableReader):
 
     def __init__(self, track_name, genome, allow_overlaps):
@@ -103,6 +106,7 @@ class BrTableReader(TableReader):
             raise DBNotOpenError
         return self._br_table
 
+
 class TrackTableReadWriter(DatabaseHandler):
 
     def __init__(self, track_name, genome, allow_overlaps):
@@ -111,6 +115,7 @@ class TrackTableReadWriter(DatabaseHandler):
     def open(self):
         super(TrackTableReadWriter, self).open('r+')
         self._track_table = self._get_track_table()
+
 
 class TableCreator(DatabaseHandler):
     def __init__(self, track_name, genome, allow_overlaps):
@@ -149,6 +154,7 @@ class TableCreator(DatabaseHandler):
 
     def _get_track_group_path(self):
         return '/%s' % ('/'.join(self._track_name))
+
 
 class TrackTableCreator(TableCreator):
 

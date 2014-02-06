@@ -1,11 +1,9 @@
-import os
 import tables
 
 from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator, BrTableReader
 from gtrackcore.util.pytables.DatabaseQueries import DatabaseQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.util.CustomExceptions import InvalidFormatError
-from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
 
 
 class BoundingRegionHandler(object):
@@ -24,9 +22,6 @@ class BoundingRegionHandler(object):
         from gtrackcore.input.userbins.UserBinSource import MinimalBinSource
         minimal_bin_list = MinimalBinSource(genome)
         self._minimal_region = minimal_bin_list[0] if minimal_bin_list is not None else None
-
-    def file_exists(self):
-        return os.path.exists(self._fn)
 
     def store_bounding_regions(self, bounding_region_tuples, genome_element_chr_list, sparse):
         assert sparse in [False, True]
@@ -94,11 +89,8 @@ class BoundingRegionHandler(object):
     def get_bounding_region_info(self, region):
         raise NotImplementedError
 
-    def _get_total_element_count_for_chr(self, chr):
-        return self._queries.total_element_count_for_chr(chr)
-
     def get_total_element_count(self):
-        return sum(self._get_total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
+        return sum(self._queries.total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
 
     def get_all_bounding_regions_for_chr(self, chr):
 
