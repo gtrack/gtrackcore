@@ -35,7 +35,6 @@ class DatabaseHandler(object):
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
-
     def _get_track_table_path(self):
         return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])
 
@@ -107,14 +106,32 @@ class BrTableReader(TableReader):
         return self._br_table
 
 
-class TrackTableReadWriter(DatabaseHandler):
+class TableReadWriter(DatabaseHandler):
+
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(TableReadWriter, self).__init__(track_name, genome, allow_overlaps)
+
+    def open(self):
+        super(TableReadWriter, self).open('r+')
+
+
+class TrackTableReadWriter(TableReadWriter):
 
     def __init__(self, track_name, genome, allow_overlaps):
         super(TrackTableReadWriter, self).__init__(track_name, genome, allow_overlaps)
 
     def open(self):
-        super(TrackTableReadWriter, self).open('r+')
+        super(TrackTableReadWriter, self).open()
         self._track_table = self._get_track_table()
+
+
+class BrTableReadWriter(TableReadWriter):
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(BrTableReadWriter, self).__init__(track_name, genome, allow_overlaps)
+
+    def open(self):
+        super(BrTableReadWriter, self).open()
+        self._br_table = self._get_br_table()
 
 
 class TableCreator(DatabaseHandler):
@@ -214,4 +231,4 @@ class BoundingRegionTableCreator(TableCreator):
         super(BoundingRegionTableCreator, self).open()
 
     def _create_indices(self):
-        pass
+        self._br_table.cols.seqid.create_csindex

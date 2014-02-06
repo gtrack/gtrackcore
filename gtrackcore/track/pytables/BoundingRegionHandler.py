@@ -1,9 +1,11 @@
 import tables
+import numpy
 
 from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator, BrTableReader
 from gtrackcore.util.pytables.DatabaseQueries import DatabaseQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
-from gtrackcore.util.CustomExceptions import InvalidFormatError
+from gtrackcore.track.core.GenomeRegion import GenomeRegion
+from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegionsNotAvailableError
 
 
 class BoundingRegionHandler(object):
@@ -14,14 +16,18 @@ class BoundingRegionHandler(object):
         self._track_name = track_name
         self._allow_overlaps = allow_overlaps
 
-        db_reader = BrTableReader(track_name, genome, allow_overlaps)
-        self._queries = DatabaseQueries(db_reader)
+        self._table_reader = BrTableReader(track_name, genome, allow_overlaps)
+        self._queries = DatabaseQueries(self._table_reader)
 
         self._updated_chromosomes = set([])
 
         from gtrackcore.input.userbins.UserBinSource import MinimalBinSource
         minimal_bin_list = MinimalBinSource(genome)
         self._minimal_region = minimal_bin_list[0] if minimal_bin_list is not None else None
+
+    #TODO: fix
+    def _table_exists(self):
+        return True
 
     def store_bounding_regions(self, bounding_region_tuples, genome_element_chr_list, sparse):
         assert sparse in [False, True]
@@ -93,8 +99,21 @@ class BoundingRegionHandler(object):
         return sum(self._queries.total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
 
     def get_all_bounding_regions_for_chr(self, chr):
-
         raise NotImplementedError
 
     def get_all_bounding_regions(self):
-        raise NotImplementedError
+        if not self._table_exists():
+            from gtrackcore.util.CommonFunctions import prettyPrintTrackName
+            raise BoundingRegionsNotAvailableError('Bounding regions not available for track: ' + \
+                                                   prettyPrintTrackName(self._trackName))
+
+        self._table_reader.open()
+        table_iterator = self.table_reader.track_table.itersorted('seqid')
+
+        for row in table_iterator:
+            yield GenomeRegion(self._genome, row['chr'], row['start'], row['end'])
+
+        self._table_reader.close()
+
+
+
