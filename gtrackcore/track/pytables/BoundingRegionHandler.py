@@ -108,7 +108,7 @@ class BoundingRegionHandler(object):
                                                    prettyPrintTrackName(self._trackName))
 
         self._table_reader.open()
-        table_iterator = self.table_reader.track_table.itersorted('seqid')
+        table_iterator = self.table_reader.track_table.iterrows()
 
         for row in table_iterator:
             yield GenomeRegion(self._genome, row['chr'], row['start'], row['end'])
