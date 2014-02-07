@@ -5,30 +5,10 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.util.CompBinManager import CompBinManager
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
+
 
 class TrackViewLoader:
-    @staticmethod
-    def _getArray(trackData, arrayName, brInfo, bin=None):
-
-        array = trackData.get(arrayName)
-        #brInfo ex.: BoundingRegionInfo(start=0, end=16571, startIdx=0, endIdx=3, startBinIdx=0, endBinIdx=1)
-        if brInfo is not None and array is not None:
-            #print arrayName
-            #print 'bin: ', bin
-            if bin is not None:
-                #print 'br',brInfo.startBinIdx, brInfo.endBinIdx
-                #print [x for x in array]
-                #print array[brInfo.startBinIdx:brInfo.endBinIdx]
-                if brInfo.startBinIdx == brInfo.endBinIdx:
-                    return 0
-                array = array[brInfo.startBinIdx:brInfo.endBinIdx]
-            else:
-                #print 'br',brInfo.startIdx, brInfo.endIdx
-                #print [x for x in array]
-                #print array[brInfo.startIdx:brInfo.endIdx]
-                array = array[brInfo.startIdx:brInfo.endIdx]
-
-        return array[bin] if bin is not None else array
 
     @staticmethod
     def loadTrackView(trackData, region, borderHandling, allowOverlaps, trackName=[]):
@@ -37,47 +17,17 @@ class TrackViewLoader:
         region : see GenomeRegion
         """
 
-        brShelve = trackData.boundingRegionShelve
-        brInfo = brShelve.get_bounding_region_info(region) if brShelve is not None else None
+        extra_column_names = [column_name for column_name in trackData if column_name not in RESERVED_PREFIXES.keys()]
+        reserved_columns = [trackData[column_name] for column_name in RESERVED_PREFIXES]
+        extra_columns = [trackData[column_name] for column_name in extra_column_names]
 
-        extraArrayNames = [arrayName for arrayName in trackData if arrayName not in \
-                                                                   RESERVED_PREFIXES.keys() + ['leftIndex', 'rightIndex']]
-    # [<TrackColumnWrapper> ...]
-        reservedArrays = [TrackViewLoader._getArray(trackData, arrayName) for arrayName in RESERVED_PREFIXES]
-        extraArrays = [TrackViewLoader._getArray(trackData, arrayName,) for arrayName in extraArrayNames]
-        trackFormat = TrackFormat( *(reservedArrays + [OrderedDict(zip(extraArrayNames, extraArrays))]) )
+        sliced_reserved_columns = [(column[region.start:region.end] if column is not None else None)
+                                   for column in reserved_columns]
+        sliced_extra_columns = [(column[region.start:region.end] if column is not None else None)
+                                for column in extra_columns]
 
+        arg_list = [region] + sliced_reserved_columns + [borderHandling, allowOverlaps] + \
+                   [OrderedDict(zip(extra_column_names, sliced_extra_columns))]
+        track_view = TrackView( *(arg_list) )
 
-        #left/right index: array hvor hver index representerer en bin, og value er index til forste element
-        # etter start paa bin-en. F.eks track som inneholder 1200-1500 og 1400-1600. Med bin size 1k vil
-        # left_index[1] vaere lik 0
-
-        if trackFormat.reprIsDense():
-            if brInfo is None:
-                first_elem_index = region.start
-                last_elem_index = region.end
-            else:
-                first_elem_index = region.start - brInfo.start
-                last_elem_index = region.end - brInfo.start
-        else:
-            leftBin = CompBinManager.getBinNumber(region.start)
-            rightBin = CompBinManager.getBinNumber(region.end-1)
-            #leftBin = region.start/COMP_BIN_SIZE
-            #rightBin = (region.end-1)/COMP_BIN_SIZE
-
-            if trackData.get('leftIndex') is None or trackData.get('rightIndex') is None:
-                raise IOError('Preprocessed track not found. TrackData: ' + ', '.join(trackData.keys()))
-
-            first_elem_index = TrackViewLoader._getArray(trackData, 'leftIndex', brInfo, leftBin)
-            last_elem_index = TrackViewLoader._getArray(trackData, 'rightIndex', brInfo, rightBin)
-
-        slicedReservedArrays = [(array[first_elem_index:last_elem_index] if array is not None else None) for array in reservedArrays]
-        slicedExtraArrays = [(array[first_elem_index:last_elem_index] if array is not None else None) for array in extraArrays]
-
-        argList = [region] + slicedReservedArrays + [borderHandling, allowOverlaps] + [OrderedDict(zip(extraArrayNames, slicedExtraArrays))]
-        tv = TrackView( *(argList) )
-
-        if not trackFormat.reprIsDense():
-            tv.sliceElementsAccordingToGenomeAnchor()
-            #tv._doScatteredSlicing()
-        return tv
+        return track_view
