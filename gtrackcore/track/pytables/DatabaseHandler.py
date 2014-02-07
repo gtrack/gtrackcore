@@ -202,6 +202,7 @@ class TrackTableCreator(TableCreator):
             raise DBNotOpenError(e)
 
     def _create_indices(self):
+        self._track_table.cols.seqid.create_index()
         self._track_table.cols.start.create_index()
         self._track_table.cols.end.create_index()
 
