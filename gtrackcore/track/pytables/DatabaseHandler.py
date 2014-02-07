@@ -151,7 +151,7 @@ class TableCreator(DatabaseHandler):
         return table
 
     def open(self):
-        super(TableCreator, self).open('w')
+        super(TableCreator, self).open('a')
 
     def _create_groups(self):
         group = self._get_track_group()
@@ -200,14 +200,6 @@ class TrackTableCreator(TableCreator):
                 self._flush_counter = 0
         except ClosedFileError, e:
             raise DBNotOpenError(e)
-
-    def _create_groups(self):
-        group = self._h5_file.create_group(self._h5_file.root, self._track_name[0], self._track_name[0])
-
-        for track_name_part in self._track_name[1:]:
-            group = self._h5_file.create_group(group, track_name_part, track_name_part)
-
-        return group
 
     def _create_indices(self):
         self._track_table.cols.start.create_index()
