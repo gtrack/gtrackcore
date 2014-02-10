@@ -66,7 +66,8 @@ class PreProcMetaDataCollector(object):
                                       preProcVersion, id, numElements, boundingRegionTuples, valCategories, edgeWeightCategories, allowOverlaps):
         
         self._checkAndUpdateAttribute('_fileSuffix', fileSuffix, mayBeEmptyString=True, isGeSourceAttr=False)
-        self._checkAndUpdateAttribute('_prefixList', set(prefixList), mayBeEmptyString=False, isGeSourceAttr=False, extraErrorMsg='Different formats?')
+        #TODO: Find out where do remove (or add) seqid to the _prefixList
+        self._checkAndUpdateAttribute('_prefixList', set(prefixList) - set(['seqid']), mayBeEmptyString=False, isGeSourceAttr=False, extraErrorMsg='Different formats?')
         self._checkAndUpdateAttribute('_preProcVersion', preProcVersion, mayBeEmptyString=True, isGeSourceAttr=True, extraErrorMsg='strange..')
         self._checkAndUpdateAttribute('_id', id, mayBeEmptyString=True, isGeSourceAttr=True, extraErrorMsg='Have the original files been modified during the run?')
 
