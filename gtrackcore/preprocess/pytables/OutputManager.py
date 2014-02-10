@@ -74,15 +74,15 @@ class OutputManager(object):
 
     @staticmethod
     def _get_max_str_lens_over_all_chromosomes(ge_source_manager):
-        max_str_lens_dictionaries = [ge_source_manager.getMaxStrLensForChr(chr)\
-                                  for chr in ge_source_manager.getAllChrs()]
+        max_str_lens_dictionaries = [ge_source_manager.getMaxStrLensForChr(chr)
+                                     for chr in ge_source_manager.getAllChrs()]
         from collections import Counter
         from operator import or_
 
         max_string_lengths = reduce(or_, map(Counter, max_str_lens_dictionaries))
         return max_string_lengths
 
-    @staticmethod #bytt med den som finnes i ge_source_manager
+    @staticmethod # bytt med den som finnes i ge_source_manager
     def _get_max_num_edges_over_all_chromosomes(ge_source_manager):
         return max(ge_source_manager.getMaxNumEdgesForChr(chr) for chr in ge_source_manager.getAllChrs())
 

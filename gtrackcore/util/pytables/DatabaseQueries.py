@@ -1,3 +1,6 @@
+from gtrackcore.util.CustomDecorators import timeit
+
+
 class DatabaseQueries(object):
 
     def __init__(self, db_handler):
