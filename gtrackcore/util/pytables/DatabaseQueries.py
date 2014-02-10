@@ -16,26 +16,23 @@ class DatabaseQueries(object):
 
         return result[0] if len(result) > 0 else 0
 
+    @timeit
     def get_start_end_indices(self, genome_region):
         self._db_handler.open()
         table = self._db_handler.track_table
 
-        from time import time
-        start = time()
-        print start, genome_region
         start_index = table.get_where_list('(seqid == chr) & (end > region_start)',
-                                            sort=True, condvars={
-                                                 'chr': genome_region.chr,
-                                                 'region_start': genome_region.start
-                                            })[0]
+                                           sort=True, condvars={
+                                               'chr': genome_region.chr,
+                                               'region_start': genome_region.start
+                                           })[0]
 
         end_index = table.get_where_list('(seqid == chr) & (start < region_end)',
-                                             sort=True, condvars={
-                                                 'chr': genome_region.chr,
-                                                 'region_end': genome_region.end,
-                                             })[-1] + 1  # end exclusive
-        print 'time used:', time() - start
-        print start_index, end_index
+                                         sort=True, condvars={
+                                             'chr': genome_region.chr,
+                                             'region_end': genome_region.end,
+                                         })[-1] + 1  # end exclusive
+
         self._db_handler.close()
 
         return start_index, end_index
