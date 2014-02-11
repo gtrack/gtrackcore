@@ -28,17 +28,15 @@ class TrackQueries(DatabaseQueries):
         self._db_handler.open()
         table = self._db_handler.track_table
 
-        start_index = table.get_where_list('(seqid == chr) & (end > region_start)',
-                                           sort=True, condvars={
-                                               'chr': genome_region.chr,
-                                               'region_start': genome_region.start
-                                           })[0]
+        region_indices = table.get_where_list('(seqid == chr) & (end > region_start) & (start < region_end)',
+                                              sort=True, condvars={
+                'chr': genome_region.chr,
+                'region_start': genome_region.start,
+                'region_end': genome_region.end
+            })
 
-        end_index = table.get_where_list('(seqid == chr) & (start < region_end)',
-                                         sort=True, condvars={
-                                             'chr': genome_region.chr,
-                                             'region_end': genome_region.end,
-                                         })[-1] + 1  # end exclusive
+        start_index = region_indices[0]
+        end_index = region_indices[len(region_indices) - 1] + 1
 
         self._db_handler.close()
 
