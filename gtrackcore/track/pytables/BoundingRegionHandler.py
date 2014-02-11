@@ -2,7 +2,7 @@ import tables
 import numpy
 
 from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator, BrTableReader
-from gtrackcore.util.pytables.DatabaseQueries import DatabaseQueries
+from gtrackcore.util.pytables.DatabaseQueries import BrQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegionsNotAvailableError
@@ -17,7 +17,7 @@ class BoundingRegionHandler(object):
         self._allow_overlaps = allow_overlaps
 
         self._table_reader = BrTableReader(track_name, genome, allow_overlaps)
-        self._queries = DatabaseQueries(self._table_reader)
+        self._queries = BrQueries(self._table_reader)
 
         self._updated_chromosomes = set([])
 
