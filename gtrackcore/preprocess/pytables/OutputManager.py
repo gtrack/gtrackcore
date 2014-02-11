@@ -42,24 +42,26 @@ class OutputManager(object):
             elif column is 'id':
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column])
             elif column is 'edges':
-                shape = self._get_shape(max_num_edges, 0)  # correct shape ??
+                shape = self._get_shape(max_num_edges, 0)  # correct shape ?? ??????
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column], shape=shape)
             elif column in ['val', 'weights']:
                 if column is 'val':
                     data_type = ge_source_manager.getValDataType()
                     data_type_dim = ge_source_manager.getValDim()
+                    shape = self._get_shape(max_num_edges, data_type_dim)[1:]  # Now shape is correct for val
                 elif column is 'weights':
                     data_type = ge_source_manager.getEdgeWeigthDataType()
                     data_type_dim = ge_source_manager.getEdgeWeigthDim()
+                    # Still don't know if this is correct for weights and edges
+                    shape = self._get_shape(max_num_edges, data_type_dim)
 
-                shape = self._get_shape(max_num_edges, data_type_dim)
-
-                #TODO: fix shape hack...
                 data_type_dict[column] = {
                     'int8': tables.Int8Col(shape=shape),
-                    'int32': tables.Int32Col(),
+                    'int32': tables.Int32Col(shape=shape),
                     'float32': tables.Float32Col(shape=shape),
                     'float64': tables.Float64Col(shape=shape),
+                    # Is it correct with max of 2 and X here? ref: TrackFormat.py (line: 38)
+                    # Would single char values work?
                     'S': tables.StringCol(max(2, max_string_lengths[column]), shape=shape)
                 }.get(data_type, tables.Float64Col(shape=shape))  # Defaults to Float64Col
             else:

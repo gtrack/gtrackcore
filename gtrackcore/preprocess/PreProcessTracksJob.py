@@ -56,6 +56,7 @@ class PreProcessTracksJob(object):
 
                         # PreProcess if needed
                         if self._shouldPreProcess():
+                            # TODO: Ask about removing outdated files!!
                             PreProcessUtils.removeOutdatedPreProcessedFiles(self._genome, trackName, allowOverlaps, self._mode)
 
                             if self._shouldPrintProcessMessages() and allowOverlaps not in overlapRulesProcessedForTrackName:
