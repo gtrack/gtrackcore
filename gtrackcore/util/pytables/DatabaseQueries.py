@@ -30,13 +30,13 @@ class TrackQueries(DatabaseQueries):
 
         region_indices = table.get_where_list('(seqid == chr) & (end > region_start) & (start < region_end)',
                                               sort=True, condvars={
-                'chr': genome_region.chr,
-                'region_start': genome_region.start,
-                'region_end': genome_region.end
+                                              'chr': genome_region.chr,
+                                              'region_start': genome_region.start,
+                                              'region_end': genome_region.end
             })
 
         start_index = region_indices[0]
-        end_index = region_indices[len(region_indices) - 1] + 1
+        end_index = region_indices[-1] + 1
 
         self._db_handler.close()
 
