@@ -3,6 +3,11 @@ class DatabaseQueries(object):
     def __init__(self, db_handler):
         self._db_handler = db_handler
 
+
+class BrQueries(DatabaseQueries):
+    def __init__(self, db_handler):
+        super(BrQueries, self).__init__(db_handler)
+
     def total_element_count_for_chr(self, chromosome):
         self._db_handler.open()
         table = self._db_handler.br_table
@@ -13,7 +18,13 @@ class DatabaseQueries(object):
 
         return result[0] if len(result) > 0 else 0
 
-    def get_start_end_indices(self, genome_region):
+
+class TrackQueries(DatabaseQueries):
+
+    def __init__(self, db_handler):
+        super(TrackQueries, self).__init__(db_handler)
+
+    def region_start_and_end_indices(self, genome_region):
         self._db_handler.open()
         table = self._db_handler.track_table
 

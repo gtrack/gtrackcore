@@ -6,7 +6,7 @@ from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.util.CompBinManager import CompBinManager
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
-from gtrackcore.util.pytables.DatabaseQueries import DatabaseQueries
+from gtrackcore.util.pytables.DatabaseQueries import TrackQueries
 
 
 class TrackViewLoader:
@@ -18,8 +18,8 @@ class TrackViewLoader:
         region : see GenomeRegion
         """
 
-        queries = DatabaseQueries(TrackTableReader(trackName, region.genome, allowOverlaps))
-        start_index, end_index = queries.get_start_end_indices(region)
+        queries = TrackQueries(TrackTableReader(trackName, region.genome, allowOverlaps))
+        start_index, end_index = queries.region_start_and_end_indices(region)
 
         extra_column_names = [column_name for column_name in trackData if column_name not in RESERVED_PREFIXES.keys()]
         reserved_columns = [trackData[column_name] if column_name in trackData else None
