@@ -1,8 +1,13 @@
-import time                                                
+import time
+import functools
 
 
-def timeit(func, print_args=False):
+def timeit(func=None, print_args=False):
 
+    if func is None:
+        return functools.partial(timeit, print_args=print_args)
+
+    @functools.wraps(func)
     def wrapper(*args, **kw_args):
         start = time.time()
         result = func(*args, **kw_args)
@@ -17,8 +22,12 @@ def timeit(func, print_args=False):
     return wrapper
 
 
-def print_args(func, pretty_print=False):
+def print_args(func=None, pretty_print=False):
 
+    if func is None:
+        return functools.partial(print_args, pretty_print=pretty_print)
+
+    @functools.wraps(func)
     def wrapper(*args, **kw_args):
         if pretty_print:
             print func.__name__
