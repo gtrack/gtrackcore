@@ -1,6 +1,8 @@
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore.preprocess.PreProcessUtils import PreProcessUtils
 from gtrackcore.preprocess.pytables.OutputManager import OutputManager
+from gtrackcore.util.CustomDecorators import timeit
+
 
 class PreProcessGeSourceJob(object):
     VERSION = '0.95'

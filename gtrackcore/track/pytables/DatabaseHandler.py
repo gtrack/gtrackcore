@@ -4,7 +4,7 @@ import tables
 from tables import ClosedFileError
 
 from gtrackcore.util.CustomExceptions import DBNotOpenError
-from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
+from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
 
 BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
 
@@ -14,7 +14,7 @@ class DatabaseHandler(object):
 
     def __init__(self, track_name, genome, allow_overlaps):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
-        self._h5_filename = getDatabaseFilename(dir_path, track_name)
+        self._h5_filename = getDatabasePath(dir_path, track_name)
         self._track_name = track_name
         self._h5_file = None
         self._track_table = None

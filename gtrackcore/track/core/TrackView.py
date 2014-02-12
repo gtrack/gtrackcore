@@ -9,7 +9,9 @@ from gtrackcore.core.LogSetup import logMessageOnce
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
 from gtrackcore.util.CommonFunctions import getClassName
+from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
@@ -127,6 +129,7 @@ class AutonomousTrackElement(TrackElement):
             raise AttributeError
     
 class TrackView(object):
+
     def _handlePointsAndPartitions(self):
         if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
             self._startList = self._endList[:-1]
@@ -204,17 +207,22 @@ class TrackView(object):
             self._numIterElements = self._computeNumIterElements()
         else:
             self._numIterElements = self._numListElements
-            
+
+    @timeit
     def _computeNumListElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:
                 return len(list)
         raise ShouldNotOccurError
-        
+
+    @timeit
     def _computeNumIterElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
+            print type(list)
             if list is not None:
-                if isinstance(list, numpy.ndarray):
+                if isinstance(list, TrackColumnWrapper):
+                    return len(list)
+                elif isinstance(list, numpy.ndarray):
                     return len(self._removeBlindPassengersFromNumpyArray(list))
                 else:
                     return sum(1 for x in self)
@@ -373,7 +381,7 @@ class TrackView(object):
         if self.allowOverlaps and len(numpyArray) > 0:
             numpyArray = numpyArray[numpy.where(self._endList > self.genomeAnchor.start)]
         return numpyArray
-                   
+
     def _commonAsNumpyArray(self, numpyArray, numpyArrayModMethod, name):
         assert(self.borderHandling in ['crop'])
         if numpyArray is None:

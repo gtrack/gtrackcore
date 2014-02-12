@@ -1,4 +1,6 @@
 import sys
+from gtrackcore.util.CustomDecorators import timeit
+
 
 class TrackColumnWrapper(object):
 
@@ -13,6 +15,7 @@ class TrackColumnWrapper(object):
         self._start_index = -1
         self._end_index = -1
 
+    @timeit
     def __getslice__(self, i, j):
         self._db_handler.open()
         column = self._db_handler.get_column(self._column_name)

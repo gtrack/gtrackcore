@@ -16,7 +16,7 @@ from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
-from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
+from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter
 
 class PreProcessUtils(object):
@@ -52,15 +52,10 @@ class PreProcessUtils(object):
         preProcFilesExist = collector.preProcFilesExist(allowOverlaps)
         if preProcFilesExist is None:
             dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
-            if BoundingRegionShelve(genome, trackName, allowOverlaps).fileExists():
-                preProcFilesExist = True
-                #    any( fn.split('.')[0] in ['start', 'end', 'val', 'edges'] \
-                #         for fn in os.listdir(dirPath) if os.path.isfile(os.path.join(dirPath, fn)) )
-            else:
-                if os.path.exists(dirPath):
-                    preProcFilesExist = PreProcessUtils._hasOldTypeChromSubDirs(dirPath, genome)
-                else:
-                    preProcFilesExist = False
+            dbPath =  getDatabasePath(dirPath, trackName)
+
+            preProcFilesExist = os.path.exists(dbPath)
+
             collector.updatePreProcFilesExistFlag(allowOverlaps, preProcFilesExist)
         return preProcFilesExist
     

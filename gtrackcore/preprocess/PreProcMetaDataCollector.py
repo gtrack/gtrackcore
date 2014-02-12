@@ -4,6 +4,8 @@ from collections import defaultdict, OrderedDict
 
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.metadata.TrackInfo import constructKey, TrackInfo
+from gtrackcore.util.CustomDecorators import timeit
+
 
 class PreProcMetaDataCollector(object):
     _preProcMetaDataStorage = {}

@@ -1,3 +1,6 @@
+from gtrackcore.util.CustomDecorators import timeit
+
+
 class DatabaseQueries(object):
 
     def __init__(self, db_handler):
@@ -24,6 +27,7 @@ class TrackQueries(DatabaseQueries):
     def __init__(self, db_handler):
         super(TrackQueries, self).__init__(db_handler)
 
+    @timeit
     def region_start_and_end_indices(self, genome_region):
         self._db_handler.open()
         table = self._db_handler.track_table
@@ -33,7 +37,7 @@ class TrackQueries(DatabaseQueries):
                                               'chr': genome_region.chr,
                                               'region_start': genome_region.start,
                                               'region_end': genome_region.end
-            })
+                                              })
 
         start_index = region_indices[0]
         end_index = region_indices[-1] + 1

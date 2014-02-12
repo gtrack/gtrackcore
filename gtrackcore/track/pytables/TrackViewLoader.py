@@ -6,12 +6,14 @@ from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.util.CompBinManager import CompBinManager
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
+from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.pytables.DatabaseQueries import TrackQueries
 
 
 class TrackViewLoader:
 
     @staticmethod
+    @timeit
     def loadTrackView(trackData, region, borderHandling, allowOverlaps, trackName=[]):
         """
         trackData : see TrackSource.getTrackData {'id' : smartmemmap}

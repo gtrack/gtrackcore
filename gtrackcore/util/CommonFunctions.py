@@ -641,6 +641,6 @@ def replaceIllegalElementsInTrackNames(string):
 #    #except Exception,e:
 #    #    raise ShouldNotOccurError('Repackaged exception.., original was: ' + getClassName(e) + ' - '+str(e) + ' - ' + traceback.format_exc())
 
-def getDatabaseFilename(dirPath, trackName):
+def getDatabasePath(dirPath, trackName):
     DATABASE_FILE_SUFFIX = 'h5'  # put in Config
     return "%s%s%s.%s" % (dirPath, os.sep, trackName[-1], DATABASE_FILE_SUFFIX)

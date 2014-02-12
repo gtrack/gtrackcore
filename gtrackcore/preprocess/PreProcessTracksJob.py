@@ -20,6 +20,7 @@ from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
 from gtrackcore.util.CommonFunctions import createOrigPath, getDirPath, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
+from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning, ShouldNotOccurError
 
 class PreProcessTracksJob(object):

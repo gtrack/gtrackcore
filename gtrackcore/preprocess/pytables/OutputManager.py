@@ -2,7 +2,7 @@ import tables
 import os
 
 from stat import S_IRWXU, S_IRWXG, S_IROTH
-from gtrackcore.util.CommonFunctions import getDirPath, getDatabaseFilename
+from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableCreator
 
 class OutputManager(object):
@@ -16,7 +16,7 @@ class OutputManager(object):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        self._database_filename = getDatabaseFilename(dir_path, track_name)
+        self._database_filename = getDatabasePath(dir_path, track_name)
 
         self._table_creator = TrackTableCreator(track_name, genome, allow_overlaps)
 
