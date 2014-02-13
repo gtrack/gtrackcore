@@ -7,15 +7,15 @@ class TrackColumnWrapper(object):
     def __init__(self, column_name, db_handler):
         self._column_name = column_name
         self._db_handler = db_handler
+        self._start_index = -1
+        self._end_index = -1
+
         self._db_handler.open()
         column = self._db_handler.get_column(self._column_name)
         self._shape = column.shape
         self._dtype = column.dtype
         self._db_handler.close()
-        self._start_index = -1
-        self._end_index = -1
 
-    @timeit
     def __getslice__(self, i, j):
         self._db_handler.open()
         column = self._db_handler.get_column(self._column_name)
@@ -36,6 +36,13 @@ class TrackColumnWrapper(object):
 
     def __len__(self):
         return self._end_index - self._start_index
+
+    def __iter__(self):
+        self._db_handler.open()
+        table = self._db_handler.track_table
+        for row in table.iterrows(start=self._start_index, stop=self._end_index):
+            yield row[self._column_name]
+        self._db_handler.close()
 
     def set_offset(self, start, end):
         self._start_index = start

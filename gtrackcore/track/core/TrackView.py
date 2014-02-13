@@ -218,7 +218,6 @@ class TrackView(object):
     @timeit
     def _computeNumIterElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
-            print type(list)
             if list is not None:
                 if isinstance(list, TrackColumnWrapper):
                     return len(list)
