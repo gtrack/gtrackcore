@@ -1,5 +1,6 @@
 import sys
 
+
 class TrackColumnWrapper(object):
 
     def __init__(self, column_name, db_handler):
@@ -14,24 +15,18 @@ class TrackColumnWrapper(object):
         self._dtype = column.dtype
         self._db_handler.close()
 
-    def __getslice__(self, i, j):
+    def __getitem__(self, val):
+        is_slice = isinstance(val, slice)
+        if is_slice:
+            start_index = self._start_index if val.start is None else self._start_index + val.start
+            end_index = self._end_index if val.end is None else self._start_index + val.end
 
         self._db_handler.open()
         column = self._db_handler.get_column(self._column_name)
-        #TODO: fix hacky solution
-        if j == sys.maxint:
-            column_slice = column[self._start_index+i:self._end_index]
-        else:
-            column_slice = column[self._start_index+i:self._start_index+j]
+        result = column[start_index:end_index] if is_slice else column[self._start_index + val]
         self._db_handler.close()
-        return column_slice
 
-    def __getitem__(self, i):
-        self._db_handler.open()
-        column = self._db_handler.get_column(self._column_name)
-        column_item = column[self._start_index+i]
-        self._db_handler.close()
-        return column_item
+        return result
 
     def __len__(self):
         return self._end_index - self._start_index
