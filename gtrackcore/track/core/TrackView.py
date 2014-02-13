@@ -259,7 +259,9 @@ class TrackView(object):
     def _generate_pytables_elements(self):
         self._db_handler.open()
         track_table = self._db_handler.track_table
+
         for row in track_table.iterrows(start=self.genomeAnchor.start, stop=self.genomeAnchor.end):
+            # TODO: fjern blind passengers
             self._pytables_track_element._row = row
             yield self._pytables_track_element
         self._db_handler.close()
