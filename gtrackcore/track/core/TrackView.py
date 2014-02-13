@@ -208,14 +208,12 @@ class TrackView(object):
         else:
             self._numIterElements = self._numListElements
 
-    @timeit
     def _computeNumListElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:
                 return len(list)
         raise ShouldNotOccurError
 
-    @timeit
     def _computeNumIterElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:

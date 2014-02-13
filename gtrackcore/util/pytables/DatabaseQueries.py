@@ -27,7 +27,6 @@ class TrackQueries(DatabaseQueries):
     def __init__(self, db_handler):
         super(TrackQueries, self).__init__(db_handler)
 
-    @timeit
     def region_start_and_end_indices(self, genome_region):
         self._db_handler.open()
         table = self._db_handler.track_table

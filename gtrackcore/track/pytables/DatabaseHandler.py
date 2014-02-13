@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import tables
 from tables import ClosedFileError
+from gtrackcore.third_party.portalocker import portalocker
 
 from gtrackcore.util.CustomExceptions import DBNotOpenError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
@@ -25,6 +26,7 @@ class DatabaseHandler(object):
         self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
 
     def close(self):
+        portalocker.unlock(self._h5_file)
         self._h5_file.close()
         self._track_table = None
         self._br_table = None
@@ -60,6 +62,7 @@ class TableReader(DatabaseHandler):
 
     def open(self):
         super(TableReader, self).open('r')
+        portalocker.lock(self._h5_file, portalocker.LOCK_SH)
 
 
 class TrackTableReader(TableReader):
@@ -113,6 +116,7 @@ class TableReadWriter(DatabaseHandler):
 
     def open(self):
         super(TableReadWriter, self).open('r+')
+        portalocker.lock(self._h5_file, portalocker.LOCK_EX)
 
 
 class TrackTableReadWriter(TableReadWriter):
@@ -152,6 +156,7 @@ class TableCreator(DatabaseHandler):
 
     def open(self):
         super(TableCreator, self).open('a')
+        portalocker.lock(self._h5_file, portalocker.LOCK_EX)
 
     def _create_groups(self):
         group = self._get_track_group()
