@@ -13,9 +13,9 @@ from gtrackcore.util.pytables.DatabaseQueries import TrackQueries
 class TrackViewLoader:
 
     @staticmethod
-    def loadTrackView(trackData, region, borderHandling, allowOverlaps, trackName=[]):
+    def loadTrackView(trackData, region, borderHandling, allowOverlaps, trackName):
         """
-        trackData : see TrackSource.getTrackData {'id' : smartmemmap}
+        trackData : see TrackSource.getTrackData
         region : see GenomeRegion
         """
 
@@ -32,8 +32,8 @@ class TrackViewLoader:
             if column is not None:
                 column.set_offset(start_index, end_index)
 
-        arg_list = [region] + reserved_columns + [borderHandling, allowOverlaps] + \
+        arg_list = [trackName] + [region] + reserved_columns + [borderHandling, allowOverlaps] + \
                    [OrderedDict(zip(extra_column_names, extra_columns))]
 
-        return TrackView( *(arg_list) )
+        return TrackView(* arg_list)
 

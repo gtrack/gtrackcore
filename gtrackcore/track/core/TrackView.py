@@ -9,6 +9,7 @@ from gtrackcore.core.LogSetup import logMessageOnce
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
 from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
 from gtrackcore.util.CommonFunctions import getClassName
 from gtrackcore.util.CustomDecorators import timeit
@@ -67,7 +68,53 @@ class TrackElement(object):
         length = self.end() - self.start()
         assert(length >= 0)
         return length
-    
+
+class PytablesTrackElement(object):
+    def __init__(self, trackView, track_name, genome, allow_overlaps):
+        # Weak proxy is used to remove memory leak caused by circular reference when TrackView is deleted
+        self._trackView = weakref.proxy(trackView)
+        self._row = None
+
+    def start(self):
+        return self._row['start']
+
+    def end(self):
+        return self._row['end']
+
+    def val(self):
+        return self._row['val']
+
+    def strand(self):
+        return self._row['strand']
+
+    def id(self):
+        return self._row['id']
+
+    def edges(self):
+        return self._row['edges']
+
+    def weights(self):
+        return self._row['weights']
+
+    def getAllExtraKeysInOrder(self):
+        return self._trackView._extraLists.keys()
+
+    def __getattr__(self, key):
+        if key in self._trackView._extraLists:
+            def extra():
+                return self._row[key]
+            return extra
+        else:
+            raise AttributeError
+
+    def none(self):
+        return None
+
+    def __len__(self):
+        length = self.end() - self.start()
+        assert(length >= 0)
+        return length
+
 class AutonomousTrackElement(TrackElement):
     def __init__(self, start = None, end = None, val = None, strand = None, id = None, edges = None, weights = None, trackEl=None, **kwArgs):
         
@@ -150,17 +197,20 @@ class TrackView(object):
         if not self.trackFormat.isDense() and not self.trackFormat.isInterval():
             self._endList = VirtualPointEnd(self._startList)
     
-    def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
+    def __init__(self, track_name, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
                  weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict()):
         assert startList!=None or endList!=None or valList!=None or edgesList!=None
         assert borderHandling in ['crop']
-        
+
+        self._track_name = track_name
         self.genomeAnchor = copy(genomeAnchor)
         self.trackFormat = TrackFormat(startList, endList, valList, strandList, idList, edgesList, weightsList, extraLists)
         self.borderHandling = borderHandling
         self.allowOverlaps = allowOverlaps
         
         self._trackElement = TrackElement(self)
+        self._pytables_track_element = PytablesTrackElement(self, track_name, genomeAnchor.genome, allowOverlaps)  # For iterating pytables track table
+        self._db_handler = TrackTableReader(track_name, genomeAnchor.genome, allowOverlaps)
         #self._bpLevelArray = None
 
         self._startList = startList
@@ -176,28 +226,51 @@ class TrackView(object):
         
         if self._startList is None:
             self._trackElement.start = noneFunc
+            self._pytables_track_element.start = noneFunc
         if self._endList is None:
             self._trackElement.end = noneFunc
+            self._pytables_track_element.end = noneFunc
         if self._valList is None:
             self._trackElement.val = noneFunc
+            self._pytables_track_element.val = noneFunc
         if self._strandList is None:
             self._trackElement.strand = noneFunc
+            self._pytables_track_element.strand = noneFunc
         if self._idList is None:
             self._trackElement.id = noneFunc
+            self._pytables_track_element.id = noneFunc
         if self._edgesList is None:
             self._trackElement.edges = noneFunc
+            self._pytables_track_element.edges = noneFunc
         if self._weightsList is None:
             self._trackElement.weights = noneFunc
+            self._pytables_track_element.weights = noneFunc
         
         self._updateNumListElements()
             
         for i, list in enumerate([self._startList, self._endList, self._valList, self._strandList, self._idList, self._edgesList, self._weightsList] \
             + [extraList for extraList in self._extraLists.values()]):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
-    
+
+    # TODO: make sure pytables is used
+    def _should_use_pytables(self):
+        return isinstance(self._startList, TrackColumnWrapper)
+
+    def _generate_pytables_elements(self):
+        self._db_handler.open()
+        track_table = self._db_handler.track_table
+        for row in track_table.iterrows(start=self.genomeAnchor.start, stop=self.genomeAnchor.end):
+            self._pytables_track_element._row = row
+            yield self._pytables_track_element
+        self._db_handler.close()
+
     def __iter__(self):
-        self._trackElement._index = -1
-        return self
+        if self._should_use_pytables():
+            self._pytables_track_element._row = None
+            return self._generate_pytables_elements()
+        else:
+            self._trackElement._index = -1
+            return self
     
     def _updateNumListElements(self):
         ""
@@ -243,7 +316,7 @@ class TrackView(object):
         if self.allowOverlaps and not self.trackFormat.reprIsDense():
             while self._trackElement._index < self._numListElements and self._endList[self._trackElement._index] <= self.genomeAnchor.start: #self._trackElement.end() <= 0:
                 self._trackElement._index += 1
-            
+
         if self._trackElement._index < self._numListElements:
             return self._trackElement
         else:
