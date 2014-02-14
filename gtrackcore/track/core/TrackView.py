@@ -260,10 +260,16 @@ class TrackView(object):
         self._db_handler.open()
         track_table = self._db_handler.track_table
 
-        for row in track_table.iterrows(start=self.genomeAnchor.start, stop=self.genomeAnchor.end):
-            # TODO: fjern blind passengers
+        rows = track_table.iterrows(start=self.genomeAnchor.start, stop=self.genomeAnchor.end)
+
+        for row in rows:
+            #  Remove blind passengers
+            if self.allowOverlaps and not self.trackFormat.reprIsDense():
+                if row['end'] <= self.genomeAnchor.start:
+                    continue
             self._pytables_track_element._row = row
             yield self._pytables_track_element
+
         self._db_handler.close()
 
     def __iter__(self):
