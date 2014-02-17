@@ -13,7 +13,7 @@ class BrQueries(DatabaseQueries):
 
     def total_element_count_for_chr(self, chromosome):
         self._db_handler.open()
-        table = self._db_handler.br_table
+        table = self._db_handler.table
 
         result = [row['element_count'] for row in table.where('(seqid == chr)', condvars={'chr': chromosome})]
 
@@ -29,7 +29,7 @@ class TrackQueries(DatabaseQueries):
 
     def region_start_and_end_indices(self, genome_region):
         self._db_handler.open()
-        table = self._db_handler.track_table
+        table = self._db_handler.table
 
         region_indices = table.get_where_list('(seqid == chr) & (end > region_start) & (start < region_end)',
                                               sort=True, condvars={

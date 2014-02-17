@@ -18,8 +18,7 @@ class DatabaseHandler(object):
         self._h5_filename = getDatabasePath(dir_path, track_name)
         self._track_name = track_name
         self._h5_file = None
-        self._track_table = None
-        self._br_table = None
+        self._table = None
 
     @abstractmethod
     def open(self, mode='r'):
@@ -28,12 +27,11 @@ class DatabaseHandler(object):
     def close(self):
         portalocker.unlock(self._h5_file)
         self._h5_file.close()
-        self._track_table = None
-        self._br_table = None
+        self._table = None
 
     def get_columns(self):
         try:
-            return self._track_table.colinstances
+            return self._table.colinstances
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
@@ -57,76 +55,72 @@ class DatabaseHandler(object):
 
 
 class TableReader(DatabaseHandler):
+    __metaclass__ = ABCMeta
+
     def __init__(self, track_name, genome, allow_overlaps):
         super(TableReader, self).__init__(track_name, genome, allow_overlaps)
 
+    @abstractmethod
     def open(self):
         super(TableReader, self).open('r')
         portalocker.lock(self._h5_file, portalocker.LOCK_SH)
 
+    @property
+    def table(self):
+        if self._table is None:
+            raise DBNotOpenError
+        return self._table
+
 
 class TrackTableReader(TableReader):
-
     def __init__(self, track_name, genome, allow_overlaps):
         super(TrackTableReader, self).__init__(track_name, genome, allow_overlaps)
 
     def get_column(self, column_name):
         try:
-            return self._track_table.colinstances[column_name]
+            return self._table.colinstances[column_name]
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
     def get_column_names(self):
         try:
-            return self._track_table.colnames
+            return self._table.colnames
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
     def open(self):
         super(TrackTableReader, self).open()
-        self._track_table = self._get_track_table()
-
-    @property
-    def track_table(self):
-        if self._track_table is None:
-            raise DBNotOpenError
-        return self._track_table
+        self._table = self._get_track_table()
 
 
 class BrTableReader(TableReader):
-
     def __init__(self, track_name, genome, allow_overlaps):
         super(BrTableReader, self).__init__(track_name, genome, allow_overlaps)
 
     def open(self):
         super(BrTableReader, self).open()
-        self._br_table = self._get_br_table()
-
-    @property
-    def br_table(self):
-        if self._br_table is None:
-            raise DBNotOpenError
-        return self._br_table
+        self._table = self._get_br_table()
 
 
 class TableReadWriter(DatabaseHandler):
+    __metaclass__ = ABCMeta
 
     def __init__(self, track_name, genome, allow_overlaps):
         super(TableReadWriter, self).__init__(track_name, genome, allow_overlaps)
 
+    @abstractmethod
     def open(self):
         super(TableReadWriter, self).open('r+')
         portalocker.lock(self._h5_file, portalocker.LOCK_EX)
 
 
 class TrackTableReadWriter(TableReadWriter):
-
     def __init__(self, track_name, genome, allow_overlaps):
         super(TrackTableReadWriter, self).__init__(track_name, genome, allow_overlaps)
 
     def open(self):
         super(TrackTableReadWriter, self).open()
-        self._track_table = self._get_track_table()
+        self._table = self._get_track_table()
 
 
 class BrTableReadWriter(TableReadWriter):
@@ -135,10 +129,12 @@ class BrTableReadWriter(TableReadWriter):
 
     def open(self):
         super(BrTableReadWriter, self).open()
-        self._br_table = self._get_br_table()
+        self._table = self._get_br_table()
 
 
 class TableCreator(DatabaseHandler):
+    __metaclass__ = ABCMeta
+
     def __init__(self, track_name, genome, allow_overlaps):
         super(TableCreator, self).__init__(track_name, genome, allow_overlaps)
 
@@ -154,9 +150,13 @@ class TableCreator(DatabaseHandler):
 
         return table
 
+    @abstractmethod
     def open(self):
         super(TableCreator, self).open('a')
         portalocker.lock(self._h5_file, portalocker.LOCK_EX)
+
+    def get_row(self):
+        return self._table.row
 
     def _create_groups(self):
         group = self._get_track_group()
@@ -179,18 +179,14 @@ class TableCreator(DatabaseHandler):
 
 
 class TrackTableCreator(TableCreator):
-
     def __init__(self, track_name, genome, allow_overlaps):
         super(TrackTableCreator, self).__init__(track_name, genome, allow_overlaps)
         self._flush_counter = 0
 
     def create_table(self, table_description, expectedrows):
-        self._track_table = super(TrackTableCreator, self).create_table(
+        self._table = super(TrackTableCreator, self).create_table(
             table_description, expectedrows, self._track_name[-1])
         self._create_indices()
-
-    def get_row(self):
-        return self._track_table.row
 
     def open(self):
         super(TrackTableCreator, self).open()
@@ -201,32 +197,28 @@ class TrackTableCreator(TableCreator):
         from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
         try:
             if self._flush_counter == FLUSH_LIMIT:
-                self._track_table.flush()
+                self._table.flush()
                 self._flush_counter = 0
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
     def _create_indices(self):
-        self._track_table.cols.seqid.create_index()
-        self._track_table.cols.start.create_index()
-        self._track_table.cols.end.create_index()
+        self._table.cols.seqid.create_index()
+        self._table.cols.start.create_index()
+        self._table.cols.end.create_index()
 
 
 class BoundingRegionTableCreator(TableCreator):
-
     def __init__(self, track_name, genome, allow_overlaps):
         super(BoundingRegionTableCreator, self).__init__(track_name, genome, allow_overlaps)
 
     def create_table(self, table_description, expectedrows):
-        self._br_table = super(BoundingRegionTableCreator, self).create_table(
+        self._table = super(BoundingRegionTableCreator, self).create_table(
             table_description, expectedrows, BOUNDING_REGION_TABLE_NAME)
         self._create_indices()
-
-    def get_row(self):
-        return self._br_table.row
 
     def open(self):
         super(BoundingRegionTableCreator, self).open()
 
     def _create_indices(self):
-        self._br_table.cols.seqid.create_csindex
+        self._table.cols.seqid.create_csindex()

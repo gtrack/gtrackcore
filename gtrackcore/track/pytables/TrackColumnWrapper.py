@@ -3,17 +3,17 @@ import sys
 
 class TrackColumnWrapper(object):
 
-    def __init__(self, column_name, db_handler):
+    def __init__(self, column_name, table_reader):
         self._column_name = column_name
-        self._db_handler = db_handler
+        self._table_reader = table_reader
         self._start_index = -1
         self._end_index = -1
 
-        self._db_handler.open()
-        column = self._db_handler.get_column(self._column_name)
+        self._table_reader.open()
+        column = self._table_reader.get_column(self._column_name)
         self._shape = column.shape
         self._dtype = column.dtype
-        self._db_handler.close()
+        self._table_reader.close()
 
     def __getitem__(self, val):
         is_slice = isinstance(val, slice)
@@ -21,10 +21,10 @@ class TrackColumnWrapper(object):
             start_index = self._start_index if val.start is None else self._start_index + val.start
             end_index = self._end_index if val.end is None else self._start_index + val.end
 
-        self._db_handler.open()
-        column = self._db_handler.get_column(self._column_name)
+        self._table_reader.open()
+        column = self._table_reader.get_column(self._column_name)
         result = column[start_index:end_index] if is_slice else column[self._start_index + val]
-        self._db_handler.close()
+        self._table_reader.close()
 
         return result
 
@@ -32,11 +32,11 @@ class TrackColumnWrapper(object):
         return self._end_index - self._start_index
 
     def __iter__(self):
-        self._db_handler.open()
-        table = self._db_handler.track_table
+        self._table_reader.open()
+        table = self._table_reader.table
         for row in table.iterrows(start=self._start_index, stop=self._end_index):
             yield row[self._column_name]
-        self._db_handler.close()
+        self._table_reader.close()
 
     def set_offset(self, start, end):
         self._start_index = start

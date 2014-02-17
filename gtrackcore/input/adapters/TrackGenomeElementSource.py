@@ -157,7 +157,7 @@ class TrackGenomeElementSource(GenomeElementSource):
             chr = br.chr
             break
         
-        return TrackSource().getTrackData(self._trackName, self._genome, chr, allowOverlaps=self._allowOverlaps)
+        return TrackSource().wrap_track_data(self._trackName, self._genome, allowOverlaps=self._allowOverlaps)
     
     def _findPrefixList(self, trackData):
         unorderedPrefixList = [p for p in trackData if p not in ['leftIndex', 'rightIndex']]

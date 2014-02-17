@@ -258,7 +258,7 @@ class TrackView(object):
 
     def _generate_pytables_elements(self):
         self._db_handler.open()
-        track_table = self._db_handler.track_table
+        track_table = self._db_handler.table
 
         rows = track_table.iterrows(start=self.genomeAnchor.start, stop=self.genomeAnchor.end)
 

@@ -21,14 +21,13 @@ class Track(object):
     def __init__(self, trackName):
         self.trackName = trackName
         self._trackSource = TrackSource()
-        self._trackViewLoader = TrackViewLoader()
         self._trackFormatReq = NeutralTrackFormatReq()
         self.formatConverters = None
         self._trackId = None
         
     def _getRawTrackView(self, region, borderHandling, allowOverlaps):
-        trackData = self._trackSource.getTrackData(self.trackName, region.genome, region.chr, allowOverlaps)
-        return self._trackViewLoader.loadTrackView(trackData, region, borderHandling, allowOverlaps, self.trackName)
+        trackData = self._trackSource.wrap_track_data(self.trackName, region.genome, allowOverlaps)
+        return TrackViewLoader.loadTrackView(trackData, region, borderHandling, allowOverlaps, self.trackName)
     
     def getTrackView(self, region):
         allowOverlaps = self._trackFormatReq.allowOverlaps()

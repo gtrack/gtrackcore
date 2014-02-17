@@ -13,7 +13,7 @@ class TrackSource:
         self._chrInUse = None
         self._fileDict = {}
 
-    def getTrackData(self, trackName, genome, chr, allowOverlaps, forceChrFolders=False):
+    def wrap_track_data(self, trackName, genome, allowOverlaps):
         track_data = TrackData()
 
         table_reader = TrackTableReader(trackName, genome, allowOverlaps)
