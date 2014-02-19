@@ -460,12 +460,16 @@ class TrackView(object):
             numpyArray = numpyArray[numpy.where(self._endList > self.genomeAnchor.start)]
         return numpyArray
 
-    def _commonAsNumpyArray(self, numpyArray, numpyArrayModMethod, name):
+    def _commonAsNumpyArray(self, array, numpyArrayModMethod, name):
         assert(self.borderHandling in ['crop'])
-        if numpyArray is None:
+        if array is None:
             return None
 
-        numpyArray = self._removeBlindPassengersFromNumpyArray(numpyArray)
+        #TODO: should we do this?
+        if isinstance(array, TrackColumnWrapper):
+            array = array[:]
+
+        numpyArray = self._removeBlindPassengersFromNumpyArray(array)
         
         if numpyArrayModMethod is not None:
             return numpyArrayModMethod(numpyArray)
