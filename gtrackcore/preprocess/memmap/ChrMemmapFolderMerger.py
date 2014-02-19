@@ -5,8 +5,8 @@ import sys
 
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore.track.memmap.CommonMemmapFunctions import createMemmapFileFn, parseMemmapFileFn, findEmptyVal
-from gtrackcore.track.memmap.TrackSource import TrackSource
-from gtrackcore.util.CommonFunctions import createDirPath
+from gtrackcore.track.pytables.TrackSource import TrackSource
+from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import EmptyGESourceError
 
 class ChrMemmapFolderMerger(object):
@@ -65,7 +65,7 @@ class ChrMemmapFolderMerger(object):
     
     @staticmethod
     def merge(genome, trackName, allowOverlaps):
-        path = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+        path = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
 
         collector = PreProcMetaDataCollector(genome, trackName)
         chrList = collector.getPreProcessedChrs(allowOverlaps)

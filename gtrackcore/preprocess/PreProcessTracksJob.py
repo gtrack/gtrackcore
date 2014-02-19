@@ -17,9 +17,10 @@ from gtrackcore.track.hierarchy.ExternalTrackManager import ExternalTrackManager
 from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
 from gtrackcore.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
-from gtrackcore.util.CommonFunctions import createOrigPath, createDirPath, prettyPrintTrackName, \
+from gtrackcore.util.CommonFunctions import createOrigPath, getDirPath, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
+from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning, ShouldNotOccurError
 
 class PreProcessTracksJob(object):
@@ -48,12 +49,15 @@ class PreProcessTracksJob(object):
                 trackName = self._renameTrackNameIfIllegal(trackName)
 
                 for allowOverlaps in [True, False]:
+
                     anyGeSourceManagers = False
                     for geSourceManager in self._allGESourceManagers(trackName, allowOverlaps):
                         anyGeSourceManagers = True
+                        should_be_sorted = not geSourceManager.isSorted()
 
                         # PreProcess if needed
                         if self._shouldPreProcess():
+                            # TODO: Ask about removing outdated files!!
                             PreProcessUtils.removeOutdatedPreProcessedFiles(self._genome, trackName, allowOverlaps, self._mode)
 
                             if self._shouldPrintProcessMessages() and allowOverlaps not in overlapRulesProcessedForTrackName:
@@ -72,12 +76,9 @@ class PreProcessTracksJob(object):
                     # Finalize overlapRule output if needed
                     if anyGeSourceManagers and self._shouldFinalize() and collector.preProcIsDirty():
                         if self._mode == 'Real' and self._shouldMergeChrFolders():
-                            self._status = 'Trying to combine chromosome vectors into combined vectors.'
-                            PreProcessUtils.createBoundingRegionShelve(self._genome, trackName, allowOverlaps)
-                            ChrMemmapFolderMerger.merge(self._genome, trackName, allowOverlaps)
-
-                            self._status = 'Trying to remove chromosome folders'
-                            PreProcessUtils.removeChrMemmapFolders(self._genome, trackName, allowOverlaps)
+                            if should_be_sorted:
+                                PreProcessUtils.sort_preprocessed_table(self._genome, trackName, allowOverlaps)
+                            PreProcessUtils.create_bounding_region_table(self._genome, trackName, allowOverlaps)
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)
@@ -118,24 +119,37 @@ class PreProcessTracksJob(object):
     def _allTrackNames(self):
         raise AbstractClassError
 
-    def _allGESourceManagers(self, trackName, allowOverlaps):
-        collector = PreProcMetaDataCollector(self._genome, trackName)
+    def _allGESourceManagers(self, trackNameList, allowOverlaps):
+        """ ??
+        Generator that return all the GESourceManagers.
+
+        Basically returns one SourceManager that handle overlaps, and one where overlaps are merged
+
+        Parameters
+        ----------
+        trackNameList : list
+            Track name/id in list format.
+        allowOverlaps : bool
+            Whether overlaps are allowed or not.
+        """
+        collector = PreProcMetaDataCollector(self._genome, trackNameList)
+
+        #If there should be no overlaps
         if allowOverlaps == False and collector.overlapRuleHasBeenFinalized(True):
-            for i in range(1):
-                self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackName) + \
-                                (' (allowOverlaps: %s)' % allowOverlaps)
-                yield self._getGESourceManagerFromTrack(trackName)
+            self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackNameList) + \
+                (' (allowOverlaps: %s)' % allowOverlaps)
+            yield self._getGESourceManagerFromTrack(trackNameList)
         else:
-            for geSource in self._allGESources(trackName):
+            for geSource in self._allGESources(trackNameList):
                 if allowOverlaps == True:
                     tf = TrackFormat.createInstanceFromGeSource(geSource)
                     if tf.isDense() or geSource.hasNoOverlappingElements():
                         return
 
-                self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackName) + \
+                self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackNameList) + \
                                 (' (filename: "%s")' % geSource.getFileName() if geSource.hasOrigFile() else '') + \
                                 (' (allowOverlaps: %s)' % allowOverlaps)
-                if PreProcessUtils.shouldPreProcessGESource(trackName, geSource, allowOverlaps):
+                if PreProcessUtils.shouldPreProcessGESource(trackNameList, geSource, allowOverlaps):
                     yield self._getGESourceManagerFromGESource(geSource)
 
     def _allGESources(self, trackName):
@@ -164,7 +178,7 @@ class PreProcessTracksJob(object):
     def _renameTrackNameIfIllegal(self, trackName):
         legalTrackName = [replaceIllegalElementsInTrackNames(x) for x in trackName]
 
-        if legalTrackName != trackName and os.path.exists(createDirPath(trackName, self._genome)):
+        if legalTrackName != trackName and os.path.exists(getDirPath(trackName, self._genome)):
             renameTrack(self._genome, trackName, legalTrackName)
 
         return legalTrackName
@@ -200,6 +214,31 @@ class PreProcessTracksJob(object):
             print os.linesep + '--- END ERROR ---' + os.linesep
 
 class PreProcessAllTracksJob(PreProcessTracksJob):
+    """ ??
+    Handles preprocessing of tracks stored in the location specified by the trackNameFilter
+
+
+    Parameters
+    ----------
+    genome : string
+        Genome id.
+    trackNameFilter : list
+        ?! Track id in list format.
+    username : string
+        ??
+    mergeChrFolders : bool
+        ?! Specifies whether chromosome folders should be merged into one.
+
+    Attributes
+    ----------
+    _trackNameFilter : list
+        Track name in list format.
+
+    _mergeChrFolders : bool
+        ??
+
+    """
+
     def __init__(self, genome, trackNameFilter=[], username='', mergeChrFolders=True, **kwArgs):
         PreProcessTracksJob.__init__(self, genome, username=username, **kwArgs)
         if trackNameFilter == ['']:

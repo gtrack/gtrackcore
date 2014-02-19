@@ -128,14 +128,42 @@ class GESourceManager(object):
         return self._geSource.isSorted()
         
     def getAllChrs(self):
+        """ ?!
+        Get a list of all chromosome names.
+
+        Returns
+        =======
+        list
+            List of all chromosome names.
+        """
         self._calcStatisticsInExtraPass()
         return self._numElements.keys()
     
     def getNumElements(self):
+        """ ?!
+        Get total number of elements in all chromosomes.
+
+        Returns
+        =======
+        int
+            Number of elements.
+        """
         self._calcStatisticsInExtraPass()
         return sum(self._numElements.values())
         
     def getNumElementsForChr(self, chr):
+        """ ?!
+        Get number of elements in chromosome chr
+
+        Paramters
+        =========
+        chr : string
+            The chromosome name.
+        Returns
+        =======
+        int
+            Number of elements in chromosome.
+        """
         self._calcStatisticsInExtraPass()
         return self._numElements[chr]
 
@@ -164,6 +192,9 @@ class GESourceManager(object):
         self._calcStatisticsInExtraPass()
         return self._maxStrLens[chr]
 
+    def getMaxChrStrLen(self):
+        self._calcStatisticsInExtraPass()
+        return max(len(chr) for chr in self._maxStrLens.keys())
 
 class OverlapClusteringGESourceManager(GESourceManager):
     def __init__(self, genome, trackName, origBrTuples):

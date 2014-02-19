@@ -10,7 +10,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CustomExceptions import InvalidFormatError, OutsideBoundingRegionError, \
                                          BoundingRegionsNotAvailableError
 from gtrackcore.util.CompBinManager import CompBinManager
-from gtrackcore.util.CommonFunctions import createDirPath, ensurePathExists
+from gtrackcore.util.CommonFunctions import getDirPath, createPath
 
 BoundingRegionInfo = namedtuple('BoundingRegionInfo', \
                                 ['start', 'end', 'startIdx', 'endIdx', 'startBinIdx', 'endBinIdx'])
@@ -28,7 +28,7 @@ class BoundingRegionShelve(object):
         self._genome = genome
         self._trackName = trackName
         
-        self._fn = createDirPath(trackName, genome, allowOverlaps=allowOverlaps) + os.sep + BR_SHELVE_FILE_NAME
+        self._fn = getDirPath(trackName, genome, allowOverlaps=allowOverlaps) + os.sep + BR_SHELVE_FILE_NAME
         self._contents = {} #None
         self._updatedChrs = set([])
         
@@ -108,7 +108,7 @@ class BoundingRegionShelve(object):
         if len(genomeElementChrs - set(tempContents.keys())) > 0:
             raise InvalidFormatError('Error: some chromosomes (sequences) contains data, but has no bounding regions: %s' % ', '.join(genomeElementChrs - set(tempContents.keys())))
         
-        ensurePathExists(self._fn)
+        createPath(self._fn)
         
         for chr in tempContents:
             brInfoDict = tempContents[chr]

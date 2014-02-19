@@ -10,11 +10,14 @@ from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollec
 from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
+from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
-from gtrackcore.track.memmap.TrackSource import TrackSource
+from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
-from gtrackcore.util.CommonFunctions import createDirPath
+from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
+from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter
 
 class PreProcessUtils(object):
     @staticmethod
@@ -42,25 +45,26 @@ class PreProcessUtils(object):
         #                               geSource.getVersion() == storedInfo.preProcVersion))
         
         return not (validFilesExist and storedAsAccordingToGeSource)
-    
+
     @staticmethod
     def preProcFilesExist(genome, trackName, allowOverlaps):
         collector = PreProcMetaDataCollector(genome, trackName)
-        preProcFilesExist = collector.preProcFilesExist(allowOverlaps)
-        if preProcFilesExist is None:
-            dirPath = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
-            if BoundingRegionShelve(genome, trackName, allowOverlaps).fileExists():
-                preProcFilesExist = True
-                #    any( fn.split('.')[0] in ['start', 'end', 'val', 'edges'] \
-                #         for fn in os.listdir(dirPath) if os.path.isfile(os.path.join(dirPath, fn)) )
+        preproc_files_exist = collector.preProcFilesExist(allowOverlaps)
+        if preproc_files_exist is None:
+            dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+            #dbPath =  getDatabasePath(dirPath, trackName)
+
+            if BoundingRegionHandler(genome, trackName, allowOverlaps).table_exists():
+                preproc_files_exist = True
             else:
                 if os.path.exists(dirPath):
-                    preProcFilesExist = PreProcessUtils._hasOldTypeChromSubDirs(dirPath, genome)
+                    preproc_files_exist = PreProcessUtils._hasOldTypeChromSubDirs(dirPath, genome)
                 else:
-                    preProcFilesExist = False
-            collector.updatePreProcFilesExistFlag(allowOverlaps, preProcFilesExist)
-        return preProcFilesExist
-    
+                    preproc_files_exist = False
+
+            collector.updatePreProcFilesExistFlag(allowOverlaps, preproc_files_exist)
+        return preproc_files_exist
+
     @staticmethod
     def _hasOldTypeChromSubDirs(dirPath, genome):
         for subDir in os.listdir(dirPath):
@@ -93,7 +97,7 @@ class PreProcessUtils(object):
         collector = PreProcMetaDataCollector(genome, trackName)
         if PreProcessUtils.preProcFilesExist(genome, trackName, allowOverlaps) and not \
             collector.hasRemovedPreProcFiles(allowOverlaps):
-                dirPath = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+                dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
                 
                 assert dirPath.startswith(Config.PROCESSED_DATA_PATH), \
                     "Processed data path '%s' does not start with '%s'" % \
@@ -115,7 +119,60 @@ class PreProcessUtils(object):
         if mode == 'Real':
             ti = TrackInfo(genome, trackName)
             ti.resetTimeOfPreProcessing()
-                
+
+    @staticmethod
+    def sort_preprocessed_table(genome, track_name, allow_overlaps):
+        dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
+        assert os.path.exists(dir_path)  # throw error
+
+        db_handler = TrackTableReadWriter(track_name, genome, allow_overlaps)
+        db_handler.open()
+        column_dict = db_handler.get_columns()
+
+        seqid_column = column_dict['seqid'][:]
+
+        if 'start' in column_dict and 'end' in column_dict:
+            start_column = column_dict['start'][:]
+            end_column = column_dict['end'][:]
+            sort_order = numpy.lexsort((end_column, start_column, seqid_column))
+            column_dict['start'][:] = start_column[sort_order]
+            column_dict['end'][:] = end_column[sort_order]
+        elif 'start' in column_dict:
+            start_column = column_dict['start'][:]
+            sort_order = numpy.lexsort((start_column, seqid_column))
+            column_dict['start'][:] = start_column[sort_order]
+        elif 'end' in column_dict:
+            end_column = column_dict['end'][:]
+            sort_order = numpy.lexsort((end_column, seqid_column))
+            column_dict['end'][:] = end_column[sort_order]
+        else:
+            sort_order = numpy.lexsort(seqid_column)
+
+        column_dict['seqid'][:] = seqid_column[sort_order]
+
+        for column_name, column_val in column_dict.iteritems():
+            if column_name not in ['seqid', 'start', 'end']:
+                column_val[:] = column_val[:][sort_order]
+
+        db_handler.close()
+
+    @staticmethod
+    def create_bounding_region_table(genome, track_name, allow_overlaps):
+        collector = PreProcMetaDataCollector(genome, track_name)
+        bounding_region_tuples = collector.getBoundingRegionTuples(allow_overlaps)
+        if not collector.getTrackFormat().reprIsDense():
+            bounding_region_tuples = sorted(bounding_region_tuples)
+        ge_chr_list = collector.getPreProcessedChrs(allow_overlaps)
+
+        br_handler = BoundingRegionHandler(genome, track_name, allow_overlaps)
+        br_handler.store_bounding_regions(bounding_region_tuples, ge_chr_list, not collector.getTrackFormat().reprIsDense())
+
+
+        # Sanity check
+        if br_handler.get_total_element_count() != collector.getNumElements(allow_overlaps):
+            raise ShouldNotOccurError("Error: The total element count for all bounding regions is not equal to the total number of genome elements. %s != %s" % \
+                                      (br_handler.get_total_element_count(), collector.getNumElements(allow_overlaps)) )
+
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):
         collector = PreProcMetaDataCollector(genome, trackName)
@@ -136,7 +193,7 @@ class PreProcessUtils(object):
     def removeChrMemmapFolders(genome, trackName, allowOverlaps):
         chrList = PreProcMetaDataCollector(genome, trackName).getPreProcessedChrs(allowOverlaps)
         for chr in chrList:
-            path = createDirPath(trackName, genome, chr, allowOverlaps)
+            path = getDirPath(trackName, genome, chr, allowOverlaps)
             assert os.path.exists(path), 'Path does not exist: ' + path
             assert os.path.isdir(path), 'Path is not a directory: ' + path
             shutil.rmtree(path)
@@ -152,7 +209,7 @@ class PreProcessUtils(object):
         
         for chr in collector.getPreProcessedChrs(allowOverlaps):
             trackSource = TrackSource()
-            trackData = trackSource.getTrackData(trackName, genome, chr, allowOverlaps)
+            trackData = trackSource.wrap_track_data(trackName, genome, allowOverlaps)
             uniqueIds = numpy.unique(numpy.concatenate((uniqueIds, trackData['id'][:])))
             uniqueEdgeIds = numpy.unique(numpy.concatenate((uniqueEdgeIds, trackData['edges'][:].flatten())))
         
@@ -173,7 +230,7 @@ class PreProcessUtils(object):
         
         for chr in collector.getPreProcessedChrs(allowOverlaps):
             trackSource = TrackSource()
-            trackData = trackSource.getTrackData(trackName, genome, chr, allowOverlaps)
+            trackData = trackSource.wrap_track_data(trackName, genome, allowOverlaps)
             
             ids = trackData['id']
             edges = trackData['edges']

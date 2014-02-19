@@ -1,6 +1,7 @@
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore.preprocess.PreProcessUtils import PreProcessUtils
-from gtrackcore.preprocess.memmap.OutputManager import OutputManager
+from gtrackcore.preprocess.pytables.OutputManager import OutputManager
+
 
 class PreProcessGeSourceJob(object):
     VERSION = '0.95'
@@ -23,16 +24,15 @@ class PreProcessGeSourceJob(object):
         genome = geSource.genome
         
         collector = PreProcMetaDataCollector(genome, self._trackName)
-        
-        collector.updateMetaDataForFinalization(geSource.getFileSuffix(), geSource.getPrefixList(), \
-                                                geSource.getValDataType(), geSource.getValDim(), \
-                                                geSource.getEdgeWeightDataType(), geSource.getEdgeWeightDim(), \
+        collector.updateMetaDataForFinalization(geSource.getFileSuffix(), geSource.getPrefixList(),
+                                                geSource.getValDataType(), geSource.getValDim(),
+                                                geSource.getEdgeWeightDataType(), geSource.getEdgeWeightDim(),
                                                 geSource.hasUndirectedEdges(),
-                                                geSource.getVersion(), PreProcessUtils.constructId(geSource), \
-                                                self._geSourceManager.getNumElements(), \
-                                                self._geSourceManager.getBoundingRegionTuples(), \
-                                                self._geSourceManager.getValCategories(), \
-                                                self._geSourceManager.getEdgeWeightCategories(), \
+                                                geSource.getVersion(), PreProcessUtils.constructId(geSource),
+                                                self._geSourceManager.getNumElements(),
+                                                self._geSourceManager.getBoundingRegionTuples(),
+                                                self._geSourceManager.getValCategories(),
+                                                self._geSourceManager.getEdgeWeightCategories(),
                                                 self._allowOverlaps)
 
         if self._geSourceManager.getNumElements() == 0:

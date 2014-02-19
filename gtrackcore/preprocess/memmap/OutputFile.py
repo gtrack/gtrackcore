@@ -41,7 +41,7 @@ class OutputFile(object):
         if not hasattr(self, '_parseFunc'):
             self._geParseClass = GetExtra(prefix)
             self._setup(prefix, prefix, self._geParseClass.parse, writeNoSlice, None, 'S' + str(maxStrLens.get(prefix)), 1, False)
-        
+
         # If there is one number in the path, it is the data type dimension.
         # Only one value is allowed per element, no extra dimensions are added
         # to the array and the element dimension is None.

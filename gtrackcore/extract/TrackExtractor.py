@@ -10,8 +10,8 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.util.CommonFunctions import getStringFromStrand, parseRegSpec, \
-                                        parseTrackNameSpec, createDirPath, \
-                                        ensurePathExists
+                                        parseTrackNameSpec, getDirPath, \
+                                        createPath
 from gtrackcore.util.CustomExceptions import NotSupportedError, ShouldNotOccurError
 
 class TrackExtractor:
@@ -107,7 +107,7 @@ class TrackExtractor:
         
         #To silently extract correctly if track type is dense
         if allowOverlaps:
-            allowOverlaps = os.path.exists(createDirPath(trackName, genome, allowOverlaps=True))
+            allowOverlaps = os.path.exists(getDirPath(trackName, genome, allowOverlaps=True))
             
         trackGESource = TrackGenomeElementSource(genome, trackName, regionList, globalCoords=globalCoords, \
                                                  allowOverlaps=allowOverlaps, printWarnings=False)
@@ -152,7 +152,7 @@ class TrackExtractor:
     def extractOneTrackManyToRegionFilesInOneZipFile(cls, trackName, regionList, zipFn, fileFormatName=DEFAULT_FILE_FORMAT_NAME, \
                                                      globalCoords=False, asOriginal=False, allowOverlaps=False, \
                                                      ignoreEmpty=True):
-        ensurePathExists(zipFn)
+        createPath(zipFn)
         zipFile = ZipFile(zipFn, 'w')
         for region in regionList:
             fn = os.path.dirname(zipFn) + os.sep + str(region).replace(':','_')

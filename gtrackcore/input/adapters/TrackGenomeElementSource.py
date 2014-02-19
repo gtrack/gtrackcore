@@ -9,7 +9,7 @@ from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollec
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.track.memmap.TrackSource import TrackSource
+from gtrackcore.track.pytables.TrackSource import TrackSource
 
 class TrackGenomeElementSource(GenomeElementSource):
     FILE_FORMAT_NAME = 'Track'
@@ -157,7 +157,7 @@ class TrackGenomeElementSource(GenomeElementSource):
             chr = br.chr
             break
         
-        return TrackSource().getTrackData(self._trackName, self._genome, chr, allowOverlaps=self._allowOverlaps)
+        return TrackSource().wrap_track_data(self._trackName, self._genome, allowOverlaps=self._allowOverlaps)
     
     def _findPrefixList(self, trackData):
         unorderedPrefixList = [p for p in trackData if p not in ['leftIndex', 'rightIndex']]
@@ -242,8 +242,8 @@ class TrackGenomeElementSource(GenomeElementSource):
 
 class FullTrackGenomeElementSource(TrackGenomeElementSource):
     def __init__(self, genome, trackName, allowOverlaps=False, *args, **kwArgs):
-        from gtrackcore.track.BoundingRegionShelve import BoundingRegionShelve
-        boundingRegions = list(BoundingRegionShelve(genome, trackName, allowOverlaps).getAllBoundingRegions())
+        from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
+        boundingRegions = list(BoundingRegionHandler(genome, trackName, allowOverlaps).get_all_bounding_regions())
         TrackGenomeElementSource.__init__(self, genome=genome, trackName=trackName, \
                                           boundingRegions=boundingRegions, globalCoords=True, \
                                           allowOverlaps=allowOverlaps, printWarnings=True)

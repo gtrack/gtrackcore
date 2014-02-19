@@ -3,6 +3,17 @@ import os
 from gtrackcore.util.CommonFunctions import createOrigPath, extractTrackNameFromOrigPath
 
 class OrigTrackNameSource(object):
+    """
+    ??
+    Iterator class
+
+    Parameters
+    ==========
+    genome : string
+        Genome id.
+    trackNameFilter : list
+
+    """
     def __init__(self, genome, trackNameFilter, avoidLiterature=True):
         self._genome = genome
         self._trackNameFilter = trackNameFilter
@@ -23,16 +34,22 @@ class OrigTrackNameSource(object):
                 dirsToRemove.append('Trashcan')
             
             trackName = extractTrackNameFromOrigPath(root)
+            #?? Hvorfor ikke bare bruke trackNameFilter siden ==
+            #print self._trackNameFilter, trackName
+
             #if self._avoidLiterature and trackName == literatureTNBase:
                     #dirsToRemove.append(literatureTN[-1])
 
             for oneDir in dirs:
                 if oneDir[0] in ['.','_','#']:
                     dirsToRemove.append(oneDir)
-
+            # dirsToRemove = ["Trash", "Trashcan", ".folder1"]
+            # dirs = ["folderx", ".folder1", "foldery"]
             for rmDir in dirsToRemove:
                 if rmDir in dirs:
                     dirs.remove(rmDir)
+            # dirsToRemove = ["Trash", "Trashcan", ".folder1"]
+            # dirs = ["folderx", "foldery"]
             
             #if sum(1 for f in files if f[0] not in ['.','_','#']) == 0:
             #    continue

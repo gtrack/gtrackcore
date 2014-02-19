@@ -21,7 +21,7 @@ from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 #from gtrackcore.application.SignatureDevianceLogging import takes,returns
 #from third_party.decorator import decorator
 #
-def ensurePathExists(fn):
+def createPath(fn):
     "Assumes that fn consists of a basepath (folder) and a filename, and ensures that the folder exists."
     path = os.path.split(fn)[0]
     
@@ -305,9 +305,9 @@ def convertTNstrToTNListFormat(tnStr, doUnquoting=False):
 #        return fn(*v, **k)
 #    return wrapped
 #
-def createDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Config.PROCESSED_DATA_PATH):
+def getDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Config.PROCESSED_DATA_PATH):
     """
-    >>> createDirPath(['trackname'],'genome','chr1')
+    >>> getDirPath(['trackname'],'genome','chr1')
     '/100000/noOverlaps/genome/trackname/chr1'
     """
     from gtrackcore.util.CompBinManager import CompBinManager
@@ -391,6 +391,19 @@ def getFileSuffix(fn):
 #    return el[2], tuple(el[3:-1]), el[-1]
 #
 def extractTrackNameFromOrigPath(path):
+    """
+    Convert a absolute trackName path to a trackName list .
+
+    Parameters
+    ==========
+    path : string
+        The absolute path of a track.
+
+    Returns
+    =======
+    list
+        The trackName list that has been extracted from the path.
+    """
     excludeEl = None if os.path.isdir(path) else -1
     path = path[len(Config.ORIG_DATA_PATH):]
     path = path.replace('//','/')
@@ -627,3 +640,7 @@ def replaceIllegalElementsInTrackNames(string):
 #    #    pass #code chunk here..
 #    #except Exception,e:
 #    #    raise ShouldNotOccurError('Repackaged exception.., original was: ' + getClassName(e) + ' - '+str(e) + ' - ' + traceback.format_exc())
+
+def getDatabasePath(dirPath, trackName):
+    DATABASE_FILE_SUFFIX = 'h5'  # put in Config
+    return "%s%s%s.%s" % (dirPath, os.sep, trackName[-1], DATABASE_FILE_SUFFIX)

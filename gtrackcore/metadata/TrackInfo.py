@@ -8,7 +8,7 @@ import gtrackcore.third_party.safeshelve as safeshelve
 
 from gtrackcore.core.Config import Config
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.util.CommonFunctions import strWithStdFormatting, ensurePathExists
+from gtrackcore.util.CommonFunctions import strWithStdFormatting, createPath
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.HtmlCore import HtmlCore
 from gtrackcore.util.TextCore import TextCore
@@ -62,7 +62,7 @@ class TrackInfo(object):
         if genome in ['hg18','NCBI36']:
             genome = 'NCBI36'
         
-        ensurePathExists(cls.SHELVE_FN)
+        createPath(cls.SHELVE_FN)
         trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'c', protocol=cls.PROTOCOL)
         stored = trackInfoShelve.get( constructKey(genome, trackName) )
         trackInfoShelve.close()
