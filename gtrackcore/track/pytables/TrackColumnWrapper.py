@@ -16,10 +16,12 @@ class TrackColumnWrapper(object):
         self._table_reader.close()
 
     def __getitem__(self, val):
+        print type(val)
+
         is_slice = isinstance(val, slice)
         if is_slice:
             start_index = self._start_index if val.start is None else self._start_index + val.start
-            end_index = self._end_index if val.end is None else self._start_index + val.end
+            end_index = self._end_index if val.stop is None else self._start_index + val.stop
 
         self._table_reader.open()
         column = self._table_reader.get_column(self._column_name)
