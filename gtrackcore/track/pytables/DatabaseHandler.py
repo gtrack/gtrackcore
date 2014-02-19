@@ -204,9 +204,10 @@ class TrackTableCreator(TableCreator):
 
     def _create_indices(self):
         self._table.cols.seqid.create_index()
-        self._table.cols.start.create_index()
-        self._table.cols.end.create_index()
-
+        if 'start' in self._table.colinstances:
+            self._table.cols.start.create_index()
+        if 'end' in self._table.colinstances:
+            self._table.cols.end.create_index()
 
 class BoundingRegionTableCreator(TableCreator):
     def __init__(self, track_name, genome, allow_overlaps):
