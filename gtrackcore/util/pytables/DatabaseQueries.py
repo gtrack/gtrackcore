@@ -1,8 +1,4 @@
-from gtrackcore.util.CustomDecorators import timeit
-
-
 class DatabaseQueries(object):
-
     def __init__(self, db_handler):
         self._db_handler = db_handler
 
@@ -27,15 +23,28 @@ class TrackQueries(DatabaseQueries):
     def __init__(self, db_handler):
         super(TrackQueries, self).__init__(db_handler)
 
-    def region_start_and_end_indices(self, genome_region):
+    def _build_start_and_end_indices_query(self, track_format):
+        if track_format.isInterval() and not track_format.isDense():  # has start and end
+            query = '(end > region_start) & (start < region_end)'
+        elif track_format.isInterval():  # has start but not end
+            query = '(start >= region_start) & (start < region_end)'
+        elif not track_format.isDense():  # has end but not start
+            query = '(end >= region_start) & (end < region_end)'
+        else:  # has neither start nor end
+            query = ''
+        return '(seqid == chr)' + query
+
+    def start_and_end_indices(self, genome_region, track_format):
+        query = self._build_start_and_end_indices_query(track_format)
+
         self._db_handler.open()
         table = self._db_handler.table
 
-        region_indices = table.get_where_list('(seqid == chr) & (end > region_start) & (start < region_end)',
-                                              sort=True, condvars={
-                                              'chr': genome_region.chr,
-                                              'region_start': genome_region.start,
-                                              'region_end': genome_region.end
+        region_indices = table.get_where_list(query, sort=True,
+                                              condvars={
+                                                  'chr': genome_region.chr,
+                                                  'region_start': genome_region.start,
+                                                  'region_end': genome_region.end
                                               })
 
         start_index = region_indices[0]

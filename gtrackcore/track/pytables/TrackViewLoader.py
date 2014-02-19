@@ -19,14 +19,16 @@ class TrackViewLoader:
         region : see GenomeRegion
         """
 
-        queries = TrackQueries(TrackTableReader(trackName, region.genome, allowOverlaps))
-        start_index, end_index = queries.region_start_and_end_indices(region)
-
         extra_column_names = [column_name for column_name in trackData if column_name not in RESERVED_PREFIXES.keys()]
         reserved_columns = [trackData[column_name] if column_name in trackData else None
                             for column_name in RESERVED_PREFIXES]
         extra_columns = [trackData[column_name] if column_name in trackData else None
                          for column_name in extra_column_names]
+
+        track_format = TrackFormat(*(reserved_columns + [OrderedDict(zip(extra_column_names, extra_columns))]))
+
+        queries = TrackQueries(TrackTableReader(trackName, region.genome, allowOverlaps))
+        start_index, end_index = queries.start_and_end_indices(region, track_format)
 
         for column in reserved_columns + extra_columns:
             if column is not None:
