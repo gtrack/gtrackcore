@@ -32,14 +32,14 @@ class TrackQueries(DatabaseQueries):
             query = '(end >= region_start) & (end < region_end)'
         else:  # has neither start nor end
             query = ''
-        return '(seqid == chr)' + query
+        return '(seqid == chr) & ' + query
 
     def start_and_end_indices(self, genome_region, track_format):
         query = self._build_start_and_end_indices_query(track_format)
 
         self._db_handler.open()
         table = self._db_handler.table
-
+        
         region_indices = table.get_where_list(query, sort=True,
                                               condvars={
                                                   'chr': genome_region.chr,
