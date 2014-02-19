@@ -26,8 +26,13 @@ class BoundingRegionHandler(object):
         self._minimal_region = minimal_bin_list[0] if minimal_bin_list is not None else None
 
     #TODO: fix
-    def _table_exists(self):
-        return True
+    def table_exists(self):
+        try:
+            self._table_reader.open()
+            self._table_reader.close()
+            return True
+        except:
+            return False
 
     def store_bounding_regions(self, bounding_region_tuples, genome_element_chr_list, sparse):
         assert sparse in [False, True]
@@ -102,7 +107,7 @@ class BoundingRegionHandler(object):
         raise NotImplementedError
 
     def get_all_bounding_regions(self):
-        if not self._table_exists():
+        if not self.table_exists():
             from gtrackcore.util.CommonFunctions import prettyPrintTrackName
             raise BoundingRegionsNotAvailableError('Bounding regions not available for track: ' + \
                                                    prettyPrintTrackName(self._trackName))

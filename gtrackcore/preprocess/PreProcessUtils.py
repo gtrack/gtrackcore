@@ -45,20 +45,26 @@ class PreProcessUtils(object):
         #                               geSource.getVersion() == storedInfo.preProcVersion))
         
         return not (validFilesExist and storedAsAccordingToGeSource)
-    
+
     @staticmethod
     def preProcFilesExist(genome, trackName, allowOverlaps):
         collector = PreProcMetaDataCollector(genome, trackName)
-        preProcFilesExist = collector.preProcFilesExist(allowOverlaps)
-        if preProcFilesExist is None:
+        preproc_files_exist = collector.preProcFilesExist(allowOverlaps)
+        if preproc_files_exist is None:
             dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
-            dbPath =  getDatabasePath(dirPath, trackName)
+            #dbPath =  getDatabasePath(dirPath, trackName)
 
-            preProcFilesExist = os.path.exists(dbPath)
+            if BoundingRegionHandler(genome, trackName, allowOverlaps).table_exists():
+                preproc_files_exist = True
+            else:
+                if os.path.exists(dirPath):
+                    preproc_files_exist = PreProcessUtils._hasOldTypeChromSubDirs(dirPath, genome)
+                else:
+                    preproc_files_exist = False
 
-            collector.updatePreProcFilesExistFlag(allowOverlaps, preProcFilesExist)
-        return preProcFilesExist
-    
+            collector.updatePreProcFilesExistFlag(allowOverlaps, preproc_files_exist)
+        return preproc_files_exist
+
     @staticmethod
     def _hasOldTypeChromSubDirs(dirPath, genome):
         for subDir in os.listdir(dirPath):
