@@ -21,8 +21,9 @@ class DatabaseHandler(object):
         self._table = None
 
     @abstractmethod
-    def open(self, mode='r'):
+    def open(self, mode='r', lock_type=portalocker.LOCK_SH):
         self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
+        portalocker.lock(self._h5_file, lock_type)
 
     def close(self):
         portalocker.unlock(self._h5_file)
@@ -62,8 +63,7 @@ class TableReader(DatabaseHandler):
 
     @abstractmethod
     def open(self):
-        super(TableReader, self).open('r')
-        portalocker.lock(self._h5_file, portalocker.LOCK_SH)
+        super(TableReader, self).open('r', portalocker.LOCK_SH)
 
     @property
     def table(self):
@@ -110,8 +110,7 @@ class TableReadWriter(DatabaseHandler):
 
     @abstractmethod
     def open(self):
-        super(TableReadWriter, self).open('r+')
-        portalocker.lock(self._h5_file, portalocker.LOCK_EX)
+        super(TableReadWriter, self).open('r+', portalocker.LOCK_EX)
 
 
 class TrackTableReadWriter(TableReadWriter):
@@ -152,8 +151,7 @@ class TableCreator(DatabaseHandler):
 
     @abstractmethod
     def open(self):
-        super(TableCreator, self).open('a')
-        portalocker.lock(self._h5_file, portalocker.LOCK_EX)
+        super(TableCreator, self).open('a', portalocker.LOCK_EX)
 
     def get_row(self):
         return self._table.row
