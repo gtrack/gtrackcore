@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
 import tables
-from tables import ClosedFileError
+import os
+from tables import ClosedFileError, is_pytables_file
 from gtrackcore.third_party.portalocker import portalocker
 
 from gtrackcore.util.CustomExceptions import DBNotOpenError
@@ -36,6 +37,20 @@ class DatabaseHandler(object):
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
+    def table_exists(self, table_path):
+        if not os.path.exists(self._h5_filename) or not is_pytables_file(self._h5_filename):
+            return False
+
+        self.open()
+        try:
+            self._h5_file.get_node(table_path)
+            table_exists = True
+        except tables.group.NoSuchNodeError:
+            table_exists = False
+        self.close()
+
+        return table_exists
+
     def _get_track_table_path(self):
         return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])
 
@@ -45,12 +60,12 @@ class DatabaseHandler(object):
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
-    def _get_track_br_path(self):
+    def _get_br_table_path(self):
         return '/%s/%s' % ('/'.join(self._track_name), BOUNDING_REGION_TABLE_NAME)
 
     def _get_br_table(self):
         try:
-            return self._h5_file.get_node(self._get_track_br_path())
+            return self._h5_file.get_node(self._get_br_table_path())
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
@@ -92,6 +107,9 @@ class TrackTableReader(TableReader):
         super(TrackTableReader, self).open()
         self._table = self._get_track_table()
 
+    def table_exists(self):
+        return super(TrackTableReader, self).table_exists(self._get_track_table_path())
+
 
 class BrTableReader(TableReader):
     def __init__(self, track_name, genome, allow_overlaps):
@@ -101,6 +119,8 @@ class BrTableReader(TableReader):
         super(BrTableReader, self).open()
         self._table = self._get_br_table()
 
+    def table_exists(self):
+        return super(BrTableReader, self).table_exists(self._get_br_table_path())
 
 class TableReadWriter(DatabaseHandler):
     __metaclass__ = ABCMeta
@@ -121,6 +141,9 @@ class TrackTableReadWriter(TableReadWriter):
         super(TrackTableReadWriter, self).open()
         self._table = self._get_track_table()
 
+    def table_exists(self):
+        return super(TrackTableReader, self).table_exists(self._get_track_table_path())
+
 
 class BrTableReadWriter(TableReadWriter):
     def __init__(self, track_name, genome, allow_overlaps):
@@ -129,6 +152,9 @@ class BrTableReadWriter(TableReadWriter):
     def open(self):
         super(BrTableReadWriter, self).open()
         self._table = self._get_br_table()
+
+    def table_exists(self):
+        return super(BrTableReadWriter, self).table_exists(self._get_br_table_path())
 
 
 class TableCreator(DatabaseHandler):
@@ -200,6 +226,9 @@ class TrackTableCreator(TableCreator):
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
+    def table_exists(self):
+        return super(TrackTableCreator, self).table_exists(self._get_track_table_path())
+
     def _create_indices(self):
         self._table.cols.seqid.create_index()
         if 'start' in self._table.colinstances:
@@ -218,6 +247,9 @@ class BoundingRegionTableCreator(TableCreator):
 
     def open(self):
         super(BoundingRegionTableCreator, self).open()
+
+    def table_exists(self):
+        return super(BoundingRegionTableCreator, self).table_exists(self._get_br_table_path())
 
     def _create_indices(self):
         self._table.cols.seqid.create_csindex()
