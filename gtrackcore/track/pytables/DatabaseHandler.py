@@ -63,7 +63,7 @@ class TableReader(DatabaseHandler):
 
     @abstractmethod
     def open(self):
-        super(TableReader, self).open('r', portalocker.LOCK_SH)
+        super(TableReader, self).open(mode='r', lock_type=portalocker.LOCK_SH)
 
     @property
     def table(self):
@@ -110,7 +110,7 @@ class TableReadWriter(DatabaseHandler):
 
     @abstractmethod
     def open(self):
-        super(TableReadWriter, self).open('r+', portalocker.LOCK_EX)
+        super(TableReadWriter, self).open(mode='r+', lock_type=portalocker.LOCK_EX)
 
 
 class TrackTableReadWriter(TableReadWriter):
@@ -151,7 +151,7 @@ class TableCreator(DatabaseHandler):
 
     @abstractmethod
     def open(self):
-        super(TableCreator, self).open('a', portalocker.LOCK_EX)
+        super(TableCreator, self).open(mode='a', lock_type=portalocker.LOCK_EX)
 
     def get_row(self):
         return self._table.row
