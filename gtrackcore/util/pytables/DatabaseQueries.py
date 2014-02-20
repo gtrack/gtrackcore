@@ -1,11 +1,18 @@
+from gtrackcore.track.pytables.DatabaseHandler import BrTableReader, TrackTableReader
+from gtrackcore.util.CommonFunctions import prettyPrintTrackName
+from gtrackcore.util.CustomExceptions import OutsideBoundingRegionError, ShouldNotOccurError
+
+
 class DatabaseQueries(object):
     def __init__(self, db_handler):
         self._db_handler = db_handler
 
 
 class BrQueries(DatabaseQueries):
-    def __init__(self, db_handler):
+    def __init__(self, track_name, genome, allow_overlaps):
+        db_handler = BrTableReader(track_name, genome, allow_overlaps)
         super(BrQueries, self).__init__(db_handler)
+        self._track_name = track_name
 
     def total_element_count_for_chr(self, chromosome):
         self._db_handler.open()
@@ -17,39 +24,96 @@ class BrQueries(DatabaseQueries):
 
         return result[0] if len(result) > 0 else 0
 
+    def start_and_end_indices(self, genome_region):
+        bounding_region = self._all_bounding_regions_for_region(genome_region)
+
+        number_of_brs = len(bounding_region)
+
+        assert number_of_brs <= 1
+
+        if number_of_brs is 0:
+            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions "
+                                             "of track: %s" % (genome_region,
+                                                               prettyPrintTrackName(self._track_name)))
+
+        return bounding_region[0]['start_index'], bounding_region[0]['end_index']
+
+    def check_region_within_bounding_region(self, genome_region):
+        bounding_regions = self._all_bounding_regions_for_region(genome_region)
+
+        number_of_brs = len(bounding_regions)
+
+        assert number_of_brs <= 1
+
+        if number_of_brs is 0:
+            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions "
+                                             "of track: %s" % (genome_region,
+                                                               prettyPrintTrackName(self._track_name)))
+        return True
+
+    def _all_bounding_regions_for_region(self, genome_region):
+        query = '(seqid == chr) & (start <= region_start) & (end >= region_end)'
+
+        self._db_handler.open()
+        table = self._db_handler.table
+
+
+        bounding_regions = [{'seqid': row['seqid'],
+                             'start': row['start'],
+                             'end': row['end'],
+                             'start_index': row['start_index'],
+                             'end_index': row['end_index']}
+                            for row in table.where(query,
+                                                   condvars={
+                                                       'chr': genome_region.chr,
+                                                       'region_start': genome_region.start,
+                                                       'region_end': genome_region.end
+                                                   })]
+        self._db_handler.close()
+
+        return bounding_regions
+
 
 class TrackQueries(DatabaseQueries):
 
-    def __init__(self, db_handler):
+    def __init__(self, track_name, genome, allow_overlaps):
+        db_handler = TrackTableReader(track_name, genome, allow_overlaps)
         super(TrackQueries, self).__init__(db_handler)
 
-    def _build_start_and_end_indices_query(self, track_format):
-        if track_format.isInterval() and not track_format.isDense():  # has start and end
-            query = '(end > region_start) & (start < region_end)'
-        elif track_format.isInterval():  # has start but not end
-            query = '(start >= region_start) & (start < region_end)'
-        elif not track_format.isDense():  # has end but not start
-            query = '(end >= region_start) & (end < region_end)'
-        else:  # has neither start nor end
+    @staticmethod
+    def _build_start_and_end_indices_query(track_format):
+        format_name = track_format.getFormatName()
+
+        if format_name in ['Segments', 'Valued segments', 'Linked segments', 'Linked valued segments']:
+            query = '& (end > region_start) & (start < region_end)'
+
+        elif format_name in ['Points', 'Valued points', 'Linked points', 'Linked valued points']:
+            query = '& (start >= region_start) & (start < region_end)'
+
+        elif format_name in ['Genome partition', 'Step function', 'Linked genome partition', 'Linked step function']:
+            query = '& (end >= region_start) & (end < region_end)'
+
+        elif format_name is 'Linked base pairs':
             query = ''
-        return '(seqid == chr) & ' + query
+        else:
+            raise ShouldNotOccurError
+
+        return '(seqid == chr)' + query
 
     def start_and_end_indices(self, genome_region, track_format):
         query = self._build_start_and_end_indices_query(track_format)
 
         self._db_handler.open()
         table = self._db_handler.table
-        
         region_indices = table.get_where_list(query, sort=True,
                                               condvars={
                                                   'chr': genome_region.chr,
                                                   'region_start': genome_region.start,
                                                   'region_end': genome_region.end
                                               })
+        self._db_handler.close()
 
         start_index = region_indices[0]
         end_index = region_indices[-1] + 1
-
-        self._db_handler.close()
 
         return start_index, end_index

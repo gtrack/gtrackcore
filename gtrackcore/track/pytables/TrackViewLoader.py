@@ -5,9 +5,9 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.util.CompBinManager import CompBinManager
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
-from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader, BrTableReader
 from gtrackcore.util.CustomDecorators import print_args
-from gtrackcore.util.pytables.DatabaseQueries import TrackQueries
+from gtrackcore.util.pytables.DatabaseQueries import TrackQueries, BrQueries
 
 
 class TrackViewLoader:
@@ -26,9 +26,8 @@ class TrackViewLoader:
                          for column_name in extra_column_names]
 
         track_format = TrackFormat(*(reserved_columns + [OrderedDict(zip(extra_column_names, extra_columns))]))
-
-        queries = TrackQueries(TrackTableReader(trackName, region.genome, allowOverlaps))
-        start_index, end_index = queries.start_and_end_indices(region, track_format)
+        start_index, end_index = TrackViewLoader._get_start_and_end_indices(
+            region, trackName, allowOverlaps, track_format)
 
         for column in reserved_columns + extra_columns:
             if column is not None:
@@ -39,3 +38,15 @@ class TrackViewLoader:
 
         return TrackView(* arg_list)
 
+    @staticmethod
+    def _get_start_and_end_indices(region, track_name, allow_overlaps, track_format):
+        br_queries = BrQueries(track_name, region.genome, allow_overlaps)
+        if track_format.getFormatName() in ['function', 'linked function']:
+            start_index, end_index = br_queries.start_and_end_indices(region)
+        else:
+            br_queries.check_region_within_bounding_region(region)
+
+            track_queries = TrackQueries(track_name, region.genome, allow_overlaps)
+            start_index, end_index = track_queries.start_and_end_indices(region, track_format)
+
+        return start_index, end_index

@@ -146,7 +146,9 @@ class PreProcessUtils(object):
             sort_order = numpy.lexsort((end_column, seqid_column))
             column_dict['end'][:] = end_column[sort_order]
         else:
-            sort_order = numpy.lexsort(seqid_column)
+            db_handler.close()
+            return
+            #sort_order = numpy.lexsort(seqid_column)
 
         column_dict['seqid'][:] = seqid_column[sort_order]
 
