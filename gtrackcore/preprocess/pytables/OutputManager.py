@@ -1,3 +1,4 @@
+from numpy import ndarray
 import tables
 import os
 
@@ -116,7 +117,7 @@ class OutputManager(object):
         for el in ge_dicts:
             row = self._table_creator.get_row()
             for key in keys:
-                row[key] = el['key']
+                row[key] = el[key]
             row.append()
             self._table_creator.flush()
 
