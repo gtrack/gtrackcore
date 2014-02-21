@@ -129,31 +129,31 @@ class PreProcessUtils(object):
         db_handler.open()
         column_dict = db_handler.get_columns()
 
-        seqid_column = column_dict['seqid'][:]
+        chr_column = column_dict['chr'][:]
 
         if 'start' in column_dict and 'end' in column_dict:
             start_column = column_dict['start'][:]
             end_column = column_dict['end'][:]
-            sort_order = numpy.lexsort((end_column, start_column, seqid_column))
+            sort_order = numpy.lexsort((end_column, start_column, chr_column))
             column_dict['start'][:] = start_column[sort_order]
             column_dict['end'][:] = end_column[sort_order]
         elif 'start' in column_dict:
             start_column = column_dict['start'][:]
-            sort_order = numpy.lexsort((start_column, seqid_column))
+            sort_order = numpy.lexsort((start_column, chr_column))
             column_dict['start'][:] = start_column[sort_order]
         elif 'end' in column_dict:
             end_column = column_dict['end'][:]
-            sort_order = numpy.lexsort((end_column, seqid_column))
+            sort_order = numpy.lexsort((end_column, chr_column))
             column_dict['end'][:] = end_column[sort_order]
         else:
             db_handler.close()
             return
-            #sort_order = numpy.lexsort(seqid_column)
+            #sort_order = numpy.lexsort(chr_column)
 
-        column_dict['seqid'][:] = seqid_column[sort_order]
+        column_dict['chr'][:] = chr_column[sort_order]
 
         for column_name, column_val in column_dict.iteritems():
-            if column_name not in ['seqid', 'start', 'end']:
+            if column_name not in ['chr', 'start', 'end']:
                 column_val[:] = column_val[:][sort_order]
 
         db_handler.close()

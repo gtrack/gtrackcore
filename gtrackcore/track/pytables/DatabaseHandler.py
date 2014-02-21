@@ -230,7 +230,7 @@ class TrackTableCreator(TableCreator):
         return super(TrackTableCreator, self).table_exists(self._get_track_table_path())
 
     def _create_indices(self):
-        self._table.cols.seqid.create_index()
+        self._table.cols.chr.create_index()
         if 'start' in self._table.colinstances:
             self._table.cols.start.create_index()
         if 'end' in self._table.colinstances:
@@ -252,4 +252,4 @@ class BoundingRegionTableCreator(TableCreator):
         return super(BoundingRegionTableCreator, self).table_exists(self._get_br_table_path())
 
     def _create_indices(self):
-        self._table.cols.seqid.create_csindex()
+        self._table.cols.chr.create_csindex()

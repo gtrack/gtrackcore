@@ -31,8 +31,8 @@ class OutputManager(object):
         data_type_dict = {}
         max_num_edges = self._get_max_num_edges_over_all_chromosomes(ge_source_manager)
 
-        max_seqid_len = ge_source_manager.getMaxChrStrLen()
-        data_type_dict['seqid'] = tables.StringCol(max_seqid_len)
+        max_chr_len = ge_source_manager.getMaxChrStrLen()
+        data_type_dict['chr'] = tables.StringCol(max_chr_len)
 
         for column in ge_source_manager.getPrefixList():
             if column in ['start', 'end']:
@@ -94,8 +94,6 @@ class OutputManager(object):
         for column in self._table_description.keys():
             if column in genome_element.__dict__ and column is not 'extra':
                 row[column] = genome_element.__dict__[column]
-            elif column is 'seqid':
-                row['seqid'] = genome_element.__dict__['chr']
             else:  # Get extra column
                 row[column] = genome_element.__dict__['extra'][column]
         row.append()
