@@ -93,4 +93,5 @@ class TrackQueries(DatabaseQueries):
         self._db_handler.close()
 
         # start_index, end_index
-        return region_indices[0], region_indices[-1] + 1 if len(region_indices) > 0 else 0, 0
+        return (region_indices[0], region_indices[-1] + 1) if len(region_indices) > 0 else (0, 0)
+
