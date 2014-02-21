@@ -33,15 +33,15 @@ class TrackViewLoader:
             if column is not None:
                 column.set_offset(start_index, end_index)
 
-        arg_list = [trackName] + [region] + reserved_columns + [borderHandling, allowOverlaps] + \
+        arg_list = [region] + reserved_columns + [borderHandling, allowOverlaps] + \
                    [OrderedDict(zip(extra_column_names, extra_columns))]
 
-        return TrackView(* arg_list)
+        return TrackView(* arg_list, track_name=trackName)
 
     @staticmethod
     def _get_start_and_end_indices(region, track_name, allow_overlaps, track_format):
         br_queries = BrQueries(track_name, region.genome, allow_overlaps)
-        if track_format.getFormatName() in ['function', 'linked function']:
+        if track_format.getFormatName() in ['Function', 'Linked function']:
             start_index, end_index = br_queries.start_and_end_indices(region)
         else:
             track_queries = TrackQueries(track_name, region.genome, allow_overlaps)

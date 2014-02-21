@@ -56,6 +56,8 @@ class OutputManager(object):
                     # Still don't know if this is correct for weights and edges
                     shape = self._get_shape(max_num_edges, data_type_dim)
 
+                data_type = 'S' if data_type.startswith('S') else data_type
+
                 data_type_dict[column] = {
                     'int8': tables.Int8Col(shape=shape),
                     'int32': tables.Int32Col(shape=shape),

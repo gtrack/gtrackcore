@@ -27,8 +27,8 @@ class BrQueries(DatabaseQueries):
     def start_and_end_indices(self, genome_region):
         bounding_region = self._all_bounding_regions_for_region(genome_region)
 
-        return bounding_region[0]['start_index'], bounding_region[0]['end_index']\
-            if len(bounding_region) > 0 else 0, 0
+        return (bounding_region[0]['start_index'], bounding_region[0]['end_index'])\
+            if len(bounding_region) > 0 else (0, 0)
 
     def _all_bounding_regions_for_region(self, genome_region):
         query = '(chr == region_chr) & (start <= region_start) & (end >= region_end)'

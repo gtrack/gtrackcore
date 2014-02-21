@@ -5,21 +5,21 @@ import gtrackcore.util.CompBinManager
 from gtrackcore.test.common.Asserts import TestCaseWithImprovedAsserts, AssertList
 from gtrackcore.test.track.common.SampleTrackView import getRandValList, getRandStrandList, getRandGraphLists
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
-from gtrackcore.track.memmap.TrackSource import TrackData
+from gtrackcore.track.pytables.TrackSource import TrackData
 
 class TestTrackViewLoader(TestCaseWithImprovedAsserts):
     def setUp(self):
         self.prevCompBinSize = gtrackcore.util.CompBinManager.COMP_BIN_SIZE
         gtrackcore.util.CompBinManager.COMP_BIN_SIZE = 100
 
-        from gtrackcore.track.memmap.TrackViewLoader import TrackViewLoader 
+        from gtrackcore.track.pytables.TrackViewLoader import TrackViewLoader
         self.trackViewLoader = TrackViewLoader()
 
     def tearDown(self):
         gtrackcore.util.CompBinManager.COMP_BIN_SIZE = self.prevCompBinSize
 
     def _assertTrackViewLoading_Numbers(self, trackData, start, end):
-        trackView = self.trackViewLoader.loadTrackView(trackData, GenomeRegion(genome='TestGenome', start=start, end=end), 'crop', False)
+        trackView = self.trackViewLoader.loadTrackView(trackData, GenomeRegion(genome='TestGenome', start=start, end=end), 'crop', False, 'dummy_track_name')
         self.assertListsOrDicts(trackData['val'][start:end], [el.val() for el in trackView])
         self.assertListsOrDicts(trackData['strand'][start:end], [el.strand() for el in trackView])
         self.assertListsOrDicts(trackData['id'][start:end], [el.id() for el in trackView])
@@ -58,7 +58,7 @@ class TestTrackViewLoader(TestCaseWithImprovedAsserts):
         self._assertTrackViewLoading_Numbers(trackData, 700, 880)
         
     def _assertTrackViewLoading_Segments(self, trackData, indexList, start, end):
-        trackView = self.trackViewLoader.loadTrackView(trackData, GenomeRegion(genome='TestGenome', start=start, end=end),'crop',False)
+        trackView = self.trackViewLoader.loadTrackView(trackData, GenomeRegion(genome='TestGenome', start=start, end=end),'crop',False, 'dummy_track_name')
         i = -1
         for i,el in enumerate(trackView):
             if i < len(indexList):

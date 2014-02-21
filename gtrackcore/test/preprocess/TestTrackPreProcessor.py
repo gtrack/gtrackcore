@@ -180,35 +180,35 @@ class TestGESourceTracksPreprocessing(TestTrackPreProcessor):
 
     def testPreProcessBed(self):
         self._preProcess(['BedGenomeElementSource'], \
-        noOverlapsFileCount=14, \
-        withOverlapsFileCount=14, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':242, 'chrM':11}, \
         withOverlapsChrElCount={'chr21':828, 'chrM':11})
     
     def testPreProcessBedPoint(self):
         self._preProcess(['PointBedGenomeElementSource'], \
-        noOverlapsFileCount=7, \
-        withOverlapsFileCount=7, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':139, 'chrM':8}, \
         withOverlapsChrElCount={'chr21':139, 'chrM':8})
     
     def testPreProcessBedCategory(self):
         self._preProcess(['BedCategoryGenomeElementSource'], \
-        noOverlapsFileCount=6, \
-        withOverlapsFileCount=6, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':38, 'chrM':0}, \
         withOverlapsChrElCount={'chr21':87, 'chrM':0})
         
     def testPreProcessBedValued(self):
         self._preProcess(['BedValuedGenomeElementSource'], \
-        noOverlapsFileCount=8, \
-        withOverlapsFileCount=8, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':38, 'chrM':0}, \
         withOverlapsChrElCount={'chr21':87, 'chrM':0})
         
     def testPreProcessFasta(self):
         self._preProcess(['FastaGenomeElementSource'], \
-        noOverlapsFileCount=2, \
+        noOverlapsFileCount=1, \
         withOverlapsFileCount=None, \
         noOverlapsChrElCount={'chr21':9804, 'chrM':0}, \
         withOverlapsChrElCount=None, \
@@ -216,35 +216,35 @@ class TestGESourceTracksPreprocessing(TestTrackPreProcessor):
         
     def testPreProcessGff(self):
         self._preProcess(['GffGenomeElementSource'], \
-        noOverlapsFileCount=12, \
-        withOverlapsFileCount=12, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':3076, 'chrM':0}, \
         withOverlapsChrElCount={'chr21':5260, 'chrM':0})
         
     def testPreProcessMicroarray(self):
         self._preProcess(['MicroarrayGenomeElementSource'], \
-        noOverlapsFileCount=7, \
-        withOverlapsFileCount=7, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':2, 'chrM':0}, \
         withOverlapsChrElCount={'chr21':2, 'chrM':0})
         
     def testPreProcessBedGraph(self):
         self._preProcess(['BedGraphGenomeElementSource'], \
-        noOverlapsFileCount=6, \
-        withOverlapsFileCount=6, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':10000, 'chrM':0}, \
         withOverlapsChrElCount={'chr21':10000, 'chrM':0})
         
     def testPreProcessBedGraphTargetControl(self):
         self._preProcess(['BedGraphTargetControlGenomeElementSource'], \
-        noOverlapsFileCount=6, \
-        withOverlapsFileCount=6, \
+        noOverlapsFileCount=1, \
+        withOverlapsFileCount=1, \
         noOverlapsChrElCount={'chr21':2, 'chrM':1}, \
         withOverlapsChrElCount={'chr21':2, 'chrM':1})
         
     def testPreProcessHBFunction(self):
         self._preProcess(['HBFunctionGenomeElementSource'], \
-        noOverlapsFileCount=2, \
+        noOverlapsFileCount=1, \
         withOverlapsFileCount=None, \
         noOverlapsChrElCount=None, \
         withOverlapsChrElCount=None)

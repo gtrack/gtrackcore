@@ -9,11 +9,12 @@ from gtrackcore.core.LogSetup import logMessageOnce
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
-from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader, BrTableReader
 from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
 from gtrackcore.util.CommonFunctions import getClassName
 from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
+from gtrackcore.util.pytables.DatabaseQueries import BrQueries
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
 
@@ -197,8 +198,8 @@ class TrackView(object):
         if not self.trackFormat.isDense() and not self.trackFormat.isInterval():
             self._endList = VirtualPointEnd(self._startList)
     
-    def __init__(self, track_name, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
-                 weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict()):
+    def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
+                 weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict(), track_name=None):
         assert startList!=None or endList!=None or valList!=None or edgesList!=None
         assert borderHandling in ['crop']
 
@@ -210,7 +211,7 @@ class TrackView(object):
         
         self._trackElement = TrackElement(self)
         self._pytables_track_element = PytablesTrackElement(self, track_name, genomeAnchor.genome, allowOverlaps)  # For iterating pytables track table
-        self._db_handler = TrackTableReader(track_name, genomeAnchor.genome, allowOverlaps)
+
         #self._bpLevelArray = None
 
         self._startList = startList
@@ -223,7 +224,10 @@ class TrackView(object):
         self._extraLists = copy(extraLists)
         
         self._handlePointsAndPartitions()
-        
+
+        if self._should_use_pytables():
+            self._db_handler = TrackTableReader(track_name, genomeAnchor.genome, allowOverlaps)
+
         if self._startList is None:
             self._trackElement.start = noneFunc
             self._pytables_track_element.start = noneFunc
@@ -254,18 +258,22 @@ class TrackView(object):
 
     # TODO: make sure pytables is used
     def _should_use_pytables(self):
-        return isinstance(self._startList, TrackColumnWrapper)
+        return any(l is not None and isinstance(l, TrackColumnWrapper)
+                   for l in [self._startList, self._endList, self._valList, self._edgesList])
 
     def _generate_pytables_elements(self):
+        br_queries = BrQueries(self._track_name, self.genomeAnchor.genome, self.allowOverlaps)
+        start_index, end_index = br_queries.start_and_end_indices(self.genomeAnchor)
+
         self._db_handler.open()
         track_table = self._db_handler.table
 
-        rows = track_table.iterrows(start=self.genomeAnchor.start, stop=self.genomeAnchor.end)
+        rows = track_table.iterrows(start=start_index, stop=end_index)
 
         for row in rows:
             #  Remove blind passengers
             if self.allowOverlaps and not self.trackFormat.reprIsDense():
-                if row['end'] <= self.genomeAnchor.start:
+                if 'end' in row and row['end'] <= self.genomeAnchor.start:
                     continue
             self._pytables_track_element._row = row
             yield self._pytables_track_element
