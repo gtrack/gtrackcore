@@ -44,8 +44,6 @@ class TrackViewLoader:
         if track_format.getFormatName() in ['function', 'linked function']:
             start_index, end_index = br_queries.start_and_end_indices(region)
         else:
-            br_queries.check_region_within_bounding_region(region)
-
             track_queries = TrackQueries(track_name, region.genome, allow_overlaps)
             start_index, end_index = track_queries.start_and_end_indices(region, track_format)
 

@@ -1,6 +1,5 @@
 from gtrackcore.track.pytables.DatabaseHandler import BrTableReader, TrackTableReader
-from gtrackcore.util.CommonFunctions import prettyPrintTrackName
-from gtrackcore.util.CustomExceptions import OutsideBoundingRegionError, ShouldNotOccurError
+from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
 
 class DatabaseQueries(object):
@@ -28,36 +27,14 @@ class BrQueries(DatabaseQueries):
     def start_and_end_indices(self, genome_region):
         bounding_region = self._all_bounding_regions_for_region(genome_region)
 
-        number_of_brs = len(bounding_region)
-
-        assert number_of_brs <= 1
-
-        if number_of_brs is 0:
-            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions "
-                                             "of track: %s" % (genome_region,
-                                                               prettyPrintTrackName(self._track_name)))
-
-        return bounding_region[0]['start_index'], bounding_region[0]['end_index']
-
-    def check_region_within_bounding_region(self, genome_region):
-        bounding_regions = self._all_bounding_regions_for_region(genome_region)
-
-        number_of_brs = len(bounding_regions)
-
-        assert number_of_brs <= 1
-
-        if number_of_brs is 0:
-            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions "
-                                             "of track: %s" % (genome_region,
-                                                               prettyPrintTrackName(self._track_name)))
-        return True
+        return bounding_region[0]['start_index'], bounding_region[0]['end_index']\
+            if len(bounding_region) > 0 else 0, 0
 
     def _all_bounding_regions_for_region(self, genome_region):
         query = '(chr == region_chr) & (start <= region_start) & (end >= region_end)'
 
         self._db_handler.open()
         table = self._db_handler.table
-
 
         bounding_regions = [{'chr': row['chr'],
                              'start': row['start'],
@@ -70,6 +47,7 @@ class BrQueries(DatabaseQueries):
                                                        'region_start': genome_region.start,
                                                        'region_end': genome_region.end
                                                    })]
+
         self._db_handler.close()
 
         return bounding_regions
@@ -114,7 +92,5 @@ class TrackQueries(DatabaseQueries):
                                               })
         self._db_handler.close()
 
-        start_index = region_indices[0]
-        end_index = region_indices[-1] + 1
-
-        return start_index, end_index
+        # start_index, end_index
+        return region_indices[0], region_indices[-1] + 1 if len(region_indices) > 0 else 0, 0
