@@ -40,7 +40,7 @@ class BoundingRegionHandler(object):
 
         row = db_creator.get_row()
         for br in temp_bounding_regions:
-            row['seqid'] = br[0]
+            row['chr'] = br[0]
             row['start'] = br[1]
             row['end'] = br[2]
             row['start_index'] = br[3]
@@ -88,7 +88,7 @@ class BoundingRegionHandler(object):
 
     def _create_table_description(self):
         return {
-                'seqid': tables.StringCol(self._max_len_seqid(), pos=0),
+                'chr': tables.StringCol(self._max_len_chr(), pos=0),
                 'start': tables.Int32Col(pos=1),
                 'end': tables.Int32Col(pos=2),
                 'start_index': tables.Int32Col(pos=3),
@@ -97,7 +97,7 @@ class BoundingRegionHandler(object):
                }
 
     # TODO: find max len
-    def _max_len_seqid(self):
+    def _max_len_chr(self):
         return 100
 
     def _update_contents_if_necessary(self, chr):

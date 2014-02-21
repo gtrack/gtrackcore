@@ -18,7 +18,8 @@ class BrQueries(DatabaseQueries):
         self._db_handler.open()
         table = self._db_handler.table
 
-        result = [row['element_count'] for row in table.where('(seqid == chr)', condvars={'chr': chromosome})]
+        result = [row['element_count'] for row in table.where('(chr == region_chr)',
+                                                              condvars={'region_chr': chromosome})]
 
         self._db_handler.close()
 
@@ -52,20 +53,20 @@ class BrQueries(DatabaseQueries):
         return True
 
     def _all_bounding_regions_for_region(self, genome_region):
-        query = '(seqid == chr) & (start <= region_start) & (end >= region_end)'
+        query = '(chr == region_chr) & (start <= region_start) & (end >= region_end)'
 
         self._db_handler.open()
         table = self._db_handler.table
 
 
-        bounding_regions = [{'seqid': row['seqid'],
+        bounding_regions = [{'chr': row['chr'],
                              'start': row['start'],
                              'end': row['end'],
                              'start_index': row['start_index'],
                              'end_index': row['end_index']}
                             for row in table.where(query,
                                                    condvars={
-                                                       'chr': genome_region.chr,
+                                                       'region_chr': genome_region.chr,
                                                        'region_start': genome_region.start,
                                                        'region_end': genome_region.end
                                                    })]
@@ -98,7 +99,7 @@ class TrackQueries(DatabaseQueries):
         else:
             raise ShouldNotOccurError
 
-        return '(seqid == chr)' + query
+        return '(chr == region_chr)' + query
 
     def start_and_end_indices(self, genome_region, track_format):
         query = self._build_start_and_end_indices_query(track_format)
@@ -107,7 +108,7 @@ class TrackQueries(DatabaseQueries):
         table = self._db_handler.table
         region_indices = table.get_where_list(query, sort=True,
                                               condvars={
-                                                  'chr': genome_region.chr,
+                                                  'region_chr': genome_region.chr,
                                                   'region_start': genome_region.start,
                                                   'region_end': genome_region.end
                                               })
