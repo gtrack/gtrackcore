@@ -47,8 +47,7 @@ class OutputManager(object):
             elif column in ['val', 'weights']:
                 if column is 'val':
                     data_type = ge_source_manager.getValDataType()
-                    data_type_dim = ge_source_manager.getValDim()
-                    shape = self._get_shape(max_num_edges, data_type_dim)[1:]  # Now shape is correct for val
+                    shape = ge_source_manager.getValDim()
                 elif column is 'weights':
                     data_type = ge_source_manager.getEdgeWeigthDataType()
                     data_type_dim = ge_source_manager.getEdgeWeigthDim()
