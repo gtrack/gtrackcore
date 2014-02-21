@@ -48,7 +48,8 @@ class OutputManager(object):
             elif column in ['val', 'weights']:
                 if column is 'val':
                     data_type = ge_source_manager.getValDataType()
-                    shape = ge_source_manager.getValDim()
+                    val_dim = ge_source_manager.getValDim()
+                    shape = val_dim if val_dim > 1 else tuple()
                 elif column is 'weights':
                     data_type = ge_source_manager.getEdgeWeigthDataType()
                     data_type_dim = ge_source_manager.getEdgeWeigthDim()
@@ -60,8 +61,6 @@ class OutputManager(object):
                     'int32': tables.Int32Col(shape=shape),
                     'float32': tables.Float32Col(shape=shape),
                     'float64': tables.Float64Col(shape=shape),
-                    # Is it correct with max of 2 and X here? ref: TrackFormat.py (line: 38)
-                    # Would single char values work?
                     'S': tables.StringCol(max(2, max_string_lengths[column]), shape=shape)
                 }.get(data_type, tables.Float64Col(shape=shape))  # Defaults to Float64Col
             else:
@@ -71,8 +70,8 @@ class OutputManager(object):
 
     @staticmethod
     def _get_shape(max_num_edges, data_type_dim):
-        return tuple(([max(1, max_num_edges)] if max_num_edges is not None else []) +
-                    ([data_type_dim] if data_type_dim > 1 else []))
+        return tuple(([max(1, max_num_edges)] if max_num_edges is not None else [])
+                     + ([data_type_dim] if data_type_dim > 1 else []))
 
     @staticmethod
     def _get_max_str_lens_over_all_chromosomes(ge_source_manager):
