@@ -1,3 +1,4 @@
+from numpy import ndarray
 import tables
 import os
 
@@ -98,13 +99,34 @@ class OutputManager(object):
         row.append()
         self._table_creator.flush()
 
-    def writeElement(self, genomeElement):
-        self._add_element_as_row(genomeElement)
+    def _add_slice_element_as_rows(self, genome_element):
 
-    def writeRawSlice(self, genomeElement):
+        slice_dict = {key: val for key, val in genome_element.__dict__.iteritems()
+                      if ((isinstance(val, ndarray) and val.any()) or val)
+                      and key not in ['extra', 'orderedExtraKeys', 'genome']}
+
+
+        slice_dict.update(genome_element.__dict__['extra'])
+        keys = slice_dict.keys()
+
+        assert self._table_description.keys() == keys
+
+        ge_dicts = [dict(zip(keys, vals)) for vals in zip(*(slice_dict[k] for k in keys))]
+
+        for el in ge_dicts:
+            row = self._table_creator.get_row()
+            for key in keys:
+                row[key] = el[key]
+            row.append()
+            self._table_creator.flush()
+
+    def writeElement(self, genome_element):
+        self._add_element_as_row(genome_element)
+
+    def writeRawSlice(self, genome_element):
         """What's the purpose of this?"""
-        pass
-        #self._outputDir.writeRawSlice(genomeElement)
+        self._add_slice_element_as_rows(genome_element)
+
 
     def close(self):
         self._table_creator.close()
