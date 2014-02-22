@@ -106,7 +106,6 @@ class OutputManager(object):
                       if ((isinstance(val, ndarray) and val.any()) or val)
                       and key not in ['extra', 'orderedExtraKeys', 'genome']}
 
-
         slice_dict.update(genome_element.__dict__['extra'])
         keys = slice_dict.keys()
 

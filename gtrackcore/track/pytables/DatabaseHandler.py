@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 import tables
 import os
 from tables import ClosedFileError, is_pytables_file
+from tables.exceptions import NodeError
 from gtrackcore.third_party.portalocker import portalocker
 
 from gtrackcore.util.CustomExceptions import DBNotOpenError
@@ -172,6 +173,8 @@ class TableCreator(DatabaseHandler):
                                                         expectedrows=expectedrows)
         except ClosedFileError, e:
             raise DBNotOpenError(e)
+        except NodeError:
+            return None
 
         return table
 
@@ -210,7 +213,12 @@ class TrackTableCreator(TableCreator):
     def create_table(self, table_description, expectedrows):
         self._table = super(TrackTableCreator, self).create_table(
             table_description, expectedrows, self._track_name[-1])
-        self._create_indices()
+
+        #Get commenced table
+        if self._table is None:
+            self._table = self._get_track_table()
+        else:
+            self._create_indices()
 
     def open(self):
         super(TrackTableCreator, self).open()
@@ -243,7 +251,11 @@ class BoundingRegionTableCreator(TableCreator):
     def create_table(self, table_description, expectedrows):
         self._table = super(BoundingRegionTableCreator, self).create_table(
             table_description, expectedrows, BOUNDING_REGION_TABLE_NAME)
-        self._create_indices()
+
+        if self._table is None:
+            self._table = self._get_br_table()
+        else:
+            self._create_indices()
 
     def open(self):
         super(BoundingRegionTableCreator, self).open()
