@@ -22,7 +22,7 @@ class BrQueries(DatabaseQueries):
 
         self._db_handler.close()
 
-        return result[0] if len(result) > 0 else 0
+        return sum(result) if len(result) > 0 else 0
 
     def start_and_end_indices(self, genome_region):
         bounding_region = self._all_bounding_regions_for_region(genome_region)
@@ -70,7 +70,7 @@ class TrackQueries(DatabaseQueries):
             query = '& (start >= region_start) & (start < region_end)'
 
         elif format_name in ['Genome partition', 'Step function', 'Linked genome partition', 'Linked step function']:
-            query = '& (end >= region_start) & (end < region_end)'
+            query = '& (end >= region_start) & (end <= region_end)'
 
         elif format_name is 'Linked base pairs':
             query = ''
