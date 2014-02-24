@@ -29,7 +29,7 @@ class TrackElement(object):
         
     def start(self):
         candidate = self._trackView._startList[self._index] - self._trackView.genomeAnchor.start
-        return candidate if candidate>0 else 0
+        return candidate if candidate > 0 else 0
 
     def end(self):
         rawEnd = self._trackView._endList[self._index]
@@ -75,6 +75,7 @@ class PytablesTrackElement(object):
         # Weak proxy is used to remove memory leak caused by circular reference when TrackView is deleted
         self._trackView = weakref.proxy(trackView)
         self._row = None
+        self._prev_row = None
 
     def start(self):
         return self._row['start']
@@ -108,13 +109,20 @@ class PytablesTrackElement(object):
         else:
             raise AttributeError
 
-    def none(self):
-        return None
-
     def __len__(self):
         length = self.end() - self.start()
         assert(length >= 0)
         return length
+
+    def none(self):
+        return None
+
+    def points_end_func(self):
+        return self._row['start'] + 1
+
+    def partition_start_func(self):
+        return self._prev_row['end']
+
 
 class AutonomousTrackElement(TrackElement):
     def __init__(self, start = None, end = None, val = None, strand = None, id = None, edges = None, weights = None, trackEl=None, **kwArgs):
@@ -178,13 +186,14 @@ class AutonomousTrackElement(TrackElement):
     
 class TrackView(object):
 
-    def _handlePointsAndPartitions(self):
-        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
+    def _handlePointsAndPartitionsForSlicing(self):
+        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():  # partition?
             self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
             if self._valList != None:
                 self._valList = self._valList[1:]
             if self._strandList != None:
+
                 self._strandList = self._strandList[1:]
             if self._idList != None:
                 self._idList = self._idList[1:]
@@ -195,9 +204,16 @@ class TrackView(object):
             for key, extraList in self._extraLists.items():
                 if extraList != None:
                     self._extraLists[key] = extraList[1:]
-        if not self.trackFormat.isDense() and not self.trackFormat.isInterval():
+        if not self.trackFormat.isDense() and not self.trackFormat.isInterval():  # point?
             self._endList = VirtualPointEnd(self._startList)
-    
+
+    def _handlePointsAndPartitionsForIteration(self):
+        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():  # partition?
+            self._pytables_track_element.start = self._pytables_track_element.partition_start_func
+
+        if not self.trackFormat.isDense() and not self.trackFormat.isInterval():  # point?
+            self._pytables_track_element.end = self._pytables_track_element.points_end_func
+
     def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
                  weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict(), track_name=None):
         assert startList!=None or endList!=None or valList!=None or edgesList!=None
@@ -222,8 +238,8 @@ class TrackView(object):
         self._edgesList = edgesList
         self._weightsList = weightsList
         self._extraLists = copy(extraLists)
-        
-        self._handlePointsAndPartitions()
+
+        self._handlePointsAndPartitionsForSlicing()
 
         if self._should_use_pytables():
             self._db_handler = TrackTableReader(track_name, genomeAnchor.genome, allowOverlaps)
@@ -249,9 +265,11 @@ class TrackView(object):
         if self._weightsList is None:
             self._trackElement.weights = noneFunc
             self._pytables_track_element.weights = noneFunc
-        
+
+        self._handlePointsAndPartitionsForIteration()
+
         self._updateNumListElements()
-            
+
         for i, list in enumerate([self._startList, self._endList, self._valList, self._strandList, self._idList, self._edgesList, self._weightsList] \
             + [extraList for extraList in self._extraLists.values()]):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
@@ -270,11 +288,15 @@ class TrackView(object):
 
         rows = track_table.iterrows(start=start_index, stop=end_index)
 
+        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
+            self._pytables_track_element._row = rows.next()
+
         for row in rows:
             #  Remove blind passengers
             if self.allowOverlaps and not self.trackFormat.reprIsDense():
                 if 'end' in row and row['end'] <= self.genomeAnchor.start:
                     continue
+            self._pytables_track_element._prev_row = self._pytables_track_element._row
             self._pytables_track_element._row = row
             yield self._pytables_track_element
 
@@ -306,16 +328,13 @@ class TrackView(object):
     def _computeNumIterElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:
-                if isinstance(list, TrackColumnWrapper):
-                    return len(list)
-                elif isinstance(list, numpy.ndarray):
+                if isinstance(list, numpy.ndarray):
                     return len(self._removeBlindPassengersFromNumpyArray(list))
                 else:
                     return sum(1 for x in self)
         raise ShouldNotOccurError
             
     def __len__(self):
-        ""
         return self._bpSize()
     
     def getNumElements(self):

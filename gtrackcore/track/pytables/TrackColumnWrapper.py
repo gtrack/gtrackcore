@@ -40,6 +40,13 @@ class TrackColumnWrapper(object):
             yield row[self._column_name]
         self._table_reader.close()
 
+    def __add__(self, other):
+        self._table_reader.open()
+        column = self._table_reader.get_column(self._column_name)
+        cache = column[:] + other
+        self._table_reader.close()
+        return cache
+
     def set_offset(self, start, end):
         self._start_index = start
         self._end_index = end
