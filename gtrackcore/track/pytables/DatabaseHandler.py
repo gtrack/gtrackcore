@@ -8,6 +8,7 @@ from gtrackcore.third_party.portalocker import portalocker
 
 from gtrackcore.util.CustomExceptions import DBNotOpenError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
+from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
 
 BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
 
@@ -181,6 +182,17 @@ class TableCreator(DatabaseHandler):
     @abstractmethod
     def open(self):
         super(TableCreator, self).open(mode='a', lock_type=portalocker.LOCK_EX)
+        self._flush_counter = 0
+
+    def flush(self, table):
+        self._flush_counter += 1
+
+        if self._flush_counter == FLUSH_LIMIT:
+            try:
+                table.flush()
+                self._flush_counter = 0
+            except ClosedFileError, e:
+                raise DBNotOpenError(e)
 
     def get_row(self):
         return self._table.row
@@ -194,6 +206,10 @@ class TableCreator(DatabaseHandler):
                 group = self._h5_file.create_group(group, track_name_part, track_name_part)
 
         return group
+
+    def remove_table(self, table_name):
+        group = self._get_track_group()
+        self._h5_file.remove_node(group, table_name)
 
     def _get_track_group(self):
         try:
@@ -223,19 +239,11 @@ class TrackTableCreator(TableCreator):
     def open(self):
         super(TrackTableCreator, self).open()
 
-    def flush(self):
-        self._flush_counter += 1
-
-        from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
-        try:
-            if self._flush_counter == FLUSH_LIMIT:
-                self._table.flush()
-                self._flush_counter = 0
-        except ClosedFileError, e:
-            raise DBNotOpenError(e)
-
     def table_exists(self):
         return super(TrackTableCreator, self).table_exists(self._get_track_table_path())
+
+    def flush(self):
+        super(TrackTableCreator, self).flush(self._table)
 
     def _create_indices(self):
         self._table.cols.chr.create_index()
@@ -243,6 +251,48 @@ class TrackTableCreator(TableCreator):
             self._table.cols.start.create_index()
         if 'end' in self._table.colinstances:
             self._table.cols.end.create_index()
+
+class TrackTableCopier(TableCreator):
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(TrackTableCopier, self).__init__(track_name, genome, allow_overlaps)
+        self._old_table = None
+
+    def open(self):
+        super(TrackTableCopier, self).open()
+        self._old_table = self._get_track_table()
+
+    def create_table(self, table_description, expectedrows):
+        self._old_table.rename(self._old_table.name + '_tmp')
+
+        self._table = super(TrackTableCreator, self).create_table(
+            table_description, expectedrows + self._old_table.nrow, self._track_name[-1])
+
+        self.remove_table(self._old_table.name)
+        self._old_table = None
+
+    def _copy_content_from_old_to_new_table(self):
+        new_row = self._table.row
+        for old_row in self._old_table.iterrows():
+            for column_name in self.get_column_names():
+                if isinstance(old_row[column_name], numpy.ndarray):
+                    new_row[column_name] = old_row[column_name].reshape(new_row[column_name].shape)
+                else:
+                    new_row[column_name] = old_row[column_name]
+            new_row.append()
+            self.flush()
+
+
+class TrackTableSorter(TableCreator):
+    def __init__(self, track_name, genome, allow_overlaps):
+        super(TrackTableSorter, self).__init__(track_name, genome, allow_overlaps)
+
+    def open(self):
+        super(TrackTableSorter, self).open()
+        self._table = self._get_track_table()
+
+    def flush(self, table):
+        super(TrackTableSorter, self).flush(table)
+
 
 class BoundingRegionTableCreator(TableCreator):
     def __init__(self, track_name, genome, allow_overlaps):

@@ -17,7 +17,8 @@ from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.util.CommonFunctions import getDirPath
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
-from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter, TrackTableCreator, TrackTableSorter
+
 
 class PreProcessUtils(object):
     @staticmethod
@@ -125,7 +126,7 @@ class PreProcessUtils(object):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         assert os.path.exists(dir_path)  # throw error
 
-        db_handler = TrackTableReadWriter(track_name, genome, allow_overlaps)
+        db_handler = TrackTableSorter(track_name, genome, allow_overlaps)
         db_handler.open()
         column_dict = db_handler.get_columns()
 
@@ -135,27 +136,34 @@ class PreProcessUtils(object):
             start_column = column_dict['start'][:]
             end_column = column_dict['end'][:]
             sort_order = numpy.lexsort((end_column, start_column, chr_column))
-            column_dict['start'][:] = start_column[sort_order]
-            column_dict['end'][:] = end_column[sort_order]
         elif 'start' in column_dict:
             start_column = column_dict['start'][:]
             sort_order = numpy.lexsort((start_column, chr_column))
-            column_dict['start'][:] = start_column[sort_order]
         elif 'end' in column_dict:
             end_column = column_dict['end'][:]
             sort_order = numpy.lexsort((end_column, chr_column))
-            column_dict['end'][:] = end_column[sort_order]
         else:
             db_handler.close()
             return
-            #sort_order = numpy.lexsort(chr_column)
 
-        column_dict['chr'][:] = chr_column[sort_order]
+        old_table = db_handler.table
 
-        for column_name, column_val in column_dict.iteritems():
-            if column_name not in ['chr', 'start', 'end']:
-                column_val[:] = column_val[:][sort_order]
+        table_description = old_table.description
+        table_nrows = old_table.nrows
+        table_name = old_table.name
 
+        old_table.rename(table_name + "_tmp")
+
+        new_table = db_handler.create_table(table_description, table_nrows, table_name)
+
+        new_row = new_table.row
+        for old_row in old_table.itersequence(sort_order):
+            for col in column_dict:
+                new_row[col] = old_row[col]
+            new_row.append()
+            db_handler.flush(new_table)
+
+        db_handler.remove_table(old_table.name)
         db_handler.close()
 
     @staticmethod
