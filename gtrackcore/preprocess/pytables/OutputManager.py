@@ -89,12 +89,18 @@ class OutputManager(object):
     def _get_max_num_edges_over_all_chromosomes(ge_source_manager):
         return max(ge_source_manager.getMaxNumEdgesForChr(chr) for chr in ge_source_manager.getAllChrs())
 
-
+    #Todo: refactor...
     def _add_element_as_row(self, genome_element):
         row = self._table_creator.get_row()
         for column in self._table_description.keys():
             if column in genome_element.__dict__ and column is not 'extra':
-                row[column] = genome_element.__dict__[column]
+                if column in ['edges', 'weights']:
+                    ge_len = sum(1 for x in genome_element.__dict__[column])
+                    if ge_len >= 1:
+                        row[column][:ge_len] = genome_element.__dict__[column]
+                else:
+                    row[column] = genome_element.__dict__[column]
+
             else:  # Get extra column
                 row[column] = genome_element.__dict__['extra'][column]
         row.append()
