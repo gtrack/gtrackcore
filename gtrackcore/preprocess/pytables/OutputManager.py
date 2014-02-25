@@ -50,7 +50,7 @@ class OutputManager(object):
             table_info_reader.open()
             table_exists = table_info_reader.table_exists()
             if table_exists:
-                table_description = table_info_reader.table.description
+                table_description = table_info_reader.table.coldescrs
             table_info_reader.close()
         except DBNotExistError, e:
             table_exists = False

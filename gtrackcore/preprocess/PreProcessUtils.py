@@ -148,7 +148,7 @@ class PreProcessUtils(object):
 
         old_table = db_handler.table
 
-        table_description = old_table.description
+        table_description = old_table.coldescrs
         table_nrows = old_table.nrows
         table_name = old_table.name
 
