@@ -3,7 +3,7 @@ import numpy
 
 import tables
 import os
-from tables import ClosedFileError, is_pytables_file
+from tables import ClosedFileError
 from tables.exceptions import NodeError
 from gtrackcore.core.LogSetup import logMessage
 from gtrackcore.third_party.portalocker import portalocker
@@ -45,16 +45,11 @@ class DatabaseHandler(object):
             raise DBNotOpenError(e)
 
     def table_exists(self, table_path):
-        if not os.path.exists(self._h5_filename) or not is_pytables_file(self._h5_filename):
-            return False
-
-        self.open()
         try:
             self._h5_file.get_node(table_path)
             table_exists = True
         except tables.group.NoSuchNodeError:
             table_exists = False
-        self.close()
 
         return table_exists
 

@@ -5,7 +5,7 @@ from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator
 from gtrackcore.util.pytables.DatabaseQueries import BrQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
-from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegionsNotAvailableError
+from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegionsNotAvailableError, DBNotExistError
 
 
 class BoundingRegionHandler(object):
@@ -26,7 +26,13 @@ class BoundingRegionHandler(object):
         self._minimal_region = minimal_bin_list[0] if minimal_bin_list is not None else None
 
     def table_exists(self):
-        return self._table_reader.table_exists()
+        try:
+            self._table_reader.open()
+            table_exist = self._table_reader.table_exists()
+            self._table_reader.close()
+        except DBNotExistError:
+            table_exist = False
+        return table_exist
 
     def store_bounding_regions(self, bounding_region_tuples, genome_element_chr_list, sparse):
         assert sparse in [False, True]

@@ -18,6 +18,7 @@ from collections import Iterable
 from gtrackcore.core.Config import Config
 #from gtrackcore.util.CustomExceptions import InvalidFormatError
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
+from tables import is_pytables_file
 #from gtrackcore.application.SignatureDevianceLogging import takes,returns
 #from third_party.decorator import decorator
 #
@@ -644,3 +645,6 @@ def replaceIllegalElementsInTrackNames(string):
 def getDatabasePath(dirPath, trackName):
     DATABASE_FILE_SUFFIX = 'h5'  # put in Config
     return "%s%s%s.%s" % (dirPath, os.sep, trackName[-1], DATABASE_FILE_SUFFIX)
+
+def databaseExist(filename):
+    return os.path.exists(filename) and is_pytables_file(filename)
