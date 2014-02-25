@@ -43,7 +43,7 @@ class OutputManager(object):
             elif column is 'id':
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column])
             elif column is 'edges':
-                shape = self._get_shape(max_num_edges, 0)  # correct shape ?? ??????
+                shape = self._get_shape(max_num_edges, 1)
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column], shape=shape)
             elif column in ['val', 'weights']:
                 if column is 'val':
@@ -51,9 +51,8 @@ class OutputManager(object):
                     val_dim = ge_source_manager.getValDim()
                     shape = val_dim if val_dim > 1 else tuple()
                 elif column is 'weights':
-                    data_type = ge_source_manager.getEdgeWeigthDataType()
-                    data_type_dim = ge_source_manager.getEdgeWeigthDim()
-                    # Still don't know if this is correct for weights and edges
+                    data_type = ge_source_manager.getEdgeWeightDataType()
+                    data_type_dim = ge_source_manager.getEdgeWeightDim()
                     shape = self._get_shape(max_num_edges, data_type_dim)
 
                 data_type = 'S' if data_type.startswith('S') else data_type
@@ -72,8 +71,7 @@ class OutputManager(object):
 
     @staticmethod
     def _get_shape(max_num_edges, data_type_dim):
-        return tuple(([max(1, max_num_edges)] if max_num_edges is not None else [])
-                     + ([data_type_dim] if data_type_dim > 1 else []))
+        return tuple([max(1, max_num_edges)] + ([data_type_dim] if data_type_dim > 1 else []))
 
     @staticmethod
     def _get_max_str_lens_over_all_chromosomes(ge_source_manager):
