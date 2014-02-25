@@ -1,6 +1,3 @@
-import sys
-
-
 class TrackColumnWrapper(object):
 
     def __init__(self, column_name, table_reader):
@@ -16,8 +13,6 @@ class TrackColumnWrapper(object):
         self._table_reader.close()
 
     def __getitem__(self, val):
-        print type(val)
-
         is_slice = isinstance(val, slice)
         if is_slice:
             start_index = self._start_index if val.start is None else self._start_index + val.start

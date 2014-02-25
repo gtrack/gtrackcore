@@ -18,8 +18,10 @@ from gtrackcore.util.pytables.DatabaseQueries import BrQueries
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
 
+
 def noneFunc():
     return None
+
 
 class TrackElement(object):
     def __init__(self, trackView, index=-1):
@@ -294,7 +296,7 @@ class TrackView(object):
         for row in rows:
             #  Remove blind passengers
             if self.allowOverlaps and not self.trackFormat.reprIsDense():
-                if 'end' in row and row['end'] <= self.genomeAnchor.start:
+                if 'end' in track_table.colnames and (row['end'] <= self.genomeAnchor.start):
                     continue
             self._pytables_track_element._prev_row = self._pytables_track_element._row
             self._pytables_track_element._row = row

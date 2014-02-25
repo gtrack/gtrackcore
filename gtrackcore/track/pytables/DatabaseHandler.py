@@ -1,12 +1,14 @@
 from abc import ABCMeta, abstractmethod
+import numpy
 
 import tables
 import os
 from tables import ClosedFileError, is_pytables_file
 from tables.exceptions import NodeError
+from gtrackcore.core.LogSetup import logMessage
 from gtrackcore.third_party.portalocker import portalocker
 
-from gtrackcore.util.CustomExceptions import DBNotOpenError
+from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
 
@@ -25,8 +27,11 @@ class DatabaseHandler(object):
 
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
-        self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
-        portalocker.lock(self._h5_file, lock_type)
+        try:
+            self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
+            portalocker.lock(self._h5_file, lock_type)
+        except IOError, e:
+            raise DBNotExistError(e)
 
     def close(self):
         portalocker.unlock(self._h5_file)
@@ -52,6 +57,18 @@ class DatabaseHandler(object):
         self.close()
 
         return table_exists
+
+    @property
+    def table(self):
+        if self._table is None:
+            raise DBNotOpenError
+        return self._table
+
+    def get_column_names(self):
+        try:
+            return self._table.colnames
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
 
     def _get_track_table_path(self):
         return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])
@@ -82,12 +99,6 @@ class TableReader(DatabaseHandler):
     def open(self):
         super(TableReader, self).open(mode='r', lock_type=portalocker.LOCK_SH)
 
-    @property
-    def table(self):
-        if self._table is None:
-            raise DBNotOpenError
-        return self._table
-
 
 class TrackTableReader(TableReader):
     def __init__(self, track_name, genome, allow_overlaps):
@@ -96,12 +107,6 @@ class TrackTableReader(TableReader):
     def get_column(self, column_name):
         try:
             return self._table.colinstances[column_name]
-        except ClosedFileError, e:
-            raise DBNotOpenError(e)
-
-    def get_column_names(self):
-        try:
-            return self._table.colnames
         except ClosedFileError, e:
             raise DBNotOpenError(e)
 
@@ -224,13 +229,12 @@ class TableCreator(DatabaseHandler):
 class TrackTableCreator(TableCreator):
     def __init__(self, track_name, genome, allow_overlaps):
         super(TrackTableCreator, self).__init__(track_name, genome, allow_overlaps)
-        self._flush_counter = 0
 
     def create_table(self, table_description, expectedrows):
         self._table = super(TrackTableCreator, self).create_table(
             table_description, expectedrows, self._track_name[-1])
 
-        #Get commenced table
+        #Get existing table
         if self._table is None:
             self._table = self._get_track_table()
         else:

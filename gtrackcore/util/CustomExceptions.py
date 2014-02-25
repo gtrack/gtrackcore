@@ -78,3 +78,6 @@ class BoundingRegionsNotAvailableError(Exception):
 
 class DBNotOpenError(Exception):
     pass
+
+class DBNotExistError(Exception):
+    pass
