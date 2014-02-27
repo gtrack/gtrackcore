@@ -73,17 +73,29 @@ class TrackElement(object):
         return length
 
 class PytablesTrackElement(object):
-    def __init__(self, trackView, track_name, genome, allow_overlaps):
+    """
+    TrackElements are relative to genome_anchor.start
+    """
+    def __init__(self, trackView):
         # Weak proxy is used to remove memory leak caused by circular reference when TrackView is deleted
         self._trackView = weakref.proxy(trackView)
         self._row = None
         self._prev_row = None
 
     def start(self):
-        return self._row['start']
+        candidate = self._row['start'] - self._trackView.genomeAnchor.start
+        return candidate if candidate > 0 else 0
 
     def end(self):
-        return self._row['end']
+        raw_end = self._row['end']
+        anchor_end = self._trackView.genomeAnchor.end
+
+        if raw_end < anchor_end:
+            end_relative_to_anchor_start = raw_end - self._trackView.genomeAnchor.start
+        else:
+            end_relative_to_anchor_start = anchor_end - self._trackView.genomeAnchor.start
+
+        return end_relative_to_anchor_start
 
     def val(self):
         return self._row['val']
@@ -189,7 +201,7 @@ class AutonomousTrackElement(TrackElement):
 class TrackView(object):
 
     def _handlePointsAndPartitionsForSlicing(self):
-        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():  # partition?
+        if self._is_partition_track():
             self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
             if self._valList != None:
@@ -206,15 +218,21 @@ class TrackView(object):
             for key, extraList in self._extraLists.items():
                 if extraList != None:
                     self._extraLists[key] = extraList[1:]
-        if not self.trackFormat.isDense() and not self.trackFormat.isInterval():  # point?
+        if self._is_points_track():
             self._endList = VirtualPointEnd(self._startList)
 
     def _handlePointsAndPartitionsForIteration(self):
-        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():  # partition?
+        if self._is_partition_track():
             self._pytables_track_element.start = self._pytables_track_element.partition_start_func
 
-        if not self.trackFormat.isDense() and not self.trackFormat.isInterval():  # point?
+        if self._is_points_track():
             self._pytables_track_element.end = self._pytables_track_element.points_end_func
+
+    def _is_partition_track(self):
+        return self.trackFormat.isDense() and not self.trackFormat.reprIsDense()
+
+    def _is_points_track(self):
+        return not self.trackFormat.isDense() and not self.trackFormat.isInterval()
 
     def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
                  weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict(), track_name=None):
@@ -228,7 +246,7 @@ class TrackView(object):
         self.allowOverlaps = allowOverlaps
         
         self._trackElement = TrackElement(self)
-        self._pytables_track_element = PytablesTrackElement(self, track_name, genomeAnchor.genome, allowOverlaps)  # For iterating pytables track table
+        self._pytables_track_element = PytablesTrackElement(self)  # For iterating pytables track table
 
         #self._bpLevelArray = None
 
@@ -278,7 +296,7 @@ class TrackView(object):
 
     # TODO: make sure pytables is used
     def _should_use_pytables(self):
-        return any(l is not None and isinstance(l, TrackColumnWrapper)
+        return all(l is not None and isinstance(l, TrackColumnWrapper)
                    for l in [self._startList, self._endList, self._valList, self._edgesList])
 
     def _generate_pytables_elements(self):
@@ -290,7 +308,7 @@ class TrackView(object):
 
         rows = track_table.iterrows(start=start_index, stop=end_index)
 
-        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
+        if self._is_partition_track():
             self._pytables_track_element._row = rows.next()
 
         for row in rows:
