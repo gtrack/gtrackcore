@@ -1,14 +1,13 @@
 from abc import ABCMeta, abstractmethod
 import numpy
+import re
 import gc
 
 import tables
-import os
 from tables import ClosedFileError
 from tables.exceptions import NodeError
-from gtrackcore.core.LogSetup import logMessage
-from gtrackcore.third_party.portalocker import portalocker
 
+from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
@@ -22,10 +21,17 @@ class DatabaseHandler(object):
     def __init__(self, track_name, genome, allow_overlaps):
         dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
         self._h5_filename = getDatabasePath(dir_path, track_name)
-        self._track_name = track_name
+        self._track_name = self._convert_track_name_to_pytables_format(track_name)
         self._h5_file = None
         self._table = None
         self._is_open = False
+
+    def _convert_track_name_to_pytables_format(self, track_name):
+        converted_track_name = []
+        for part in track_name:
+            converted_part = re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part))
+            converted_track_name.append(converted_part.lower())
+        return converted_track_name
 
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
