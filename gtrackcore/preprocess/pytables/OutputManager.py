@@ -109,7 +109,8 @@ class OutputManager(object):
                     'int32': tables.Int32Col(shape=shape),
                     'float32': tables.Float32Col(shape=shape),
                     'float64': tables.Float64Col(shape=shape),
-                    'S': tables.StringCol(max(2, max_string_lengths[column]), shape=shape)
+                    'float128': tables.Float128Col(shape=shape),
+                    'S': tables.StringCol(max(1, max_string_lengths[column]), shape=shape)
                 }.get(data_type, tables.Float64Col(shape=shape))  # Defaults to Float64Col
             else:
                 data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
