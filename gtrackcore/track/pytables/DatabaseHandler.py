@@ -27,11 +27,7 @@ class DatabaseHandler(object):
         self._is_open = False
 
     def _convert_track_name_to_pytables_format(self, track_name):
-        converted_track_name = []
-        for part in track_name:
-            converted_part = re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part))
-            converted_track_name.append(converted_part.lower())
-        return converted_track_name
+        return [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in track_name]
 
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
