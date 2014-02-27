@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import numpy
+import gc
 
 import tables
 import os
@@ -24,18 +25,22 @@ class DatabaseHandler(object):
         self._track_name = track_name
         self._h5_file = None
         self._table = None
+        self._is_open = False
 
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
+        gc.collect()
         try:
             self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
             portalocker.lock(self._h5_file, lock_type)
+            self._is_open = True
         except IOError, e:
             raise DBNotExistError(e)
 
     def close(self):
         portalocker.unlock(self._h5_file)
         self._h5_file.close()
+        self._is_open = False
         self._table = None
 
     def get_columns(self):
@@ -52,6 +57,10 @@ class DatabaseHandler(object):
             table_exists = False
 
         return table_exists
+
+    def __del__(self):
+        if self._is_open and self._h5_file is not None:
+            self.close()
 
     @property
     def table(self):
