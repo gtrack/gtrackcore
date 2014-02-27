@@ -200,28 +200,53 @@ class AutonomousTrackElement(TrackElement):
     
 class TrackView(object):
 
-    def _handlePointsAndPartitionsForSlicing(self):
+    def _handlePointsAndPartitions(self):
         if self._is_partition_track():
             self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
-            if self._valList != None:
+            if self._valList is not None:
                 self._valList = self._valList[1:]
-            if self._strandList != None:
+            if self._strandList is not None:
 
                 self._strandList = self._strandList[1:]
-            if self._idList != None:
+            if self._idList is not None:
                 self._idList = self._idList[1:]
-            if self._edgesList != None:
+            if self._edgesList is not None:
                 self._edgesList = self._edgesList[1:]
-            if self._weightsList != None:
+            if self._weightsList is not None:
                 self._weightsList = self._weightsList[1:]
             for key, extraList in self._extraLists.items():
-                if extraList != None:
+                if extraList is not None:
                     self._extraLists[key] = extraList[1:]
+
         if self._is_points_track():
             self._endList = VirtualPointEnd(self._startList)
 
-    def _handlePointsAndPartitionsForIteration(self):
+
+    def _handle_points_and_partitions_for_slicing(self):
+        if self._is_partition_track():
+            self._startList = copy(self._endList)
+            self._startList.change_offset(0, -1)
+            self._endList.change_offset(1, 0)
+            if self._valList is not None:
+                self._valList.change_offset(1, 0)
+            if self._strandList is not None:
+
+                self._strandList.change_offset(1, 0)
+            if self._idList is not None:
+                self._idList.change_offset(1, 0)
+            if self._edgesList is not None:
+                self._edgesList.change_offset(1, 0)
+            if self._weightsList is not None:
+                self._weightsList.change_offset(1, 0)
+            for key, extraList in self._extraLists.items():
+                if extraList is not None:
+                    self._extraLists[key].change_offset(1, 0)
+
+        if self._is_points_track():
+            self._endList = copy(self._startList)
+
+    def _handle_points_and_partitions_for_iteration(self):
         if self._is_partition_track():
             self._pytables_track_element.start = self._pytables_track_element.partition_start_func
 
@@ -259,7 +284,10 @@ class TrackView(object):
         self._weightsList = weightsList
         self._extraLists = copy(extraLists)
 
-        self._handlePointsAndPartitionsForSlicing()
+        if self._should_use_pytables():
+            self._handle_points_and_partitions_for_slicing()
+        else:
+            self._handlePointsAndPartitions()
 
         if self._should_use_pytables():
             self._db_handler = TrackTableReader(track_name, genomeAnchor.genome, allowOverlaps)
@@ -325,7 +353,7 @@ class TrackView(object):
     def __iter__(self):
         if self._should_use_pytables():
             self._pytables_track_element._row = None
-            return self._generate_pytables_elements()
+            return self._generate_pytables_track_elements()
         else:
             self._trackElement._index = -1
             return self
@@ -351,7 +379,7 @@ class TrackView(object):
                 if isinstance(list, numpy.ndarray):
                     return len(self._removeBlindPassengersFromNumpyArray(list))
                 else:
-                    return sum(1 for x in self)
+                    return sum(1 for _ in self)
         raise ShouldNotOccurError
             
     def __len__(self):

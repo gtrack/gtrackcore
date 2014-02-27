@@ -69,6 +69,10 @@ class TrackColumnWrapper(object):
         self._start_index = start
         self._end_index = end
 
+    def change_offset(self, start, end):
+        self._start_index += start
+        self._end_index += end
+
     def getShape(self):
         return self._shape
 
