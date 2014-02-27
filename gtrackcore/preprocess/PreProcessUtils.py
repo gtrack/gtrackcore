@@ -55,7 +55,7 @@ class PreProcessUtils(object):
             dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
             #dbPath =  getDatabasePath(dirPath, trackName)
 
-            if BoundingRegionHandler(genome, trackName, allowOverlaps).table_exists():
+            if os.path.exists(dirPath) and BoundingRegionHandler(genome, trackName, allowOverlaps).table_exists():
                 preproc_files_exist = True
             else:
                 if os.path.exists(dirPath):
