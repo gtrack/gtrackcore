@@ -308,21 +308,16 @@ def convertTNstrToTNListFormat(tnStr, doUnquoting=False):
 #
 def getDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Config.PROCESSED_DATA_PATH):
     """
-    >>> getDirPath(['trackname'],'genome','chr1')
-    '/100000/noOverlaps/genome/trackname/chr1'
+    >>> getDirPath(['trackname'],'genome')
+    '/noOverlaps/genome/trackname'
     """
-    from gtrackcore.util.CompBinManager import CompBinManager
-    if len(trackName)>0 and trackName[0] == 'redirect':
+    if len(trackName) > 0 and trackName[0] == 'redirect':
         genome = trackName[1]
-        chr = trackName[2]
+        #trackName[2] is chr
         #trackName[3] is description
         trackName = trackName[4:]
         
-    #print [basePath, str(CompBinManager.getIndexBinSize()), ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
-    #    list(trackName) + ([chr] if chr is not None else [])
-    
-    return os.sep.join( [basePath, str(CompBinManager.getIndexBinSize()), ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
-        list(trackName) + ([chr] if chr is not None else []) )
+    return os.sep.join( [basePath, ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] + list(trackName))
 #
 ##def createMemoPath(trackName, genome, chr, statName):
 ##    return os.sep.join( [MEMOIZED_DATA_PATH, statName, str(COMP_BIN_SIZE), genome]+list(trackName)+[chr] )
