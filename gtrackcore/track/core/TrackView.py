@@ -314,7 +314,8 @@ class TrackView(object):
             self._trackElement.weights = noneFunc
             self._pytables_track_element.weights = noneFunc
 
-        self._handlePointsAndPartitionsForIteration()
+        if self._should_use_pytables():
+            self._handle_points_and_partitions_for_iteration()
 
         self._updateNumListElements()
 
@@ -322,12 +323,11 @@ class TrackView(object):
             + [extraList for extraList in self._extraLists.values()]):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
 
-    # TODO: make sure pytables is used
     def _should_use_pytables(self):
-        return all(l is not None and isinstance(l, TrackColumnWrapper)
-                   for l in [self._startList, self._endList, self._valList, self._edgesList])
+        return all([isinstance(l, TrackColumnWrapper)
+                   for l in [self._startList, self._endList, self._valList, self._edgesList] if l is not None])
 
-    def _generate_pytables_elements(self):
+    def _generate_pytables_track_elements(self):
         br_queries = BrQueries(self._track_name, self.genomeAnchor.genome, self.allowOverlaps)
         start_index, end_index = br_queries.start_and_end_indices(self.genomeAnchor)
 
