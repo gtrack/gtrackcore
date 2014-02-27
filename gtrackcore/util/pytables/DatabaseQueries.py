@@ -72,7 +72,7 @@ class TrackQueries(DatabaseQueries):
         elif format_name in ['Genome partition', 'Step function', 'Linked genome partition', 'Linked step function']:
             query = '& (end >= region_start) & (end <= region_end)'
 
-        elif format_name is 'Linked base pairs':
+        elif format_name == 'Linked base pairs':
             query = ''
         else:
             raise ShouldNotOccurError

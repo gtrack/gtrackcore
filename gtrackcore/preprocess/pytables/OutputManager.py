@@ -85,19 +85,19 @@ class OutputManager(object):
         for column in ge_source_manager.getPrefixList():
             if column in ['start', 'end']:
                 data_type_dict[column] = tables.Int32Col()
-            elif column is 'strand':
+            elif column == 'strand':
                 data_type_dict[column] = tables.Int8Col()
-            elif column is 'id':
+            elif column == 'id':
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column])
-            elif column is 'edges':
+            elif column == 'edges':
                 shape = self._get_shape(max_num_edges, 1)
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column], shape=shape)
             elif column in ['val', 'weights']:
-                if column is 'val':
+                if column == 'val':
                     data_type = ge_source_manager.getValDataType()
                     val_dim = ge_source_manager.getValDim()
                     shape = val_dim if val_dim > 1 else tuple()
-                elif column is 'weights':
+                elif column == 'weights':
                     data_type = ge_source_manager.getEdgeWeightDataType()
                     data_type_dim = ge_source_manager.getEdgeWeightDim()
                     shape = self._get_shape(max_num_edges, data_type_dim)
@@ -137,7 +137,7 @@ class OutputManager(object):
     def _add_element_as_row(self, genome_element):
         row = self._table_creator.get_row()
         for column in self._table_description.keys():
-            if column in genome_element.__dict__ and column is not 'extra':
+            if column in genome_element.__dict__ and column != 'extra':
                 if column in ['edges', 'weights']:
                     ge_len = sum(1 for x in genome_element.__dict__[column])
                     if ge_len >= 1:
