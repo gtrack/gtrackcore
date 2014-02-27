@@ -95,8 +95,8 @@ def _getDirPath(genome=''):
         The found directory path.
 
     """
-    from gtrackcore.util.CommonFunctions import getDirPath, createPath
-    dirPath = getDirPath([], '')
+    from gtrackcore.util.CommonFunctions import get_dir_path, createPath
+    dirPath = get_dir_path('', [])
     createPath(dirPath)
     return dirPath
 
@@ -234,7 +234,7 @@ def getTrackData(genome, trackName, chr, allowOverlaps):
 
     from gtrackcore.track.pytables.TrackSource import TrackSource
     trackSource = TrackSource()
-    return trackSource.wrap_track_data(trackName, genome, allowOverlaps)
+    return trackSource.wrap_track_data(genome, trackName, allowOverlaps)
 
 
 def getTrackElementCount(trackData):

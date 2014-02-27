@@ -8,8 +8,8 @@ class DatabaseQueries(object):
 
 
 class BrQueries(DatabaseQueries):
-    def __init__(self, track_name, genome, allow_overlaps):
-        db_handler = BrTableReader(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        db_handler = BrTableReader(genome, track_name, allow_overlaps)
         super(BrQueries, self).__init__(db_handler)
         self._track_name = track_name
 
@@ -55,8 +55,8 @@ class BrQueries(DatabaseQueries):
 
 class TrackQueries(DatabaseQueries):
 
-    def __init__(self, track_name, genome, allow_overlaps):
-        db_handler = TrackTableReader(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        db_handler = TrackTableReader(genome, track_name, allow_overlaps)
         super(TrackQueries, self).__init__(db_handler)
 
     @staticmethod

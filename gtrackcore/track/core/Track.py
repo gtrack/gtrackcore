@@ -26,7 +26,7 @@ class Track(object):
         self._trackId = None
         
     def _getRawTrackView(self, region, borderHandling, allowOverlaps):
-        trackData = self._trackSource.wrap_track_data(self.trackName, region.genome, allowOverlaps)
+        trackData = self._trackSource.wrap_track_data(region.genome, self.trackName, allowOverlaps)
         return TrackViewLoader.loadTrackView(trackData, region, borderHandling, allowOverlaps, self.trackName)
     
     def getTrackView(self, region):

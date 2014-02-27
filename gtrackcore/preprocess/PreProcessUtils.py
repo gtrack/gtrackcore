@@ -14,9 +14,9 @@ from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandle
 from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
 from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
-from gtrackcore.util.CommonFunctions import getDirPath
+from gtrackcore.util.CommonFunctions import get_dir_path
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
-from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
+from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter, TrackTableCreator, TrackTableSorter
 
 
@@ -52,7 +52,7 @@ class PreProcessUtils(object):
         collector = PreProcMetaDataCollector(genome, trackName)
         preproc_files_exist = collector.preProcFilesExist(allowOverlaps)
         if preproc_files_exist is None:
-            dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+            dirPath = get_dir_path(genome, trackName, allow_overlaps=allowOverlaps)
             #dbPath =  getDatabasePath(dirPath, trackName)
 
             if os.path.exists(dirPath) and BoundingRegionHandler(genome, trackName, allowOverlaps).table_exists():
@@ -98,7 +98,7 @@ class PreProcessUtils(object):
         collector = PreProcMetaDataCollector(genome, trackName)
         if PreProcessUtils.preProcFilesExist(genome, trackName, allowOverlaps) and not \
             collector.hasRemovedPreProcFiles(allowOverlaps):
-                dirPath = getDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+                dirPath = get_dir_path(genome, trackName, allow_overlaps=allowOverlaps)
                 
                 assert dirPath.startswith(Config.PROCESSED_DATA_PATH), \
                     "Processed data path '%s' does not start with '%s'" % \
@@ -123,10 +123,10 @@ class PreProcessUtils(object):
 
     @staticmethod
     def sort_preprocessed_table(genome, track_name, allow_overlaps):
-        dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
+        dir_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
         assert os.path.exists(dir_path)  # throw error
 
-        db_handler = TrackTableSorter(track_name, genome, allow_overlaps)
+        db_handler = TrackTableSorter(genome, track_name, allow_overlaps)
         db_handler.open()
         column_dict = db_handler.get_columns()
 
@@ -203,7 +203,7 @@ class PreProcessUtils(object):
     def removeChrMemmapFolders(genome, trackName, allowOverlaps):
         chrList = PreProcMetaDataCollector(genome, trackName).getPreProcessedChrs(allowOverlaps)
         for chr in chrList:
-            path = getDirPath(trackName, genome, chr, allowOverlaps)
+            path = get_dir_path(genome, trackName, chr, allowOverlaps)
             assert os.path.exists(path), 'Path does not exist: ' + path
             assert os.path.isdir(path), 'Path is not a directory: ' + path
             shutil.rmtree(path)
@@ -219,7 +219,7 @@ class PreProcessUtils(object):
         
         for chr in collector.getPreProcessedChrs(allowOverlaps):
             trackSource = TrackSource()
-            trackData = trackSource.wrap_track_data(trackName, genome, allowOverlaps)
+            trackData = trackSource.wrap_track_data(genome, trackName, allowOverlaps)
             uniqueIds = numpy.unique(numpy.concatenate((uniqueIds, trackData['id'][:])))
             uniqueEdgeIds = numpy.unique(numpy.concatenate((uniqueEdgeIds, trackData['edges'][:].flatten())))
         
@@ -240,7 +240,7 @@ class PreProcessUtils(object):
         
         for chr in collector.getPreProcessedChrs(allowOverlaps):
             trackSource = TrackSource()
-            trackData = trackSource.wrap_track_data(trackName, genome, allowOverlaps)
+            trackData = trackSource.wrap_track_data(genome, trackName, allowOverlaps)
             
             ids = trackData['id']
             edges = trackData['edges']

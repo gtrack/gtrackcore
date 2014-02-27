@@ -13,10 +13,10 @@ class TrackSource:
         self._chrInUse = None
         self._fileDict = {}
 
-    def wrap_track_data(self, trackName, genome, allowOverlaps):
+    def wrap_track_data(self, genome, trackName, allowOverlaps):
         track_data = TrackData()
 
-        table_reader = TrackTableReader(trackName, genome, allowOverlaps)
+        table_reader = TrackTableReader(genome, trackName, allowOverlaps)
         table_reader.open()
 
         column_names = table_reader.get_column_names()

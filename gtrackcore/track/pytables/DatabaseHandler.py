@@ -9,7 +9,7 @@ from tables.exceptions import NodeError
 
 from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
-from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
+from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
 
 BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
@@ -18,8 +18,8 @@ BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
 class DatabaseHandler(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, track_name, genome, allow_overlaps):
-        dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        dir_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
         self._h5_filename = getDatabasePath(dir_path, track_name)
         self._track_name = self._convert_track_name_to_pytables_format(track_name)
         self._h5_file = None
@@ -99,8 +99,8 @@ class DatabaseHandler(object):
 class TableReader(DatabaseHandler):
     __metaclass__ = ABCMeta
 
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TableReader, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TableReader, self).__init__(genome, track_name, allow_overlaps)
 
     @abstractmethod
     def open(self):
@@ -108,8 +108,8 @@ class TableReader(DatabaseHandler):
 
 
 class TrackTableReader(TableReader):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TrackTableReader, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TrackTableReader, self).__init__(genome, track_name, allow_overlaps)
 
     def get_column(self, column_name):
         try:
@@ -126,8 +126,8 @@ class TrackTableReader(TableReader):
 
 
 class BrTableReader(TableReader):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(BrTableReader, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(BrTableReader, self).__init__(genome, track_name, allow_overlaps)
 
     def open(self):
         super(BrTableReader, self).open()
@@ -139,8 +139,8 @@ class BrTableReader(TableReader):
 class TableReadWriter(DatabaseHandler):
     __metaclass__ = ABCMeta
 
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TableReadWriter, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TableReadWriter, self).__init__(genome, track_name, allow_overlaps)
 
     @abstractmethod
     def open(self):
@@ -148,8 +148,8 @@ class TableReadWriter(DatabaseHandler):
 
 
 class TrackTableReadWriter(TableReadWriter):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TrackTableReadWriter, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TrackTableReadWriter, self).__init__(genome, track_name, allow_overlaps)
 
     def open(self):
         super(TrackTableReadWriter, self).open()
@@ -160,8 +160,8 @@ class TrackTableReadWriter(TableReadWriter):
 
 
 class BrTableReadWriter(TableReadWriter):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(BrTableReadWriter, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(BrTableReadWriter, self).__init__(genome, track_name, allow_overlaps)
 
     def open(self):
         super(BrTableReadWriter, self).open()
@@ -174,8 +174,8 @@ class BrTableReadWriter(TableReadWriter):
 class TableCreator(DatabaseHandler):
     __metaclass__ = ABCMeta
 
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TableCreator, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TableCreator, self).__init__(genome, track_name, allow_overlaps)
 
     def create_table(self, table_description, expectedrows, table_name):
         group = self._create_groups()
@@ -234,8 +234,8 @@ class TableCreator(DatabaseHandler):
 
 
 class TrackTableCreator(TableCreator):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TrackTableCreator, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TrackTableCreator, self).__init__(genome, track_name, allow_overlaps)
 
     def create_table(self, table_description, expectedrows):
         self._table = super(TrackTableCreator, self).create_table(
@@ -264,8 +264,8 @@ class TrackTableCreator(TableCreator):
             self._table.cols.end.create_index()
 
 class TrackTableCopier(TableCreator):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TrackTableCopier, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TrackTableCopier, self).__init__(genome, track_name, allow_overlaps)
         self._old_table = None
 
     def open(self):
@@ -294,8 +294,8 @@ class TrackTableCopier(TableCreator):
 
 
 class TrackTableSorter(TableCreator):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(TrackTableSorter, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TrackTableSorter, self).__init__(genome, track_name, allow_overlaps)
 
     def open(self):
         super(TrackTableSorter, self).open()
@@ -306,8 +306,8 @@ class TrackTableSorter(TableCreator):
 
 
 class BoundingRegionTableCreator(TableCreator):
-    def __init__(self, track_name, genome, allow_overlaps):
-        super(BoundingRegionTableCreator, self).__init__(track_name, genome, allow_overlaps)
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(BoundingRegionTableCreator, self).__init__(genome, track_name, allow_overlaps)
 
     def create_table(self, table_description, expectedrows):
         self._table = super(BoundingRegionTableCreator, self).create_table(

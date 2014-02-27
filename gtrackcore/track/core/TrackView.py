@@ -290,7 +290,7 @@ class TrackView(object):
             self._handlePointsAndPartitions()
 
         if self._should_use_pytables():
-            self._db_handler = TrackTableReader(track_name, genomeAnchor.genome, allowOverlaps)
+            self._db_handler = TrackTableReader(genomeAnchor.genome, track_name, allowOverlaps)
 
         if self._startList is None:
             self._trackElement.start = noneFunc
@@ -328,7 +328,7 @@ class TrackView(object):
                    for l in [self._startList, self._endList, self._valList, self._edgesList] if l is not None])
 
     def _generate_pytables_track_elements(self):
-        br_queries = BrQueries(self._track_name, self.genomeAnchor.genome, self.allowOverlaps)
+        br_queries = BrQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
         start_index, end_index = br_queries.start_and_end_indices(self.genomeAnchor)
 
         self._db_handler.open()

@@ -3,7 +3,7 @@ import os
 from gtrackcore.track.memmap.CommonMemmapFunctions import parseMemmapFileFn
 from gtrackcore.track.memmap.SmartMemmap import SmartMemmap
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve, isBoundingRegionFileName
-from gtrackcore.util.CommonFunctions import getDirPath
+from gtrackcore.util.CommonFunctions import get_dir_path
 
 class TrackData(dict):
     def __init__(self, other=None):
@@ -26,7 +26,7 @@ class TrackSource:
         if not forceChrFolders and brShelve.fileExists():
             chr = None
         
-        dir = getDirPath(trackName, genome, chr, allowOverlaps)
+        dir = get_dir_path(genome, trackName, chr, allowOverlaps)
 
         for fn in os.listdir(dir):
             fullFn = dir + os.sep + fn

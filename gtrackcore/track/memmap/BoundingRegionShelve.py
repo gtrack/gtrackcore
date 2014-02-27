@@ -10,7 +10,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CustomExceptions import InvalidFormatError, OutsideBoundingRegionError, \
                                          BoundingRegionsNotAvailableError
 from gtrackcore.util.CompBinManager import CompBinManager
-from gtrackcore.util.CommonFunctions import getDirPath, createPath
+from gtrackcore.util.CommonFunctions import get_dir_path, createPath
 
 BoundingRegionInfo = namedtuple('BoundingRegionInfo', \
                                 ['start', 'end', 'startIdx', 'endIdx', 'startBinIdx', 'endBinIdx'])
@@ -28,7 +28,7 @@ class BoundingRegionShelve(object):
         self._genome = genome
         self._trackName = trackName
         
-        self._fn = getDirPath(trackName, genome, allowOverlaps=allowOverlaps) + os.sep + BR_SHELVE_FILE_NAME
+        self._fn = get_dir_path(genome, trackName, allow_overlaps=allowOverlaps) + os.sep + BR_SHELVE_FILE_NAME
         self._contents = {} #None
         self._updatedChrs = set([])
         

@@ -10,7 +10,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.util.CommonFunctions import getStringFromStrand, parseRegSpec, \
-                                        parseTrackNameSpec, getDirPath, \
+                                        parseTrackNameSpec, get_dir_path, \
                                         createPath
 from gtrackcore.util.CustomExceptions import NotSupportedError, ShouldNotOccurError
 
@@ -107,7 +107,7 @@ class TrackExtractor:
         
         #To silently extract correctly if track type is dense
         if allowOverlaps:
-            allowOverlaps = os.path.exists(getDirPath(trackName, genome, allowOverlaps=True))
+            allowOverlaps = os.path.exists(get_dir_path(genome, trackName, allow_overlaps=True))
             
         trackGESource = TrackGenomeElementSource(genome, trackName, regionList, globalCoords=globalCoords, \
                                                  allowOverlaps=allowOverlaps, printWarnings=False)

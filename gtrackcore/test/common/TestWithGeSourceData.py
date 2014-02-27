@@ -5,7 +5,7 @@ import unittest
 
 from subprocess import call
 
-from gtrackcore.util.CommonFunctions import createOrigPath, getDirPath, createPath
+from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, createPath
 
 class TestWithGeSourceData(unittest.TestCase):
     def _removeDir(self, procDir, trackName):
@@ -15,8 +15,8 @@ class TestWithGeSourceData(unittest.TestCase):
             call('rm -R ' + procDir, shell=True)
             
     def _removeAllTrackData(self, trackName, removeOrigData=True):
-        self._removeDir(getDirPath(trackName, self.GENOME, allowOverlaps=False), trackName)
-        self._removeDir(getDirPath(trackName, self.GENOME, allowOverlaps=True), trackName)
+        self._removeDir(get_dir_path(self.GENOME, trackName, allow_overlaps=False), trackName)
+        self._removeDir(get_dir_path(self.GENOME, trackName, allow_overlaps=True), trackName)
         if removeOrigData:
             self._removeDir(createOrigPath(self.GENOME, trackName), trackName)
         

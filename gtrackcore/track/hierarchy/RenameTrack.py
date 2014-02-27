@@ -5,7 +5,7 @@ import sys
 import os
 
 from gtrackcore.util.CommonFunctions import createPath, createOrigPath, \
-                                        getDirPath #, createCollectedPath
+                                        get_dir_path #, createCollectedPath
 from gtrackcore.metadata.TrackInfo import TrackInfo
 from gtrackcore.track.hierarchy.ProcTrackNameSource import ProcTrackNameSource
 
@@ -41,12 +41,12 @@ def renameStdTrack(genome, oldTn, newTn):
 
 def renameProcTrack(genome, oldTn, newTn):
     for allowOverlaps in [False, True]:
-        oldPath = getDirPath(oldTn, genome, allowOverlaps=allowOverlaps)
+        oldPath = get_dir_path(genome, oldTn, allow_overlaps=allowOverlaps)
         if not os.path.exists(oldPath):
             print 'Warning: TN did not exist as preproc ' + ('with overlaps' if allowOverlaps else ' without overlaps')
         else:
             print '(renaming TN in preproc ' + ('with overlaps' if allowOverlaps else ' without overlaps') + ')'
-            newPath = getDirPath(newTn, genome, allowOverlaps=allowOverlaps)
+            newPath = get_dir_path(genome, newTn, allow_overlaps=allowOverlaps)
             if not ONLY_SIMULATION:    
                 assert not os.path.exists(newPath), 'ERROR: Target path already exists: ' + newPath
                 createPath(newPath)
@@ -93,7 +93,7 @@ def renameTrack(genome, oldTn, newTn):
     assert newTn != oldTn[:len(newTn)], 'ERROR: it is not allowed to move a track into itself (%s -> %s)' % (':'.join(oldTn), ':'.join(newTn))
 
     #First check to filter out misspellings..
-    oldPath = getDirPath(oldTn, genome)
+    oldPath = get_dir_path(genome, oldTn)
     assert os.path.exists(oldPath), 'ERROR: TN did not exist in processed tracks: ' + oldPath
     
     #renaming TI first, in case of problems, such as incomplete records..

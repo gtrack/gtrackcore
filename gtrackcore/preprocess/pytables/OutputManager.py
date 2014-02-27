@@ -6,14 +6,14 @@ from itertools import izip_longest, izip
 from stat import S_IRWXU, S_IRWXG, S_IROTH
 
 from gtrackcore.core.LogSetup import logMessage
-from gtrackcore.util.CommonFunctions import getDirPath, getDatabasePath
+from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableCreator, TrackTableReader, TrackTableCopier
 from gtrackcore.util.CustomExceptions import DBNotExistError
 
 
 class OutputManager(object):
     def __init__(self, genome, track_name, allow_overlaps, ge_source_manager):
-        dir_path = getDirPath(track_name, genome, allowOverlaps=allow_overlaps)
+        dir_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         self._database_filename = getDatabasePath(dir_path, track_name)
@@ -21,7 +21,7 @@ class OutputManager(object):
         self._create_single_track_database(genome, track_name, allow_overlaps, ge_source_manager)
 
     def _create_single_track_database(self, genome, track_name, allow_overlaps, ge_source_manager):
-        table_exists, current_table_description = self._extract_table_info(track_name, genome, allow_overlaps)
+        table_exists, current_table_description = self._extract_table_info(genome, track_name, allow_overlaps)
         self._table_description = self._create_track_table_description(ge_source_manager)
 
         self._table_creator = None
@@ -34,17 +34,17 @@ class OutputManager(object):
                     for column_name, shape in shape_dict.iteritems():
                         self._table_description[column_name].shape = shape
 
-                    self._table_creator = TrackTableCopier(track_name, genome, allow_overlaps)
+                    self._table_creator = TrackTableCopier(genome, track_name, allow_overlaps)
 
         if self._table_creator is None:
-            self._table_creator = TrackTableCreator(track_name, genome, allow_overlaps)
+            self._table_creator = TrackTableCreator(genome, track_name, allow_overlaps)
 
         self._table_creator.open()
         self._table_creator.create_table(self._table_description,
                                                       expectedrows=ge_source_manager.getNumElements())
 
-    def _extract_table_info(self, track_name, genome, allow_overlaps):
-        table_info_reader = TrackTableReader(track_name, genome, allow_overlaps)
+    def _extract_table_info(self, genome, track_name, allow_overlaps):
+        table_info_reader = TrackTableReader(genome, track_name, allow_overlaps)
         table_description = None
         try:
             table_info_reader.open()

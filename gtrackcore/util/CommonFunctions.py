@@ -306,18 +306,18 @@ def convertTNstrToTNListFormat(tnStr, doUnquoting=False):
 #        return fn(*v, **k)
 #    return wrapped
 #
-def getDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Config.PROCESSED_DATA_PATH):
+def get_dir_path(genome, track_name, chr=None, allow_overlaps=False, base_path=Config.PROCESSED_DATA_PATH):
     """
-    >>> getDirPath(['trackname'],'genome')
+    >>> get_dir_path('genome',['trackname'])
     '/noOverlaps/genome/trackname'
     """
-    if len(trackName) > 0 and trackName[0] == 'redirect':
-        genome = trackName[1]
+    if len(track_name) > 0 and track_name[0] == 'redirect':
+        genome = track_name[1]
         #trackName[2] is chr
         #trackName[3] is description
-        trackName = trackName[4:]
+        track_name = track_name[4:]
         
-    return os.sep.join( [basePath, ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] + list(trackName))
+    return os.sep.join( [base_path, ('withOverlaps' if allow_overlaps else 'noOverlaps'), genome] + list(track_name))
 #
 ##def createMemoPath(trackName, genome, chr, statName):
 ##    return os.sep.join( [MEMOIZED_DATA_PATH, statName, str(COMP_BIN_SIZE), genome]+list(trackName)+[chr] )

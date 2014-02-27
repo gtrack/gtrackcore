@@ -16,8 +16,8 @@ class BoundingRegionHandler(object):
         self._track_name = track_name
         self._allow_overlaps = allow_overlaps
 
-        self._table_reader = BrTableReader(track_name, genome, allow_overlaps)
-        self._queries = BrQueries(track_name, genome, allow_overlaps)
+        self._table_reader = BrTableReader(genome, track_name, allow_overlaps)
+        self._queries = BrQueries(genome, track_name, allow_overlaps)
 
         self._updated_chromosomes = set([])
 
@@ -40,7 +40,7 @@ class BoundingRegionHandler(object):
         temp_bounding_regions = self._create_bounding_regions_triples(bounding_region_tuples, genome_element_chr_list, sparse)
 
         table_description = self._create_table_description()
-        db_creator = BoundingRegionTableCreator(self._track_name, self._genome, self._allow_overlaps)
+        db_creator = BoundingRegionTableCreator(self._genome, self._track_name, self._allow_overlaps)
         db_creator.open()
         db_creator.create_table(table_description, len(bounding_region_tuples))
 

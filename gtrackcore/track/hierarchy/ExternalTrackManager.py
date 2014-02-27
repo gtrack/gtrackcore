@@ -6,7 +6,7 @@ from gtrackcore.core.Config import Config
 from gtrackcore.core.DataTypes import getSupportedFileSuffixes
 from gtrackcore.metadata.TrackInfo import TrackInfo
 from gtrackcore.track.format.TrackFormat import TrackFormat
-from gtrackcore.util.CommonFunctions import getDirPath, getClassName, \
+from gtrackcore.util.CommonFunctions import get_dir_path, getClassName, \
                                         extractIdFromGalaxyFn as commonExtractIdFromGalaxyFn
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
