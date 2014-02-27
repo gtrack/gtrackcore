@@ -29,7 +29,8 @@ class DatabaseHandler(object):
 
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
-        gc.collect()
+        if mode != 'r':
+            gc.collect()
         try:
             self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
             portalocker.lock(self._h5_file, lock_type)
