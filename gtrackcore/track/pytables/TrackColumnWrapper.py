@@ -6,6 +6,9 @@ class TrackColumnWrapper(object):
         self._start_index = -1
         self._end_index = -1
 
+        self._set_column_metadata()
+
+    def _set_column_metadata(self):
         self._table_reader.open()
         column = self._table_reader.get_column(self._column_name)
         self._shape = column.shape
@@ -15,15 +18,35 @@ class TrackColumnWrapper(object):
     def __getitem__(self, val):
         is_slice = isinstance(val, slice)
         if is_slice:
-            start_index = self._start_index if val.start is None else self._start_index + val.start
-            end_index = self._end_index if val.stop is None else self._start_index + val.stop
+            start_index, end_index, step = self._handle_slice(val)
 
         self._table_reader.open()
         column = self._table_reader.get_column(self._column_name)
-        result = column[start_index:end_index] if is_slice else column[self._start_index + val]
+        result = column[start_index:end_index:step] if is_slice else column[self._start_index + val]
         self._table_reader.close()
 
         return result
+
+    def _handle_slice(self, slice_val):
+        if slice_val.start is None:
+            start_index = self._start_index
+        else:
+            if slice_val.start >= 0:
+                start_index = self._start_index + slice_val.start
+            else:
+                start_index = self._end_index + slice_val.start
+
+        if slice_val.stop is None:
+            end_index = self._end_index
+        else:
+            if slice_val.start >= 0:
+                end_index = self._start_index + slice_val.stop
+            else:
+                end_index = self._end_index + slice_val.stop
+
+        step = slice_val.step if slice_val.step is not None else 1
+
+        return start_index, end_index, step
 
     def __len__(self):
         return self._end_index - self._start_index
