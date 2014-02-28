@@ -1,55 +1,53 @@
-class TrackColumnWrapper(object):
+from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
+
+
+class TrackColumnWrapper(VirtualNumpyArray):
 
     def __init__(self, column_name, table_reader):
+        VirtualNumpyArray.__init__(self)
         self._column_name = column_name
         self._table_reader = table_reader
         self._start_index = -1
         self._end_index = -1
+        self._step = 1
 
-        self._set_column_metadata()
-
-    def _set_column_metadata(self):
         self._table_reader.open()
         column = self._table_reader.get_column(self._column_name)
         self._shape = column.shape
         self._dtype = column.dtype
         self._table_reader.close()
 
+    @property
+    def offset(self):
+        return self._start_index, self._end_index
+
+    @offset.setter
+    def offset(self, start_end_tuple):
+        self._start_index = start_end_tuple[0]
+        self._end_index = start_end_tuple[1]
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @property
+    def dtype(self):
+        return self._dtype
+
+    @property
+    def filename(self):
+        raise NotImplementedError
+
     def __getitem__(self, val):
-        is_slice = isinstance(val, slice)
-        if is_slice:
-            start_index, end_index, step = self._handle_slice(val)
-
-        self._table_reader.open()
-        column = self._table_reader.get_column(self._column_name)
-        result = column[start_index:end_index:step] if is_slice else column[self._start_index + val]
-        self._table_reader.close()
-
-        return result
-
-    def _handle_slice(self, slice_val):
-        if slice_val.start is None:
-            start_index = self._start_index
+        if isinstance(val, slice):
+            self._update_offset(val)
+            return self
         else:
-            if slice_val.start >= 0:
-                start_index = self._start_index + slice_val.start
-            else:
-                start_index = self._end_index + slice_val.start
-
-        if slice_val.stop is None:
-            end_index = self._end_index
-        else:
-            if slice_val.start >= 0:
-                end_index = self._start_index + slice_val.stop
-            else:
-                end_index = self._end_index + slice_val.stop
-
-        step = slice_val.step if slice_val.step is not None else 1
-
-        return start_index, end_index, step
-
-    def __len__(self):
-        return self._end_index - self._start_index
+            self._table_reader.open()
+            column = self._table_reader.get_column(self._column_name)
+            result = column[self._start_index + val]
+            self._table_reader.close()
+            return result
 
     def __iter__(self):
         self._table_reader.open()
@@ -58,30 +56,42 @@ class TrackColumnWrapper(object):
             yield row[self._column_name]
         self._table_reader.close()
 
-    def __add__(self, other):
+    def __copy__(self):
+        tcw = TrackColumnWrapper(self._column_name, self._table_reader)
+        tcw.offset = self.offset
+        return tcw
+
+    def __len__(self):
+        return self._end_index - self._start_index
+
+    def _asNumpyArray(self):
         self._table_reader.open()
         column = self._table_reader.get_column(self._column_name)
-        cache = column[:] + other
+        result = column[self._start_index:self._end_index]
         self._table_reader.close()
-        return cache
+        return result
 
-    def set_offset(self, start, end):
-        self._start_index = start
-        self._end_index = end
+    def _update_offset(self, slice_val):
+        if slice_val.start is not None:
+            if slice_val.start >= 0:
+                self._start_index = self._start_index + slice_val.start
+            else:
+                self._start_index = self._end_index + slice_val.start
 
-    def change_offset(self, start, end):
-        self._start_index += start
-        self._end_index += end
+        if slice_val.stop is not None:
+            if slice_val.start >= 0:
+                self._end_index = self._start_index + slice_val.stop
+            else:
+                self._end_index = self._end_index + slice_val.stop
 
-    def getShape(self):
-        return self._shape
+        self._step = slice_val.step if slice_val.step is not None else 1
 
-    def getDType(self):
-        return self._dtype
-
-    def getFilename(self):
-        raise NotImplementedError
-
-    shape = property( getShape )
-    dtype = property( getDType )
-    filename = property( getFilename )
+    def ends_as_numpy_array_points_func(self):
+        """
+        Used for points tracks for ends (== starts + 1)
+        """
+        self._table_reader.open()
+        column = self._table_reader.get_column(self._column_name)
+        result = column[self._start_index:self._end_index] + 1
+        self._table_reader.close()
+        return result

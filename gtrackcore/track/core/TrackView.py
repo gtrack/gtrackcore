@@ -1,23 +1,18 @@
-import numpy
-import traceback
 import weakref
-
 from collections import OrderedDict
 from copy import copy
 
-from gtrackcore.core.LogSetup import logMessageOnce
-from gtrackcore.track.core.GenomeRegion import GenomeRegion
+import numpy
+
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
-from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader, BrTableReader
+from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
 from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
-from gtrackcore.util.CommonFunctions import getClassName
-from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.pytables.DatabaseQueries import BrQueries
 
-numpy.seterr(all='raise', under='ignore', invalid='ignore')
 
+numpy.seterr(all='raise', under='ignore', invalid='ignore')
 
 def noneFunc():
     return None
@@ -202,7 +197,11 @@ class TrackView(object):
 
     def _handlePointsAndPartitions(self):
         if self._is_partition_track():
-            self._startList = self._endList[:-1]
+            if self._should_use_pytables():
+                self._startList = copy(self._endList)
+                self._startList = self._startList[:-1]
+            else:
+                self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
             if self._valList is not None:
                 self._valList = self._valList[1:]
@@ -220,31 +219,11 @@ class TrackView(object):
                     self._extraLists[key] = extraList[1:]
 
         if self._is_points_track():
-            self._endList = VirtualPointEnd(self._startList)
-
-
-    def _handle_points_and_partitions_for_slicing(self):
-        if self._is_partition_track():
-            self._startList = copy(self._endList)
-            self._startList.change_offset(0, -1)
-            self._endList.change_offset(1, 0)
-            if self._valList is not None:
-                self._valList.change_offset(1, 0)
-            if self._strandList is not None:
-
-                self._strandList.change_offset(1, 0)
-            if self._idList is not None:
-                self._idList.change_offset(1, 0)
-            if self._edgesList is not None:
-                self._edgesList.change_offset(1, 0)
-            if self._weightsList is not None:
-                self._weightsList.change_offset(1, 0)
-            for key, extraList in self._extraLists.items():
-                if extraList is not None:
-                    self._extraLists[key].change_offset(1, 0)
-
-        if self._is_points_track():
-            self._endList = copy(self._startList)
+            if self._should_use_pytables():
+                self._endList = copy(self._startList)
+                self._endList._asNumpyArray = self._endList.ends_as_numpy_array_points_func
+            else:
+                self._endList = VirtualPointEnd(self._startList)
 
     def _handle_points_and_partitions_for_iteration(self):
         if self._is_partition_track():
@@ -284,13 +263,7 @@ class TrackView(object):
         self._weightsList = weightsList
         self._extraLists = copy(extraLists)
 
-        if self._should_use_pytables():
-            self._handle_points_and_partitions_for_slicing()
-        else:
-            self._handlePointsAndPartitions()
-
-        if self._should_use_pytables():
-            self._db_handler = TrackTableReader(genomeAnchor.genome, track_name, allowOverlaps)
+        self._handlePointsAndPartitions()
 
         if self._startList is None:
             self._trackElement.start = noneFunc
@@ -315,6 +288,7 @@ class TrackView(object):
             self._pytables_track_element.weights = noneFunc
 
         if self._should_use_pytables():
+            self._db_handler = TrackTableReader(genomeAnchor.genome, track_name, allowOverlaps)
             self._handle_points_and_partitions_for_iteration()
 
         self._updateNumListElements()
@@ -359,7 +333,6 @@ class TrackView(object):
             return self
     
     def _updateNumListElements(self):
-        ""
         self._numListElements = self._computeNumListElements()
         
         if self.allowOverlaps and self._numListElements > 0:
@@ -582,7 +555,6 @@ class TrackView(object):
         
     def extrasAsNumpyArray(self, key):
         assert self.hasExtra(key)
-        from functools import partial
         return self._commonAsNumpyArray(self._extraLists[key], None, 'extras')
     
     def allExtrasAsDictOfNumpyArrays(self):
