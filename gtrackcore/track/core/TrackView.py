@@ -305,24 +305,22 @@ class TrackView(object):
         br_queries = BrQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
         start_index, end_index = br_queries.start_and_end_indices(self.genomeAnchor)
 
-        self._db_handler.open()
-        track_table = self._db_handler.table
+        with self._db_handler as table_reader:
+            track_table = table_reader.table
 
-        rows = track_table.iterrows(start=start_index, stop=end_index)
+            rows = track_table.iterrows(start=start_index, stop=end_index)
 
-        if self._is_partition_track():
-            self._pytables_track_element._row = rows.next()
+            if self._is_partition_track():
+                self._pytables_track_element._row = rows.next()
 
-        for row in rows:
-            #  Remove blind passengers
-            if self.allowOverlaps and not self.trackFormat.reprIsDense():
-                if 'end' in track_table.colnames and (row['end'] <= self.genomeAnchor.start):
-                    continue
-            self._pytables_track_element._prev_row = self._pytables_track_element._row
-            self._pytables_track_element._row = row
-            yield self._pytables_track_element
-
-        self._db_handler.close()
+            for row in rows:
+                #  Remove blind passengers
+                if self.allowOverlaps and not self.trackFormat.reprIsDense():
+                    if 'end' in track_table.colnames and (row['end'] <= self.genomeAnchor.start):
+                        continue
+                self._pytables_track_element._prev_row = self._pytables_track_element._row
+                self._pytables_track_element._row = row
+                yield self._pytables_track_element
 
     def __iter__(self):
         if self._should_use_pytables():

@@ -29,10 +29,15 @@ class DatabaseHandler(object):
     def _convert_track_name_to_pytables_format(self, track_name):
         return [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in track_name]
 
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
-        if mode != 'r':
-            gc.collect()
         try:
             self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
             portalocker.lock(self._h5_file, lock_type)
@@ -60,10 +65,6 @@ class DatabaseHandler(object):
             table_exists = False
 
         return table_exists
-
-    def __del__(self):
-        if self._is_open and self._h5_file is not None:
-            self.close()
 
     @property
     def table(self):
