@@ -18,18 +18,18 @@ class VirtualStartFromInterval(VirtualNumpyArray):
         return len(self._startArray)
     
 class VirtualStartFromIntervalStart(VirtualStartFromInterval):
-    def _asNumpyArray(self):
+    def as_numpy_array(self):
         if self._strandArray is None:
             return self._startArray
         else:
             return numpy.where(self._strandArray, self._startArray, self._endArray-1)
         
 class VirtualStartFromIntervalMid(VirtualStartFromInterval):
-    def _asNumpyArray(self):
+    def as_numpy_array(self):
         return (self._endArray + self._startArray) / 2
 
 class VirtualStartFromIntervalEnd(VirtualStartFromInterval):
-    def _asNumpyArray(self):
+    def as_numpy_array(self):
         if self._strandArray == None:
             return self._endArray - 1
         else:

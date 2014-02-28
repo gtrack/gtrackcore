@@ -15,5 +15,5 @@ class VirtualPointEnd(VirtualNumpyArray):
     def __len__(self):
         return len(self._startArray)
     
-    def _asNumpyArray(self):
+    def as_numpy_array(self):
         return self._startArray + 1

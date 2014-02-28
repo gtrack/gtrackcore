@@ -4,7 +4,7 @@ class VirtualNumpyArray(object):
         self._cachedNumpyArray = None
         
     def cacheNumpyArray(self):
-        self._cachedNumpyArray = self._asNumpyArray()
+        self._cachedNumpyArray = self.as_numpy_array()
 
     def __getattr__(self, name):
         if self._cachedNumpyArray is None:

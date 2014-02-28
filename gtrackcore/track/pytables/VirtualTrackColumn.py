@@ -64,7 +64,7 @@ class VirtualTrackColumn(VirtualNumpyArray):
     def __len__(self):
         return self._end_index - self._start_index
 
-    def _asNumpyArray(self):
+    def as_numpy_array(self):
         self._table_reader.open()
         column = self._table_reader.get_column(self._column_name)
         result = column[self._start_index:self._end_index]

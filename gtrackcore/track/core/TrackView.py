@@ -221,7 +221,7 @@ class TrackView(object):
         if self._is_points_track():
             if self._should_use_pytables():
                 self._endList = copy(self._startList)
-                self._endList._asNumpyArray = self._endList.ends_as_numpy_array_points_func
+                self._endList.as_numpy_array = self._endList.ends_as_numpy_array_points_func
             else:
                 self._endList = VirtualPointEnd(self._startList)
 
@@ -513,9 +513,8 @@ class TrackView(object):
         if array is None:
             return None
 
-        #TODO: should we do this?
         if isinstance(array, VirtualTrackColumn):
-            array = array[:]
+            array = array.as_numpy_array()
 
         numpyArray = self._removeBlindPassengersFromNumpyArray(array)
         
