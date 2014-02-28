@@ -1,5 +1,6 @@
 import tables
 import numpy
+from tables.exceptions import NoSuchNodeError
 
 from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator, BrTableReader
 from gtrackcore.util.pytables.DatabaseQueries import BrQueries
@@ -31,6 +32,8 @@ class BoundingRegionHandler(object):
             table_exist = self._table_reader.table_exists()
             self._table_reader.close()
         except DBNotExistError:
+            table_exist = False
+        except NoSuchNodeError:
             table_exist = False
         return table_exist
 
