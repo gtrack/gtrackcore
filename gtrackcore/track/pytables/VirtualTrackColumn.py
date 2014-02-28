@@ -1,7 +1,7 @@
 from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
 
 
-class TrackColumnWrapper(VirtualNumpyArray):
+class VirtualTrackColumn(VirtualNumpyArray):
 
     def __init__(self, column_name, table_reader):
         VirtualNumpyArray.__init__(self)
@@ -57,9 +57,9 @@ class TrackColumnWrapper(VirtualNumpyArray):
         self._table_reader.close()
 
     def __copy__(self):
-        tcw = TrackColumnWrapper(self._column_name, self._table_reader)
-        tcw.offset = self.offset
-        return tcw
+        vtc = VirtualTrackColumn(self._column_name, self._table_reader)
+        vtc.offset = self.offset
+        return vtc
 
     def __len__(self):
         return self._end_index - self._start_index

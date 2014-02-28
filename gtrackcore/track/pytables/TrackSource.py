@@ -1,5 +1,5 @@
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
-from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
+from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
 
 class TrackData(dict):
     def __init__(self, other=None):
@@ -23,7 +23,7 @@ class TrackSource:
         table_reader.close()
 
         for column_name in column_names:
-            track_data[column_name] = TrackColumnWrapper(column_name, table_reader)
+            track_data[column_name] = VirtualTrackColumn(column_name, table_reader)
 
         return track_data
 

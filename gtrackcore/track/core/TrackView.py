@@ -7,7 +7,7 @@ import numpy
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
-from gtrackcore.track.pytables.TrackColumnWrapper import TrackColumnWrapper
+from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.pytables.DatabaseQueries import BrQueries
 
@@ -298,7 +298,7 @@ class TrackView(object):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
 
     def _should_use_pytables(self):
-        return all([isinstance(l, TrackColumnWrapper)
+        return all([isinstance(l, VirtualTrackColumn)
                    for l in [self._startList, self._endList, self._valList, self._edgesList] if l is not None])
 
     def _generate_pytables_track_elements(self):
@@ -514,7 +514,7 @@ class TrackView(object):
             return None
 
         #TODO: should we do this?
-        if isinstance(array, TrackColumnWrapper):
+        if isinstance(array, VirtualTrackColumn):
             array = array[:]
 
         numpyArray = self._removeBlindPassengersFromNumpyArray(array)
