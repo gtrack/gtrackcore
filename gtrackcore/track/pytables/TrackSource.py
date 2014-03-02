@@ -18,12 +18,13 @@ class TrackSource:
 
         table_reader = TrackTableReader(genome, trackName, allowOverlaps)
         table_reader.open()
-
         column_names = table_reader.get_column_names()
+        number_of_rows = table_reader.number_of_rows()
         table_reader.close()
 
+
         for column_name in column_names:
-            track_data[column_name] = VirtualTrackColumn(column_name, table_reader)
+            track_data[column_name] = VirtualTrackColumn(column_name, table_reader, start_index=0, end_index=number_of_rows)
 
         return track_data
 

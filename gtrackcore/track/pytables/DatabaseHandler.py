@@ -72,11 +72,18 @@ class DatabaseHandler(object):
             raise DBNotOpenError
         return self._table
 
+    def number_of_rows(self):
+        try:
+            return self._table.nrows
+        except ClosedFileError, e:
+            raise DBNotOpenError(e)
+
     def get_column_names(self):
         try:
             return self._table.colnames
         except ClosedFileError, e:
             raise DBNotOpenError(e)
+
 
     def _get_track_table_path(self):
         return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])

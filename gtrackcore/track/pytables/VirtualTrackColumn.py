@@ -3,12 +3,12 @@ from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
 
 class VirtualTrackColumn(VirtualNumpyArray):
 
-    def __init__(self, column_name, table_reader):
+    def __init__(self, column_name, table_reader, start_index=-1, end_index=-1):
         VirtualNumpyArray.__init__(self)
         self._column_name = column_name
         self._table_reader = table_reader
-        self._start_index = -1
-        self._end_index = -1
+        self._start_index = start_index
+        self._end_index = end_index
         self._step = 1
 
         self._table_reader.open()
