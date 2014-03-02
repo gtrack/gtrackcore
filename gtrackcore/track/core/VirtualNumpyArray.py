@@ -39,6 +39,7 @@ NDARRAY_SPECIAL_METHODS_TO_OVERRIDE = [
     '__format__',
     '__ge__',
     '__getitem__',
+    '__getslice__',
     '__gt__',
     '__hash__',
     '__hex__',

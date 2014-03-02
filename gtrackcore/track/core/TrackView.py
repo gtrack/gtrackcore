@@ -197,40 +197,51 @@ class TrackView(object):
 
     def _handlePointsAndPartitions(self):
         if self._is_partition_track():
-            if self._should_use_pytables():
-                self._startList = copy(self._endList)
-                self._startList = self._startList[:-1]
-            else:
-                self._startList = self._endList[:-1]
+            self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
-            if self._valList is not None:
+            if self._valList != None:
                 self._valList = self._valList[1:]
-            if self._strandList is not None:
-
+            if self._strandList != None:
                 self._strandList = self._strandList[1:]
-            if self._idList is not None:
+            if self._idList != None:
                 self._idList = self._idList[1:]
-            if self._edgesList is not None:
+            if self._edgesList != None:
                 self._edgesList = self._edgesList[1:]
-            if self._weightsList is not None:
+            if self._weightsList != None:
                 self._weightsList = self._weightsList[1:]
             for key, extraList in self._extraLists.items():
-                if extraList is not None:
+                if extraList != None:
                     self._extraLists[key] = extraList[1:]
 
-        if self._is_points_track():
-            if self._should_use_pytables():
-                self._endList = copy(self._startList)
-                self._endList.as_numpy_array = self._endList.ends_as_numpy_array_points_func
-            else:
-                self._endList = VirtualPointEnd(self._startList)
+        elif self._is_points_track():
+            self._endList = VirtualPointEnd(self._startList)
 
-    def _handle_points_and_partitions_for_iteration(self):
+    def _handle_points_and_partitions_for_pytables(self):
         if self._is_partition_track():
-            self._pytables_track_element.start = self._pytables_track_element.partition_start_func
+            self._pytables_track_element.start = self._pytables_track_element.partition_start_func  # iteration
 
-        if self._is_points_track():
-            self._pytables_track_element.end = self._pytables_track_element.points_end_func
+            self._startList = copy(self._endList)
+            self._startList.update_offset(stop=-1)
+            self._endList.update_offset(start=1)
+            if self._valList is not None:
+                self._valList.update_offset(start=1)
+            if self._strandList is not None:
+                self._strandList.update_offset(start=1)
+            if self._idList is not None:
+                self._idList.update_offset(start=1)
+            if self._edgesList is not None:
+                self._edgesList.update_offset(start=1)
+            if self._weightsList is not None:
+                self._weightsList.update_offset(start=1)
+            for key, extraList in self._extraLists.items():
+                if extraList is not None:
+                    self._extraLists[key] = extraList.update_offset(start=1)
+
+        elif self._is_points_track():
+            self._pytables_track_element.end = self._pytables_track_element.points_end_func  # iteration
+
+            self._endList = copy(self._startList)
+            self._endList.as_numpy_array = self._endList.ends_as_numpy_array_points_func
 
     def _is_partition_track(self):
         return self.trackFormat.isDense() and not self.trackFormat.reprIsDense()
@@ -248,7 +259,9 @@ class TrackView(object):
         self.trackFormat = TrackFormat(startList, endList, valList, strandList, idList, edgesList, weightsList, extraLists)
         self.borderHandling = borderHandling
         self.allowOverlaps = allowOverlaps
-        
+        self._should_use_pytables = all([isinstance(l, VirtualTrackColumn)
+                                         for l in [startList, endList, valList, edgesList] if l is not None])
+
         self._trackElement = TrackElement(self)
         self._pytables_track_element = PytablesTrackElement(self)  # For iterating pytables track table
 
@@ -263,7 +276,8 @@ class TrackView(object):
         self._weightsList = weightsList
         self._extraLists = copy(extraLists)
 
-        self._handlePointsAndPartitions()
+        if not self._should_use_pytables:
+            self._handlePointsAndPartitions()
 
         if self._startList is None:
             self._trackElement.start = noneFunc
@@ -287,19 +301,15 @@ class TrackView(object):
             self._trackElement.weights = noneFunc
             self._pytables_track_element.weights = noneFunc
 
-        if self._should_use_pytables():
+        if self._should_use_pytables:
             self._db_handler = TrackTableReader(genomeAnchor.genome, track_name, allowOverlaps)
-            self._handle_points_and_partitions_for_iteration()
+            self._handle_points_and_partitions_for_pytables()
 
         self._updateNumListElements()
 
         for i, list in enumerate([self._startList, self._endList, self._valList, self._strandList, self._idList, self._edgesList, self._weightsList] \
             + [extraList for extraList in self._extraLists.values()]):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
-
-    def _should_use_pytables(self):
-        return all([isinstance(l, VirtualTrackColumn)
-                   for l in [self._startList, self._endList, self._valList, self._edgesList] if l is not None])
 
     def _generate_pytables_track_elements(self):
         br_queries = BrQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
@@ -323,7 +333,7 @@ class TrackView(object):
                 yield self._pytables_track_element
 
     def __iter__(self):
-        if self._should_use_pytables():
+        if self._should_use_pytables:
             self._pytables_track_element._row = None
             return self._generate_pytables_track_elements()
         else:
@@ -399,7 +409,7 @@ class TrackView(object):
         
         if self._bpSize() == 0:
             rightIndex = leftIndex
-        
+
         self._startList = self._startList[leftIndex:rightIndex]
         self._endList = self._endList[leftIndex:rightIndex]
 
@@ -510,9 +520,6 @@ class TrackView(object):
         assert(self.borderHandling in ['crop'])
         if array is None:
             return None
-
-        if isinstance(array, VirtualTrackColumn):
-            array = array.as_numpy_array()
 
         numpyArray = self._removeBlindPassengersFromNumpyArray(array)
         

@@ -38,23 +38,22 @@ class VirtualTrackColumn(VirtualNumpyArray):
     def filename(self):
         raise NotImplementedError
 
-    def __getitem__(self, val):
-        if isinstance(val, slice):
-            self._update_offset(val)
-            return self
-        else:
-            self._table_reader.open()
-            column = self._table_reader.get_column(self._column_name)
-            result = column[self._start_index + val]
-            self._table_reader.close()
-            return result
+    def update_offset(self, start=None, stop=None, step=None):
+        if start is not None:
+            if start >= 0:
+                self._start_index = self._start_index + start
+            else:
+                self._start_index = self._end_index + start
 
-    def __iter__(self):
-        self._table_reader.open()
-        table = self._table_reader.table
-        for row in table.iterrows(start=self._start_index, stop=self._end_index):
-            yield row[self._column_name]
-        self._table_reader.close()
+        if stop is not None:
+            if start >= 0:
+                self._end_index = self._start_index + stop
+            else:
+                self._end_index = self._end_index + stop
+
+        self._step = step if step is not None else 1
+
+        return self
 
     def __copy__(self):
         vtc = VirtualTrackColumn(self._column_name, self._table_reader)
@@ -70,21 +69,6 @@ class VirtualTrackColumn(VirtualNumpyArray):
         result = column[self._start_index:self._end_index]
         self._table_reader.close()
         return result
-
-    def _update_offset(self, slice_val):
-        if slice_val.start is not None:
-            if slice_val.start >= 0:
-                self._start_index = self._start_index + slice_val.start
-            else:
-                self._start_index = self._end_index + slice_val.start
-
-        if slice_val.stop is not None:
-            if slice_val.start >= 0:
-                self._end_index = self._start_index + slice_val.stop
-            else:
-                self._end_index = self._end_index + slice_val.stop
-
-        self._step = slice_val.step if slice_val.step is not None else 1
 
     def ends_as_numpy_array_points_func(self):
         """
