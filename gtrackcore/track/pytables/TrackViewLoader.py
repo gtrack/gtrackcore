@@ -31,10 +31,11 @@ class TrackViewLoader:
     @staticmethod
     def _get_start_and_end_indices(region, track_name, allow_overlaps, track_format):
         br_queries = BrQueries(region.genome, track_name, allow_overlaps)
-        if track_format.getFormatName() in ['Function', 'Linked function']:
-            start_index, end_index = br_queries.start_and_end_indices(region)
+        br_start_index, br_end_index = br_queries.start_and_end_indices(region)
+        if track_format.getFormatName() in ['Function', 'Linked function', 'Linked base pairs']:
+            return br_start_index, br_end_index
         else:
             track_queries = TrackQueries(region.genome, track_name, allow_overlaps)
-            start_index, end_index = track_queries.start_and_end_indices(region, track_format)
-
-        return start_index, end_index
+            start_index, end_index = track_queries.start_and_end_indices(region, br_start_index,
+                                                                         br_end_index, track_format)
+            return start_index, end_index

@@ -190,8 +190,8 @@ class TableCreator(DatabaseHandler):
 
         try:
             table = self._h5_file.create_table(group, table_name,
-                                                        table_description, table_name,
-                                                        expectedrows=expectedrows)
+                                               table_description, table_name,
+                                               expectedrows=expectedrows)
         except ClosedFileError, e:
             raise DBNotOpenError(e)
         except NodeError:
@@ -216,6 +216,14 @@ class TableCreator(DatabaseHandler):
 
     def get_row(self):
         return self._table.row
+
+    def _create_indices(self):
+        if 'chr' in self._table.colinstances:
+            self._table.cols.chr.create_index()
+        if 'start' in self._table.colinstances:
+            self._table.cols.start.create_index()
+        if 'end' in self._table.colinstances:
+            self._table.cols.end.create_index()
 
     def _create_groups(self):
         group = self._get_track_group()
@@ -264,13 +272,6 @@ class TrackTableCreator(TableCreator):
     def flush(self):
         super(TrackTableCreator, self).flush(self._table)
 
-    def _create_indices(self):
-        self._table.cols.chr.create_index()
-        if 'start' in self._table.colinstances:
-            self._table.cols.start.create_index()
-        if 'end' in self._table.colinstances:
-            self._table.cols.end.create_index()
-
 class TrackTableCopier(TableCreator):
     def __init__(self, genome, track_name, allow_overlaps):
         super(TrackTableCopier, self).__init__(genome, track_name, allow_overlaps)
@@ -283,8 +284,11 @@ class TrackTableCopier(TableCreator):
     def create_table(self, table_description, expectedrows):
         self._old_table.rename(self._old_table.name + '_tmp')
 
-        self._table = super(TrackTableCreator, self).create_table(
-            table_description, expectedrows + self._old_table.nrow, self._track_name[-1])
+        self._table = super(TrackTableCopier, self).create_table(
+            table_description, expectedrows + self._old_table.nrows, self._track_name[-1])
+        self._create_indices()
+
+        self._copy_content_from_old_to_new_table()
 
         self.remove_table(self._old_table.name)
         self._old_table = None
@@ -298,19 +302,42 @@ class TrackTableCopier(TableCreator):
                 else:
                     new_row[column_name] = old_row[column_name]
             new_row.append()
-            self.flush()
+            self.flush(self._table)
 
 
 class TrackTableSorter(TableCreator):
     def __init__(self, genome, track_name, allow_overlaps):
         super(TrackTableSorter, self).__init__(genome, track_name, allow_overlaps)
+        self._old_table = None
 
     def open(self):
         super(TrackTableSorter, self).open()
         self._table = self._get_track_table()
+        self._old_table = self._table
 
-    def flush(self, table):
-        super(TrackTableSorter, self).flush(table)
+    def sort_table(self, sort_order):
+        table_description = self._old_table.coldescrs
+        if 'chr' in table_description:
+            del table_description['chr']
+
+        self._old_table.rename(self._old_table.name + '_tmp')
+
+        self._table = super(TrackTableSorter, self).create_table(
+            table_description, self._old_table.nrows, self._track_name[-1])
+        self._create_indices()
+
+        self._copy_content_from_old_to_new_table_in_sorted_order(sort_order, table_description)
+
+        self.remove_table(self._old_table.name)
+        self._old_table = None
+
+    def _copy_content_from_old_to_new_table_in_sorted_order(self, sort_order, table_description):
+        new_row = self._table.row
+        for old_row in self._old_table.itersequence(sort_order):
+            for col in table_description:
+                new_row[col] = old_row[col]
+            new_row.append()
+            self.flush(self._table)
 
 
 class BoundingRegionTableCreator(TableCreator):

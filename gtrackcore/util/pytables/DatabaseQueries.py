@@ -64,29 +64,26 @@ class TrackQueries(DatabaseQueries):
         format_name = track_format.getFormatName()
 
         if format_name in ['Segments', 'Valued segments', 'Linked segments', 'Linked valued segments']:
-            query = '& (end > region_start) & (start < region_end)'
+            query = '(end > region_start) & (start < region_end)'
 
         elif format_name in ['Points', 'Valued points', 'Linked points', 'Linked valued points']:
-            query = '& (start >= region_start) & (start < region_end)'
+            query = '(start >= region_start) & (start < region_end)'
 
         elif format_name in ['Genome partition', 'Step function', 'Linked genome partition', 'Linked step function']:
-            query = '& (end >= region_start) & (end <= region_end)'
+            query = '(end >= region_start) & (end <= region_end)'
 
-        elif format_name == 'Linked base pairs':
-            query = ''
         else:
             raise ShouldNotOccurError
 
-        return '(chr == region_chr)' + query
+        return query
 
-    def start_and_end_indices(self, genome_region, track_format):
+    def start_and_end_indices(self, genome_region, br_start, br_stop, track_format):
         query = self._build_start_and_end_indices_query(track_format)
 
         self._db_handler.open()
         table = self._db_handler.table
-        region_indices = table.get_where_list(query, sort=True,
+        region_indices = table.get_where_list(query, sort=True, start=br_start, stop=br_stop,
                                               condvars={
-                                                  'region_chr': genome_region.chr,
                                                   'region_start': genome_region.start,
                                                   'region_end': genome_region.end
                                               })

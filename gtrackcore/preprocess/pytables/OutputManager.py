@@ -80,7 +80,8 @@ class OutputManager(object):
         max_chr_len = ge_source_manager.getMaxChrStrLen()
 
         data_type_dict = {}
-        data_type_dict['chr'] = tables.StringCol(max_chr_len)
+        if not ge_source_manager.isSorted():
+            data_type_dict['chr'] = tables.StringCol(max_chr_len)
 
         for column in ge_source_manager.getPrefixList():
             if column in ['start', 'end']:

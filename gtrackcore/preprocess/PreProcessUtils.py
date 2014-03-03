@@ -126,9 +126,10 @@ class PreProcessUtils(object):
         dir_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
         assert os.path.exists(dir_path)  # throw error
 
-        db_handler = TrackTableSorter(genome, track_name, allow_overlaps)
-        db_handler.open()
-        column_dict = db_handler.get_columns()
+        table_sorter = TrackTableSorter(genome, track_name, allow_overlaps)
+        table_sorter.open()
+
+        column_dict = table_sorter.get_columns()
 
         chr_column = column_dict['chr'][:]
 
@@ -143,28 +144,12 @@ class PreProcessUtils(object):
             end_column = column_dict['end'][:]
             sort_order = numpy.lexsort((end_column, chr_column))
         else:
-            db_handler.close()
+            table_sorter.close()
             return
 
-        old_table = db_handler.table
+        table_sorter.sort_table(sort_order)
 
-        table_description = old_table.coldescrs
-        table_nrows = old_table.nrows
-        table_name = old_table.name
-
-        old_table.rename(table_name + "_tmp")
-
-        new_table = db_handler.create_table(table_description, table_nrows, table_name)
-
-        new_row = new_table.row
-        for old_row in old_table.itersequence(sort_order):
-            for col in column_dict:
-                new_row[col] = old_row[col]
-            new_row.append()
-            db_handler.flush(new_table)
-
-        db_handler.remove_table(old_table.name)
-        db_handler.close()
+        table_sorter.close()
 
     @staticmethod
     def create_bounding_region_table(genome, track_name, allow_overlaps):

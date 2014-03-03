@@ -22,7 +22,6 @@ class TrackSource:
         number_of_rows = table_reader.number_of_rows()
         table_reader.close()
 
-
         for column_name in column_names:
             track_data[column_name] = VirtualTrackColumn(column_name, table_reader, start_index=0, end_index=number_of_rows)
 
