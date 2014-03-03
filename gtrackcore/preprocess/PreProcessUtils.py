@@ -152,7 +152,7 @@ class PreProcessUtils(object):
         table_sorter.close()
 
     @staticmethod
-    def create_bounding_region_table(genome, track_name, allow_overlaps):
+    def create_bounding_regions(genome, track_name, allow_overlaps):
         collector = PreProcMetaDataCollector(genome, track_name)
         bounding_region_tuples = collector.getBoundingRegionTuples(allow_overlaps)
         if not collector.getTrackFormat().reprIsDense():
@@ -161,7 +161,6 @@ class PreProcessUtils(object):
 
         br_handler = BoundingRegionHandler(genome, track_name, allow_overlaps)
         br_handler.store_bounding_regions(bounding_region_tuples, ge_chr_list, not collector.getTrackFormat().reprIsDense())
-
 
         # Sanity check
         if br_handler.get_total_element_count() != collector.getNumElements(allow_overlaps):
