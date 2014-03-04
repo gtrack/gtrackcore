@@ -23,7 +23,7 @@ class BoundingRegionHandler(object):
         self._br_queries = BoundingRegionQueries(genome, track_name, allow_overlaps)
 
         self._updated_chromosomes = set([])
-        self._max_chr_len = 0
+        self._max_chr_len = 1
 
         from gtrackcore.input.userbins.UserBinSource import MinimalBinSource
         minimal_bin_list = MinimalBinSource(genome)
@@ -77,13 +77,11 @@ class BoundingRegionHandler(object):
                     raise InvalidFormatError("Error: bounding regions '%s' and '%s' overlap." % (last_region, br.region))
                 if last_region.end == br.region.start:
                     raise InvalidFormatError("Error: bounding regions '%s' and '%s' are adjoining (there is no gap between them)." % (last_region, br.region))
-                if len(br.region) < 1:
-                    raise InvalidFormatError("Error: bounding region '%s' does not have positive length." % br.region)
-
+            if len(br.region) < 1:
+                raise InvalidFormatError("Error: bounding region '%s' does not have positive length." % br.region)
             if not sparse and len(br.region) != br.elCount:
                 raise InvalidFormatError("Error: track type representation is dense, but the length of bounding region '%s' is not equal to the element count: %s != %s" % (br.region, len(br.region), br.elCount))
 
-            # TODO: Should end_index be +1 ?!
             start_index, end_index = (total_elements, total_elements + br.elCount)
             total_elements += br.elCount
 
@@ -114,34 +112,34 @@ class BoundingRegionHandler(object):
 
         if len(bounding_regions) != 1:
             raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
-                                             % (region, prettyPrintTrackName(self._trackName)))
+                                             % (region, prettyPrintTrackName(self._track_name)))
 
-        return GenomeRegion(bounding_regions[0]['chr'], bounding_regions[0]['start'], bounding_regions[0]['end'])
+        return GenomeRegion(chr=bounding_regions[0]['chr'], start=bounding_regions[0]['start'], end=bounding_regions[0]['end'])
 
     def get_all_enclosing_bounding_regions(self, region):
         bounding_regions = self._br_queries.all_enclosing_bounding_regions_for_region(region)
 
         if len(bounding_regions) == 0:
             raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
-                                             % (region, prettyPrintTrackName(self._trackName)))
+                                             % (region, prettyPrintTrackName(self._track_name)))
 
-        return [GenomeRegion(br['chr'], br['start'], br['end']) for br in bounding_regions]
+        return [GenomeRegion(chr=br['chr'], start=br['start'], end=br['end']) for br in bounding_regions]
 
     def get_all_touching_bounding_regions(self):
         bounding_regions = self._br_queries.all_touching_bounding_regions_for_region()
 
-        return [GenomeRegion(br['chr'], br['start'], br['end']) for br in bounding_regions]
+        return [GenomeRegion(chr=br['chr'], start=br['start'], end=br['end']) for br in bounding_regions]
 
     def get_all_bounding_regions(self):
         bounding_regions = self._br_queries.all_bounding_regions()
 
-        return [GenomeRegion(br['chr'], br['start'], br['end']) for br in bounding_regions]
+        return [GenomeRegion(chr=br['chr'], start=br['start'], end=br['end']) for br in bounding_regions]
 
     def get_total_element_count(self):
-        return sum(self._br_queries.total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
+        return sum(self.get_total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
 
-    def get_all_bounding_regions_for_chr(self, chr):
-        raise NotImplementedError
+    def get_total_element_count_for_chr(self, chr):
+        return self._br_queries.total_element_count_for_chr(chr)
 
     def get_all_bounding_regions(self):
         if not self.table_exists():
