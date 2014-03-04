@@ -302,7 +302,10 @@ class TrackTableCopier(TableCreator):
                 else:
                     new_row[column_name] = old_row[column_name]
             new_row.append()
-            self.flush(self._table)
+            self.flush()
+
+    def flush(self):
+        super(TrackTableCopier, self).flush(self._table)
 
 
 class TrackTableSorter(TableCreator):

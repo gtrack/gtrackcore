@@ -137,7 +137,7 @@ class OutputManager(object):
     #Todo: refactor...
     def _add_element_as_row(self, genome_element):
         row = self._table_creator.get_row()
-        for column in self._table_description.keys():
+        for column in self._table_description:
             if column in genome_element.__dict__ and column != 'extra':
                 if column in ['edges', 'weights']:
                     ge_len = sum(1 for x in genome_element.__dict__[column])
