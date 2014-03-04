@@ -23,6 +23,7 @@ class BoundingRegionHandler(object):
         self._br_queries = BoundingRegionQueries(genome, track_name, allow_overlaps)
 
         self._updated_chromosomes = set([])
+        self._max_chr_len = 0
 
         from gtrackcore.input.userbins.UserBinSource import MinimalBinSource
         minimal_bin_list = MinimalBinSource(genome)
@@ -61,8 +62,7 @@ class BoundingRegionHandler(object):
 
         db_creator.close()
 
-    @staticmethod
-    def _create_bounding_regions_triples(bounding_region_tuples, genome_element_chr_list, sparse):
+    def _create_bounding_regions_triples(self, bounding_region_tuples, genome_element_chr_list, sparse):
         last_region = None
         total_elements = 0
         temp_bounding_regions = []
@@ -87,6 +87,8 @@ class BoundingRegionHandler(object):
             start_index, end_index = (total_elements, total_elements + br.elCount)
             total_elements += br.elCount
 
+            self._max_chr_len = max(self._max_chr_len, len(br.region.chr))
+
             temp_bounding_regions.append((br.region.chr, br.region.start, br.region.end, start_index, end_index, br.elCount))
 
             last_region = br.region
@@ -99,7 +101,7 @@ class BoundingRegionHandler(object):
 
     def _create_table_description(self):
         return {
-                'chr': tables.StringCol(self._max_len_chr(), pos=0),
+                'chr': tables.StringCol(self._max_chr_len, pos=0),
                 'start': tables.Int32Col(pos=1),
                 'end': tables.Int32Col(pos=2),
                 'start_index': tables.Int32Col(pos=3),
