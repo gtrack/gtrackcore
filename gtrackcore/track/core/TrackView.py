@@ -410,36 +410,67 @@ class TrackView(object):
         if self._bpSize() == 0:
             rightIndex = leftIndex
 
-        self._startList = self._startList[leftIndex:rightIndex]
-        self._endList = self._endList[leftIndex:rightIndex]
+        if self._should_use_pytables:
+            self._startList = self._startList.update_offset(start=leftIndex, stop=rightIndex)
+            self._endList = self._endList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._valList != None:
+                self._valList = self._valList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._strandList != None:
+                self._strandList = self._strandList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._idList != None:
+                self._idList = self._idList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._edgesList != None:
+                self._edgesList = self._edgesList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._weightsList != None:
+                self._weightsList = self._weightsList.update_offset(start=leftIndex, stop=rightIndex)
+            for key, extraList in self._extraLists.items():
+                self._extraLists[key] = extraList.update_offset(start=leftIndex, stop=rightIndex)
+        else:
+            self._startList = self._startList[leftIndex:rightIndex]
+            self._endList = self._endList[leftIndex:rightIndex]
+            if self._valList != None:
+                self._valList = self._valList[leftIndex:rightIndex]
+            if self._strandList != None:
+                self._strandList = self._strandList[leftIndex:rightIndex]
+            if self._idList != None:
+                self._idList = self._idList[leftIndex:rightIndex]
+            if self._edgesList != None:
+                self._edgesList = self._edgesList[leftIndex:rightIndex]
+            if self._weightsList != None:
+                self._weightsList = self._weightsList[leftIndex:rightIndex]
+            for key, extraList in self._extraLists.items():
+                self._extraLists[key] = extraList[leftIndex:rightIndex]
 
-        if self._valList != None:
-            self._valList = self._valList[leftIndex:rightIndex]
-        if self._strandList != None:
-            self._strandList = self._strandList[leftIndex:rightIndex]
-        if self._idList != None:
-            self._idList = self._idList[leftIndex:rightIndex]
-        if self._edgesList != None:
-            self._edgesList = self._edgesList[leftIndex:rightIndex]
-        if self._weightsList != None:
-            self._weightsList = self._weightsList[leftIndex:rightIndex]
-        for key, extraList in self._extraLists.items():
-            self._extraLists[key] = extraList[leftIndex:rightIndex]
         self._updateNumListElements()
 
     def _doDenseSlicing(self, i, j):
-        if self._valList != None:
-            self._valList = self._valList[i:j]
-        if self._strandList != None:
-            self._strandList = self._strandList[i:j]
-        if self._idList != None:
-            self._idList = self._idList[i:j]
-        if self._edgesList != None:
-            self._edgesList = self._edgesList[i:j]
-        if self._weightsList != None:
-            self._weightsList = self._weightsList[i:j]
-        for key, extraList in self._extraLists.items():
-            self._extraLists[key] = extraList[i:j]
+        if self._should_use_pytables:
+            if self._valList != None:
+                self._valList = self._valList.update_offset(start=i, stop=j)
+            if self._strandList != None:
+                self._strandList = self._strandList.update_offset(start=i, stop=j)
+            if self._idList != None:
+                self._idList = self._idList.update_offset(start=i, stop=j)
+            if self._edgesList != None:
+                self._edgesList = self._edgesList.update_offset(start=i, stop=j)
+            if self._weightsList != None:
+                self._weightsList = self._weightsList.update_offset(start=i, stop=j)
+            for key, extraList in self._extraLists.items():
+                self._extraLists[key] = extraList.update_offset(start=i, stop=j)
+        else:
+            if self._valList != None:
+                self._valList = self._valList[i:j]
+            if self._strandList != None:
+                self._strandList = self._strandList[i:j]
+            if self._idList != None:
+                self._idList = self._idList[i:j]
+            if self._edgesList != None:
+                self._edgesList = self._edgesList[i:j]
+            if self._weightsList != None:
+                self._weightsList = self._weightsList[i:j]
+            for key, extraList in self._extraLists.items():
+                self._extraLists[key] = extraList[i:j]
+
         self._updateNumListElements()
             
     def __getslice__(self, i, j):
