@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
-import numpy
 import re
-import gc
+import numpy
 
 import tables
 from tables import ClosedFileError
@@ -11,6 +10,7 @@ from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
+
 
 BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
 
@@ -24,7 +24,6 @@ class DatabaseHandler(object):
         self._track_name = self._convert_track_name_to_pytables_format(track_name)
         self._h5_file = None
         self._table = None
-        self._is_open = False
 
     def _convert_track_name_to_pytables_format(self, track_name):
         return [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in track_name]
@@ -41,14 +40,12 @@ class DatabaseHandler(object):
         try:
             self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
             portalocker.lock(self._h5_file, lock_type)
-            self._is_open = True
         except IOError, e:
             raise DBNotExistError(e)
 
     def close(self):
         portalocker.unlock(self._h5_file)
         self._h5_file.close()
-        self._is_open = False
         self._table = None
 
     def get_columns(self):
