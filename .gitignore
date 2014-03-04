@@ -37,3 +37,14 @@ test_output
 
 #intellij
 gtrackcore.iml
+
+#test tracks
+gtrackcore/core/*.bed
+gtrackcore/core/*.gtrack
+gtrackcore/core/*.wig
+
+#OS X
+*.DS_Store
+
+#Intellij
+.idea/
