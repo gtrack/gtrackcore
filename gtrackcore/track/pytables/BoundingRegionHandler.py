@@ -3,10 +3,12 @@ import numpy
 from tables.exceptions import NoSuchNodeError
 
 from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator, BrTableReader
-from gtrackcore.util.pytables.DatabaseQueries import BrQueries
+from gtrackcore.util.CommonFunctions import prettyPrintTrackName
+from gtrackcore.util.pytables.DatabaseQueries import BoundingRegionQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
-from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegionsNotAvailableError, DBNotExistError
+from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegionsNotAvailableError, DBNotExistError, \
+    OutsideBoundingRegionError
 
 
 class BoundingRegionHandler(object):
@@ -18,7 +20,7 @@ class BoundingRegionHandler(object):
         self._allow_overlaps = allow_overlaps
 
         self._table_reader = BrTableReader(genome, track_name, allow_overlaps)
-        self._queries = BrQueries(genome, track_name, allow_overlaps)
+        self._br_queries = BoundingRegionQueries(genome, track_name, allow_overlaps)
 
         self._updated_chromosomes = set([])
 
@@ -105,18 +107,36 @@ class BoundingRegionHandler(object):
                 'element_count': tables.Int32Col(pos=5),
                }
 
-    # TODO: find max len
-    def _max_len_chr(self):
-        return 100
+    def get_enclosing_bounding_region(self, region):
+        bounding_regions = self._br_queries.all_enclosing_bounding_regions_for_region(region)
 
-    def _update_contents_if_necessary(self, chr):
-        raise NotImplementedError
+        if len(bounding_regions) != 1:
+            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
+                                             % (region, prettyPrintTrackName(self._trackName)))
 
-    def get_bounding_region_info(self, region):
-        raise NotImplementedError
+        return GenomeRegion(bounding_regions[0]['chr'], bounding_regions[0]['start'], bounding_regions[0]['end'])
+
+    def get_all_enclosing_bounding_regions(self, region):
+        bounding_regions = self._br_queries.all_enclosing_bounding_regions_for_region(region)
+
+        if len(bounding_regions) == 0:
+            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
+                                             % (region, prettyPrintTrackName(self._trackName)))
+
+        return [GenomeRegion(br['chr'], br['start'], br['end']) for br in bounding_regions]
+
+    def get_all_touching_bounding_regions(self):
+        bounding_regions = self._br_queries.all_touching_bounding_regions_for_region()
+
+        return [GenomeRegion(br['chr'], br['start'], br['end']) for br in bounding_regions]
+
+    def get_all_bounding_regions(self):
+        bounding_regions = self._br_queries.all_bounding_regions()
+
+        return [GenomeRegion(br['chr'], br['start'], br['end']) for br in bounding_regions]
 
     def get_total_element_count(self):
-        return sum(self._queries.total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
+        return sum(self._br_queries.total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
 
     def get_all_bounding_regions_for_chr(self, chr):
         raise NotImplementedError

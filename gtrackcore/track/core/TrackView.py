@@ -9,7 +9,7 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
-from gtrackcore.util.pytables.DatabaseQueries import BrQueries
+from gtrackcore.util.pytables.DatabaseQueries import BoundingRegionQueries
 
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
@@ -312,7 +312,7 @@ class TrackView(object):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
 
     def _generate_pytables_track_elements(self):
-        br_queries = BrQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
+        br_queries = BoundingRegionQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
         start_index, end_index = br_queries.start_and_end_indices(self.genomeAnchor)
 
         with self._db_handler as table_reader:
