@@ -25,10 +25,37 @@ class BoundingRegionQueries(DatabaseQueries):
         return sum(result) if len(result) > 0 else 0
 
     def start_and_end_indices(self, genome_region):
-        bounding_region = self.all_enclosing_bounding_regions_for_region(genome_region)
+        bounding_region = self.enclosing_bounding_region_for_region(genome_region)
 
         return (bounding_region[0]['start_index'], bounding_region[0]['end_index'])\
             if len(bounding_region) > 0 else (0, 0)
+
+    def enclosing_bounding_region_for_region(self, genome_region):
+        query = '(chr == region_chr) & (start <= region_start) & (end >= region_end)'
+        return self._all_bounding_regions_for_region(genome_region, query)
+
+    def all_bounding_regions_enclosed_by_region(self, genome_region):
+        query = '(chr == region_chr) & (start >= region_start) & (end < region_end)'
+        return self._all_bounding_regions_for_region(genome_region, query)
+
+    def all_bounding_regions_touched_by_region(self, genome_region):
+        query = '(chr == region_chr) & (start < region_end) & (end > region_start)'
+        return self._all_bounding_regions_for_region(genome_region, query)
+
+    def all_bounding_regions(self):
+        self._db_handler.open()
+        table = self._db_handler.table
+
+        bounding_regions = [{'chr': row['chr'],
+                             'start': row['start'],
+                             'end': row['end'],
+                             'start_index': row['start_index'],
+                             'end_index': row['end_index']}
+                            for row in table]
+
+        self._db_handler.close()
+
+        return bounding_regions
 
     def _all_bounding_regions_for_region(self, genome_region, query):
         self._db_handler.open()
@@ -45,29 +72,6 @@ class BoundingRegionQueries(DatabaseQueries):
                                                        'region_start': genome_region.start,
                                                        'region_end': genome_region.end
                                                    })]
-
-        self._db_handler.close()
-
-        return bounding_regions
-
-    def all_enclosing_bounding_regions_for_region(self, genome_region):
-        query = '(chr == region_chr) & (start <= region_start) & (end >= region_end)'
-        return self._all_bounding_regions_for_region(genome_region, query)
-
-    def all_touching_bounding_regions_for_region(self, genome_region):
-        query = '(chr == region_chr) & (start < region_end) & (end > region_start)'
-        return self._all_bounding_regions_for_region(genome_region, query)
-
-    def all_bounding_regions(self):
-        self._db_handler.open()
-        table = self._db_handler.table
-
-        bounding_regions = [{'chr': row['chr'],
-                             'start': row['start'],
-                             'end': row['end'],
-                             'start_index': row['start_index'],
-                             'end_index': row['end_index']}
-                            for row in table]
 
         self._db_handler.close()
 

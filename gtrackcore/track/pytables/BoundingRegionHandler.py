@@ -107,7 +107,7 @@ class BoundingRegionHandler(object):
         }
 
     def get_enclosing_bounding_region(self, region):
-        bounding_regions = self._br_queries.all_enclosing_bounding_regions_for_region(region)
+        bounding_regions = self._br_queries.enclosing_bounding_region_for_region(region)
 
         if len(bounding_regions) != 1:
             raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
@@ -116,7 +116,7 @@ class BoundingRegionHandler(object):
         return GenomeRegion(chr=bounding_regions[0]['chr'], start=bounding_regions[0]['start'], end=bounding_regions[0]['end'])
 
     def get_all_enclosing_bounding_regions(self, region):
-        bounding_regions = self._br_queries.all_enclosing_bounding_regions_for_region(region)
+        bounding_regions = self._br_queries.all_bounding_regions_enclosed_by_region(region)
 
         if len(bounding_regions) == 0:
             raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
@@ -125,7 +125,7 @@ class BoundingRegionHandler(object):
         return [GenomeRegion(chr=br['chr'], start=br['start'], end=br['end']) for br in bounding_regions]
 
     def get_all_touching_bounding_regions(self, region):
-        bounding_regions = self._br_queries.all_touching_bounding_regions_for_region(region)
+        bounding_regions = self._br_queries.all_bounding_regions_touched_by_region(region)
 
         if len(bounding_regions) == 0:
             raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \

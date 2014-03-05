@@ -37,7 +37,7 @@ class TestBoundingRegionHandler(unittest.TestCase):
                     BoundingRegionTuple(GenomeRegion('TestGenome', 'chrM', 1000, 2000), 5 if sparse else 1000)]
         self._br_handler.store_bounding_regions(brTuples, ['chr21', 'chrM'], sparse)
 
-    def testShelveFileExists(self):
+    def testTableFileExists(self):
         self._set_up_handler()
         
         self.assertFalse(self._br_handler.table_exists())
@@ -48,15 +48,15 @@ class TestBoundingRegionHandler(unittest.TestCase):
         self.assertTrue(self._br_handler.table_exists())
         self.assertTrue(os.path.exists(self._fn))
 
-    def testShelveLocking(self):
+    def testTableLocking(self):
         self._set_up_handler()
 
         BoundingRegionHandler('TestGenome', ['test_bounding_region_handler'], allow_overlaps=False)
 
         self._commonStoreBoundingRegions(sparse=True)
-
+        
         BoundingRegionHandler('TestGenome', ['test_bounding_region_handler'], allow_overlaps=False)
-
+        
     def testBoundingRegionsOverlapping(self):
         self._set_up_handler()
         
@@ -136,9 +136,9 @@ class TestBoundingRegionHandler(unittest.TestCase):
         self._set_up_handler()
         self._commonStoreBoundingRegions(sparse=True)
         
-        self.assertEquals(GenomeRegion(chr='chr21', start=50000, end=52000),
+        self.assertEquals(GenomeRegion(chr='chr21', start=0, end=1000000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chr21', 50000, 52000)))
-        self.assertEquals(GenomeRegion(chr='chr21', start=2050000, end=2052000),
+        self.assertEquals(GenomeRegion(chr='chr21', start=2000000, end=2500000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chr21', 2050000, 2052000)))
         self.assertEquals(GenomeRegion(chr='chrM', start=1000, end=2000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chrM', 1000, 2000)))
@@ -147,9 +147,9 @@ class TestBoundingRegionHandler(unittest.TestCase):
         self._set_up_handler()
         self._commonStoreBoundingRegions(sparse=False)
         
-        self.assertEquals(GenomeRegion(chr='chr21', start=50000, end=52000),
+        self.assertEquals(GenomeRegion(chr='chr21', start=0, end=1000000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chr21', 50000, 52000)))
-        self.assertEquals(GenomeRegion(chr='chr21', start=2050000, end=2052000),
+        self.assertEquals(GenomeRegion(chr='chr21', start=2000000, end=2500000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chr21', 2050000, 2052000)))
         self.assertEquals(GenomeRegion(chr='chrM', start=1000, end=2000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chrM', 1000, 2000)))
@@ -163,12 +163,9 @@ class TestBoundingRegionHandler(unittest.TestCase):
         
         self._br_handler.store_bounding_regions(brTuples, ['chr21'], sparse=True)
 
-        region = self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chr21', 50000, 52000))
-        logMessage("Should these be the same?  " + str(GenomeRegion(chr='chr21', start=50000, end=52000)) + " == " + str(region))
-        
-        self.assertEquals(GenomeRegion(chr='chr21', start=50000, end=52000),
+        self.assertEquals(GenomeRegion(chr='chr21', start=0, end=1000000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chr21', 50000, 52000)))
-        self.assertEquals(GenomeRegion(chr='chr21', start=2050000, end=2052000),
+        self.assertEquals(GenomeRegion(chr='chr21', start=2000000, end=2500000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chr21', 2050000, 2052000)))
         self.assertEquals(GenomeRegion(chr='chrM', start=1000, end=2000),
                           self._br_handler.get_enclosing_bounding_region(GenomeRegion('TestGenome', 'chrM', 1000, 2000)))
