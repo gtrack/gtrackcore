@@ -1,5 +1,4 @@
 import tables
-import numpy
 from tables.exceptions import NoSuchNodeError
 
 from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator, BrTableReader
@@ -99,13 +98,13 @@ class BoundingRegionHandler(object):
 
     def _create_table_description(self):
         return {
-                'chr': tables.StringCol(self._max_chr_len, pos=0),
-                'start': tables.Int32Col(pos=1),
-                'end': tables.Int32Col(pos=2),
-                'start_index': tables.Int32Col(pos=3),
-                'end_index': tables.Int32Col(pos=4),
-                'element_count': tables.Int32Col(pos=5),
-               }
+            'chr': tables.StringCol(self._max_chr_len, pos=0),
+            'start': tables.Int32Col(pos=1),
+            'end': tables.Int32Col(pos=2),
+            'start_index': tables.Int32Col(pos=3),
+            'end_index': tables.Int32Col(pos=4),
+            'element_count': tables.Int32Col(pos=5)
+        }
 
     def get_enclosing_bounding_region(self, region):
         bounding_regions = self._br_queries.all_enclosing_bounding_regions_for_region(region)
@@ -125,21 +124,14 @@ class BoundingRegionHandler(object):
 
         return [GenomeRegion(chr=br['chr'], start=br['start'], end=br['end']) for br in bounding_regions]
 
-    def get_all_touching_bounding_regions(self):
-        bounding_regions = self._br_queries.all_touching_bounding_regions_for_region()
+    def get_all_touching_bounding_regions(self, region):
+        bounding_regions = self._br_queries.all_touching_bounding_regions_for_region(region)
+
+        if len(bounding_regions) == 0:
+            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
+                                             % (region, prettyPrintTrackName(self._track_name)))
 
         return [GenomeRegion(chr=br['chr'], start=br['start'], end=br['end']) for br in bounding_regions]
-
-    def get_all_bounding_regions(self):
-        bounding_regions = self._br_queries.all_bounding_regions()
-
-        return [GenomeRegion(chr=br['chr'], start=br['start'], end=br['end']) for br in bounding_regions]
-
-    def get_total_element_count(self):
-        return sum(self.get_total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
-
-    def get_total_element_count_for_chr(self, chr):
-        return self._br_queries.total_element_count_for_chr(chr)
 
     def get_all_bounding_regions(self):
         if not self.table_exists():
@@ -148,12 +140,15 @@ class BoundingRegionHandler(object):
                                                    prettyPrintTrackName(self._track_name))
 
         self._table_reader.open()
-        table_iterator = self.table_reader.table.iterrows()
+        table_iterator = self._table_reader.table.iterrows()
 
         for row in table_iterator:
             yield GenomeRegion(self._genome, row['chr'], row['start'], row['end'])
 
         self._table_reader.close()
 
+    def get_total_element_count(self):
+        return sum(self.get_total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
 
-
+    def get_total_element_count_for_chr(self, chr):
+        return self._br_queries.total_element_count_for_chr(chr)
