@@ -1,11 +1,13 @@
 import pkg_resources
+
+from gtrackcore.third_party import gprof2dot
+
 pkg_resources.require('pygraphviz')
 import pygraphviz
 
 import re
 import timeit
 
-from gtrackcore.util.profile import gprof2dot
 from math import fsum
 from pstats import Stats
 

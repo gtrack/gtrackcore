@@ -48,3 +48,6 @@ gtrackcore/core/*.wig
 
 #Intellij
 .idea/
+
+#profiling
+*.prof
