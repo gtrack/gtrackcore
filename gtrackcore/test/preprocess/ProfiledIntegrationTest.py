@@ -1,8 +1,9 @@
 import sys
 
-from gtrackcore.util.Profiler import Profiler
 from gtrackcore.test.common.Asserts import TestCaseWithImprovedAsserts
 from gtrackcore.test import get_data_output_path
+from gtrackcore.util.profile import Profiler
+
 
 class ProfiledIntegrationTest(TestCaseWithImprovedAsserts):
     VERBOSE = False

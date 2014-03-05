@@ -1,6 +1,9 @@
-import shutil, os, sys, numpy
+import shutil
+import os
 
-#TODO: Confirm docstring
+from gtrackcore.util.profile.Profiler import Profiler
+
+
 def importFile(fileName, genome, trackName):
     """ ?!
     Generate gtrackcore data from a textual genomic track.
@@ -257,6 +260,8 @@ if __name__ == "__main__":
     from collections import OrderedDict
     import types
     import sys
+
+    profile = True
     thisModule = sys.modules[__name__]
 
     funcList = OrderedDict((a, thisModule.__dict__.get(a)) for a in sorted(dir(thisModule))
@@ -271,7 +276,13 @@ if __name__ == "__main__":
         else:
             try:
                 func = funcList[sys.argv[1]]
-                func(*sys.argv[2:])
+
+                if profile:
+                    profiler = Profiler()
+                    profiler.run(sys.argv[1] + '(\"' + '\",\"'.join(sys.argv[2:]) + '\")', locals(), globals())
+                    profiler.printStats(graphDir="/Users/brynjar/gtrackcore_graphs")
+                else:
+                    func(*sys.argv[2:])
             except:
                 print
                 print 'usage: python Api.py ' + str(func.__name__) + ' ' + str(func.__doc__)

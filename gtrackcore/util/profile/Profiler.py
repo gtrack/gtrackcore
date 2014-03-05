@@ -1,12 +1,8 @@
 #import cProfile
-import profile
-import pstats
 
-import hotshot, hotshot.stats
+import hotshot
+import hotshot.stats
 
-#from gtrackcore.util.StaticFile import GalaxyRunSpecificFile
-from gtrackcore.util.CommonFunctions import createPath
-from gtrackcore.util.HtmlCore import HtmlCore
 
 class Profiler:
     PROFILE_HEADER = '--- Profile ---'
@@ -38,7 +34,7 @@ class Profiler:
         print Profiler.PROFILE_FOOTER
         
         if graphDir:
-            from gtrackcore.util.PstatsUtil import OverheadStats
+            from gtrackcore.util.profile.PstatsUtil import OverheadStats
             import os
             id = str(id) if id else ''
             statsFn = os.path.join(graphDir, id + '_prof.stats')
@@ -61,4 +57,4 @@ class Profiler:
     #    stats.writeDotGraph(dotFile.getDiskPath(), prune=prune)
     #    stats.renderGraph(dotFile.getDiskPath(), pngFile.getDiskPath())
     #    
-    #    print str(HtmlCore().link('Call graph based on profiling (id=%s)' % ':'.join(id), pngFile.getURL()))
+    #    print str(HtmlCore().link('Call graph based on profile (id=%s)' % ':'.join(id), pngFile.getURL()))
