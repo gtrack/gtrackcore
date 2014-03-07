@@ -29,14 +29,14 @@ class ToolShell(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self._available_tracks = None
-        self._find_available_tracks()
+        self._update_available_tracks()
 
-    def _find_available_tracks(self):
-        base_dir = Config.PROCESSED_DATA_PATH + '/noOverlaps'
+    def _update_available_tracks(self):
+        base_dir = Config.PROCESSED_DATA_PATH + '/noOverlaps/'
         data = []
         for directory, dirnames, filenames in os.walk(base_dir):
             if len(filenames) > 0:
-                track_name_list = directory.split(base_dir + '/')[1].split('/')
+                track_name_list = directory.split(base_dir)[1].split('/')
 
                 genome = track_name_list[0]
                 track_name = track_name_list[1:]
@@ -75,7 +75,7 @@ class ToolShell(cmd.Cmd):
         TrackTools.coverage()
 
     def complete_coverage(self, text, line, begidx, endidx):
-        command_length = len(line.split()[0] + 1)
+        command_length = len(line.split()[0]) + 1
 
         if begidx <= command_length:
             completions = [f[0] for f in self._available_tracks if text is None or f[0].startswith(text)]
