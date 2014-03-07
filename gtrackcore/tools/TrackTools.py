@@ -50,17 +50,10 @@ def print_result(tool, track_name, result):
 
 if __name__ == '__main__':
     genome = 'testgenome'
-    track_name = ['testcat', 'small']
+    track_name = ['testcat', 'point']
+    genome_region_list = [genome, 'chr21', 0, 36944323]
 
-    genome_region_list = [genome, 'chr21', 0, 46944323]
+    tv = get_track_view(track_name, GenomeRegion(*genome_region_list))
 
-    genome_region = GenomeRegion(* genome_region_list)
-    track_view = get_track_view(track_name, genome_region)
+    print coverage(tv)
 
-    num_elements = count_elements(track_view)
-    num_all_elements = count_elements_in_all_bounding_regions(track_name)
-    bp_coverage = coverage(track_view)
-
-    print_result("count_elements", track_name, num_elements)
-    print_result("count_all_elements", track_name, num_all_elements)
-    print_result("coverage", track_name, bp_coverage)
