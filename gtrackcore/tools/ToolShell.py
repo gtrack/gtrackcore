@@ -118,29 +118,29 @@ class ToolShell(cmd.Cmd):
         return False
 
     def _parse_region(self, genome, textual_region):
-        all_specified = r'\w+:\d+-\d+'
-        seqid_and_start_specified = r'\w+:\d+-'
-        seqid_specified = r'\w+'
+        all_regex = r'\w+:\d+-\d+$'
+        seqid_and_start_regex = r'\w+:\d+-$'
+        seqid_regex = r'\w+$'
 
         region_tuple = tuple(textual_region.replace('-', ':').split(':'))
-        seqid = start = end = None
+        start = end = None
 
         from re import match
-        if match(all_specified, textual_region) is not None:
+        if match(all_regex, textual_region) is not None:
             seqid, start, end = region_tuple
-        elif match(seqid_and_start_specified, textual_region) is not None:
+        elif match(seqid_and_start_regex, textual_region) is not None:
             seqid = region_tuple[0]
             start = region_tuple[1]
-        elif match(seqid_specified, textual_region) is not None:
+        elif match(seqid_regex, textual_region) is not None:
             seqid = region_tuple[0]
-
+        else:
+            return None
 
         if start is not None:
             start = int(start)
         if end is not None:
             end = int(end)
         return GenomeRegion(genome=genome, chr=seqid, start=start, end=end)
-
 
     def do_list(self, line):
         print_table(['Genome', 'Track name', 'Track type'], self._available_tracks)
@@ -165,7 +165,7 @@ class ToolShell(cmd.Cmd):
         genome_region = self._parse_region(genome, textual_region)
 
         if genome_region is None:
-            print 'Region has wrong format'
+            print 'Region is in wrong format'
             print 'Example region: chr21:0-46944323.\nWhere seqid = chr21, start = 0, end = 46944323\n'
             return
 
