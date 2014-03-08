@@ -33,6 +33,12 @@ class ToolShell(cmd.Cmd):
         self._update_available_tracks()
         self._cached_bounding_regions = {}
 
+    def cmdloop(self):
+        try:
+            cmd.Cmd.cmdloop(self)
+        except KeyboardInterrupt as e:
+            self.do_exit(None)
+
     def print_result(self, tool, track_name, result):
         print
         print tool, 'for', ":".join(track_name)
@@ -73,13 +79,12 @@ class ToolShell(cmd.Cmd):
         bounding_regions = {}
         for allow_overlaps in [True, False]:
             bounding_region_handler = BoundingRegionHandler(genome, track_name, allow_overlaps)
-            regions = [[region.chr + ':' + str(region.start) + '-' + str(region.end)]
-                       for region in bounding_region_handler.get_all_bounding_regions()]
+            regions = [region for region in bounding_region_handler.get_all_bounding_regions()]
 
             if allow_overlaps:
-                bounding_regions['with_overlaps'] = regions
+                bounding_regions['with overlaps'] = regions
             else:
-                bounding_regions['no_overlaps'] = regions
+                bounding_regions['no overlaps'] = regions
 
         self._cached_bounding_regions[cache_key] = bounding_regions
 
@@ -94,22 +99,58 @@ class ToolShell(cmd.Cmd):
 
     def _is_legal_region(self, genome, track_name, region):
         bounding_regions = self._extract_bounding_regions(genome, track_name)
-        for allow_overlaps_regions in bounding_regions:
+
+        for key, allow_overlaps_regions in bounding_regions.iteritems():
             for bounding_region in allow_overlaps_regions:
-                if region == bounding_region:
-                    return True
+                if region.chr == bounding_region.chr:
+                    if region.start >= bounding_region.start:
+                        if region.end <= bounding_region.end:
+                            if region.end is None:
+                                region.end = bounding_region.end
+                            return True
+
+                    elif region.start is None:
+                        region.start = bounding_region.start
+                        region.end = bounding_region.end
+                        return True
+
+
         return False
 
-    def _is_valid_region_format(self, region):
-        valid_region_format_regex = r'\w+:\d+-\d*'
+    def _parse_region(self, genome, textual_region):
+        all_specified = r'\w+:\d+-\d+'
+        seqid_and_start_specified = r'\w+:\d+-'
+        seqid_specified = r'\w+'
+
+        region_tuple = tuple(textual_region.replace('-', ':').split(':'))
+        seqid = start = end = None
+
         from re import match
-        return match(valid_region_format_regex, region) is not None
+        if match(all_specified, textual_region) is not None:
+            seqid, start, end = region_tuple
+        elif match(seqid_and_start_specified, textual_region) is not None:
+            seqid = region_tuple[0]
+            start = region_tuple[1]
+        elif match(seqid_specified, textual_region) is not None:
+            seqid = region_tuple[0]
+
+
+        if start is not None:
+            start = int(start)
+        if end is not None:
+            end = int(end)
+        return GenomeRegion(genome=genome, chr=seqid, start=start, end=end)
+
 
     def do_list(self, line):
         print_table(['Genome', 'Track name', 'Track type'], self._available_tracks)
 
     def do_exit(self, line):
+        print "Exiting..."
         sys.exit()
+
+    def do_EOF(self, line):
+        self.do_exit(line)
 
     def do_coverage(self, line):
         argv = line.split()
@@ -120,19 +161,22 @@ class ToolShell(cmd.Cmd):
 
         genome = argv[0]
         track_name = argv[1].split(":")
-        region = argv[2]
+        textual_region = argv[2]
+        genome_region = self._parse_region(genome, textual_region)
 
-        if not self._is_valid_region_format(region):
+        if genome_region is None:
             print 'Region has wrong format'
             print 'Example region: chr21:0-46944323.\nWhere seqid = chr21, start = 0, end = 46944323\n'
             return
 
-        if not self._is_track_available(genome, track_name):
-            print 'Track not available'
+        if not self._is_legal_region(genome, track_name, genome_region):
+            print 'Region is not bounded by a bounding region and is thus not legal.'
             return
 
-        seqid, start, end = tuple(region.replace('-', ':').split(':'))
-        genome_region = GenomeRegion(genome, seqid, int(start), int(end))
+        if not self._is_track_available(genome, track_name):
+            print 'Track "' + ':'.join(track_name) + '" not available for genome "' + genome + '".'
+            return
+
         track_view = self._get_track_view(track_name, genome_region)
 
         coverage = TrackTools.coverage(track_view)
@@ -140,7 +184,7 @@ class ToolShell(cmd.Cmd):
         self.print_result('coverage', track_name, coverage)
 
     def complete_coverage(self, text, line, begidx, endidx):
-        command_length = len(line.split()[0]) + 1
+        command_length = len("coverage") + 1
 
         if begidx <= command_length:
             completions = [f[0] for f in self._available_tracks if text is None or f[0].startswith(text)]
@@ -169,9 +213,13 @@ class ToolShell(cmd.Cmd):
 
         if self._is_track_available(genome, track_name):
             bounding_regions = self._extract_bounding_regions(genome, track_name)
+            textual_bounding_regions = {allow_overlaps_string: [[region.chr + ':' + str(region.start) + '-' +
+                                                                 str(region.end)] for region in bounding_regions]
+                                        for allow_overlaps_string, bounding_regions in bounding_regions.iteritems()}
+
             print 'Example: chr21:0-46944323, seqid = chr21, start = 0, end = 46944323\n'
-            for allow_overlaps_string, bounding_regions in bounding_regions.iteritems():
-                print allow_overlaps_string.replace('_', ' ').capitalize() + ":"
+            for allow_overlaps_string, bounding_regions in textual_bounding_regions.iteritems():
+                print allow_overlaps_string + ':'
                 print_table(['Available regions'], bounding_regions)
                 print
         else:
