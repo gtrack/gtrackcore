@@ -7,6 +7,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import PlainTrack
 from gtrackcore.core.Config import Config
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
+from gtrackcore.util.CustomExceptions import BoundingRegionsNotAvailableError
 
 
 def print_table(headers, data):
@@ -79,12 +80,15 @@ class ToolShell(cmd.Cmd):
         bounding_regions = {}
         for allow_overlaps in [True, False]:
             bounding_region_handler = BoundingRegionHandler(genome, track_name, allow_overlaps)
-            regions = [region for region in bounding_region_handler.get_all_bounding_regions()]
+            try:
+                regions = [region for region in bounding_region_handler.get_all_bounding_regions()]
 
-            if allow_overlaps:
-                bounding_regions['with overlaps'] = regions
-            else:
-                bounding_regions['no overlaps'] = regions
+                if allow_overlaps:
+                    bounding_regions['with overlaps'] = regions
+                else:
+                    bounding_regions['no overlaps'] = regions
+            except BoundingRegionsNotAvailableError:
+                pass
 
         self._cached_bounding_regions[cache_key] = bounding_regions
 
