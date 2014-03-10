@@ -5,7 +5,7 @@ from gtrackcore.track.core.Track import PlainTrack
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 from gtrackcore.util.CommonFunctions import createOrigPath, createPath, convertTNstrToTNListFormat
-
+from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
 
 def get_track_view(track_name, genome_region):
@@ -18,14 +18,15 @@ def count_elements(track_view):
 
 
 def coverage(track_view):
-    if not track_view.trackFormat.isDense() and track_view.trackFormat.isInterval():
+    format_name = track_view.trackFormat.getFormatName()
+    if format_name in ['Segments', 'Valued segments', 'Linked segments', 'Linked valued segments']:
         return track_view.endsAsNumpyArray().sum() - track_view.startsAsNumpyArray().sum()
-    elif not track_view.trackFormat.isDense():
-        return count_elements(track_view)
-    elif track_view.trackFormat.isInterval():
+    elif format_name in ['Points', 'Valued points', 'Linked points', 'Linked valued points', 'Function', 'Linked function']:
+        return track_view.getNumElements()
+    elif format_name in ['Genome partition', 'Step function', 'Linked genome partition', 'Linked step function', 'Linked base pairs']:
         return len(track_view)
     else:
-        return count_elements_in_all_bounding_regions(track_view._track_name)
+        raise ShouldNotOccurError
 
 
 def intersection(track_view_1, track_view_2):
