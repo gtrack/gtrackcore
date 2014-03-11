@@ -6,6 +6,7 @@ from gtrackcore.track.core.Track import PlainTrack
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 from gtrackcore.util.CommonFunctions import createOrigPath, createPath, convertTNstrToTNListFormat
+from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
 
@@ -30,31 +31,33 @@ def coverage(track_view):
         raise ShouldNotOccurError
 
 
+@timeit
 def intersection_iter(track_view_1, track_view_2):
-    position_counter = 0
-    track_el_iterator1 = iter(track_view_1)
-    track_el_iterator2 = iter(track_view_2)
+    base_pair_counter = 0
+    track_element_iterator1 = iter(track_view_1)
+    track_element_iterator2 = iter(track_view_2)
     try:
-        track_element1 = track_el_iterator1.next()
-        track_element2 = track_el_iterator2.next()
+        track_el1 = track_element_iterator1.next()
+        track_el2 = track_element_iterator2.next()
         while True:
 
-            overlap = min(track_element1.end(), track_element2.end()) - max(track_element1.start(), track_element2.start())
+            overlap = min(track_el1.end(), track_el2.end()) - max(track_el1.start(), track_el2.start())
 
             if overlap > 0:
-                position_counter += overlap
+                base_pair_counter += overlap
 
-            if track_element1.end() < track_element2.end():
-                track_element1 = track_el_iterator1.next()
-            elif track_element1.end() > track_element2.end():
-                track_element2 = track_el_iterator2.next()
+            if track_el1.end() < track_el2.end():
+                track_el1 = track_element_iterator1.next()
+            elif track_el1.end() > track_el2.end():
+                track_el2 = track_element_iterator2.next()
             else:
-                track_element1 = track_el_iterator1.next()
-                track_element2 = track_el_iterator2.next()
+                track_el1 = track_element_iterator1.next()
+                track_el2 = track_element_iterator2.next()
     except StopIteration:
-        return position_counter
+        return base_pair_counter
 
 
+@timeit
 def intersection(track_view1, track_view2):
     t1_coded_starts = track_view1.startsAsNumpyArray() * 8 + 5
     t1_coded_ends = track_view1.endsAsNumpyArray() * 8 + 3
@@ -83,6 +86,7 @@ def count_elements_in_all_bounding_regions(track_name, genome='testgenome', allo
         num_elements += count_elements(tv)
     return num_elements
 
+
 def print_result(tool, track_name, result):
     print
     print tool, 'for', ":".join(track_name)
@@ -92,14 +96,16 @@ def print_result(tool, track_name, result):
 
 if __name__ == '__main__':
     genome = 'testgenome'
-    track_name = ['testcat', 'stor']
-    track_name2 = ['testcat', 'stor']
+    track_name = ['testcat', 'big']
+    track_name2 = ['testcat', 'big']
 
-    genome_region_list = [genome, 'chr21', 0, 36944323]
+    genome_region_list = [genome, 'chr21', 0, 46944323]
 
-    tv = get_track_view(track_name, GenomeRegion(*genome_region_list))
+    tv1 = get_track_view(track_name, GenomeRegion(*genome_region_list))
     tv2 = get_track_view(track_name2, GenomeRegion(*genome_region_list))
 
-    print intersection_iter(tv, tv2)
-    print intersection(tv, tv2)
+    print_result('intersection', track_name + ['--'] + track_name2, intersection(tv1, tv2))
+    print_result('intersection_iter', track_name + ['--'] + track_name2, intersection_iter(tv1, tv2))
+
+
 
