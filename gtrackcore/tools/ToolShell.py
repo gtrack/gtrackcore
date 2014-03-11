@@ -144,7 +144,23 @@ class ToolShell(cmd.Cmd):
             start = int(start)
         if end is not None:
             end = int(end)
+
         return GenomeRegion(genome=genome, chr=seqid, start=start, end=end)
+
+    def _autocomplete_genome_and_track_name(self, command, text, line, begidx, endidx):
+        command_length = len(command) + 1
+
+        if begidx <= command_length:
+            completions = [f[0] for f in self._available_tracks if text is None or f[0].startswith(text)]
+        elif begidx > command_length:
+            completions = [f[1] for f in self._available_tracks if text is None or f[1].startswith(text)]
+            if len(line.split()) > 2:
+                written = line.split()[2]
+                completions = [f[1][len(written) - len(text):] for f in self._available_tracks if f[1].startswith(written)]
+                if len(completions) == 1 and completions[0] == text:
+                    completions.remove(text)
+
+        return completions
 
     def do_list(self, line):
         print_table(['Genome', 'Track name', 'Track type'], self._available_tracks)
@@ -188,14 +204,7 @@ class ToolShell(cmd.Cmd):
         self.print_result('coverage', track_name, coverage)
 
     def complete_coverage(self, text, line, begidx, endidx):
-        command_length = len("coverage") + 1
-
-        if begidx <= command_length:
-            completions = [f[0] for f in self._available_tracks if text is None or f[0].startswith(text)]
-        elif begidx > command_length:
-            completions = [f[1] for f in self._available_tracks if text is None or f[1].startswith(text)]
-
-        return completions
+        return self._autocomplete_genome_and_track_name('coverage', text, line, begidx, endidx)
 
     def help_coverage(self):
         print '\n'.join([self._usage_coverage(),
@@ -223,11 +232,14 @@ class ToolShell(cmd.Cmd):
 
             print 'Example: chr21:0-46944323, seqid = chr21, start = 0, end = 46944323\n'
             for allow_overlaps_string, bounding_regions in textual_bounding_regions.iteritems():
-                print allow_overlaps_string + ':'
+                print allow_overlaps_string.capitalize() + ':'
                 print_table(['Available regions'], bounding_regions)
                 print
         else:
             print 'Track ' + ':'.join(track_name) + ' does not exist.'
+
+    def complete_regions(self, text, line, begidx, endidx):
+        return self._autocomplete_genome_and_track_name('regions', text, line, begidx, endidx)
 
     def help_regions(self):
         print '\n'.join([self._usage_regions(),
