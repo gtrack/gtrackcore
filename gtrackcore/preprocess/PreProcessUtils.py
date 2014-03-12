@@ -203,7 +203,7 @@ class PreProcessUtils(object):
         
         for chr in collector.getPreProcessedChrs(allowOverlaps):
             trackSource = TrackSource()
-            trackData = trackSource.wrap_track_data(genome, trackName, allowOverlaps)
+            trackData = trackSource.get_track_data(genome, trackName, allowOverlaps)
             uniqueIds = numpy.unique(numpy.concatenate((uniqueIds, trackData['id'][:])))
             uniqueEdgeIds = numpy.unique(numpy.concatenate((uniqueEdgeIds, trackData['edges'][:].flatten())))
         
@@ -224,7 +224,7 @@ class PreProcessUtils(object):
         
         for chr in collector.getPreProcessedChrs(allowOverlaps):
             trackSource = TrackSource()
-            trackData = trackSource.wrap_track_data(genome, trackName, allowOverlaps)
+            trackData = trackSource.get_track_data(genome, trackName, allowOverlaps)
             
             ids = trackData['id']
             edges = trackData['edges']

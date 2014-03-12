@@ -237,7 +237,7 @@ def getTrackData(genome, trackName, chr, allowOverlaps):
 
     from gtrackcore.track.pytables.TrackSource import TrackSource
     trackSource = TrackSource()
-    return trackSource.wrap_track_data(genome, trackName, allowOverlaps)
+    return trackSource.get_track_data(genome, trackName, allowOverlaps)
 
 
 def getTrackElementCount(trackData):
