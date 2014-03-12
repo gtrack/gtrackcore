@@ -29,7 +29,7 @@ def k_highest_values(track_view, k):
 
 
 def coverage(track_view):
-    format = track_name.trackFormat
+    format = track_view.trackFormat
     if format.isSegment():
         return track_view.endsAsNumpyArray().sum() - track_view.startsAsNumpyArray().sum()
     elif format.isPoint():
