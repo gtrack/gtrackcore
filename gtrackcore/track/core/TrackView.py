@@ -233,9 +233,9 @@ class TrackView(object):
                 self._edgesList.update_offset(start=1)
             if self._weightsList is not None:
                 self._weightsList.update_offset(start=1)
-            for key, extraList in self._extraLists.items():
+            for extraList in self._extraLists.values():
                 if extraList is not None:
-                    self._extraLists[key] = extraList.update_offset(start=1)
+                    extraList.update_offset(start=1)
 
         elif self._is_points_track():
             self._pytables_track_element.end = self._pytables_track_element.points_end_func  # iteration
@@ -411,20 +411,20 @@ class TrackView(object):
             rightIndex = leftIndex
 
         if self._should_use_pytables:
-            self._startList = self._startList.update_offset(start=leftIndex, stop=rightIndex)
-            self._endList = self._endList.update_offset(start=leftIndex, stop=rightIndex)
-            if self._valList != None:
-                self._valList = self._valList.update_offset(start=leftIndex, stop=rightIndex)
-            if self._strandList != None:
-                self._strandList = self._strandList.update_offset(start=leftIndex, stop=rightIndex)
-            if self._idList != None:
-                self._idList = self._idList.update_offset(start=leftIndex, stop=rightIndex)
-            if self._edgesList != None:
-                self._edgesList = self._edgesList.update_offset(start=leftIndex, stop=rightIndex)
-            if self._weightsList != None:
-                self._weightsList = self._weightsList.update_offset(start=leftIndex, stop=rightIndex)
-            for key, extraList in self._extraLists.items():
-                self._extraLists[key] = extraList.update_offset(start=leftIndex, stop=rightIndex)
+            self._startList.update_offset(start=leftIndex, stop=rightIndex)
+            self._endList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._valList is not None:
+                self._valList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._strandList is not None:
+                self._strandList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._idList is not None:
+                self._idList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._edgesList is not None:
+                self._edgesList.update_offset(start=leftIndex, stop=rightIndex)
+            if self._weightsList is not None:
+                self._weightsList.update_offset(start=leftIndex, stop=rightIndex)
+            for extraList in self._extraLists.values():
+                extraList.update_offset(start=leftIndex, stop=rightIndex)
         else:
             self._startList = self._startList[leftIndex:rightIndex]
             self._endList = self._endList[leftIndex:rightIndex]
@@ -445,18 +445,18 @@ class TrackView(object):
 
     def _doDenseSlicing(self, i, j):
         if self._should_use_pytables:
-            if self._valList != None:
-                self._valList = self._valList.update_offset(start=i, stop=j)
-            if self._strandList != None:
-                self._strandList = self._strandList.update_offset(start=i, stop=j)
-            if self._idList != None:
-                self._idList = self._idList.update_offset(start=i, stop=j)
-            if self._edgesList != None:
-                self._edgesList = self._edgesList.update_offset(start=i, stop=j)
-            if self._weightsList != None:
-                self._weightsList = self._weightsList.update_offset(start=i, stop=j)
-            for key, extraList in self._extraLists.items():
-                self._extraLists[key] = extraList.update_offset(start=i, stop=j)
+            if self._valList is not None:
+                self._valList.update_offset(start=i, stop=j)
+            if self._strandList is not None:
+                self._strandList.update_offset(start=i, stop=j)
+            if self._idList is not None:
+                self._idList.update_offset(start=i, stop=j)
+            if self._edgesList is not None:
+                self._edgesList.update_offset(start=i, stop=j)
+            if self._weightsList is not None:
+                self._weightsList.update_offset(start=i, stop=j)
+            for extraList in self._extraLists.values():
+                extraList.update_offset(start=i, stop=j)
         else:
             if self._valList != None:
                 self._valList = self._valList[i:j]
@@ -553,7 +553,7 @@ class TrackView(object):
             return None
 
         numpyArray = self._removeBlindPassengersFromNumpyArray(array)
-        
+
         if numpyArrayModMethod is not None:
             return numpyArrayModMethod(numpyArray)
         else:

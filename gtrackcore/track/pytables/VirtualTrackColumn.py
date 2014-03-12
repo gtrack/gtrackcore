@@ -53,7 +53,6 @@ class VirtualTrackColumn(VirtualNumpyArray):
 
         self._step = step if step is not None else 1
 
-        return self
 
     def __copy__(self):
         vtc = VirtualTrackColumn(self._column_name, self._table_reader)
