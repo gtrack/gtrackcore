@@ -118,8 +118,6 @@ class ToolShell(cmd.Cmd):
                         region.start = bounding_region.start
                         region.end = bounding_region.end
                         return True
-
-
         return False
 
     def _parse_region(self, genome, textual_region):
@@ -150,12 +148,12 @@ class ToolShell(cmd.Cmd):
 
     def _autocomplete_genome_and_track_name(self, command, text, line, begidx, endidx):
         command_length = len(command) + 1
-        separating_whitespaces = re.findall(r'\s+', line)
+        number_of_typed_commands = len(re.findall(r'\s+', line))
         if begidx <= command_length:
             completions = [f[0] for f in self._available_tracks if text is None or f[0].startswith(text)]
-        elif len(separating_whitespaces) is 1:
+        elif number_of_typed_commands is 1:
             completions = [f[1] for f in self._available_tracks if text is None or f[1].startswith(text)]
-        elif len(separating_whitespaces) is 2:
+        elif number_of_typed_commands is 2:
             if line[-1] == ':' or len(text) > 0:
                 written = line.split()[2]
                 completions = [f[1][len(written) - len(text):] for f in self._available_tracks if f[1].startswith(written)]
@@ -183,10 +181,10 @@ class ToolShell(cmd.Cmd):
             return False
         return True
 
-    def do_list(self, line):
+    def do_list(self):
         print_table(['Genome', 'Track name', 'Track type'], self._available_tracks)
 
-    def do_exit(self, line):
+    def do_exit(self):
         print "Exiting..."
         sys.exit()
 
@@ -211,9 +209,7 @@ class ToolShell(cmd.Cmd):
             return
 
         track_view = self._get_track_view(track_name, genome_region)
-
         coverage = TrackTools.coverage(track_view)
-
         self.print_result('coverage', track_name, coverage)
 
     def complete_coverage(self, text, line, begidx, endidx):
@@ -286,9 +282,7 @@ class ToolShell(cmd.Cmd):
             return
 
         track_view = self._get_track_view(track_name, genome_region)
-
         k_elements_with_highest_values = TrackTools.k_highest_values(track_view, k)
-
         self.print_result('k_highest_values', track_name, k_elements_with_highest_values)
 
     def complete_k_highest(self, text, line, begidx, endidx):
