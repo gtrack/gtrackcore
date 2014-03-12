@@ -160,6 +160,15 @@ class TrackFormat(object):
         
     def isInterval(self):
         return self._interval
+
+    def isSegment(self):
+        return self._interval and not self._dense
+
+    def isPoint(self):
+        return not self._interval and not self._dense
+
+    def isPartition(self):
+        return self._interval and self._dense
         
     def isLinked(self):
         return self._linked

@@ -35,10 +35,10 @@ class TrackViewLoader:
         if br_start_index == br_end_index:
             return br_start_index, br_end_index  # Empty track_view
 
-        if track_format.getFormatName() in ['Function', 'Linked function', 'Linked base pairs']:
+        if track_format.reprIsDense():
             bounding_region = br_queries.enclosing_bounding_region_for_region(region)
             start_index = br_start_index + (region.start - bounding_region[0]['start'])
-            end_index = start_index + (region.end - region.start)
+            end_index = start_index + len(region)
         else:
             track_queries = TrackQueries(region.genome, track_name, allow_overlaps)
             start_index, end_index = track_queries.start_and_end_indices(region, br_start_index,

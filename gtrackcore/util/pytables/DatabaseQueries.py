@@ -86,15 +86,13 @@ class TrackQueries(DatabaseQueries):
 
     @staticmethod
     def _build_start_and_end_indices_query(track_format):
-        format_name = track_format.getFormatName()
-
-        if format_name in ['Segments', 'Valued segments', 'Linked segments', 'Linked valued segments']:
+        if track_format.isSegment():
             query = '(end > region_start) & (start < region_end)'
 
-        elif format_name in ['Points', 'Valued points', 'Linked points', 'Linked valued points']:
+        elif track_format.isPoint():
             query = '(start >= region_start) & (start < region_end)'
 
-        elif format_name in ['Genome partition', 'Step function', 'Linked genome partition', 'Linked step function']:
+        elif track_format.isPartition():
             query = '(end >= region_start) & (end <= region_end)'
 
         else:
