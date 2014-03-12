@@ -224,7 +224,7 @@ class ToolShell(cmd.Cmd):
                          'Find coverage of a single track'])
 
     def _usage_coverage(self):
-        return 'coverage <genome> <track name> <region>\n'
+        return 'Usage: coverage <genome> <track name> <region>\n'
 
 
     def do_regions(self, line):
@@ -259,20 +259,19 @@ class ToolShell(cmd.Cmd):
                         'Find all available regions for a track'])
 
     def _usage_regions(self):
-        return 'regions <genome> <track name>\n'
+        return 'Usage: regions <genome> <track name>\n'
 
-    def do_k_highest_values(self, line):
+    def do_k_highest(self, line):
+        argv = line.split()
+        if len(argv) < 3:
+            print 'Wrong usage'
+            print self._usage_coverage()
+            return
+
         try:
             k = int(raw_input('Input k: '))
         except ValueError:
             print 'k is not an integer'
-            return
-
-        argv = line.split()
-
-        if len(argv) < 3k:
-            print 'Wrong usage'
-            print self._usage_coverage()
             return
 
         genome = argv[0]
@@ -291,6 +290,16 @@ class ToolShell(cmd.Cmd):
         k_elements_with_highest_values = TrackTools.k_highest_values(track_view, k)
 
         self.print_result('k_highest_values', track_name, k_elements_with_highest_values)
+
+    def complete_k_highest(self, text, line, begidx, endidx):
+        return self._autocomplete_genome_and_track_name('k_highest', text, line, begidx, endidx)
+
+    def _usage_k_highest(self):
+        print 'Usage: k_highest <genome> <track name>'
+
+    def help_k_highest(self):
+        print '\n'.join([self._usage_k_highest(),
+                         'Get the GenomeElements with the k highest values'])
 
 if __name__ == '__main__':
     ToolShell().cmdloop()
