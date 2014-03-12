@@ -1,3 +1,4 @@
+import re
 import sys
 import os
 import cmd
@@ -117,8 +118,6 @@ class ToolShell(cmd.Cmd):
                         region.start = bounding_region.start
                         region.end = bounding_region.end
                         return True
-
-
         return False
 
     def _parse_region(self, genome, textual_region):
@@ -149,18 +148,38 @@ class ToolShell(cmd.Cmd):
 
     def _autocomplete_genome_and_track_name(self, command, text, line, begidx, endidx):
         command_length = len(command) + 1
-
+        number_of_typed_commands = len(re.findall(r'\s+', line))
         if begidx <= command_length:
             completions = [f[0] for f in self._available_tracks if text is None or f[0].startswith(text)]
-        elif begidx > command_length:
+        elif number_of_typed_commands is 1:
             completions = [f[1] for f in self._available_tracks if text is None or f[1].startswith(text)]
-            if len(line.split()) > 2:
+        elif number_of_typed_commands is 2:
+            if line[-1] == ':' or len(text) > 0:
                 written = line.split()[2]
                 completions = [f[1][len(written) - len(text):] for f in self._available_tracks if f[1].startswith(written)]
                 if len(completions) == 1 and completions[0] == text:
                     completions.remove(text)
+            else:
+                completions = [f[1] for f in self._available_tracks if text is None or f[1].startswith(text)]
 
         return completions
+
+    def _is_valid_region(self, genome, track_name, genome_region):
+        if genome_region is None:
+            print 'Region is in wrong format'
+            print 'Example region: chr21:0-46944323.\nWhere seqid = chr21, start = 0, end = 46944323\n'
+            return False
+
+        if not self._is_legal_region(genome, track_name, genome_region):
+            print 'Region is not bounded by a bounding region and is thus not legal.'
+            return False
+        return True
+
+    def _is_valid_track_name(self, genome, track_name):
+        if not self._is_track_available(genome, track_name):
+            print 'Track "' + ':'.join(track_name) + '" not available for genome "' + genome + '".'
+            return False
+        return True
 
     def do_list(self, line):
         print_table(['Genome', 'Track name', 'Track type'], self._available_tracks)
@@ -184,23 +203,13 @@ class ToolShell(cmd.Cmd):
         textual_region = argv[2]
         genome_region = self._parse_region(genome, textual_region)
 
-        if genome_region is None:
-            print 'Region is in wrong format'
-            print 'Example region: chr21:0-46944323.\nWhere seqid = chr21, start = 0, end = 46944323\n'
+        if not self._is_valid_region(genome, track_name, genome_region):
             return
-
-        if not self._is_legal_region(genome, track_name, genome_region):
-            print 'Region is not bounded by a bounding region and is thus not legal.'
-            return
-
-        if not self._is_track_available(genome, track_name):
-            print 'Track "' + ':'.join(track_name) + '" not available for genome "' + genome + '".'
+        if not self._is_valid_track_name(genome, track_name):
             return
 
         track_view = self._get_track_view(track_name, genome_region)
-
         coverage = TrackTools.coverage(track_view)
-
         self.print_result('coverage', track_name, coverage)
 
     def complete_coverage(self, text, line, begidx, endidx):
@@ -211,7 +220,7 @@ class ToolShell(cmd.Cmd):
                          'Find coverage of a single track'])
 
     def _usage_coverage(self):
-        return 'coverage <genome> <track name> <region>\n'
+        return 'Usage: coverage <genome> <track name> <region>\n'
 
 
     def do_regions(self, line):
@@ -246,7 +255,45 @@ class ToolShell(cmd.Cmd):
                         'Find all available regions for a track'])
 
     def _usage_regions(self):
-        return 'regions <genome> <track name>\n'
+        return 'Usage: regions <genome> <track name>\n'
+
+    def do_k_highest(self, line):
+        argv = line.split()
+        if len(argv) < 3:
+            print 'Wrong usage'
+            print self._usage_coverage()
+            return
+
+        try:
+            k = int(raw_input('Input k: '))
+        except ValueError:
+            print 'k is not an integer'
+            return
+
+        genome = argv[0]
+        track_name = argv[1].split(":")
+        textual_region = argv[2]
+        genome_region = self._parse_region(genome, textual_region)
+
+        if not self._is_valid_region(genome, track_name, genome_region):
+            return
+
+        if not self._is_valid_track_name(genome, track_name):
+            return
+
+        track_view = self._get_track_view(track_name, genome_region)
+        k_elements_with_highest_values = TrackTools.k_highest_values(track_view, k)
+        self.print_result('k_highest_values', track_name, k_elements_with_highest_values)
+
+    def complete_k_highest(self, text, line, begidx, endidx):
+        return self._autocomplete_genome_and_track_name('k_highest', text, line, begidx, endidx)
+
+    def _usage_k_highest(self):
+        print 'Usage: k_highest <genome> <track name>'
+
+    def help_k_highest(self):
+        print '\n'.join([self._usage_k_highest(),
+                         'Get the GenomeElements with the k highest values'])
 
 if __name__ == '__main__':
     ToolShell().cmdloop()
