@@ -181,10 +181,10 @@ class ToolShell(cmd.Cmd):
             return False
         return True
 
-    def do_list(self):
+    def do_list(self, line):
         print_table(['Genome', 'Track name', 'Track type'], self._available_tracks)
 
-    def do_exit(self):
+    def do_exit(self, line):
         print "Exiting..."
         sys.exit()
 
