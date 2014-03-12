@@ -1,12 +1,8 @@
-import os
-import sys
 import numpy
-from gtrackcore.core.Config import Config
+
 from gtrackcore.track.core.Track import PlainTrack
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
-from gtrackcore.util.CommonFunctions import createOrigPath, createPath, convertTNstrToTNListFormat
-from gtrackcore.util.CustomDecorators import timeit
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
 
@@ -31,7 +27,6 @@ def coverage(track_view):
         raise ShouldNotOccurError
 
 
-@timeit
 def intersection_iter(track_view_1, track_view_2):
     base_pair_counter = 0
     track_element_iterator1 = iter(track_view_1)
@@ -57,7 +52,6 @@ def intersection_iter(track_view_1, track_view_2):
         return base_pair_counter
 
 
-@timeit
 def intersection(track_view1, track_view2):
     t1_coded_starts = track_view1.startsAsNumpyArray() * 8 + 5
     t1_coded_ends = track_view1.endsAsNumpyArray() * 8 + 3
