@@ -136,7 +136,7 @@ class TrackFormat(object):
         self._val = inferValType(valList) #trackData.has_key('val')
         self._interval = (endList is not None) #trackData.has_key('end')
         self._linked = (edgesList is not None) #trackData.has_key('edges')
-        self._reprDense = ((valList is not None or edgesList != None) and startList == None and endList == None)
+        self._reprDense = ((valList is not None or edgesList is not None) and startList is None and endList is None)
         #( trackData.has_key('val') or trackData.has_key('edges') ) and not trackData.has_key('start') and not trackData.has_key('end')
         self._hasStrand = (strandList is not None) #trackData.has_key('strand')
         self._hasId = (idList is not None) #trackData.has_key('strand')
@@ -299,7 +299,7 @@ class TrackFormatReq(TrackFormat):
     def __str__(self):
         return 'Requirement: ' + ', '.join([ attr + ': ' + str(getattr(self, attr))\
                                              for attr in self._getAttributes(includeReqExtensions=True) \
-                                             if getattr(self, attr) != None])
+                                             if getattr(self, attr) is not None])
     
     def reprIsDense(self):
         raise NotSupportedError()
