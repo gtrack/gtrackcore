@@ -29,12 +29,12 @@ def k_highest_values(track_view, k):
 
 
 def coverage(track_view):
-    format_name = track_view.trackFormat.getFormatName()
-    if format_name in ['Segments', 'Valued segments', 'Linked segments', 'Linked valued segments']:
+    format = track_name.trackFormat
+    if format.isSegment():
         return track_view.endsAsNumpyArray().sum() - track_view.startsAsNumpyArray().sum()
-    elif format_name in ['Points', 'Valued points', 'Linked points', 'Linked valued points', 'Function', 'Linked function']:
+    elif format.isPoint():
         return track_view.getNumElements()
-    elif format_name in ['Genome partition', 'Step function', 'Linked genome partition', 'Linked step function', 'Linked base pairs']:
+    elif format.isPartition() or format.reprIsDense():
         return len(track_view)
     else:
         raise OperationNotSupportedError
