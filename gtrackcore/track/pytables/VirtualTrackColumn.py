@@ -23,8 +23,20 @@ class VirtualTrackColumn(VirtualNumpyArray):
 
     @offset.setter
     def offset(self, start_end_tuple):
-        self._start_index = start_end_tuple[0]
-        self._end_index = start_end_tuple[1]
+        self._set_offset(start_end_tuple[0], start_end_tuple[1])
+
+    def _set_offset(self, start_index, end_index, step=1):
+        assert start_index <= end_index
+
+        if self._cachedNumpyArray is not None:
+            if start_index >= self._start_index and end_index <= self._end_index:
+                self._cachedNumpyArray = self._cachedNumpyArray[start_index:end_index:step]
+            else:
+                self._cachedNumpyArray = None
+
+        self._start_index = start_index
+        self._end_index = end_index
+        self._step = step
 
     @property
     def shape(self):
@@ -41,18 +53,23 @@ class VirtualTrackColumn(VirtualNumpyArray):
     def update_offset(self, start=None, stop=None, step=None):
         if start is not None:
             if start >= 0:
-                self._start_index = self._start_index + start
+                start_index = self._start_index + start
             else:
-                self._start_index = self._end_index + start
+                start_index = self._end_index + start
+        else:
+            start_index = self._start_index
 
         if stop is not None:
-            if start >= 0:
-                self._end_index = self._start_index + stop
+            if stop >= 0:
+                end_index = self._start_index + stop
             else:
-                self._end_index = self._end_index + stop
+                end_index = self._end_index + stop
+        else:
+            end_index = self._end_index
 
-        self._step = step if step is not None else 1
+        step = step if step is not None else 1
 
+        self._set_offset(start_index, end_index, step)
 
     def __copy__(self):
         vtc = VirtualTrackColumn(self._column_name, self._table_reader)
@@ -65,7 +82,7 @@ class VirtualTrackColumn(VirtualNumpyArray):
     def as_numpy_array(self):
         self._table_reader.open()
         column = self._table_reader.get_column(self._column_name)
-        result = column[self._start_index:self._end_index]
+        result = column[self._start_index:self._end_index:self._step]
         self._table_reader.close()
         return result
 
