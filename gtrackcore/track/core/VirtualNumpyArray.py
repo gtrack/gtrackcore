@@ -61,6 +61,7 @@ NDARRAY_SPECIAL_METHODS_TO_OVERRIDE = [
     '__itruediv__',
     '__ixor__',
     '__le__',
+    '__len__',
     '__long__',
     '__lshift__',
     '__lt__',
