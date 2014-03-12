@@ -1,3 +1,4 @@
+import re
 import sys
 import os
 import cmd
@@ -149,16 +150,19 @@ class ToolShell(cmd.Cmd):
 
     def _autocomplete_genome_and_track_name(self, command, text, line, begidx, endidx):
         command_length = len(command) + 1
-
+        separating_whitespaces = re.findall(r'\s+', line)
         if begidx <= command_length:
             completions = [f[0] for f in self._available_tracks if text is None or f[0].startswith(text)]
-        elif begidx > command_length:
+        elif len(separating_whitespaces) is 1:
             completions = [f[1] for f in self._available_tracks if text is None or f[1].startswith(text)]
-            if len(line.split()) > 2:
+        elif len(separating_whitespaces) is 2:
+            if line[-1] == ':' or len(text) > 0:
                 written = line.split()[2]
                 completions = [f[1][len(written) - len(text):] for f in self._available_tracks if f[1].startswith(written)]
                 if len(completions) == 1 and completions[0] == text:
                     completions.remove(text)
+            else:
+                completions = [f[1] for f in self._available_tracks if text is None or f[1].startswith(text)]
 
         return completions
 
