@@ -10,8 +10,6 @@ from gtrackcore.track.pytables.CommonFunctions import get_start_and_end_indices
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
-from gtrackcore.util.pytables.DatabaseQueries import BoundingRegionQueries
-
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
 
@@ -75,15 +73,15 @@ class PytablesTrackElement(object):
     def __init__(self, trackView):
         # Weak proxy is used to remove memory leak caused by circular reference when TrackView is deleted
         self._trackView = weakref.proxy(trackView)
-        self._row = None
-        self._prev_row = None
+        self.row = None
+        self.prev_row = None
 
     def start(self):
-        candidate = self._row['start'] - self._trackView.genomeAnchor.start
+        candidate = self.row['start'] - self._trackView.genomeAnchor.start
         return candidate if candidate > 0 else 0
 
     def end(self):
-        raw_end = self._row['end']
+        raw_end = self.row['end']
         anchor_end = self._trackView.genomeAnchor.end
 
         if raw_end < anchor_end:
@@ -94,19 +92,19 @@ class PytablesTrackElement(object):
         return end_relative_to_anchor_start
 
     def val(self):
-        return self._row['val']
+        return self.row['val']
 
     def strand(self):
-        return self._row['strand']
+        return self.row['strand']
 
     def id(self):
-        return self._row['id']
+        return self.row['id']
 
     def edges(self):
-        return self._row['edges']
+        return self.row['edges']
 
     def weights(self):
-        return self._row['weights']
+        return self.row['weights']
 
     def getAllExtraKeysInOrder(self):
         return self._trackView._extraLists.keys()
@@ -114,7 +112,7 @@ class PytablesTrackElement(object):
     def __getattr__(self, key):
         if key in self._trackView._extraLists:
             def extra():
-                return self._row[key]
+                return self.row[key]
             return extra
         else:
             raise AttributeError
@@ -128,10 +126,10 @@ class PytablesTrackElement(object):
         return None
 
     def points_end_func(self):
-        return self._row['start'] + 1
+        return self.row['start'] + 1
 
     def partition_start_func(self):
-        return self._prev_row['end']
+        return self.prev_row['end']
 
 
 class AutonomousTrackElement(TrackElement):
@@ -197,28 +195,28 @@ class AutonomousTrackElement(TrackElement):
 class TrackView(object):
 
     def _handlePointsAndPartitions(self):
-        if self._is_partition_track():
+        if self.trackFormat.isPartition():
             self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
-            if self._valList != None:
+            if self._valList is not None:
                 self._valList = self._valList[1:]
-            if self._strandList != None:
+            if self._strandList is not None:
                 self._strandList = self._strandList[1:]
-            if self._idList != None:
+            if self._idList is not None:
                 self._idList = self._idList[1:]
-            if self._edgesList != None:
+            if self._edgesList is not None:
                 self._edgesList = self._edgesList[1:]
-            if self._weightsList != None:
+            if self._weightsList is not None:
                 self._weightsList = self._weightsList[1:]
             for key, extraList in self._extraLists.items():
-                if extraList != None:
+                if extraList is not None:
                     self._extraLists[key] = extraList[1:]
 
-        elif self._is_points_track():
+        elif self.trackFormat.isPoint():
             self._endList = VirtualPointEnd(self._startList)
 
     def _handle_points_and_partitions_for_pytables(self):
-        if self._is_partition_track():
+        if self.trackFormat.isPartition():
             self._pytables_track_element.start = self._pytables_track_element.partition_start_func  # iteration
 
             self._startList = copy(self._endList)
@@ -238,17 +236,11 @@ class TrackView(object):
                 if extraList is not None:
                     extraList.update_offset(start=1)
 
-        elif self._is_points_track():
+        elif self.trackFormat.isPoint():
             self._pytables_track_element.end = self._pytables_track_element.points_end_func  # iteration
 
             self._endList = copy(self._startList)
             self._endList.as_numpy_array = self._endList.ends_as_numpy_array_points_func
-
-    def _is_partition_track(self):
-        return self.trackFormat.isDense() and not self.trackFormat.reprIsDense()
-
-    def _is_points_track(self):
-        return not self.trackFormat.isDense() and not self.trackFormat.isInterval()
 
     def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
                  weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict(), track_name=None):
@@ -264,7 +256,7 @@ class TrackView(object):
                                          for l in [startList, endList, valList, edgesList] if l is not None])
 
         self._trackElement = TrackElement(self)
-        self._pytables_track_element = PytablesTrackElement(self)  # For iterating pytables track table
+        self._pytables_track_element = PytablesTrackElement(self)
 
         #self._bpLevelArray = None
 
@@ -323,21 +315,21 @@ class TrackView(object):
 
             rows = track_table.iterrows(start=start_index, stop=end_index)
 
-            if self._is_partition_track():
-                self._pytables_track_element._row = rows.next()
+            if self.trackFormat.isPartition():
+                self._pytables_track_element.row = rows.next()
 
             for row in rows:
                 #  Remove blind passengers
                 if self.allowOverlaps and not self.trackFormat.reprIsDense():
                     if 'end' in track_table.colnames and (row['end'] <= self.genomeAnchor.start):
                         continue
-                self._pytables_track_element._prev_row = self._pytables_track_element._row
-                self._pytables_track_element._row = row
+                self._pytables_track_element.prev_row = self._pytables_track_element.row
+                self._pytables_track_element.row = row
                 yield self._pytables_track_element
 
     def __iter__(self):
         if self._should_use_pytables:
-            self._pytables_track_element._row = None
+            self._pytables_track_element.row = None
             return self._generate_pytables_track_elements()
         else:
             self._trackElement._index = -1
