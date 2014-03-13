@@ -6,6 +6,7 @@ import numpy
 
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track.pytables.CommonFunctions import get_start_and_end_indices
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
@@ -312,19 +313,15 @@ class TrackView(object):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
 
     def _generate_pytables_track_elements(self):
-        br_queries = BoundingRegionQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
+        start_index, end_index = get_start_and_end_indices(self.genomeAnchor, self._track_name, self.allowOverlaps, self.trackFormat)
 
-        bounding_region = br_queries.enclosing_bounding_region_for_region(self.genomeAnchor)
-        br_start_index, br_end_index = (bounding_region[0]['start_index'], bounding_region[0]['end_index']) \
-            if len(bounding_region) > 0 else (0, 0)
-
-        if (br_start_index, br_end_index) == (0, 0):
+        if start_index == end_index:
             return
 
         with self._db_handler as table_reader:
             track_table = table_reader.table
 
-            rows = track_table.iterrows(start=br_start_index, stop=br_end_index)
+            rows = track_table.iterrows(start=start_index, stop=end_index)
 
             if self._is_partition_track():
                 self._pytables_track_element._row = rows.next()
