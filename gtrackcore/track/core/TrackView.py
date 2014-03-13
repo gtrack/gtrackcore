@@ -313,12 +313,18 @@ class TrackView(object):
 
     def _generate_pytables_track_elements(self):
         br_queries = BoundingRegionQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
-        start_index, end_index = br_queries.start_and_end_indices(self.genomeAnchor)
+
+        bounding_region = br_queries.enclosing_bounding_region_for_region(self.genomeAnchor)
+        br_start_index, br_end_index = (bounding_region[0]['start_index'], bounding_region[0]['end_index']) \
+            if len(bounding_region) > 0 else (0, 0)
+
+        if (br_start_index, br_end_index) == (0, 0):
+            return
 
         with self._db_handler as table_reader:
             track_table = table_reader.table
 
-            rows = track_table.iterrows(start=start_index, stop=end_index)
+            rows = track_table.iterrows(start=br_start_index, stop=br_end_index)
 
             if self._is_partition_track():
                 self._pytables_track_element._row = rows.next()

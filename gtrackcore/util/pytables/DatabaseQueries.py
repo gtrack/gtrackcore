@@ -24,12 +24,6 @@ class BoundingRegionQueries(DatabaseQueries):
 
         return sum(result) if len(result) > 0 else 0
 
-    def start_and_end_indices(self, genome_region):
-        bounding_region = self.enclosing_bounding_region_for_region(genome_region)
-
-        return (bounding_region[0]['start_index'], bounding_region[0]['end_index'])\
-            if len(bounding_region) > 0 else (0, 0)  # Empty track_view if len(bounding_region) == 0
-
     def enclosing_bounding_region_for_region(self, genome_region):
         query = '(chr == region_chr) & (start <= region_start) & (end >= region_end)'
         return self._all_bounding_regions_for_region(genome_region, query)

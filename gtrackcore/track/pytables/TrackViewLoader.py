@@ -31,12 +31,14 @@ class TrackViewLoader:
     @staticmethod
     def _get_start_and_end_indices(region, track_name, allow_overlaps, track_format):
         br_queries = BoundingRegionQueries(region.genome, track_name, allow_overlaps)
-        br_start_index, br_end_index = br_queries.start_and_end_indices(region)
+        bounding_region = br_queries.enclosing_bounding_region_for_region(region)
+        br_start_index, br_end_index = (bounding_region[0]['start_index'], bounding_region[0]['end_index']) \
+            if len(bounding_region) > 0 else (0, 0)
+
         if br_start_index == br_end_index:
             return br_start_index, br_end_index  # Empty track_view
 
         if track_format.reprIsDense():
-            bounding_region = br_queries.enclosing_bounding_region_for_region(region)
             start_index = br_start_index + (region.start - bounding_region[0]['start'])
             end_index = start_index + len(region)
         else:
