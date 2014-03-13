@@ -360,7 +360,8 @@ class TrackView(object):
     def _computeNumIterElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:
-                if isinstance(list, numpy.ndarray):
+                #TODO: test
+                if isinstance(list, numpy.ndarray) or isinstance(list, VirtualTrackColumn):
                     return len(self._removeBlindPassengersFromNumpyArray(list))
                 else:
                     return sum(1 for _ in self)
