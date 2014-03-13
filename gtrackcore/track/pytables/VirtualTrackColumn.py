@@ -74,6 +74,7 @@ class VirtualTrackColumn(VirtualNumpyArray):
     def __copy__(self):
         vtc = VirtualTrackColumn(self._column_name, self._table_reader)
         vtc.offset = self.offset
+        vtc._cachedNumpyArray = self._cachedNumpyArray
         return vtc
 
     def __len__(self):
