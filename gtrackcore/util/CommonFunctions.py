@@ -316,8 +316,8 @@ def get_dir_path(genome, track_name, chr=None, allow_overlaps=False, base_path=C
         #trackName[2] is chr
         #trackName[3] is description
         track_name = track_name[4:]
-        
-    return os.sep.join( [base_path, ('withOverlaps' if allow_overlaps else 'noOverlaps'), genome] + list(track_name))
+    return os.sep.join( [base_path, genome] + list(track_name))
+
 #
 ##def createMemoPath(trackName, genome, chr, statName):
 ##    return os.sep.join( [MEMOIZED_DATA_PATH, statName, str(COMP_BIN_SIZE), genome]+list(trackName)+[chr] )
@@ -637,9 +637,20 @@ def replaceIllegalElementsInTrackNames(string):
 #    #except Exception,e:
 #    #    raise ShouldNotOccurError('Repackaged exception.., original was: ' + getClassName(e) + ' - '+str(e) + ' - ' + traceback.format_exc())
 
-def getDatabasePath(dirPath, trackName):
+
+def getDatabasePath(dirPath, trackName, allow_overlaps=False):
     DATABASE_FILE_SUFFIX = 'h5'  # put in Config
-    return "%s%s%s.%s" % (dirPath, os.sep, trackName[-1], DATABASE_FILE_SUFFIX)
+    db_path = "%s%s%s.%s" % (dirPath, os.sep, get_db_name(trackName[-1], None), DATABASE_FILE_SUFFIX)
+    if os.path.exists(db_path):
+        return db_path
+    else:
+        return "%s%s%s.%s" % (dirPath, os.sep, get_db_name(trackName[-1], allow_overlaps), DATABASE_FILE_SUFFIX)
+
+
+def get_db_name(track_name, allow_overlaps):
+    return track_name if allow_overlaps is None else track_name +\
+                                                     ('_with_overlaps' if allow_overlaps else '_no_overlaps')
+
 
 def databaseExist(filename):
     return os.path.exists(filename) and is_pytables_file(filename)

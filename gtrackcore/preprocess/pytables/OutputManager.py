@@ -13,10 +13,10 @@ from gtrackcore.util.CustomExceptions import DBNotExistError
 
 class OutputManager(object):
     def __init__(self, genome, track_name, allow_overlaps, ge_source_manager):
-        dir_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
+        dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        self._database_filename = getDatabasePath(dir_path, track_name)
+        self._database_filename = getDatabasePath(dir_path, track_name, allow_overlaps)
 
         self._create_single_track_database(genome, track_name, allow_overlaps, ge_source_manager)
 

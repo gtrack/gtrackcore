@@ -52,7 +52,7 @@ class PreProcessUtils(object):
         collector = PreProcMetaDataCollector(genome, trackName)
         preproc_files_exist = collector.preProcFilesExist(allowOverlaps)
         if preproc_files_exist is None:
-            dirPath = get_dir_path(genome, trackName, allow_overlaps=allowOverlaps)
+            dirPath = get_dir_path(genome, trackName, allow_overlaps=None)
             #dbPath =  getDatabasePath(dirPath, trackName)
 
             if os.path.exists(dirPath) and BoundingRegionHandler(genome, trackName, allowOverlaps).table_exists():
@@ -98,7 +98,7 @@ class PreProcessUtils(object):
         collector = PreProcMetaDataCollector(genome, trackName)
         if PreProcessUtils.preProcFilesExist(genome, trackName, allowOverlaps) and not \
             collector.hasRemovedPreProcFiles(allowOverlaps):
-                dirPath = get_dir_path(genome, trackName, allow_overlaps=allowOverlaps)
+                dirPath = get_dir_path(genome, trackName, allow_overlaps=None)
                 
                 assert dirPath.startswith(Config.PROCESSED_DATA_PATH), \
                     "Processed data path '%s' does not start with '%s'" % \
@@ -123,7 +123,7 @@ class PreProcessUtils(object):
 
     @staticmethod
     def sort_preprocessed_table(genome, track_name, allow_overlaps):
-        dir_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
+        dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
         assert os.path.exists(dir_path)  # throw error
 
         table_sorter = TrackTableSorter(genome, track_name, allow_overlaps)

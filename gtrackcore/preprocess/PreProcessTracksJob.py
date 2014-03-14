@@ -17,6 +17,7 @@ from gtrackcore.track.hierarchy.ExternalTrackManager import ExternalTrackManager
 from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
 from gtrackcore.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
+from gtrackcore.track.pytables.DatabaseHandler import DatabaseMerger
 from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
@@ -95,6 +96,9 @@ class PreProcessTracksJob(object):
                             atLeastOneFinalized = True
                     else:
                         collector.removeEntry()
+                    if False:  #work in progress...
+                        db_merger = DatabaseMerger(self._genome, trackName)
+                        db_merger.merge()
 
             except NotSupportedError, e:
                 collector.removeEntry()
@@ -159,8 +163,7 @@ class PreProcessTracksJob(object):
         return GESourceManager(geSource)
 
     def _getGESourceManagerFromTrack(self, trackName):
-        origBrTuples = PreProcMetaDataCollector(self._genome, trackName).\
-                        getBoundingRegionTuples(allowOverlaps=True)
+        origBrTuples = PreProcMetaDataCollector(self._genome, trackName).getBoundingRegionTuples(allowOverlaps=True)
         return OverlapClusteringGESourceManager(self._genome, trackName, origBrTuples)
 
     def _shouldPreProcess(self):

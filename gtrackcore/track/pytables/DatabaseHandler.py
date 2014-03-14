@@ -1,4 +1,6 @@
 from abc import ABCMeta, abstractmethod
+from copy import copy
+import os
 import re
 import numpy
 
@@ -19,14 +21,16 @@ class DatabaseHandler(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, genome, track_name, allow_overlaps):
-        dir_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
-        self._h5_filename = getDatabasePath(dir_path, track_name)
-        self._track_name = self._convert_track_name_to_pytables_format(track_name)
+        dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
+        self._h5_filename = getDatabasePath(dir_path, track_name, allow_overlaps)
+        self._track_name = self._convert_track_name_to_pytables_format(track_name, allow_overlaps)
         self._h5_file = None
         self._table = None
 
-    def _convert_track_name_to_pytables_format(self, track_name):
-        return [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in track_name]
+    def _convert_track_name_to_pytables_format(self, track_name, allow_overlaps):
+        converted_track_name = [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in track_name]
+        converted_track_name.insert(0, 'with_overlaps' if allow_overlaps else 'no_overlaps')
+        return converted_track_name
 
     def __enter__(self):
         self.open()
@@ -162,6 +166,14 @@ class TrackTableReadWriter(TableReadWriter):
 
     def table_exists(self):
         return super(TrackTableReader, self).table_exists(self._get_track_table_path())
+
+    def create_indices(self):
+        if 'chr' in self._table.colinstances:
+            self._table.cols.chr.create_index()
+        if 'start' in self._table.colinstances:
+            self._table.cols.start.create_index()
+        if 'end' in self._table.colinstances:
+            self._table.cols.end.create_index()
 
 
 class BrTableReadWriter(TableReadWriter):
@@ -370,3 +382,45 @@ class BoundingRegionTableCreator(TableCreator):
 
     def _create_indices(self):
         self._table.cols.chr.create_csindex()
+
+
+class DatabaseMerger(object):
+    def __init__(self, genome, track_name):
+        self._track_name = track_name
+        self._genome = genome
+        self._track_path = get_dir_path(genome, track_name, allow_overlaps=None)
+
+    def merge(self):
+        dir_path = get_dir_path(self._genome, self._track_name)
+        no_overlaps_db_path = getDatabasePath(dir_path, self._track_name, allow_overlaps=False)
+        with_overlaps_db_path = getDatabasePath(dir_path, self._track_name, allow_overlaps=True)
+        if os.path.isfile(with_overlaps_db_path):
+            no_overlaps_file = tables.open_file(no_overlaps_db_path, 'a')
+            with_overlaps_file = tables.open_file(with_overlaps_db_path, 'r')
+
+            with_overlaps_tree_node = with_overlaps_file.root.with_overlaps
+            no_overlaps_tree_node = no_overlaps_file.root
+
+            with_overlaps_file.copy_node(with_overlaps_tree_node, newparent=no_overlaps_tree_node, recursive=True)
+            os.remove(with_overlaps_db_path)
+
+        db_path = getDatabasePath(dir_path, self._track_name, allow_overlaps=None)
+        os.rename(no_overlaps_db_path, db_path)
+
+        db_handler = TrackTableReadWriter(self._genome, self._track_name, allow_overlaps=True)
+        db_handler.open()
+        db_handler.create_indices()
+        db_handler.close()
+
+
+
+    def _create_indices(self, table):
+        table.cols.chr.create_csindex()
+
+
+
+
+
+
+
+
