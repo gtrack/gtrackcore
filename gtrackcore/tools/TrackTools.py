@@ -14,10 +14,15 @@ def count_elements(track_view):
     return track_view.getNumElements()
 
 
+def sum_of_values(track_view):
+    if not track_view.trackFormat.isValued():
+        raise OperationNotSupportedError
+
+    return track_view.valsAsNumpyArray().sum()
+
+
 def k_highest_values(track_view, k):
-    format_name = track_view.trackFormat.getFormatName()
-    if format_name not in ['Function', 'Linked function', 'Valued points', 'Linked valued segments', 'Valued segments',
-                       'Linked valued segments']:
+    if not track_view.trackFormat.isValued():
         raise OperationNotSupportedError
     print len(track_view)
     if k > track_view.getNumElements():
