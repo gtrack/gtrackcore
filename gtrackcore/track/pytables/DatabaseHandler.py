@@ -12,6 +12,7 @@ from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
+from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
 
 
 BOUNDING_REGION_TABLE_NAME = 'bounding_regions'
@@ -307,16 +308,8 @@ class TrackTableCopier(TableCreator):
         for old_row in self._old_table.iterrows():
             for column_name in self.get_column_names():
                 if isinstance(old_row[column_name], numpy.ndarray):
-                    # TODO: test this code and put it in a seperate function
-                    temp_val = numpy.zeros(shape=new_row[column_name].shape, dtype=new_row[column_name].dtype)
-                    shape_len = len(new_row[column_name].shape)
-                    if shape_len == 1:
-                        temp_val[:old_row[column_name].shape[0]] = old_row[column_name]
-                    elif shape_len == 2:
-                        temp_val[:old_row[column_name].shape[0], :old_row[column_name].shape[1]] = old_row[column_name]
-                    else:
-                        raise AssertionError('shape len must be 1 or 2, was %d' % shape_len)
-                    new_row[column_name] = temp_val
+                    new_row[column_name] = insert_into_array_of_larger_shape(old_row[column_name],
+                                                                             new_row[column_name].shape)
                 else:
                     new_row[column_name] = old_row[column_name]
             new_row.append()
