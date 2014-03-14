@@ -24,4 +24,4 @@ class TrackViewLoader:
         arg_list = [region] + reserved_columns + [borderHandling, allowOverlaps] + \
                    [OrderedDict(zip(extra_column_names, extra_columns))]
 
-        return TrackView(* arg_list, track_name=trackName)
+        return TrackView(* arg_list, track_name=trackName, start_index=start_index, end_index=end_index)

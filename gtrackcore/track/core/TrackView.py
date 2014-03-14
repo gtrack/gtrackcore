@@ -243,10 +243,9 @@ class TrackView(object):
             self._endList.as_numpy_array = self._endList.ends_as_numpy_array_points_func
 
     def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
-                 weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict(), track_name=None):
+                 weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict(), track_name=None, start_index=0, end_index=0):
         assert startList is not None or endList is not None or valList is not None or edgesList is not None
         assert borderHandling in ['crop']
-
         self._track_name = track_name
         self.genomeAnchor = copy(genomeAnchor)
         self.trackFormat = TrackFormat(startList, endList, valList, strandList, idList, edgesList, weightsList, extraLists)
@@ -254,10 +253,9 @@ class TrackView(object):
         self.allowOverlaps = allowOverlaps
         self._should_use_pytables = all([isinstance(l, VirtualTrackColumn)
                                          for l in [startList, endList, valList, edgesList] if l is not None])
-
         self._trackElement = TrackElement(self)
         self._pytables_track_element = PytablesTrackElement(self)
-
+        self._cached_start_and_end_indices = start_index, end_index
         #self._bpLevelArray = None
 
         self._startList = startList
@@ -305,8 +303,10 @@ class TrackView(object):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
 
     def _generate_pytables_track_elements(self):
-        start_index, end_index = get_start_and_end_indices(self.genomeAnchor, self._track_name, self.allowOverlaps, self.trackFormat)
+        if self._cached_start_and_end_indices is None:
+            self._cached_start_and_end_indices = get_start_and_end_indices(self.genomeAnchor, self._track_name, self.allowOverlaps, self.trackFormat)
 
+        start_index, end_index = self._cached_start_and_end_indices
         if start_index == end_index:
             return
 
@@ -490,6 +490,8 @@ class TrackView(object):
             slicedTV._doDenseSlicing(i,j)
         else:
             slicedTV._doScatteredSlicing()
+
+        self._cached_start_and_end_indices = None
         return slicedTV
     
     def _getBpLevelModificationArray(self, indexes, vals):
