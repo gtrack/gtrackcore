@@ -1,12 +1,12 @@
-import numpy
-import tables
 import os
-
-from itertools import izip_longest, izip
+from itertools import izip_longest
 from stat import S_IRWXU, S_IRWXG, S_IROTH
 
-from gtrackcore.core.LogSetup import logMessage
+import numpy
+import tables
+
 from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
+from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableCreator, TrackTableReader, TrackTableCopier
 from gtrackcore.util.CustomExceptions import DBNotExistError
 
@@ -29,19 +29,22 @@ class OutputManager(object):
             if 'val' in self._table_description.keys() or 'edges' in self._table_description.keys():
                 assert set(self._table_description.keys()) == set(current_table_description.keys())  # new and old has same attributes
 
-                shape_dict = self._should_create_new_table(current_table_description, self._table_description)
-                if len(shape_dict) > 0:  # need to create new table and copy content from old
-                    for column_name, shape in shape_dict.iteritems():
-                        self._table_description[column_name].shape = shape
+                new_descriptions = self._should_create_new_table(current_table_description, self._table_description)
+
+                if len(new_descriptions) > 0:  # need to create new table and copy content from old
+                    for column_name, description in new_descriptions.iteritems():
+                        self._table_description[column_name] = description
 
                     self._table_creator = TrackTableCopier(genome, track_name, allow_overlaps)
+                else:
+                    self._add_element_as_row = self._add_element_as_row_from_new_file_using_old_shape
 
         if self._table_creator is None:
             self._table_creator = TrackTableCreator(genome, track_name, allow_overlaps)
 
         self._table_creator.open()
         self._table_creator.create_table(self._table_description,
-                                                      expectedrows=ge_source_manager.getNumElements())
+                                         expectedrows=ge_source_manager.getNumElements())
 
     def _extract_table_info(self, genome, track_name, allow_overlaps):
         table_info_reader = TrackTableReader(genome, track_name, allow_overlaps)
@@ -57,11 +60,11 @@ class OutputManager(object):
 
         return table_exists, table_description
 
-    def _should_create_new_table(self, old_table_description, new_table_description):
-        def should_use_new_shape(old_shape, new_shape):
-            return not all([x > y for x, y in izip_longest(old_shape, new_shape)])
+    def should_use_new_shape(self, old_shape, new_shape):
+        return any([x < y for x, y in izip_longest(old_shape, new_shape)])
 
-        shape_dict = {}
+    def _should_create_new_table(self, old_table_description, new_table_description):
+        new_descriptions = {}
 
         for column_name in ('val', 'edges', 'weights'):
             if column_name in old_table_description:
@@ -69,10 +72,15 @@ class OutputManager(object):
                 new_val_shape = new_table_description[column_name].shape
                 result_val_shape = tuple([max(x, y) for x, y in izip_longest(old_val_shape, new_val_shape)])
 
-                if should_use_new_shape(old_val_shape, result_val_shape):
-                    shape_dict[column_name] = result_val_shape
+                if self.should_use_new_shape(old_val_shape, result_val_shape):
+                    dtype = old_table_description[column_name].type
+                    if dtype == 'string':
+                        new_descriptions[column_name] = tables.StringCol(old_table_description[column_name].itemsize,
+                                                                         shape=result_val_shape)
+                    else:
+                        new_descriptions[column_name] = tables.Col.from_type(dtype, shape=result_val_shape)
 
-        return shape_dict
+        return new_descriptions
 
     def _create_track_table_description(self, ge_source_manager):
         max_string_lengths = self._get_max_str_lens_over_all_chromosomes(ge_source_manager)
@@ -140,9 +148,27 @@ class OutputManager(object):
         for column in self._table_description:
             if column in genome_element.__dict__ and column != 'extra':
                 if column in ['edges', 'weights']:
-                    ge_len = sum(1 for x in genome_element.__dict__[column])
+                    ge_len = sum(1 for _ in genome_element.__dict__[column])
                     if ge_len >= 1:
                         row[column] = numpy.array(genome_element.__dict__[column] + list(row[column][ge_len:]))
+                else:
+                    row[column] = genome_element.__dict__[column]
+
+            else:  # Get extra column
+                row[column] = genome_element.__dict__['extra'][column]
+        row.append()
+        self._table_creator.flush()
+
+    def _add_element_as_row_from_new_file_using_old_shape(self, genome_element):
+        row = self._table_creator.get_row()
+        for column in self._table_description:
+            if column in genome_element.__dict__ and column != 'extra':
+                if column in ['edges', 'weights']:
+                    ge_len = sum(1 for _ in genome_element.__dict__[column])
+                    if ge_len >= 1:
+                        row[column] = numpy.array(genome_element.__dict__[column] + list(row[column][ge_len:]))
+                elif column == 'val' and isinstance(row[column], numpy.ndarray):
+                    row[column] = insert_into_array_of_larger_shape(genome_element.__dict__[column], row[column].shape)
                 else:
                     row[column] = genome_element.__dict__[column]
 
