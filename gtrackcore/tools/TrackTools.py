@@ -4,13 +4,14 @@ from gtrackcore.tools.ToolExceptions import OperationNotSupportedError
 from gtrackcore.track.core.Track import Track, PlainTrack
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
+from gtrackcore.track.graph.GraphView import LazyProtoGraphView
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 
 
 def get_track_view(track_name, genome_region, allow_overlaps=False):
     track = Track(track_name)
     track.addFormatReq(TrackFormatReq(allowOverlaps=allow_overlaps, borderHandling='crop'))
-    return track.getTrackView()
+    return track.getTrackView(genome_region)
 
 
 def count_elements(track_view):
