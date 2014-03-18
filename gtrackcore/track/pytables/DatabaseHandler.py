@@ -24,7 +24,8 @@ class DatabaseHandler(object):
     def __init__(self, genome, track_name, allow_overlaps):
         dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
         self._h5_filename = getDatabasePath(dir_path, track_name, allow_overlaps)
-        self._track_name = self._convert_track_name_to_pytables_format(track_name, allow_overlaps)
+        self._node_names = self._convert_track_name_to_pytables_format(track_name, allow_overlaps)
+        self._table_name = self._node_names[-1]
         self._h5_file = None
         self._table = None
 
@@ -43,7 +44,7 @@ class DatabaseHandler(object):
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
         try:
-            self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
+            self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._table_name)
             portalocker.lock(self._h5_file, lock_type)
         except IOError, e:
             raise DBNotExistError(e)
@@ -88,7 +89,7 @@ class DatabaseHandler(object):
 
 
     def _get_track_table_path(self):
-        return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])
+        return '/%s/%s' % ('/'.join(self._node_names), self._table_name)
 
     def _get_track_table(self):
         try:
@@ -97,7 +98,7 @@ class DatabaseHandler(object):
             raise DBNotOpenError(e)
 
     def _get_br_table_path(self):
-        return '/%s/%s' % ('/'.join(self._track_name), BOUNDING_REGION_TABLE_NAME)
+        return '/%s/%s' % ('/'.join(self._node_names), BOUNDING_REGION_TABLE_NAME)
 
     def _get_br_table(self):
         try:
@@ -238,9 +239,9 @@ class TableCreator(DatabaseHandler):
     def _create_groups(self):
         group = self._get_track_group()
         if group is None:
-            group = self._h5_file.create_group(self._h5_file.root, self._track_name[0], self._track_name[0])
+            group = self._h5_file.create_group(self._h5_file.root, self._node_names[0], self._node_names[0])
 
-            for track_name_part in self._track_name[1:]:
+            for track_name_part in self._node_names[1:]:
                 group = self._h5_file.create_group(group, track_name_part, track_name_part)
 
         return group
@@ -256,7 +257,7 @@ class TableCreator(DatabaseHandler):
             return None
 
     def _get_track_group_path(self):
-        return '/%s' % ('/'.join(self._track_name))
+        return '/%s' % ('/'.join(self._node_names))
 
 
 class TrackTableCreator(TableCreator):
@@ -265,7 +266,7 @@ class TrackTableCreator(TableCreator):
 
     def create_table(self, table_description, expectedrows):
         self._table = super(TrackTableCreator, self).create_table(
-            table_description, expectedrows, self._track_name[-1])
+            table_description, expectedrows, self._table_name)
 
         #Get existing table
         if self._table is None:
@@ -295,7 +296,7 @@ class TrackTableCopier(TableCreator):
         self._old_table.rename(self._old_table.name + '_tmp')
 
         self._table = super(TrackTableCopier, self).create_table(
-            table_description, expectedrows + self._old_table.nrows, self._track_name[-1])
+            table_description, expectedrows + self._old_table.nrows, self._table_name)
         self._create_indices()
 
         self._copy_content_from_old_to_new_table()
@@ -337,7 +338,7 @@ class TrackTableSorter(TableCreator):
         self._old_table.rename(self._old_table.name + '_tmp')
 
         self._table = super(TrackTableSorter, self).create_table(
-            table_description, self._old_table.nrows, self._track_name[-1])
+            table_description, self._old_table.nrows, self._table_name)
         self._create_indices()
 
         self._copy_content_from_old_to_new_table_in_sorted_order(sort_order, table_description)
