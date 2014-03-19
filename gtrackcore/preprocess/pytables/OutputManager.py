@@ -60,7 +60,7 @@ class OutputManager(object):
 
         return table_exists, table_description
 
-    def should_use_new_shape(self, old_shape, new_shape):
+    def _should_use_new_shape(self, old_shape, new_shape):
         return any([x < y for x, y in izip_longest(old_shape, new_shape)])
 
     def _should_create_new_table(self, old_table_description, new_table_description):
@@ -72,7 +72,7 @@ class OutputManager(object):
                 new_val_shape = new_table_description[column_name].shape
                 result_val_shape = tuple([max(x, y) for x, y in izip_longest(old_val_shape, new_val_shape)])
 
-                if self.should_use_new_shape(old_val_shape, result_val_shape):
+                if self._should_use_new_shape(old_val_shape, result_val_shape):
                     dtype = old_table_description[column_name].type
                     if dtype == 'string':
                         new_descriptions[column_name] = tables.StringCol(old_table_description[column_name].itemsize,

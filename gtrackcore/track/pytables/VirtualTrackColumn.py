@@ -51,6 +51,9 @@ class VirtualTrackColumn(VirtualNumpyArray):
         raise NotImplementedError
 
     def update_offset(self, start=None, stop=None, step=None):
+        if self._start_index == self._end_index:
+            return
+
         if start is not None:
             if start >= 0:
                 start_index = self._start_index + start
