@@ -2,6 +2,8 @@ import os
 import shutil
 import sys
 import numpy
+import tables
+from tables.exceptions import NoSuchNodeError
 
 from gtrackcore.core.Config import Config
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
@@ -167,6 +169,50 @@ class PreProcessUtils(object):
         if br_handler.get_total_element_count() != collector.getNumElements(allow_overlaps):
             raise ShouldNotOccurError("Error: The total element count for all bounding regions is not equal to the total number of genome elements. %s != %s" % \
                                       (br_handler.get_total_element_count(), collector.getNumElements(allow_overlaps)) )
+    @staticmethod
+    def merge_and_rename_overlap_tables(genome, track_name):
+        """
+        Merge the no_overlaps and_with_overlaps tables into a single h5-file.
+        The tables doesn't need to be separated after the pre-processing, since they're accessed independent of each
+        other. In the pre-processing step the with_overlaps table is open in read-only mode, while the no_overlaps
+        table is being open in append mode. Thus, the tables cannot be in the same file before the
+        pre-processing is done.
+        """
+        dir_path = get_dir_path(genome, track_name)
+        no_overlaps_db_path = getDatabasePath(dir_path, track_name, allow_overlaps=False)
+        with_overlaps_db_path = getDatabasePath(dir_path,track_name, allow_overlaps=True)
+        no_overlaps_file = tables.open_file(no_overlaps_db_path, 'a')
+        if os.path.isfile(with_overlaps_db_path):
+            with_overlaps_file = tables.open_file(with_overlaps_db_path, 'r')
+
+            with_overlaps_tree_node = with_overlaps_file.root.with_overlaps
+            no_overlaps_tree_node = no_overlaps_file.root
+
+            with_overlaps_file.copy_node(with_overlaps_tree_node, newparent=no_overlaps_tree_node, recursive=True)
+            with_overlaps_file.close()
+            os.remove(with_overlaps_db_path)
+
+        db_path = getDatabasePath(dir_path, track_name, allow_overlaps=None)
+        os.rename(no_overlaps_db_path, db_path)
+        no_overlaps_file.close()
+
+        PreProcessUtils._create_indices(genome, track_name)
+
+    @staticmethod
+    def _create_indices(genome, track_name):
+        db_handler = TrackTableReadWriter(genome, track_name, allow_overlaps=False)
+        db_handler.open()
+        db_handler.create_indices()
+        db_handler.close()
+
+        db_handler = TrackTableReadWriter(genome, track_name, allow_overlaps=True)
+        try:
+            db_handler.open()
+            db_handler.create_indices()
+        except NoSuchNodeError:
+            pass
+        finally:
+            db_handler.close()
 
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):
