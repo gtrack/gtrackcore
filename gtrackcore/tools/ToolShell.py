@@ -54,7 +54,8 @@ class ToolShell(cmd.Cmd):
     def _update_available_tracks(self):
         data = []
         base_dirs = os.listdir(Config.PROCESSED_DATA_PATH)
-
+        if '100000' in base_dirs:
+            base_dirs.remove('100000')
         for base_dir in base_dirs:
             for directory, dirnames, filenames in os.walk(Config.PROCESSED_DATA_PATH + os.sep + base_dir):
                 if len(filenames) > 0:

@@ -50,7 +50,7 @@ def sum_of_weights(genome, track_name, allow_overlaps=False, genome_regions=None
     weight_sum = numpy.float128(0)
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
-        weight_sum += numpy.nansum(track_view.weightsAsNumpyArray(), axis=0)
+        weight_sum += numpy.nansum(track_view.weightsAsNumpyArray())
 
     return weight_sum
 
@@ -59,7 +59,7 @@ def sum_of_weights_iter(graph_view):
     weight_sum = numpy.float128(0)
     for edge in graph_view.getEdgeIter():
         if isinstance(edge.weight, numpy.ndarray):
-            weight_sum += numpy.nansum(edge.weight, axis=0)
+            weight_sum += numpy.nansum(edge.weight)
         elif not math.isnan(edge.weight):
             weight_sum += edge.weight
     return weight_sum
