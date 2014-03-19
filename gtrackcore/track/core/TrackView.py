@@ -74,7 +74,7 @@ class PytablesTrackElement(object):
         # Weak proxy is used to remove memory leak caused by circular reference when TrackView is deleted
         self._trackView = weakref.proxy(trackView)
         self.row = None
-        self.prev_row = None
+        self.partition_start = -1
 
     def start(self):
         candidate = self.row['start'] - self._trackView.genomeAnchor.start
@@ -129,7 +129,7 @@ class PytablesTrackElement(object):
         return self.row['start'] + 1
 
     def partition_start_func(self):
-        return self.prev_row['end']
+        return self.partition_start
 
 
 class AutonomousTrackElement(TrackElement):
@@ -317,15 +317,19 @@ class TrackView(object):
 
             if self.trackFormat.isPartition():
                 self._pytables_track_element.row = rows.next()
-
-            for row in rows:
-                #  Remove blind passengers
-                if self.allowOverlaps and not self.trackFormat.reprIsDense():
-                    if 'end' in track_table.colnames and (row['end'] <= self.genomeAnchor.start):
-                        continue
-                self._pytables_track_element.prev_row = self._pytables_track_element.row
-                self._pytables_track_element.row = row
-                yield self._pytables_track_element
+                self._pytables_track_element.partition_start = self._pytables_track_element.row['end']
+                for row in rows:
+                    self._pytables_track_element.row = row
+                    yield self._pytables_track_element
+                    self._pytables_track_element.partition_start = self._pytables_track_element.row['end']
+            else:
+                for row in rows:
+                    #  Remove blind passengers
+                    if self.allowOverlaps and not self.trackFormat.reprIsDense():
+                        if 'end' in track_table.colnames and (row['end'] <= self.genomeAnchor.start):
+                            continue
+                    self._pytables_track_element.row = row
+                    yield self._pytables_track_element
 
     def __iter__(self):
         if self._should_use_pytables:

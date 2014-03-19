@@ -1,6 +1,6 @@
 import weakref
 
-from gtrackcore.graph.Edge import Edge
+from gtrackcore.track.graph.Edge import Edge
 from gtrackcore.track.core.TrackView import TrackElement, AutonomousTrackElement, noneFunc
 
 class NodeElement(TrackElement):

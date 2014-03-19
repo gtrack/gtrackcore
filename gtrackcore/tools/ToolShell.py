@@ -52,17 +52,19 @@ class ToolShell(cmd.Cmd):
         return track.getTrackView(genome_region)
 
     def _update_available_tracks(self):
-        base_dir = Config.PROCESSED_DATA_PATH + '/noOverlaps/'
         data = []
-        for directory, dirnames, filenames in os.walk(base_dir):
-            if len(filenames) > 0:
-                track_name_list = directory.split(base_dir)[1].split('/')
+        base_dirs = os.listdir(Config.PROCESSED_DATA_PATH)
+        base_dirs.remove('100000')
 
-                genome = track_name_list[0]
-                track_name = track_name_list[1:]
-                track_type = self._extract_track_type(genome, track_name)
+        for base_dir in base_dirs:
+            for directory, dirnames, filenames in os.walk(Config.PROCESSED_DATA_PATH + os.sep + base_dir):
+                if len(filenames) > 0:
+                    track_name_list = directory.split(base_dir)[1].split('/')
+                    genome = base_dir
+                    track_name = track_name_list[1:]
+                    track_type = self._extract_track_type(genome, track_name)
 
-                data.append([genome, ':'.join(track_name), track_type])
+                    data.append([genome, ':'.join(track_name), track_type])
 
         self._available_tracks = sorted(data, key=lambda x: (x[0], x[1]))
 

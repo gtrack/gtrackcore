@@ -13,7 +13,8 @@ from gtrackcore.util.CustomExceptions import DBNotExistError
 
 
 class OutputManager(object):
-    def __init__(self, genome, track_name, allow_overlaps, ge_source_manager):
+    def __init__(self, genome, track_name, allow_overlaps, ge_source_manager, track_format):
+        self._track_format = track_format
         dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -22,32 +23,33 @@ class OutputManager(object):
         self._create_single_track_database(genome, track_name, allow_overlaps, ge_source_manager)
 
     def _create_single_track_database(self, genome, track_name, allow_overlaps, ge_source_manager):
-        table_exists, current_table_description = self._extract_table_info(genome, track_name, allow_overlaps)
+        table_exists, old_table_description = self._extract_table_info(genome, track_name, allow_overlaps)
         self._table_description = self._create_track_table_description(ge_source_manager)
 
-        self._table_creator = None
         if table_exists:
-            if 'val' in self._table_description.keys() or 'edges' in self._table_description.keys():
-                assert set(self._table_description.keys()) == set(current_table_description.keys())  # new and old has same attributes
+            self._table_writer = self._append_to_existing_table(genome, track_name, allow_overlaps, old_table_description)
+        else:
+            self._table_writer = TrackTableCreator(genome, track_name, allow_overlaps)
 
-                new_descriptions = self._should_create_new_table(current_table_description, self._table_description)
-
-                if len(new_descriptions) > 0:  # need to create new table and copy content from old
-                    for column_name, description in new_descriptions.iteritems():
-                        self._table_description[column_name] = description
-
-                    self._table_creator = TrackTableCopier(genome, track_name, allow_overlaps)
-                else:
-                    self._add_element_as_row = self._add_element_as_row_from_new_file_using_old_shape
-
-        if self._table_creator is None:
-            self._table_creator = TrackTableCreator(genome, track_name, allow_overlaps)
-
-        self._table_creator.open()
-        self._table_creator.create_table(self._table_description,
+        self._table_writer.open()
+        self._table_writer.create_table(self._table_description,
                                          expectedrows=ge_source_manager.getNumElements())
 
-    def _extract_table_info(self, genome, track_name, allow_overlaps):
+    def _append_to_existing_table(self, genome, track_name, allow_overlaps, old_table_description):
+        if 'val' in self._table_description.keys() or 'edges' in self._table_description.keys():
+            assert set(self._table_description.keys()) == set(old_table_description.keys())  # new and old has same attributes
+
+            new_column_descriptions = self._get_new_column_descriptions(old_table_description, self._table_description)
+
+            if len(new_column_descriptions) > 0:  # need to create new table and copy content from old
+                for column_name, description in new_column_descriptions.iteritems():
+                    self._table_description[column_name] = description
+
+                return TrackTableCopier(genome, track_name, allow_overlaps)
+        return TrackTableCreator(genome, track_name, allow_overlaps)  # TrackTableAppender
+
+    @staticmethod
+    def _extract_table_info(genome, track_name, allow_overlaps):
         table_info_reader = TrackTableReader(genome, track_name, allow_overlaps)
         table_description = None
         try:
@@ -56,15 +58,16 @@ class OutputManager(object):
             if table_exists:
                 table_description = table_info_reader.table.coldescrs
             table_info_reader.close()
-        except DBNotExistError, e:
+        except DBNotExistError:
             table_exists = False
 
         return table_exists, table_description
 
-    def should_use_new_shape(self, old_shape, new_shape):
+    @staticmethod
+    def _should_use_new_shape(old_shape, new_shape):
         return any([x < y for x, y in izip_longest(old_shape, new_shape)])
 
-    def _should_create_new_table(self, old_table_description, new_table_description):
+    def _get_new_column_descriptions(self, old_table_description, new_table_description):
         new_descriptions = {}
 
         for column_name in ('val', 'edges', 'weights'):
@@ -73,7 +76,7 @@ class OutputManager(object):
                 new_val_shape = new_table_description[column_name].shape
                 result_val_shape = tuple([max(x, y) for x, y in izip_longest(old_val_shape, new_val_shape)])
 
-                if self.should_use_new_shape(old_val_shape, result_val_shape):
+                if self._should_use_new_shape(old_val_shape, result_val_shape):
                     dtype = old_table_description[column_name].type
                     if dtype == 'string':
                         new_descriptions[column_name] = tables.StringCol(old_table_description[column_name].itemsize,
@@ -89,7 +92,7 @@ class OutputManager(object):
         max_chr_len = ge_source_manager.getMaxChrStrLen()
 
         data_type_dict = {}
-        if not ge_source_manager.isSorted():
+        if not self._track_format.reprIsDense():
             data_type_dict['chr'] = tables.StringCol(max_chr_len)
 
         for column in ge_source_manager.getPrefixList():
@@ -127,10 +130,12 @@ class OutputManager(object):
 
         return data_type_dict
 
-    def _get_shape(self, max_num_edges, data_type_dim):
+    @staticmethod
+    def _get_shape(max_num_edges, data_type_dim):
         return tuple([max(1, max_num_edges)] + ([data_type_dim] if data_type_dim > 1 else []))
 
-    def _get_max_str_lens_over_all_chromosomes(self, ge_source_manager):
+    @staticmethod
+    def _get_max_str_lens_over_all_chromosomes(ge_source_manager):
         max_str_lens_dictionaries = [ge_source_manager.getMaxStrLensForChr(chr)
                                      for chr in ge_source_manager.getAllChrs()]
         from collections import Counter
@@ -139,44 +144,30 @@ class OutputManager(object):
         max_string_lengths = reduce(or_, map(Counter, max_str_lens_dictionaries))
         return max_string_lengths
 
-    # bytt med den som finnes i ge_source_manager
-    def _get_max_num_edges_over_all_chromosomes(self, ge_source_manager):
+    @staticmethod
+    def _get_max_num_edges_over_all_chromosomes(ge_source_manager):
         return max(ge_source_manager.getMaxNumEdgesForChr(chr) for chr in ge_source_manager.getAllChrs())
 
     #Todo: refactor...
     def _add_element_as_row(self, genome_element):
-        row = self._table_creator.get_row()
+        row = self._table_writer.get_row()
         for column in self._table_description:
             if column in genome_element.__dict__ and column != 'extra':
                 if column in ['edges', 'weights']:
                     ge_len = sum(1 for _ in genome_element.__dict__[column])
                     if ge_len >= 1:
                         row[column] = numpy.array(genome_element.__dict__[column] + list(row[column][ge_len:]))
+                elif column == 'val' and isinstance(row['val'], numpy.ndarray):
+                    new_val = genome_element.__dict__['val']
+                    if isinstance(new_val, list) or isinstance(new_val, tuple):
+                        new_val = numpy.array(new_val)
+                    row['val'] = insert_into_array_of_larger_shape(new_val, row['val'].shape)
                 else:
                     row[column] = genome_element.__dict__[column]
-
             else:  # Get extra column
                 row[column] = genome_element.__dict__['extra'][column]
         row.append()
-        self._table_creator.flush()
-
-    def _add_element_as_row_from_new_file_using_old_shape(self, genome_element):
-        row = self._table_creator.get_row()
-        for column in self._table_description:
-            if column in genome_element.__dict__ and column != 'extra':
-                if column in ['edges', 'weights']:
-                    ge_len = sum(1 for _ in genome_element.__dict__[column])
-                    if ge_len >= 1:
-                        row[column] = numpy.array(genome_element.__dict__[column] + list(row[column][ge_len:]))
-                elif column == 'val' and isinstance(row[column], numpy.ndarray):
-                    row[column] = insert_into_array_of_larger_shape(genome_element.__dict__[column], row[column].shape)
-                else:
-                    row[column] = genome_element.__dict__[column]
-
-            else:  # Get extra column
-                row[column] = genome_element.__dict__['extra'][column]
-        row.append()
-        self._table_creator.flush()
+        self._table_writer.flush()
 
     def _add_slice_element_as_rows(self, genome_element):
 
@@ -192,11 +183,11 @@ class OutputManager(object):
         ge_dicts = [dict(zip(keys, vals)) for vals in zip(*(slice_dict[k] for k in keys))]
 
         for el in ge_dicts:
-            row = self._table_creator.get_row()
+            row = self._table_writer.get_row()
             for key in keys:
                 row[key] = el[key]
             row.append()
-            self._table_creator.flush()
+            self._table_writer.flush()
 
     def writeElement(self, genome_element):
         self._add_element_as_row(genome_element)
@@ -207,5 +198,5 @@ class OutputManager(object):
 
 
     def close(self):
-        self._table_creator.close()
+        self._table_writer.close()
         os.chmod(self._database_filename, S_IRWXU | S_IRWXG | S_IROTH)

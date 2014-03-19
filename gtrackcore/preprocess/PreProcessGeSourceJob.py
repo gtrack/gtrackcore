@@ -43,7 +43,7 @@ class PreProcessGeSourceJob(object):
                 pass
             return
         
-        output = OutputManager(genome, self._trackName, self._allowOverlaps, self._geSourceManager)
+        output = OutputManager(genome, self._trackName, self._allowOverlaps, self._geSourceManager, collector.getTrackFormat())
         
         writeFunc = output.writeRawSlice if geSource.isSliceSource() else output.writeElement
         
