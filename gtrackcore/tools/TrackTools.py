@@ -1,10 +1,11 @@
 import numpy
+import math
 
 from gtrackcore.tools.ToolExceptions import OperationNotSupportedError
-from gtrackcore.track.core.Track import Track, PlainTrack
+from gtrackcore.track.core.Track import Track
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.track.graph.GraphView import GraphView, LazyProtoGraphView
+from gtrackcore.track.graph.GraphView import LazyProtoGraphView
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 
 
@@ -14,30 +15,21 @@ def get_track_view(track_name, genome_region, allow_overlaps=False):
     return track.getTrackView(genome_region)
 
 
-def get_graph_view(genome, track_name, allow_overlaps=False, is_directed=True, genome_regions=None):
-    ids = []
-    genome_anchors = []
-    track_views_dict = {}
+def get_graph_view(genome, track_name, allow_overlaps=False, genome_regions=None):
+    proto_graph_views = []
 
     if genome_regions is None:
         genome_regions = BoundingRegionHandler(genome, track_name, allow_overlaps).get_all_bounding_regions()
 
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
-        genome_anchor = track_view.genomeAnchor
-        track_views_dict[genome_anchor] = track_view
+        proto_graph_view = LazyProtoGraphView.createInstanceFromTrackView(track_view)
+        proto_graph_views.append(proto_graph_view)
 
-        ids_as_numpy_array = track_view.idsAsNumpyArray()
-        ids.append(ids_as_numpy_array)
-        genome_anchors.append([genome_anchor] * len(ids_as_numpy_array))
+    merged_proto_graph_views = LazyProtoGraphView.mergeProtoGraphViews(proto_graph_views)
+    graph_view = merged_proto_graph_views.getClosedGraphVersion()
 
-    all_ids = numpy.concatenate(tuple(ids))
-    indexes = zip(genome_anchors, xrange(len(all_ids)))
-    id2index = dict(zip(all_ids, indexes))
-
-    print track_views_dict
-
-    return GraphView(track_views_dict, id2index, is_directed)
+    return graph_view
 
 
 def count_elements(track_view):
@@ -55,20 +47,22 @@ def sum_of_weights(genome, track_name, allow_overlaps=False, genome_regions=None
     if genome_regions is None:
         genome_regions = BoundingRegionHandler(genome, track_name, allow_overlaps).get_all_bounding_regions()
 
-    sum = numpy.float128(0)
+    weight_sum = numpy.float128(0)
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
-        sum += numpy.sum(track_view.weightsAsNumpyArray())
+        weight_sum += numpy.nansum(track_view.weightsAsNumpyArray(), axis=0)
 
-    return sum
+    return weight_sum
 
 
 def sum_of_weights_iter(graph_view):
-    sum = numpy.float128(0)
+    weight_sum = numpy.float128(0)
     for edge in graph_view.getEdgeIter():
-        sum += edge.weight
-
-    return sum
+        if isinstance(edge.weight, numpy.ndarray):
+            weight_sum += numpy.nansum(edge.weight, axis=0)
+        elif not math.isnan(edge.weight):
+            weight_sum += edge.weight
+    return weight_sum
 
 
 def k_highest_values(track_view, k):
@@ -139,28 +133,19 @@ def intersection(track_view1, track_view2):
     return (all_event_lengths[cumulative_cover_status[:-1] == 3]).sum()
 
 
-def count_elements_in_all_bounding_regions(track_name, genome='testgenome', allow_overlaps=False):
+def count_elements_in_all_bounding_regions(genome, track_name, allow_overlaps=False):
     bounding_regions = BoundingRegionHandler(genome, track_name, allow_overlaps).get_all_bounding_regions()
-    track = PlainTrack(track_name)
 
     num_elements = 0
-    for tv in [track.getTrackView(region) for region in bounding_regions]:
+    for tv in [get_track_view(track_name, region) for region in bounding_regions]:
         num_elements += count_elements(tv)
     return num_elements
 
 
-def print_result(tool, track_name, result):
-    print
-    print tool, 'for', ":".join(track_name)
-    print 'Result:', result
-    print
-
-
 if __name__ == '__main__':
-    tv = get_track_view(['testcat', 'edges'], GenomeRegion('testgenome', 'chr21', 0, 25000000))
-    for i, el in enumerate(tv):
-        print i, el.start(), el.end()
+    graph_view = get_graph_view('testgenome', ['testcat', 'edges'],
+                                genome_regions=[GenomeRegion('testgenome', 'chr21', 0, 25000000),
+                                                GenomeRegion('testgenome', 'chr21', 25000001, 40000000)])
 
-    #graph_view = LazyProtoGraphView.createInstanceFromTrackView(tv).getClosedGraphVersion()
-    #graph_view = get_graph_view('testgenome', ['testcat', 'edges'])
-    #print 'res:', sum_of_weights_iter(graph_view)
+    print sum_of_weights_iter(graph_view)
+    print sum_of_weights('testgenome', ['testcat', 'edges'])
