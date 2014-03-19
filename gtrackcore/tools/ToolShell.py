@@ -54,7 +54,6 @@ class ToolShell(cmd.Cmd):
     def _update_available_tracks(self):
         data = []
         base_dirs = os.listdir(Config.PROCESSED_DATA_PATH)
-        base_dirs.remove('100000')
 
         for base_dir in base_dirs:
             for directory, dirnames, filenames in os.walk(Config.PROCESSED_DATA_PATH + os.sep + base_dir):
@@ -62,18 +61,17 @@ class ToolShell(cmd.Cmd):
                     track_name_list = directory.split(base_dir)[1].split('/')
                     genome = base_dir
                     track_name = track_name_list[1:]
-                    track_type = self._extract_track_type(genome, track_name)
+                    track_format = self._get_track_format(genome, track_name)
+                    track_type = track_format.getFormatName()
 
                     data.append([genome, ':'.join(track_name), track_type])
 
         self._available_tracks = sorted(data, key=lambda x: (x[0], x[1]))
 
-    def _extract_track_type(self, genome, track_name):
+    def _get_track_format(self, genome, track_name):
         track = PlainTrack(track_name)
         track_view = track.getTrackView(GenomeRegion(genome, '', 0, 0))
-        track_type = track_view.trackFormat.getFormatName()
-
-        return track_type
+        return track_view.trackFormat
 
     def _extract_bounding_regions(self, genome, track_name):
         cache_key = genome + ':' + ':'.join(track_name)

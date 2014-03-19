@@ -7,7 +7,6 @@ import traceback
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.metadata.TrackInfo import TrackInfo
-from gtrackcore.preprocess.memmap.ChrMemmapFolderMerger import ChrMemmapFolderMerger
 from gtrackcore.preprocess.GESourceManager import GESourceManager, OverlapClusteringGESourceManager, RegionBasedGESourceManager
 from gtrackcore.preprocess.PreProcessGeSourceJob import PreProcessGeSourceJob
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
@@ -17,12 +16,10 @@ from gtrackcore.track.hierarchy.ExternalTrackManager import ExternalTrackManager
 from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
 from gtrackcore.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
-from gtrackcore.track.pytables.DatabaseHandler import DatabaseMerger
 from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
-from gtrackcore.util.CustomDecorators import timeit
-from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning, ShouldNotOccurError
+from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning
 
 class PreProcessTracksJob(object):
     VERSION = '1.0'
@@ -91,11 +88,9 @@ class PreProcessTracksJob(object):
                         collector.finalize(self._username, self._shouldPrintProcessMessages())
                         if not atLeastOneFinalized:
                             atLeastOneFinalized = True
-                    else:
+                        PreProcessUtils.merge_and_rename_overlap_tables(self._genome, trackName)
+                else:
                         collector.removeEntry()
-                    if False:  #work in progress...
-                        db_merger = DatabaseMerger(self._genome, trackName)
-                        db_merger.merge()
 
             except NotSupportedError, e:
                 collector.removeEntry()

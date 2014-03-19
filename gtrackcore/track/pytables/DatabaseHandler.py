@@ -24,11 +24,13 @@ class DatabaseHandler(object):
     def __init__(self, genome, track_name, allow_overlaps):
         dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
         self._h5_filename = getDatabasePath(dir_path, track_name, allow_overlaps)
-        self._track_name = self._convert_track_name_to_pytables_format(track_name, allow_overlaps)
+        self._node_names = self._convert_track_name_to_pytables_format(track_name, allow_overlaps)
+        self._table_name = self._node_names[-1]
         self._h5_file = None
         self._table = None
 
-    def _convert_track_name_to_pytables_format(self, track_name, allow_overlaps):
+    @staticmethod
+    def _convert_track_name_to_pytables_format(track_name, allow_overlaps):
         converted_track_name = [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in track_name]
         converted_track_name.insert(0, 'with_overlaps' if allow_overlaps else 'no_overlaps')
         return converted_track_name
@@ -43,10 +45,10 @@ class DatabaseHandler(object):
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
         try:
-            self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._track_name[-1])
-            portalocker.lock(self._h5_file, lock_type)
+            self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._table_name)
         except IOError, e:
             raise DBNotExistError(e)
+        portalocker.lock(self._h5_file, lock_type)
 
     def close(self):
         portalocker.unlock(self._h5_file)
@@ -88,7 +90,7 @@ class DatabaseHandler(object):
 
 
     def _get_track_table_path(self):
-        return '/%s/%s' % ('/'.join(self._track_name), self._track_name[-1])
+        return '/%s/%s' % ('/'.join(self._node_names), self._table_name)
 
     def _get_track_table(self):
         try:
@@ -97,7 +99,7 @@ class DatabaseHandler(object):
             raise DBNotOpenError(e)
 
     def _get_br_table_path(self):
-        return '/%s/%s' % ('/'.join(self._track_name), BOUNDING_REGION_TABLE_NAME)
+        return '/%s/%s' % ('/'.join(self._node_names), BOUNDING_REGION_TABLE_NAME)
 
     def _get_br_table(self):
         try:
@@ -170,11 +172,14 @@ class TrackTableReadWriter(TableReadWriter):
 
     def create_indices(self):
         if 'chr' in self._table.colinstances:
-            self._table.cols.chr.create_index()
+            if not self._table.cols.chr.is_indexed:
+                self._table.cols.chr.create_index()
         if 'start' in self._table.colinstances:
-            self._table.cols.start.create_index()
+            if not self._table.cols.start.is_indexed:
+                self._table.cols.start.create_index()
         if 'end' in self._table.colinstances:
-            self._table.cols.end.create_index()
+            if not self._table.cols.end.is_indexed:
+                self._table.cols.end.create_index()
 
 
 class BrTableReadWriter(TableReadWriter):
@@ -238,9 +243,9 @@ class TableCreator(DatabaseHandler):
     def _create_groups(self):
         group = self._get_track_group()
         if group is None:
-            group = self._h5_file.create_group(self._h5_file.root, self._track_name[0], self._track_name[0])
+            group = self._h5_file.create_group(self._h5_file.root, self._node_names[0], self._node_names[0])
 
-            for track_name_part in self._track_name[1:]:
+            for track_name_part in self._node_names[1:]:
                 group = self._h5_file.create_group(group, track_name_part, track_name_part)
 
         return group
@@ -256,7 +261,7 @@ class TableCreator(DatabaseHandler):
             return None
 
     def _get_track_group_path(self):
-        return '/%s' % ('/'.join(self._track_name))
+        return '/%s' % ('/'.join(self._node_names))
 
 
 class TrackTableCreator(TableCreator):
@@ -265,7 +270,7 @@ class TrackTableCreator(TableCreator):
 
     def create_table(self, table_description, expectedrows):
         self._table = super(TrackTableCreator, self).create_table(
-            table_description, expectedrows, self._track_name[-1])
+            table_description, expectedrows, self._table_name)
 
         #Get existing table
         if self._table is None:
@@ -295,7 +300,7 @@ class TrackTableCopier(TableCreator):
         self._old_table.rename(self._old_table.name + '_tmp')
 
         self._table = super(TrackTableCopier, self).create_table(
-            table_description, expectedrows + self._old_table.nrows, self._track_name[-1])
+            table_description, expectedrows + self._old_table.nrows, self._table_name)
         self._create_indices()
 
         self._copy_content_from_old_to_new_table()
@@ -337,7 +342,7 @@ class TrackTableSorter(TableCreator):
         self._old_table.rename(self._old_table.name + '_tmp')
 
         self._table = super(TrackTableSorter, self).create_table(
-            table_description, self._old_table.nrows, self._track_name[-1])
+            table_description, self._old_table.nrows, self._table_name)
         self._create_indices()
 
         self._copy_content_from_old_to_new_table_in_sorted_order(sort_order, table_description)
@@ -375,40 +380,6 @@ class BoundingRegionTableCreator(TableCreator):
 
     def _create_indices(self):
         self._table.cols.chr.create_csindex()
-
-
-class DatabaseMerger(object):
-    def __init__(self, genome, track_name):
-        self._track_name = track_name
-        self._genome = genome
-        self._track_path = get_dir_path(genome, track_name, allow_overlaps=None)
-
-    def merge(self):
-        dir_path = get_dir_path(self._genome, self._track_name)
-        no_overlaps_db_path = getDatabasePath(dir_path, self._track_name, allow_overlaps=False)
-        with_overlaps_db_path = getDatabasePath(dir_path, self._track_name, allow_overlaps=True)
-        if os.path.isfile(with_overlaps_db_path):
-            no_overlaps_file = tables.open_file(no_overlaps_db_path, 'a')
-            with_overlaps_file = tables.open_file(with_overlaps_db_path, 'r')
-
-            with_overlaps_tree_node = with_overlaps_file.root.with_overlaps
-            no_overlaps_tree_node = no_overlaps_file.root
-
-            with_overlaps_file.copy_node(with_overlaps_tree_node, newparent=no_overlaps_tree_node, recursive=True)
-            os.remove(with_overlaps_db_path)
-
-        db_path = getDatabasePath(dir_path, self._track_name, allow_overlaps=None)
-        os.rename(no_overlaps_db_path, db_path)
-
-        db_handler = TrackTableReadWriter(self._genome, self._track_name, allow_overlaps=True)
-        db_handler.open()
-        db_handler.create_indices()
-        db_handler.close()
-
-
-
-    def _create_indices(self, table):
-        table.cols.chr.create_csindex()
 
 
 
