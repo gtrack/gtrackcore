@@ -4,6 +4,7 @@ from stat import S_IRWXU, S_IRWXG, S_IROTH
 
 import numpy
 import tables
+from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 
 from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
 from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
@@ -114,15 +115,15 @@ class OutputManager(object):
                 data_type = 'S' if data_type.startswith('S') else data_type
 
                 data_type_dict[column] = {
-                    'int8': tables.Int8Col(shape=shape),
-                    'int32': tables.Int32Col(shape=shape),
-                    'float32': tables.Float32Col(shape=shape),
-                    'float64': tables.Float64Col(shape=shape),
-                    'float128': tables.Float128Col(shape=shape),
-                    'S': tables.StringCol(max(1, max_string_lengths[column]), shape=shape)
-                }.get(data_type, tables.Float64Col(shape=shape))  # Defaults to Float64Col
+                    'int8': tables.Int8Col(shape=shape, dflt=BINARY_MISSING_VAL),
+                    'int32': tables.Int32Col(shape=shape, dflt=BINARY_MISSING_VAL),
+                    'float32': tables.Float32Col(shape=shape, dflt=numpy.nan),
+                    'float64': tables.Float64Col(shape=shape, dflt=numpy.nan),
+                    'float128': tables.Float128Col(shape=shape, dflt=numpy.nan),
+                    'S': tables.StringCol(max(1, max_string_lengths[column]), shape=shape, dflt='')
+                }.get(data_type, tables.Float64Col(shape=shape, dflt=numpy.nan))  # Defaults to Float64Col
             else:
-                data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]))
+                data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]), dflt='')
 
         return data_type_dict
 
