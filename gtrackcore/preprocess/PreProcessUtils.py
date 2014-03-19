@@ -131,16 +131,17 @@ class PreProcessUtils(object):
 
         column_dict = table_sorter.get_columns()
 
-        chr_column = column_dict['chr'][:]
-
         if 'start' in column_dict and 'end' in column_dict:
+            chr_column = column_dict['chr'][:]
             start_column = column_dict['start'][:]
             end_column = column_dict['end'][:]
             sort_order = numpy.lexsort((end_column, start_column, chr_column))
         elif 'start' in column_dict:
+            chr_column = column_dict['chr'][:]
             start_column = column_dict['start'][:]
             sort_order = numpy.lexsort((start_column, chr_column))
         elif 'end' in column_dict:
+            chr_column = column_dict['chr'][:]
             end_column = column_dict['end'][:]
             sort_order = numpy.lexsort((end_column, chr_column))
         else:

@@ -13,7 +13,8 @@ from gtrackcore.util.CustomExceptions import DBNotExistError
 
 
 class OutputManager(object):
-    def __init__(self, genome, track_name, allow_overlaps, ge_source_manager):
+    def __init__(self, genome, track_name, allow_overlaps, ge_source_manager, track_format):
+        self._track_format = track_format
         dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -89,7 +90,7 @@ class OutputManager(object):
         max_chr_len = ge_source_manager.getMaxChrStrLen()
 
         data_type_dict = {}
-        if not ge_source_manager.isSorted():
+        if not self._track_format.reprIsDense():
             data_type_dict['chr'] = tables.StringCol(max_chr_len)
 
         for column in ge_source_manager.getPrefixList():
