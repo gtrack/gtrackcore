@@ -4,70 +4,58 @@ from stat import S_IRWXU, S_IRWXG, S_IROTH
 
 import numpy
 import tables
-from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 
-from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
+from gtrackcore.track.pytables.PytablesDatabase import DatabaseWriter
+from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
+from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
-from gtrackcore.track.pytables.DatabaseHandler import TrackTableCreator, TrackTableReader, TrackTableCopier
-from gtrackcore.util.CustomExceptions import DBNotExistError
 
 
 class OutputManager(object):
     def __init__(self, genome, track_name, allow_overlaps, ge_source_manager, track_format):
         self._track_format = track_format
-        dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-        self._database_filename = getDatabasePath(dir_path, track_name, allow_overlaps)
+        self._database_filename = PytablesDatabaseUtils.get_database_filename(genome, track_name,
+                                                                              allow_overlaps=allow_overlaps,
+                                                                              create_path=True)
+        self._db_writer = None
+        self._table = None
+        self._insert_counter = 0
 
-        self._create_single_track_database(genome, track_name, allow_overlaps, ge_source_manager)
+        self._create_single_track_database(track_name, allow_overlaps, ge_source_manager)
 
-    def _create_single_track_database(self, genome, track_name, allow_overlaps, ge_source_manager):
-        table_exists, old_table_description = self._extract_table_info(genome, track_name, allow_overlaps)
-        self._table_description = self._create_track_table_description(ge_source_manager)
+    def _create_single_track_database(self, track_name, allow_overlaps, ge_source_manager):
+        new_table_description = self._create_track_table_description(ge_source_manager)
 
-        if table_exists:
-            self._table_writer = self._append_to_existing_table(genome, track_name, allow_overlaps, old_table_description)
+        self._db_writer = DatabaseWriter(self._database_filename)
+        self._db_writer.open()
+        table_node_names = PytablesDatabaseUtils.get_track_table_node_names(track_name, allow_overlaps)
+
+        if self._db_writer.table_exists(table_node_names):
+            old_table = self._db_writer.get_table(table_node_names)
+            old_table_description = old_table.coldescrs
+
+            assert set(new_table_description.keys()) == set(old_table_description.keys())
+
+            if 'val' in new_table_description.keys() or 'edges' in new_table_description.keys():
+                self._update_table_description(old_table_description, new_table_description)
         else:
-            self._table_writer = TrackTableCreator(genome, track_name, allow_overlaps)
+            self._db_writer.create_table(table_node_names, new_table_description, ge_source_manager.getNumElements())
 
-        self._table_writer.open()
-        self._table_writer.create_table(self._table_description,
-                                         expectedrows=ge_source_manager.getNumElements())
+        self._table = self._db_writer.get_table(table_node_names)
 
-    def _append_to_existing_table(self, genome, track_name, allow_overlaps, old_table_description):
-        if 'val' in self._table_description.keys() or 'edges' in self._table_description.keys():
-            assert set(self._table_description.keys()) == set(old_table_description.keys())  # new and old has same attributes
-
-            new_column_descriptions = self._get_new_column_descriptions(old_table_description, self._table_description)
-
+    @classmethod
+    def _update_table_description(cls, old_table_description, new_table_description):
+            new_column_descriptions = cls._get_new_column_descriptions(old_table_description, new_table_description)
             if len(new_column_descriptions) > 0:  # need to create new table and copy content from old
                 for column_name, description in new_column_descriptions.iteritems():
-                    self._table_description[column_name] = description
+                    new_table_description[column_name] = description
 
-                return TrackTableCopier(genome, track_name, allow_overlaps)
-        return TrackTableCreator(genome, track_name, allow_overlaps)  # TrackTableAppender
-
-    @staticmethod
-    def _extract_table_info(genome, track_name, allow_overlaps):
-        table_info_reader = TrackTableReader(genome, track_name, allow_overlaps)
-        table_description = None
-        try:
-            table_info_reader.open()
-            table_exists = table_info_reader.table_exists()
-            if table_exists:
-                table_description = table_info_reader.table.coldescrs
-            table_info_reader.close()
-        except DBNotExistError:
-            table_exists = False
-
-        return table_exists, table_description
-
-    @staticmethod
-    def _should_use_new_shape(old_shape, new_shape):
+    @classmethod
+    def _should_use_new_shape(cls, old_shape, new_shape):
         return any([x < y for x, y in izip_longest(old_shape, new_shape)])
 
-    def _get_new_column_descriptions(self, old_table_description, new_table_description):
+    @classmethod
+    def _get_new_column_descriptions(cls, old_table_description, new_table_description):
         new_descriptions = {}
 
         for column_name in ('val', 'edges', 'weights'):
@@ -76,7 +64,7 @@ class OutputManager(object):
                 new_val_shape = new_table_description[column_name].shape
                 result_val_shape = tuple([max(x, y) for x, y in izip_longest(old_val_shape, new_val_shape)])
 
-                if self._should_use_new_shape(old_val_shape, result_val_shape):
+                if cls._should_use_new_shape(old_val_shape, result_val_shape):
                     dtype = old_table_description[column_name].type
                     if dtype == 'string':
                         new_descriptions[column_name] = tables.StringCol(old_table_description[column_name].itemsize,
@@ -150,8 +138,8 @@ class OutputManager(object):
 
     #Todo: refactor...
     def _add_element_as_row(self, genome_element):
-        row = self._table_writer.get_row()
-        for column in self._table_description:
+        row = self._table.row
+        for column in self._table.colnames:
             if column in genome_element.__dict__ and column != 'extra':
                 if column in ['edges', 'weights']:
                     ge_len = sum(1 for _ in genome_element.__dict__[column])
@@ -166,8 +154,9 @@ class OutputManager(object):
                     row[column] = genome_element.__dict__[column]
             else:  # Get extra column
                 row[column] = genome_element.__dict__['extra'][column]
+            self._insert_counter += 1
         row.append()
-        self._table_writer.flush()
+        PytablesDatabaseUtils.flush(self._table, self._insert_counter)
 
     def _add_slice_element_as_rows(self, genome_element):
 
@@ -178,16 +167,17 @@ class OutputManager(object):
         slice_dict.update(genome_element.__dict__['extra'])
         keys = slice_dict.keys()
 
-        assert self._table_description.keys() == keys
+        assert self._table.colnames == keys
 
         ge_dicts = [dict(zip(keys, vals)) for vals in zip(*(slice_dict[k] for k in keys))]
 
         for el in ge_dicts:
-            row = self._table_writer.get_row()
+            row = self._table.row
             for key in keys:
                 row[key] = el[key]
             row.append()
-            self._table_writer.flush()
+            self._insert_counter += 1
+            PytablesDatabaseUtils.flush(self._table, self._insert_counter)
 
     def writeElement(self, genome_element):
         self._add_element_as_row(genome_element)
@@ -196,7 +186,6 @@ class OutputManager(object):
         """What's the purpose of this?"""
         self._add_slice_element_as_rows(genome_element)
 
-
     def close(self):
-        self._table_writer.close()
+        self._db_writer.close()
         os.chmod(self._database_filename, S_IRWXU | S_IRWXG | S_IROTH)

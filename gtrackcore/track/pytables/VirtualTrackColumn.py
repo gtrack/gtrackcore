@@ -3,19 +3,21 @@ from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
 
 class VirtualTrackColumn(VirtualNumpyArray):
 
-    def __init__(self, column_name, table_reader, start_index=-1, end_index=-1):
+    def __init__(self, column_name, db_reader, table_node_names, start_index=-1, end_index=-1):
         VirtualNumpyArray.__init__(self)
         self._column_name = column_name
-        self._table_reader = table_reader
+        self._db_reader = db_reader
+        self._table_node_names = table_node_names
         self._start_index = start_index
         self._end_index = end_index
         self._step = 1
 
-        self._table_reader.open()
-        column = self._table_reader.get_column(self._column_name)
+        self._db_reader.open()
+        table = db_reader.get_table(table_node_names)
+        column = table.colinstances[column_name]
         self._shape = column.shape
         self._dtype = column.dtype
-        self._table_reader.close()
+        self._db_reader.close()
 
     @property
     def offset(self):
@@ -75,7 +77,7 @@ class VirtualTrackColumn(VirtualNumpyArray):
         self._set_offset(start_index, end_index, step)
 
     def __copy__(self):
-        vtc = VirtualTrackColumn(self._column_name, self._table_reader)
+        vtc = VirtualTrackColumn(self._column_name, self._db_reader, self._table_node_names)
         vtc.offset = self.offset
         vtc._cachedNumpyArray = self._cachedNumpyArray
         return vtc
@@ -84,18 +86,20 @@ class VirtualTrackColumn(VirtualNumpyArray):
         return self._end_index - self._start_index
 
     def as_numpy_array(self):
-        self._table_reader.open()
-        column = self._table_reader.get_column(self._column_name)
+        self._db_reader.open()
+        table = self._db_reader.get_table(self._table_node_names)
+        column = table.colinstances[self._column_name]
         result = column[self._start_index:self._end_index:self._step]
-        self._table_reader.close()
+        self._db_reader.close()
         return result
 
     def ends_as_numpy_array_points_func(self):
         """
         Used for points tracks for ends (== starts + 1)
         """
-        self._table_reader.open()
-        column = self._table_reader.get_column(self._column_name)
+        self._db_reader.open()
+        table = self._db_reader.get_table(self._table_node_names)
+        column = table.colinstances[self._column_name]
         result = column[self._start_index:self._end_index] + 1
-        self._table_reader.close()
+        self._db_reader.close()
         return result

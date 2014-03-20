@@ -14,11 +14,13 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
+from gtrackcore.track.pytables.PytablesDatabase import DatabaseWriter
+from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
 from gtrackcore.track.pytables.TrackSource import TrackSource
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 from gtrackcore.util.CommonFunctions import get_dir_path
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
-from gtrackcore.util.CommonFunctions import get_dir_path, getDatabasePath
+from gtrackcore.util.CommonFunctions import get_dir_path
 from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter, TrackTableCreator, TrackTableSorter
 
 
@@ -125,34 +127,33 @@ class PreProcessUtils(object):
 
     @staticmethod
     def sort_preprocessed_table(genome, track_name, allow_overlaps):
-        dir_path = get_dir_path(genome, track_name, allow_overlaps=None)
-        assert os.path.exists(dir_path)  # throw error
+        database_filename = PytablesDatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
 
-        table_sorter = TrackTableSorter(genome, track_name, allow_overlaps)
-        table_sorter.open()
+        db_writer = DatabaseWriter(database_filename)
+        db_writer.open()
+        table_node_names = PytablesDatabaseUtils.get_track_table_node_names(track_name, allow_overlaps)
+        table = db_writer.get_table(table_node_names)
 
-        column_dict = table_sorter.get_columns()
-
-        if 'start' in column_dict and 'end' in column_dict:
-            chr_column = column_dict['chr'][:]
-            start_column = column_dict['start'][:]
-            end_column = column_dict['end'][:]
+        if 'start' in table.colinstances and 'end' in table.colinstances:
+            chr_column = table.colinstances['chr'][:]
+            start_column = table.colinstances['start'][:]
+            end_column = table.colinstances['end'][:]
             sort_order = numpy.lexsort((end_column, start_column, chr_column))
-        elif 'start' in column_dict:
-            chr_column = column_dict['chr'][:]
-            start_column = column_dict['start'][:]
+        elif 'start' in table.colinstances:
+            chr_column = table.colinstances['chr'][:]
+            start_column = table.colinstances['start'][:]
             sort_order = numpy.lexsort((start_column, chr_column))
-        elif 'end' in column_dict:
-            chr_column = column_dict['chr'][:]
-            end_column = column_dict['end'][:]
+        elif 'end' in table.colinstances:
+            chr_column = table.colinstances['chr'][:]
+            end_column = table.colinstances['end'][:]
             sort_order = numpy.lexsort((end_column, chr_column))
         else:
-            table_sorter.close()
+            db_writer.close()
             return
 
-        table_sorter.sort_table(sort_order)
+        db_writer.close()
 
-        table_sorter.close()
+        PytablesDatabaseUtils.sort_table(database_filename, table_node_names, sort_order)
 
     @staticmethod
     def create_bounding_regions(genome, track_name, allow_overlaps):
@@ -169,34 +170,6 @@ class PreProcessUtils(object):
         if br_handler.get_total_element_count() != collector.getNumElements(allow_overlaps):
             raise ShouldNotOccurError("Error: The total element count for all bounding regions is not equal to the total number of genome elements. %s != %s" % \
                                       (br_handler.get_total_element_count(), collector.getNumElements(allow_overlaps)) )
-    @staticmethod
-    def merge_and_rename_overlap_tables(genome, track_name):
-        """
-        Merge the no_overlaps and_with_overlaps tables into a single h5-file.
-        The tables doesn't need to be separated after the pre-processing, since they're accessed independent of each
-        other. In the pre-processing step the with_overlaps table is open in read-only mode, while the no_overlaps
-        table is being open in append mode. Thus, the tables cannot be in the same file before the
-        pre-processing is done.
-        """
-        dir_path = get_dir_path(genome, track_name)
-        no_overlaps_db_path = getDatabasePath(dir_path, track_name, allow_overlaps=False)
-        with_overlaps_db_path = getDatabasePath(dir_path,track_name, allow_overlaps=True)
-        no_overlaps_file = tables.open_file(no_overlaps_db_path, 'a')
-        if os.path.isfile(with_overlaps_db_path):
-            with_overlaps_file = tables.open_file(with_overlaps_db_path, 'r')
-
-            with_overlaps_tree_node = with_overlaps_file.root.with_overlaps
-            no_overlaps_tree_node = no_overlaps_file.root
-
-            with_overlaps_file.copy_node(with_overlaps_tree_node, newparent=no_overlaps_tree_node, recursive=True)
-            with_overlaps_file.close()
-            os.remove(with_overlaps_db_path)
-
-        db_path = getDatabasePath(dir_path, track_name, allow_overlaps=None)
-        os.rename(no_overlaps_db_path, db_path)
-        no_overlaps_file.close()
-
-        PreProcessUtils._create_indices(genome, track_name)
 
     @staticmethod
     def _create_indices(genome, track_name):

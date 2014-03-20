@@ -7,7 +7,8 @@ import numpy
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.pytables.CommonFunctions import get_start_and_end_indices
-from gtrackcore.track.pytables.DatabaseHandler import TrackTableReader
+from gtrackcore.track.pytables.PytablesDatabase import DatabaseReader
+from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
@@ -293,7 +294,11 @@ class TrackView(object):
             self._pytables_track_element.weights = noneFunc
 
         if self._should_use_pytables:
-            self._db_handler = TrackTableReader(genomeAnchor.genome, track_name, allowOverlaps)
+            database_filename = PytablesDatabaseUtils.get_database_filename(genomeAnchor.genome, track_name,
+                                                                            allow_overlaps=allowOverlaps)
+            self._db_handler = DatabaseReader(database_filename)
+            self._track_node_names = PytablesDatabaseUtils.get_track_table_node_names(self._track_name,
+                                                                                self.allowOverlaps)
             self._handle_points_and_partitions_for_pytables()
 
         self._updateNumListElements()
@@ -304,14 +309,16 @@ class TrackView(object):
 
     def _generate_pytables_track_elements(self):
         if self._cached_start_and_end_indices is None:
-            self._cached_start_and_end_indices = get_start_and_end_indices(self.genomeAnchor, self._track_name, self.allowOverlaps, self.trackFormat)
+            self._cached_start_and_end_indices = get_start_and_end_indices(self.genomeAnchor, self._track_name,
+                                                                           self.allowOverlaps, self.trackFormat)
 
         start_index, end_index = self._cached_start_and_end_indices
         if start_index == end_index:
             return
 
-        with self._db_handler as table_reader:
-            track_table = table_reader.table
+        with self._db_handler as db_reader:
+
+            track_table = db_reader.get_table(self._track_node_names)
 
             rows = track_table.iterrows(start=start_index, stop=end_index)
 

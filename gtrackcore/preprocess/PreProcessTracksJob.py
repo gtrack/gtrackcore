@@ -16,6 +16,7 @@ from gtrackcore.track.hierarchy.ExternalTrackManager import ExternalTrackManager
 from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
 from gtrackcore.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
+from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
 from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
@@ -88,7 +89,7 @@ class PreProcessTracksJob(object):
                         collector.finalize(self._username, self._shouldPrintProcessMessages())
                         if not atLeastOneFinalized:
                             atLeastOneFinalized = True
-                        PreProcessUtils.merge_and_rename_overlap_tables(self._genome, trackName)
+                        PytablesDatabaseUtils.merge_and_rename_overlap_tables(self._genome, trackName)
                 else:
                         collector.removeEntry()
 

@@ -1,7 +1,16 @@
+from gtrackcore.track.pytables.PytablesDatabase import DatabaseReader
+from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
 from gtrackcore.util.pytables.DatabaseQueries import BoundingRegionQueries, TrackQueries
 
 def get_start_and_end_indices(region, track_name, allow_overlaps, track_format):
-    br_queries = BoundingRegionQueries(region.genome, track_name, allow_overlaps)
+
+    database_filename = PytablesDatabaseUtils.get_database_filename(region.genome, track_name,
+                                                                    allow_overlaps=allow_overlaps)
+
+    br_node_names = PytablesDatabaseUtils.get_br_table_node_names(track_name, allow_overlaps)
+    db_reader = DatabaseReader(database_filename)
+    br_queries = BoundingRegionQueries(db_reader, br_node_names)
+
     bounding_region = br_queries.enclosing_bounding_region_for_region(region)
     if len(bounding_region) > 0:
         br_start_index, br_end_index = (bounding_region[0]['start_index'], bounding_region[0]['end_index'])
@@ -12,7 +21,10 @@ def get_start_and_end_indices(region, track_name, allow_overlaps, track_format):
         start_index = br_start_index + (region.start - bounding_region[0]['start'])
         end_index = start_index + len(region)
     else:
-        track_queries = TrackQueries(region.genome, track_name, allow_overlaps)
+        track_table_node_names = PytablesDatabaseUtils.get_track_table_node_names(track_name, allow_overlaps)
+        db_reader = DatabaseReader(database_filename)
+
+        track_queries = TrackQueries(db_reader, track_table_node_names)
         start_index, end_index = track_queries.start_and_end_indices(region, br_start_index,
                                                                      br_end_index, track_format)
 

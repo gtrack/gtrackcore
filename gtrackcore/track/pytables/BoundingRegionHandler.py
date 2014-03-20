@@ -1,7 +1,8 @@
 import tables
 from tables.exceptions import NoSuchNodeError
 
-from gtrackcore.track.pytables.DatabaseHandler import BoundingRegionTableCreator, BrTableReader
+from gtrackcore.track.pytables.PytablesDatabase import DatabaseReader, DatabaseWriter
+from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
 from gtrackcore.util.CommonFunctions import prettyPrintTrackName
 from gtrackcore.util.pytables.DatabaseQueries import BoundingRegionQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
@@ -18,8 +19,13 @@ class BoundingRegionHandler(object):
         self._track_name = track_name
         self._allow_overlaps = allow_overlaps
 
-        self._table_reader = BrTableReader(genome, track_name, allow_overlaps)
-        self._br_queries = BoundingRegionQueries(genome, track_name, allow_overlaps)
+        self._database_filename = PytablesDatabaseUtils.get_database_filename(genome, track_name,
+                                                                              allow_overlaps=allow_overlaps)
+
+        self._br_node_names = PytablesDatabaseUtils.get_br_table_node_names(track_name, allow_overlaps)
+
+        self._db_reader = DatabaseReader(self._database_filename)
+        self._br_queries = BoundingRegionQueries(self._db_reader, self._br_node_names)
 
         self._updated_chromosomes = set([])
         self._max_chr_len = 1
@@ -30,12 +36,10 @@ class BoundingRegionHandler(object):
 
     def table_exists(self):
         try:
-            self._table_reader.open()
-            table_exist = self._table_reader.table_exists()
-            self._table_reader.close()
+            self._db_reader.open()
+            table_exist = self._db_reader.table_exists(self._br_node_names)
+            self._db_reader.close()
         except DBNotExistError:
-            table_exist = False
-        except NoSuchNodeError:
             table_exist = False
         return table_exist
 
@@ -45,11 +49,11 @@ class BoundingRegionHandler(object):
         temp_bounding_regions = self._create_bounding_regions_triples(bounding_region_tuples, genome_element_chr_list, sparse)
 
         table_description = self._create_table_description()
-        db_creator = BoundingRegionTableCreator(self._genome, self._track_name, self._allow_overlaps)
-        db_creator.open()
-        db_creator.create_table(table_description, len(bounding_region_tuples))
+        db_writer = DatabaseWriter(self._database_filename)
+        db_writer.open()
+        table = db_writer.create_table(self._br_node_names, table_description, len(bounding_region_tuples))
 
-        row = db_creator.get_row()
+        row = table.row
         for br in temp_bounding_regions:
             row['chr'] = br[0]
             row['start'] = br[1]
@@ -58,8 +62,8 @@ class BoundingRegionHandler(object):
             row['end_index'] = br[4]
             row['element_count'] = br[5]
             row.append()
-
-        db_creator.close()
+        table.flush()
+        db_writer.close()
 
     def _create_bounding_regions_triples(self, bounding_region_tuples, genome_element_chr_list, sparse):
         last_region = None
@@ -110,7 +114,7 @@ class BoundingRegionHandler(object):
         bounding_regions = self._br_queries.enclosing_bounding_region_for_region(region)
 
         if len(bounding_regions) != 1:
-            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s" \
+            raise OutsideBoundingRegionError("The analysis region '%s' is outside the bounding regions of track: %s"\
                                              % (region, prettyPrintTrackName(self._track_name)))
 
         return GenomeRegion(chr=bounding_regions[0]['chr'], start=bounding_regions[0]['start'], end=bounding_regions[0]['end'])
@@ -139,13 +143,14 @@ class BoundingRegionHandler(object):
             raise BoundingRegionsNotAvailableError('Bounding regions not available for track: ' + \
                                                    prettyPrintTrackName(self._track_name))
 
-        self._table_reader.open()
-        table_iterator = self._table_reader.table.iterrows()
+        self._db_reader.open()
+        br_table = self._db_reader.get_table(self._br_node_names)
+        table_iterator = br_table.iterrows()
 
         for row in table_iterator:
             yield GenomeRegion(self._genome, row['chr'], row['start'], row['end'])
 
-        self._table_reader.close()
+        self._db_reader.close()
 
     def get_total_element_count(self):
         return sum(self.get_total_element_count_for_chr(chr) for chr in GenomeInfo.getExtendedChrList(self._genome))
