@@ -18,7 +18,6 @@ from collections import Iterable
 from gtrackcore.core.Config import Config
 #from gtrackcore.util.CustomExceptions import InvalidFormatError
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
-from tables import is_pytables_file
 #from gtrackcore.application.SignatureDevianceLogging import takes,returns
 #from third_party.decorator import decorator
 #
@@ -637,9 +636,6 @@ def replaceIllegalElementsInTrackNames(string):
 #    #except Exception,e:
 #    #    raise ShouldNotOccurError('Repackaged exception.., original was: ' + getClassName(e) + ' - '+str(e) + ' - ' + traceback.format_exc())
 
-
-def databaseExist(filename):
-    return os.path.exists(filename) and is_pytables_file(filename)
 
 def convert_to_natural_naming(name_list):
     return [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in name_list]
