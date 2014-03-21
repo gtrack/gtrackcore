@@ -1,27 +1,19 @@
 import os
 import shutil
-import sys
+
 import numpy
-import tables
-from tables.exceptions import NoSuchNodeError
 
 from gtrackcore.core.Config import Config
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.metadata.TrackInfo import TrackInfo
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
-from gtrackcore.input.core.GenomeElement import GenomeElement
-from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
-from gtrackcore.track.memmap.CommonMemmapFunctions import findEmptyVal
 from gtrackcore.track.pytables.PytablesDatabase import DatabaseWriter
 from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
 from gtrackcore.track.pytables.TrackSource import TrackSource
-from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
-from gtrackcore.util.CommonFunctions import get_dir_path
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 from gtrackcore.util.CommonFunctions import get_dir_path
-from gtrackcore.track.pytables.DatabaseHandler import TrackTableReadWriter, TrackTableCreator, TrackTableSorter
 
 
 class PreProcessUtils(object):
@@ -170,23 +162,6 @@ class PreProcessUtils(object):
         if br_handler.get_total_element_count() != collector.getNumElements(allow_overlaps):
             raise ShouldNotOccurError("Error: The total element count for all bounding regions is not equal to the total number of genome elements. %s != %s" % \
                                       (br_handler.get_total_element_count(), collector.getNumElements(allow_overlaps)) )
-
-    @staticmethod
-    def _create_indices(genome, track_name):
-        db_handler = TrackTableReadWriter(genome, track_name, allow_overlaps=False)
-        db_handler.open()
-        db_handler.create_indices()
-        db_handler.close()
-
-        db_handler = TrackTableReadWriter(genome, track_name, allow_overlaps=True)
-        try:
-            db_handler.open()
-            db_handler.create_indices()
-        except NoSuchNodeError:
-            pass
-        finally:
-            db_handler.close()
-
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):
         collector = PreProcMetaDataCollector(genome, trackName)
