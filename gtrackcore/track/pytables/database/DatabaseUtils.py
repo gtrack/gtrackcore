@@ -1,21 +1,19 @@
 from functools import partial
 import os
-import re
 import numpy
 
-from gtrackcore.track.pytables.PytablesDatabase import DatabaseWriter, DatabaseReader
-from gtrackcore.util.CommonFunctions import get_dir_path
+from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
+from gtrackcore.util.CommonFunctions import get_dir_path, convert_to_natural_naming
 from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
 
 
-class PytablesDatabaseUtils(object):
+class DatabaseUtils(object):
 
     @classmethod
     def _get_node_names(cls, track_name, table_name, allow_overlaps):
-        node_names = [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in track_name]
+        node_names = convert_to_natural_naming(track_name + [table_name])
         node_names.insert(0, 'with_overlaps' if allow_overlaps else 'no_overlaps')
-        node_names.append(table_name)
         return node_names
 
     @classmethod
@@ -147,8 +145,8 @@ class PytablesDatabaseUtils(object):
         table is being open in append mode. Thus, the tables cannot be in the same file before the
         pre-processing is done.
         """
-        no_overlaps_db_path = PytablesDatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=False)
-        with_overlaps_db_path = PytablesDatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=True)
+        no_overlaps_db_path = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=False)
+        with_overlaps_db_path = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=True)
 
         db_writer = DatabaseWriter(no_overlaps_db_path)
         db_writer.open()

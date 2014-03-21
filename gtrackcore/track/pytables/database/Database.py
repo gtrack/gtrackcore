@@ -5,15 +5,15 @@ import tables
 from tables.exceptions import ClosedFileError
 
 from gtrackcore.third_party.portalocker import portalocker
+from gtrackcore.util.CommonFunctions import convert_to_natural_naming
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 
-
-class PytablesDatabase(object):
+class Database(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, h5_filename):
         self._h5_filename = h5_filename
-        self._db_name = h5_filename.split(os.sep)[-1]
+        self._db_name = convert_to_natural_naming([h5_filename.split(os.sep)[-1]])
         self._h5_file = None
 
     def __enter__(self):
@@ -61,7 +61,7 @@ class PytablesDatabase(object):
         return '/%s' % ('/'.join(node_names))
 
 
-class DatabaseWriter(PytablesDatabase):
+class DatabaseWriter(Database):
 
     def __init__(self, h5_filename):
         super(DatabaseWriter, self).__init__(h5_filename)
@@ -99,7 +99,7 @@ class DatabaseWriter(PytablesDatabase):
         return group
 
 
-class DatabaseReader(PytablesDatabase):
+class DatabaseReader(Database):
 
     def __init__(self, h5_filename):
         super(DatabaseReader, self).__init__(h5_filename)

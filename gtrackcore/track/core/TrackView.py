@@ -7,8 +7,8 @@ import numpy
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.pytables.CommonFunctions import get_start_and_end_indices
-from gtrackcore.track.pytables.PytablesDatabase import DatabaseReader
-from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
+from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
+from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
@@ -294,11 +294,9 @@ class TrackView(object):
             self._pytables_track_element.weights = noneFunc
 
         if self._should_use_pytables:
-            database_filename = PytablesDatabaseUtils.get_database_filename(genomeAnchor.genome, track_name,
-                                                                            allow_overlaps=allowOverlaps)
+            database_filename = DatabaseUtils.get_database_filename(genomeAnchor.genome, track_name, allow_overlaps=allowOverlaps)
             self._db_handler = DatabaseReader(database_filename)
-            self._track_node_names = PytablesDatabaseUtils.get_track_table_node_names(self._track_name,
-                                                                                self.allowOverlaps)
+            self._track_node_names = DatabaseUtils.get_track_table_node_names(self._track_name, self.allowOverlaps)
             self._handle_points_and_partitions_for_pytables()
 
         self._updateNumListElements()

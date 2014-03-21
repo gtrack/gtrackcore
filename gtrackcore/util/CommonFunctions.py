@@ -640,3 +640,6 @@ def replaceIllegalElementsInTrackNames(string):
 
 def databaseExist(filename):
     return os.path.exists(filename) and is_pytables_file(filename)
+
+def convert_to_natural_naming(name_list):
+    return [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in name_list]

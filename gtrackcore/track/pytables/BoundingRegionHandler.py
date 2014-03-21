@@ -1,8 +1,7 @@
 import tables
-from tables.exceptions import NoSuchNodeError
 
-from gtrackcore.track.pytables.PytablesDatabase import DatabaseReader, DatabaseWriter
-from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
+from gtrackcore.track.pytables.database.Database import DatabaseReader, DatabaseWriter
+from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
 from gtrackcore.util.CommonFunctions import prettyPrintTrackName
 from gtrackcore.util.pytables.DatabaseQueries import BoundingRegionQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
@@ -14,25 +13,15 @@ from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegions
 class BoundingRegionHandler(object):
     def __init__(self, genome, track_name, allow_overlaps):
         assert allow_overlaps in [False, True]
-
         self._genome = genome
         self._track_name = track_name
         self._allow_overlaps = allow_overlaps
-
-        self._database_filename = PytablesDatabaseUtils.get_database_filename(genome, track_name,
-                                                                              allow_overlaps=allow_overlaps)
-
-        self._br_node_names = PytablesDatabaseUtils.get_br_table_node_names(track_name, allow_overlaps)
-
-        self._db_reader = DatabaseReader(self._database_filename)
-        self._br_queries = BoundingRegionQueries(self._db_reader, self._br_node_names)
-
-        self._updated_chromosomes = set([])
         self._max_chr_len = 1
 
-        from gtrackcore.input.userbins.UserBinSource import MinimalBinSource
-        minimal_bin_list = MinimalBinSource(genome)
-        self._minimal_region = minimal_bin_list[0] if minimal_bin_list is not None else None
+        self._database_filename = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
+        self._db_reader = DatabaseReader(self._database_filename)
+        self._br_node_names = DatabaseUtils.get_br_table_node_names(track_name, allow_overlaps)
+        self._br_queries = BoundingRegionQueries(self._db_reader, self._br_node_names)
 
     def table_exists(self):
         try:

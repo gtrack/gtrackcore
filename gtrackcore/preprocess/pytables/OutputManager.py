@@ -5,8 +5,8 @@ from stat import S_IRWXU, S_IRWXG, S_IROTH
 import numpy
 import tables
 
-from gtrackcore.track.pytables.PytablesDatabase import DatabaseWriter
-from gtrackcore.track.pytables.PytablesDatabaseUtils import PytablesDatabaseUtils
+from gtrackcore.track.pytables.database.Database import DatabaseWriter
+from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
 
@@ -14,9 +14,8 @@ from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_l
 class OutputManager(object):
     def __init__(self, genome, track_name, allow_overlaps, ge_source_manager, track_format):
         self._track_format = track_format
-        self._database_filename = PytablesDatabaseUtils.get_database_filename(genome, track_name,
-                                                                              allow_overlaps=allow_overlaps,
-                                                                              create_path=True)
+        self._database_filename = DatabaseUtils.get_database_filename(genome, track_name,
+                                                                      allow_overlaps=allow_overlaps, create_path=True)
         self._db_writer = None
         self._table = None
         self._insert_counter = 0
@@ -28,7 +27,7 @@ class OutputManager(object):
 
         self._db_writer = DatabaseWriter(self._database_filename)
         self._db_writer.open()
-        table_node_names = PytablesDatabaseUtils.get_track_table_node_names(track_name, allow_overlaps)
+        table_node_names = DatabaseUtils.get_track_table_node_names(track_name, allow_overlaps)
 
         if self._db_writer.table_exists(table_node_names):
             old_table = self._db_writer.get_table(table_node_names)
@@ -156,7 +155,7 @@ class OutputManager(object):
                 row[column] = genome_element.__dict__['extra'][column]
             self._insert_counter += 1
         row.append()
-        PytablesDatabaseUtils.flush(self._table, self._insert_counter)
+        DatabaseUtils.flush(self._table, self._insert_counter)
 
     def _add_slice_element_as_rows(self, genome_element):
 
@@ -177,7 +176,7 @@ class OutputManager(object):
                 row[key] = el[key]
             row.append()
             self._insert_counter += 1
-            PytablesDatabaseUtils.flush(self._table, self._insert_counter)
+            DatabaseUtils.flush(self._table, self._insert_counter)
 
     def writeElement(self, genome_element):
         self._add_element_as_row(genome_element)
