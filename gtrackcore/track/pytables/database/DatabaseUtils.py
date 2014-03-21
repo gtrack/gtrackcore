@@ -3,6 +3,7 @@ import os
 import numpy
 
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
+from gtrackcore.util.CommonConstants import GTRACKCORE_FORMAT_SUFFIX
 from gtrackcore.util.CommonFunctions import get_dir_path, convert_to_natural_naming
 from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
@@ -116,8 +117,6 @@ class DatabaseUtils(object):
 
     @classmethod
     def get_database_filename(cls, genome, track_name, allow_overlaps=None, create_path=False):
-        DATABASE_FILE_SUFFIX = 'h5'  # put in Config
-
         dir_path = get_dir_path(genome, track_name)
         if create_path:
             if not os.path.exists(dir_path):
@@ -125,11 +124,12 @@ class DatabaseUtils(object):
 
         assert os.path.exists(dir_path)
 
-        db_path = "%s%s%s.%s" % (dir_path, os.sep, cls.get_db_name(track_name[-1], None), DATABASE_FILE_SUFFIX)
+        db_path = "%s%s%s.%s" % (dir_path, os.sep, cls.get_db_name(track_name[-1], None), GTRACKCORE_FORMAT_SUFFIX)
         if os.path.exists(db_path):
             return db_path
         else:
-            return "%s%s%s.%s" % (dir_path, os.sep, cls.get_db_name(track_name[-1], allow_overlaps), DATABASE_FILE_SUFFIX)
+            return "%s%s%s.%s" % (dir_path, os.sep, cls.get_db_name(track_name[-1], allow_overlaps),
+                                  GTRACKCORE_FORMAT_SUFFIX)
 
     @classmethod
     def get_db_name(cls, track_name, allow_overlaps):

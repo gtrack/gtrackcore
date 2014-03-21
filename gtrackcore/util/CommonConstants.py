@@ -7,3 +7,5 @@ RESERVED_PREFIXES = OrderedDict([(x,None) for x in ('start', 'end', 'val', 'stra
 LICENSE_STMT = \
 '''
 '''
+
+GTRACKCORE_FORMAT_SUFFIX = 'h5'
