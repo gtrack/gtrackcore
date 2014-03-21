@@ -33,4 +33,7 @@ pip-log.txt
 *.komodoproject
 
 #Track5 specific
-test_output
+test_output.idea/
+.idea/*
+.idea/
+*.iml
