@@ -1,9 +1,9 @@
 #import os
 #from config.Config import METADATA_FILES_PATH, IS_EXPERIMENTAL_INSTALLATION
-from gtrackcore_memmap.util.CustomExceptions import ArgumentValueError #, NotSupportedError
-#from gtrackcore_memmap.util.CommonFunctions import strWithStdFormatting
+from gtrackcore.util.CustomExceptions import ArgumentValueError #, NotSupportedError
+#from gtrackcore.util.CommonFunctions import strWithStdFormatting
 #from third_party.roman import fromRoman
-#from gtrackcore_memmap.result.HtmlCore import HtmlCore
+#from gtrackcore.result.HtmlCore import HtmlCore
 #from collections import defaultdict
 #import third_party.safeshelve as safeshelve
 #import copy
@@ -89,7 +89,7 @@ class GenomeInfo(object):
 #        
 #        except Exception, e:
 #            if IS_EXPERIMENTAL_INSTALLATION:
-#                from gtrackcore_memmap.application.LogSetup import logException, logMessage
+#                from gtrackcore.application.LogSetup import logException, logMessage
 #                logMessage('Exception for genome: %s' % self.genome)
 #                logException(e)
 #                import traceback
@@ -160,14 +160,14 @@ class GenomeInfo(object):
 #                    return chr
 #
 #    def isInstalled(self):
-#        from gtrackcore_memmap.util.CommonFunctions import createDirPath
-#        from gtrackcore_memmap.application.ProcTrackOptions import ProcTrackOptions
+#        from gtrackcore.util.CommonFunctions import createDirPath
+#        from gtrackcore.application.ProcTrackOptions import ProcTrackOptions
 #        return self.timeOfInstallation is not None and \
 #            ProcTrackOptions.isValidTrack(self.genome, GenomeInfo.getChrTrackName(self.genome), fullAccess=True) and \
 #            ProcTrackOptions.isValidTrack(self.genome, GenomeInfo.getAssemblyGapsTrackName(self.genome), fullAccess=True)
 #
 #    def hasOrigFiles(self):
-#        from gtrackcore_memmap.util.CommonFunctions import createOrigPath
+#        from gtrackcore.util.CommonFunctions import createOrigPath
 #        return os.path.exists(createOrigPath(self.genome, []))
     
     @classmethod
@@ -175,11 +175,20 @@ class GenomeInfo(object):
         "Returns a list of all chromosomes of the genome build file set."
         if genome.lower() in ['testgenome']:
             return ['chr21', 'chrM']
-            
-        raise NotImplementedError
+        else:
+            try:
+                chr_dict = GENOMES[genome.lower()]['size']
+            except KeyError:
+                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+
+            try:
+                return chr_dict.keys()
+            except KeyError:
+                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+
 
 #        else:
-#            from gtrackcore_memmap.util.CommonFunctions import createOrigPath
+#            from gtrackcore.util.CommonFunctions import createOrigPath
 #            seqFilesPath = createOrigPath(genome, cls.getSequenceTrackName(genome))
 #            fullChrList = sorted([fn.replace('.fa','') for fn in os.listdir(seqFilesPath) if '.fa' in fn])
 #            
@@ -196,8 +205,17 @@ class GenomeInfo(object):
         
         if genome.lower() in ['testgenome']:
             return ['chr21', 'chrM']
-            
-        raise NotImplementedError
+        else:
+            try:
+                chr_dict = GENOMES[genome.lower()]['size']
+            except KeyError:
+                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+
+            try:
+                return chr_dict.keys()
+            except KeyError:
+                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+
 #        else:
 #            chrListFn = cls.getChrRegsFn(genome)
 #            if chrListFn is None:
@@ -217,7 +235,7 @@ class GenomeInfo(object):
         
     @classmethod
     def getStdChrRegionList(cls, genome):
-        from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
+        from gtrackcore.track.core.GenomeRegion import GenomeRegion
         return [GenomeRegion(self._genome, chr, 0, cls.getChrLen(self._genome, chr) ) \
                 for chr in cls.getChrList(self._genome)]
     
@@ -262,16 +280,24 @@ class GenomeInfo(object):
                 return 16571
             else:
                 raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
-                
-        raise NotImplementedError
-#
+        else:
+            try:
+                chr_dict = GENOMES[genome.lower()]['size']
+            except KeyError:
+                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+
+            try:
+                return chr_dict[chr]
+            except KeyError:
+                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+
 #        if genome in cls._chrLengths and \
 #            chr in cls._chrLengths[genome]:
 #            return cls._chrLengths[genome][chr]
 #        else:
 #            try:
 #                #length = cls.getNumElementsInFastaFile(os.sep.join([ORIG_DATA_PATH, genome, 'sequence', cls.fixChr(chr) + '.fa']))
-#                from gtrackcore_memmap.util.CommonFunctions import createOrigPath
+#                from gtrackcore.util.CommonFunctions import createOrigPath
 #                length = cls.getNumElementsInFastaFile(createOrigPath(genome, cls.getSequenceTrackName(genome), chr + '.fa'))
 #            except IOError:
 #                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
@@ -377,15 +403,15 @@ class GenomeInfo(object):
 #
 #    @staticmethod
 #    def getChrRegsFn(genome):
-#        from gtrackcore_memmap.util.CommonFunctions import getOrigFn
+#        from gtrackcore.util.CommonFunctions import getOrigFn
 #        return getOrigFn(genome, GenomeInfo.getChrTrackName(genome), '.category.bed')
 #        
 #    @classmethod
 #    def getChrRegs(cls, genome, categoryFilterList = None):
 #        if not genome in cls._chrRegs:
-#            from gtrackcore_memmap.util.CommonFunctions import createOrigPath
-#            #from gtrackcore_memmap.application.UserBinSource import UnfilteredUserBinSource
-#            from gtrackcore_memmap.application.UserBinSource import ValuesStrippedUserBinSource
+#            from gtrackcore.util.CommonFunctions import createOrigPath
+#            #from gtrackcore.application.UserBinSource import UnfilteredUserBinSource
+#            from gtrackcore.application.UserBinSource import ValuesStrippedUserBinSource
 #            fn = cls.getChrRegsFn(genome)
 #            if fn is not None and os.path.exists(fn):
 #                cls._chrRegs[genome] = ValuesStrippedUserBinSource('file', fn, genome, categoryFilterList)
@@ -395,14 +421,14 @@ class GenomeInfo(object):
 #
 #    @staticmethod
 #    def getChrArmRegsFn(genome):
-#        from gtrackcore_memmap.util.CommonFunctions import getOrigFn
+#        from gtrackcore.util.CommonFunctions import getOrigFn
 #        return getOrigFn(genome, GenomeInfo.getChrArmsTrackName(genome), '.category.bed')
 #    
 #    @classmethod
 #    def getChrArmRegs(cls, genome, categoryFilterList = None):
 #        if not genome in cls._chrArmRegs:                    
-#            from gtrackcore_memmap.util.CommonFunctions import createOrigPath
-#            from gtrackcore_memmap.application.UserBinSource import UserBinSource
+#            from gtrackcore.util.CommonFunctions import createOrigPath
+#            from gtrackcore.application.UserBinSource import UserBinSource
 #            fn = cls.getChrArmRegsFn(genome)
 #            if fn is not None and os.path.exists(fn):    
 #                cls._chrArmRegs[genome] = UserBinSource('file', fn, genome, categoryFilterList)
@@ -416,7 +442,7 @@ class GenomeInfo(object):
 #    
 #    @classmethod
 #    def getStdGeneRegsFn(cls, genome):
-#        from gtrackcore_memmap.util.CommonFunctions import getOrigFn
+#        from gtrackcore.util.CommonFunctions import getOrigFn
 #        return getOrigFn(genome, cls.getStdGeneRegsTn(genome), '.category.bed')
 #    
 #    @classmethod
@@ -428,22 +454,22 @@ class GenomeInfo(object):
 #    def getGeneRegs(cls, genome, fn, categoryFilterList = None, cluster = True):
 #        if fn is not None and os.path.exists(fn):
 #            if cluster:
-#                from gtrackcore_memmap.application.UserBinSource import UserBinSource
+#                from gtrackcore.application.UserBinSource import UserBinSource
 #                return UserBinSource('file',fn, genome, categoryFilterList)
 #            else:
-#                from gtrackcore_memmap.application.UserBinSource import UnBoundedUnClusteredUserBinSource
+#                from gtrackcore.application.UserBinSource import UnBoundedUnClusteredUserBinSource
 #                return UnBoundedUnClusteredUserBinSource('file',fn, genome, categoryFilterList)
 #        else:
 #            return None
 #    
 #    @staticmethod
 #    def getChrBandRegsFn(genome):
-#        from gtrackcore_memmap.util.CommonFunctions import getOrigFn
+#        from gtrackcore.util.CommonFunctions import getOrigFn
 #        return getOrigFn(genome, GenomeInfo.getCytobandsTrackName(genome), '.category.bed')
 #    
 #    @staticmethod
 #    def getEncodeRegsFn(genome):
-#        from gtrackcore_memmap.util.CommonFunctions import getOrigFn
+#        from gtrackcore.util.CommonFunctions import getOrigFn
 #        return getOrigFn(genome, GenomeInfo.getEncodeTrackName(genome), '.category.bed')
 #    
 #    @classmethod
@@ -453,7 +479,7 @@ class GenomeInfo(object):
 #    
 #    @classmethod
 #    def getChrBandRegs(cls, genome, categoryFilterList = None):        
-#        from gtrackcore_memmap.application.UserBinSource import UserBinSource
+#        from gtrackcore.application.UserBinSource import UserBinSource
 #        fn = cls.getChrBandRegsFn(genome)
 #        if fn is not None and os.path.exists(fn):
 #            return UserBinSource('file',fn, genome, categoryFilterList, strictMatch=False)
@@ -462,7 +488,7 @@ class GenomeInfo(object):
 #    
 #    @staticmethod
 #    def getProteinRegsFn(genome):
-#        from gtrackcore_memmap.util.CommonFunctions import getOrigFn
+#        from gtrackcore.util.CommonFunctions import getOrigFn
 #        return getOrigFn(genome, GenomeInfo.getProteinTrackName(genome), '.category.bed')
 #    
 #    @classmethod
@@ -537,4 +563,67 @@ class GenomeInfo(object):
 #            if i >= 0:
 #                return inStr[:i] + str(fromRoman(romanStr)) + inStr[i+len(romanStr):]
 #        
-#        return inStr    
+#        return inStr
+
+GENOMES = {
+    "hg18": {
+        "name":"HG18",
+        "size": {
+            "chr1":    247249719,
+            "chr2":    242951149,
+            "chr3":    199501827,
+            "chr4":    191273063,
+            "chr5":    180857866,
+            "chr6":    170899992,
+            "chr7":    158821424,
+            "chr8":    146274826,
+            "chr9":    140273252,
+            "chr10":   135374737,
+            "chr11":   134452384,
+            "chr12":   132349534,
+            "chr13":   114142980,
+            "chr14":   106368585,
+            "chr15":   100338915,
+            "chr16":   88827254,
+            "chr17":   78774742,
+            "chr18":   76117153,
+            "chr19":   63811651,
+            "chr20":   62435964,
+            "chr21":   46944323,
+            "chr22":   49691432,
+            "chrX":    154913754,
+            "chrY":    57772954,
+            "chrM":    16571
+        },
+    },
+    "hg19": {
+        "name":"HG19",
+        "size": {
+            "chr1":    249250621,
+            "chr2":    243199373,
+            "chr3":    198022430,
+            "chr4":    191154276,
+            "chr5":    180915260,
+            "chr6":    171115067,
+            "chr7":    159138663,
+            "chr8":    146364022,
+            "chr9":    141213431,
+            "chr10":   135534747,
+            "chr11":   135006516,
+            "chr12":   133851895,
+            "chr13":   115169878,
+            "chr14":   107349540,
+            "chr15":   102531392,
+            "chr16":   90354753,
+            "chr17":   81195210,
+            "chr18":   78077248,
+            "chr19":   59128983,
+            "chr20":   63025520,
+            "chr21":   48129895,
+            "chr22":   51304566,
+            "chrX":    155270560,
+            "chrY":    59373566,
+            "chrM":    16571
+        }
+    }
+}
