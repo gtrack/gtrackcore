@@ -1,12 +1,5 @@
 import hotshot
 import hotshot.stats
-import os
-import shutil
-import sys
-from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
-
-from gtrackcore_memmap.util.CommonFunctions import convertTNstrToTNListFormat
-
 
 class Profiler:
     PROFILE_HEADER = '--- Profile ---'
@@ -65,38 +58,7 @@ class Profiler:
 
 def profile_track_preprocessor(genome, track_name, stat_dir=None):
     from gtrackcore_memmap.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
-    track_name = convertTNstrToTNListFormat(track_name, doUnquoting=True)
 
     profiler = Profiler()
     profiler.run('PreProcessAllTracksJob(genome, track_name, username=\'\', mode=\'Real\').process()', globals(), locals())
     profiler.printStats(graphDir=stat_dir)
-
-
-def profile_operation(operation, genome_region, track_name1=None, track_name2=None):
-    if track_name1 is not None and track_name2 is not None:
-        track_view1 = TrackTools.get_track_view(track_name1, genome_region)
-        track_view2 = TrackTools.get_track_view(track_name2, genome_region)
-        run_str = operation + '(track_view1, track_view2)'
-    elif track_name1 is not None:
-        track_view = TrackTools.get_track_view(track_name1, genome_region)
-        run_str = operation + '(track_view)'
-    else:
-        return
-
-    profiler = Profiler()
-    profiler.run(run_str, globals(), locals())
-    profiler.printStats()
-
-
-if __name__ == '__main__':
-    genome = 'testgenome'
-    track_name1 = ['testcat', 'mid']
-    track_name2 = ['testcat', 'big']
-    genome_region = GenomeRegion(genome, 'chr21', 0, 46944323)
-
-    if sys.argv[1] == 'preprocessing':
-        profile_track_preprocessor(genome, ':'.join(track_name1))
-    elif sys.argv[1] == 'intersection':
-        profile_operation('TrackTools.intersection', genome_region, track_name1, track_name2)
-    elif sys.argv[1] == 'intersection_iter':
-        profile_operation('TrackTools.intersection_iter', genome_region, track_name1, track_name2)
