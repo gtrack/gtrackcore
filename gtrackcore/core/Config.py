@@ -4,7 +4,6 @@ from ConfigParser import SafeConfigParser
 from collections import OrderedDict
 from itertools import chain
 
-from gtrackcore.util.CustomExceptions import ArgumentValueError
 
 class ConfigInit(type):
     def __getattribute__(cls, key):
@@ -29,7 +28,7 @@ class Config(object):
                 print 'GTRACKCORE_DIR env should be defined. Using %s as data directory' % os.environ.get('HOME')
                 gtrackcore_dir = os.environ.get('HOME')
             else:
-                raise AttributeError('Neither env GTRACKCORE_DIR nor HOME is set')
+                raise EnvironmentError('Neither env GTRACKCORE_DIR nor HOME is set')
 
         if gtrackcore_dir[-1] == '/':
             gtrackcore_dir = gtrackcore_dir[:-1]
