@@ -64,7 +64,7 @@ class Profiler:
     #    
     #    print str(HtmlCore().link('Call graph based on profile (id=%s)' % ':'.join(id), pngFile.getURL()))
 
-def profile_track_preprocessor(genome, track_name):
+def profile_track_preprocessor(genome, track_name, stat_dir=None):
     from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
     track_name = convertTNstrToTNListFormat(track_name, doUnquoting=True)
 
@@ -76,7 +76,7 @@ def profile_track_preprocessor(genome, track_name):
 
     profiler = Profiler()
     profiler.run('PreProcessAllTracksJob(genome, track_name, username=\'\', mode=\'Real\').process()', globals(), locals())
-    profiler.printStats()
+    profiler.printStats(graphDir=stat_dir)
 
 
 def profile_operation(operation, genome_region, track_name1=None, track_name2=None):
