@@ -5,6 +5,7 @@ import tables
 from tables.exceptions import ClosedFileError
 
 from gtrackcore.third_party.portalocker import portalocker
+from gtrackcore.util.CommonConstants import GTRACKCORE_FORMAT_SUFFIX
 from gtrackcore.util.CommonFunctions import convert_to_natural_naming
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 
@@ -13,7 +14,7 @@ class Database(object):
 
     def __init__(self, h5_filename):
         self._h5_filename = h5_filename
-        self._db_name = convert_to_natural_naming([h5_filename.split(os.sep)[-1]])
+        self._db_name = convert_to_natural_naming(h5_filename.split(os.sep)[-1][:len(GTRACKCORE_FORMAT_SUFFIX)])
         self._h5_file = None
 
     def __enter__(self):

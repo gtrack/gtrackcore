@@ -133,8 +133,9 @@ class DatabaseUtils(object):
 
     @classmethod
     def get_db_name(cls, track_name, allow_overlaps):
-        return track_name if allow_overlaps is None else \
+        track_name = track_name if allow_overlaps is None else \
             track_name + ('_with_overlaps' if allow_overlaps else '_no_overlaps')
+        return convert_to_natural_naming(track_name)
 
     @classmethod
     def merge_and_rename_overlap_tables(cls, genome, track_name):

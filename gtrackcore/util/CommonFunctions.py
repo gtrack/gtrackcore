@@ -637,5 +637,12 @@ def replaceIllegalElementsInTrackNames(string):
 #    #    raise ShouldNotOccurError('Repackaged exception.., original was: ' + getClassName(e) + ' - '+str(e) + ' - ' + traceback.format_exc())
 
 
-def convert_to_natural_naming(name_list):
-    return [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in name_list]
+def convert_to_natural_naming(name):
+    is_list_type = isinstance(name, list)
+    if not is_list_type:
+        name = [name]
+    converted_name = [re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part)).lower() for part in name]
+    if is_list_type:
+        return converted_name
+    else:
+        return converted_name[0]
