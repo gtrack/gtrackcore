@@ -1,12 +1,10 @@
 import hotshot
 import hotshot.stats
-import os
-import shutil
 import sys
 from gtrackcore.tools import TrackTools
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 
-from gtrackcore.util.CommonFunctions import convertTNstrToTNListFormat, get_dir_path
+from gtrackcore.util.CommonFunctions import convertTNstrToTNListFormat
 
 
 class Profiler:
@@ -67,12 +65,6 @@ class Profiler:
 def profile_track_preprocessor(genome, track_name, stat_dir=None):
     from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
     track_name = convertTNstrToTNListFormat(track_name, doUnquoting=True)
-
-    for allow_overlaps in [True, False]:
-        track_path = get_dir_path(genome, track_name, allow_overlaps=allow_overlaps)
-        print track_path
-        if os.path.exists(track_path):
-            shutil.rmtree(os.path.dirname(track_path))
 
     profiler = Profiler()
     profiler.run('PreProcessAllTracksJob(genome, track_name, username=\'\', mode=\'Real\').process()', globals(), locals())
