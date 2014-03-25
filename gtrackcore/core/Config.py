@@ -31,6 +31,9 @@ class Config(object):
             else:
                 raise AttributeError('Neither env GTRACKCORE_DIR nor HOME is set')
 
+        if gtrackcore_dir[-1] == '/':
+            gtrackcore_dir = gtrackcore_dir[:-1]
+
         data_dir = os.sep.join([gtrackcore_dir, 'gtrackcore_data'])
         config_filename = os.sep.join([gtrackcore_dir, 'gtrackcore_config'])
 
