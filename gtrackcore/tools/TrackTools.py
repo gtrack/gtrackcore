@@ -9,17 +9,18 @@ from gtrackcore.track.graph.GraphView import LazyProtoGraphView
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 
 
-def get_track_view(track_name, genome_region, allow_overlaps=False):
+def get_track_format(track_name, allow_overlaps, genome_regions):
+    pass
+
+
+def get_track_view(track_name, allow_overlaps, genome_region):
     track = Track(track_name)
     track.addFormatReq(TrackFormatReq(allowOverlaps=allow_overlaps, borderHandling='crop'))
     return track.getTrackView(genome_region)
 
 
-def get_graph_view(genome, track_name, allow_overlaps=False, genome_regions=None):
+def get_graph_view(track_name, allow_overlaps, genome_regions):
     proto_graph_views = []
-
-    if genome_regions is None:
-        genome_regions = BoundingRegionHandler(genome, track_name, allow_overlaps).get_all_bounding_regions()
 
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
@@ -32,21 +33,22 @@ def get_graph_view(genome, track_name, allow_overlaps=False, genome_regions=None
     return graph_view
 
 
-def count_elements(track_view):
-    return track_view.getNumElements()
+def count_elements(track_name, allow_overlaps, genome_regions):
+    count_sum = numpy.int64(0)
+    for region in genome_regions:
+        track_view = get_track_view(track_name, region, allow_overlaps)
+        count_sum += track_view.getNumElements()
 
 
-def sum_of_values(track_view):
-    if not track_view.trackFormat.isValued():
-        raise OperationNotSupportedError
+def sum_of_values(track_name, allow_overlaps, genome_regions):
+    value_sum = numpy.float128(0)
+    for region in genome_regions:
+        track_view = get_track_view(track_name, region, allow_overlaps)
+        value_sum += track_view.valsAsNumpyArray().sum()
+    return value_sum
 
-    return track_view.valsAsNumpyArray().sum()
 
-
-def sum_of_weights(genome, track_name, allow_overlaps=False, genome_regions=None):
-    if genome_regions is None:
-        genome_regions = BoundingRegionHandler(genome, track_name, allow_overlaps).get_all_bounding_regions()
-
+def sum_of_weights(track_name, allow_overlaps, genome_regions):
     weight_sum = numpy.float128(0)
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
@@ -55,7 +57,8 @@ def sum_of_weights(genome, track_name, allow_overlaps=False, genome_regions=None
     return weight_sum
 
 
-def sum_of_weights_iter(graph_view):
+def sum_of_weights_iter(track_name, allow_overlaps, genome_regions):
+    graph_view = get_graph_view(track_name, genome_regions, allow_overlaps)
     weight_sum = numpy.float128(0)
     for edge in graph_view.getEdgeIter():
         if isinstance(edge.weight, numpy.ndarray):
@@ -65,31 +68,16 @@ def sum_of_weights_iter(graph_view):
     return weight_sum
 
 
-def k_highest_values(track_view, k):
-    if not track_view.trackFormat.isValued():
-        raise OperationNotSupportedError
-    print len(track_view)
-    if k > track_view.getNumElements():
-        raise ValueError('The given k is larger than the number of elements of the TrackView')
+def coverage(track_name, allow_overlaps, genome_regions):
+    coverage_sum = numpy.int64(0)
+    for region in genome_regions:
+        track_view = get_track_view(track_name, region, allow_overlaps)
+        coverage_sum += track_view.endsAsNumpyArray().sum() - track_view.startsAsNumpyArray().sum()
 
-    values = track_view.valsAsNumpyArray()
-
-    return values.argsort()[-k:]
+    return coverage_sum
 
 
-def coverage(track_view):
-    format = track_view.trackFormat
-    if format.isSegment():
-        return track_view.endsAsNumpyArray().sum() - track_view.startsAsNumpyArray().sum()
-    elif format.isPoint():
-        return track_view.getNumElements()
-    elif format.isPartition() or format.reprIsDense():
-        return len(track_view)
-    else:
-        raise OperationNotSupportedError
-
-
-def intersection_iter(track_view_1, track_view_2):
+def intersection_of_track_views_iter(track_view_1, track_view_2):
     base_pair_counter = 0
     track_element_iterator1 = iter(track_view_1)
     track_element_iterator2 = iter(track_view_2)
@@ -114,7 +102,7 @@ def intersection_iter(track_view_1, track_view_2):
         return base_pair_counter
 
 
-def intersection(track_view1, track_view2):
+def intersection_of_track_views(track_view1, track_view2):
     t1_coded_starts = track_view1.startsAsNumpyArray() * 8 + 5
     t1_coded_ends = track_view1.endsAsNumpyArray() * 8 + 3
     t2_coded_starts = track_view2.startsAsNumpyArray() * 8 + 6
@@ -133,6 +121,24 @@ def intersection(track_view1, track_view2):
     return (all_event_lengths[cumulative_cover_status[:-1] == 3]).sum()
 
 
+def intersection_iter(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions):
+    intersection_sum = numpy.int64(0)
+    for region in genome_regions:
+        track_view1 = get_track_view(track_name1, region, allow_overlaps1)
+        track_view2 = get_track_view(track_name2, region, allow_overlaps2)
+        intersection_sum += intersection_of_track_views_iter(track_view1, track_view2)
+    return intersection_sum
+
+
+def intersection(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions):
+    intersection_sum = numpy.int64(0)
+    for region in genome_regions:
+        track_view1 = get_track_view(track_name1, region, allow_overlaps1)
+        track_view2 = get_track_view(track_name2, region, allow_overlaps2)
+        intersection_sum += intersection_of_track_views(track_view1, track_view2)
+    return intersection_sum
+
+
 def count_elements_in_all_bounding_regions(genome, track_name, allow_overlaps=False):
     bounding_regions = BoundingRegionHandler(genome, track_name, allow_overlaps).get_all_bounding_regions()
 
@@ -142,10 +148,17 @@ def count_elements_in_all_bounding_regions(genome, track_name, allow_overlaps=Fa
     return num_elements
 
 
-if __name__ == '__main__':
-    graph_view = get_graph_view('testgenome', ['testcat', 'edges'],
-                                genome_regions=[GenomeRegion('testgenome', 'chr21', 0, 25000000),
-                                                GenomeRegion('testgenome', 'chr21', 25000001, 40000000)])
+def k_highest_values(track_view, k):
+    if not track_view.trackFormat.isValued():
+        raise OperationNotSupportedError
+    print len(track_view)
+    if k > track_view.getNumElements():
+        raise ValueError('The given k is larger than the number of elements of the TrackView')
 
-    print sum_of_weights_iter(graph_view)
-    print sum_of_weights('testgenome', ['testcat', 'edges'])
+    values = track_view.valsAsNumpyArray()
+
+    return values.argsort()[-k:]
+
+
+if __name__ == '__main__':
+    pass
