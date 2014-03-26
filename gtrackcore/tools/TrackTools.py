@@ -1,9 +1,8 @@
-import numpy
 import math
+import numpy
 
 from gtrackcore.tools.ToolExceptions import OperationNotSupportedError
 from gtrackcore.track.core.Track import Track
-from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.graph.GraphView import LazyProtoGraphView
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
@@ -38,6 +37,7 @@ def count_elements(track_name, allow_overlaps, genome_regions):
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
         count_sum += track_view.getNumElements()
+    return count_sum
 
 
 def sum_of_values(track_name, allow_overlaps, genome_regions):
@@ -53,7 +53,6 @@ def sum_of_weights(track_name, allow_overlaps, genome_regions):
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
         weight_sum += numpy.nansum(track_view.weightsAsNumpyArray())
-
     return weight_sum
 
 
@@ -73,7 +72,6 @@ def coverage(track_name, allow_overlaps, genome_regions):
     for region in genome_regions:
         track_view = get_track_view(track_name, region, allow_overlaps)
         coverage_sum += track_view.endsAsNumpyArray().sum() - track_view.startsAsNumpyArray().sum()
-
     return coverage_sum
 
 
@@ -139,13 +137,9 @@ def intersection(track_name1, allow_overlaps1, track_name2, allow_overlaps2, gen
     return intersection_sum
 
 
-def count_elements_in_all_bounding_regions(genome, track_name, allow_overlaps=False):
+def count_elements_in_all_bounding_regions(genome, track_name, allow_overlaps):
     bounding_regions = BoundingRegionHandler(genome, track_name, allow_overlaps).get_all_bounding_regions()
-
-    num_elements = 0
-    for tv in [get_track_view(track_name, region) for region in bounding_regions]:
-        num_elements += count_elements(tv)
-    return num_elements
+    return count_elements(track_name, allow_overlaps, bounding_regions)
 
 
 def k_highest_values(track_view, k):

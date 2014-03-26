@@ -5,6 +5,7 @@ import numpy
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.CommonConstants import GTRACKCORE_FORMAT_SUFFIX
 from gtrackcore.util.CommonFunctions import get_dir_path, convert_to_natural_naming
+from gtrackcore.util.CustomExceptions import DBNotExistError
 from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
 
@@ -122,7 +123,8 @@ class DatabaseUtils(object):
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
 
-        assert os.path.exists(dir_path)
+        if not os.path.exists(dir_path):
+            raise DBNotExistError('Track \'' + ':'.join(track_name) + '\' does not exist')
 
         db_path = "%s%s%s.%s" % (dir_path, os.sep, cls.get_db_name(track_name[-1], None), GTRACKCORE_FORMAT_SUFFIX)
         if os.path.exists(db_path):
