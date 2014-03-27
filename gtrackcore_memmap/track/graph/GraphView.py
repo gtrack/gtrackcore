@@ -1,8 +1,8 @@
 import numpy as np
 from collections import OrderedDict
 from copy import copy
-from gtrackcore_memmap.graph.NodeElement import NodeElement
-from gtrackcore_memmap.graph.Edge import Edge
+from gtrackcore_memmap.track.graph.NodeElement import NodeElement
+from gtrackcore_memmap.track.graph.Edge import Edge
 
 class BaseGraphView(object):
     def __init__(self, trackViewDict, id2index, isDirected):

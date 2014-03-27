@@ -1,6 +1,6 @@
 import weakref
 
-from gtrackcore_memmap.graph.Edge import Edge
+from gtrackcore_memmap.track.graph.Edge import Edge
 from gtrackcore_memmap.track.core.TrackView import TrackElement, AutonomousTrackElement, noneFunc
 
 class NodeElement(TrackElement):
