@@ -64,7 +64,7 @@ def profile_track_preprocessor(genome, track_name, stat_dir=None):
     profiler.printStats(graphDir=stat_dir)
 
 def profile_operation(operation, track_name1, allow_overlaps1, genome_regions, track_name2=None, allow_overlaps2=None):
-    import gtrackcore.tool.TrackTools
+    from gtrackcore.tools.TrackTools import *
 
     if track_name1 is not None and track_name2 is not None:
         run_str = operation + '(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions)'
