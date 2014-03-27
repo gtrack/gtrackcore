@@ -22,7 +22,7 @@ def get_graph_view(track_name, allow_overlaps, genome_regions):
     proto_graph_views = []
 
     for region in genome_regions:
-        track_view = get_track_view(track_name, region, allow_overlaps)
+        track_view = get_track_view(track_name, allow_overlaps, region)
         proto_graph_view = LazyProtoGraphView.createInstanceFromTrackView(track_view)
         proto_graph_views.append(proto_graph_view)
 
@@ -35,7 +35,7 @@ def get_graph_view(track_name, allow_overlaps, genome_regions):
 def count_elements(track_name, allow_overlaps, genome_regions):
     count_sum = numpy.int64(0)
     for region in genome_regions:
-        track_view = get_track_view(track_name, region, allow_overlaps)
+        track_view = get_track_view(track_name, allow_overlaps, region)
         count_sum += track_view.getNumElements()
     return count_sum
 
@@ -43,7 +43,7 @@ def count_elements(track_name, allow_overlaps, genome_regions):
 def sum_of_values(track_name, allow_overlaps, genome_regions):
     value_sum = numpy.float128(0)
     for region in genome_regions:
-        track_view = get_track_view(track_name, region, allow_overlaps)
+        track_view = get_track_view(track_name, allow_overlaps, region)
         value_sum += track_view.valsAsNumpyArray().sum()
     return value_sum
 
@@ -51,7 +51,7 @@ def sum_of_values(track_name, allow_overlaps, genome_regions):
 def sum_of_weights(track_name, allow_overlaps, genome_regions):
     weight_sum = numpy.float128(0)
     for region in genome_regions:
-        track_view = get_track_view(track_name, region, allow_overlaps)
+        track_view = get_track_view(track_name, allow_overlaps, region)
         weight_sum += numpy.nansum(track_view.weightsAsNumpyArray())
     return weight_sum
 
@@ -70,7 +70,7 @@ def sum_of_weights_iter(track_name, allow_overlaps, genome_regions):
 def coverage(track_name, allow_overlaps, genome_regions):
     coverage_sum = numpy.int64(0)
     for region in genome_regions:
-        track_view = get_track_view(track_name, region, allow_overlaps)
+        track_view = get_track_view(track_name, allow_overlaps, region)
         coverage_sum += track_view.endsAsNumpyArray().sum() - track_view.startsAsNumpyArray().sum()
     return coverage_sum
 
@@ -122,8 +122,8 @@ def overlap_of_track_views(track_view1, track_view2):
 def overlap_iter(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions):
     intersection_sum = numpy.int64(0)
     for region in genome_regions:
-        track_view1 = get_track_view(track_name1, region, allow_overlaps1)
-        track_view2 = get_track_view(track_name2, region, allow_overlaps2)
+        track_view1 = get_track_view(track_name1, allow_overlaps1, region)
+        track_view2 = get_track_view(track_name2, allow_overlaps2, region)
         intersection_sum += overlap_of_track_views_iter(track_view1, track_view2)
     return intersection_sum
 
@@ -131,8 +131,8 @@ def overlap_iter(track_name1, allow_overlaps1, track_name2, allow_overlaps2, gen
 def overlap(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions):
     intersection_sum = numpy.int64(0)
     for region in genome_regions:
-        track_view1 = get_track_view(track_name1, region, allow_overlaps1)
-        track_view2 = get_track_view(track_name2, region, allow_overlaps2)
+        track_view1 = get_track_view(track_name1, allow_overlaps1, region)
+        track_view2 = get_track_view(track_name2, allow_overlaps2, region)
         intersection_sum += overlap_of_track_views(track_view1, track_view2)
     return intersection_sum
 
