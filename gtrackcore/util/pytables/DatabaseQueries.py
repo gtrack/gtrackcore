@@ -97,7 +97,7 @@ class TrackQueries(DatabaseQueries):
 
         self._db_reader.open()
         table = self._db_reader.get_table(self._track_table_node_names)
-        region_indices = table.get_where_list(query, sort=True, start=br_start, stop=br_stop,
+        region_indices = table.get_where_list(query, start=br_start, stop=br_stop,
                                               condvars={
                                                   'region_start': genome_region.start,
                                                   'region_end': genome_region.end
