@@ -16,6 +16,7 @@ class Database(object):
         self._h5_filename = h5_filename
         self._db_name = convert_to_natural_naming(h5_filename.split(os.sep)[-1][:len(GTRACKCORE_FORMAT_SUFFIX)])
         self._h5_file = None
+        self._cached_nodes = {}
 
     def __enter__(self):
         self.open()
@@ -34,6 +35,7 @@ class Database(object):
         portalocker.lock(self._h5_file, lock_type)
 
     def close(self):
+        self._cached_nodes = {}
         portalocker.unlock(self._h5_file)
         self._h5_file.close()
 
@@ -49,9 +51,13 @@ class Database(object):
         return self.get_node(node_names)
 
     def get_node(self, node_names):
-        table_path = self._get_node_path(node_names)
+        node_path = self._get_node_path(node_names)
+        if node_path in self._cached_nodes:
+            return self._cached_nodes[node_path]
         try:
-            return self._h5_file.get_node(table_path)
+            node = self._h5_file.get_node(node_path)
+            self._cached_nodes[node_path] = node
+            return node
         except tables.group.NoSuchNodeError:
             return None
 
