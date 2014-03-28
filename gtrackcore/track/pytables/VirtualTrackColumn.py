@@ -1,3 +1,4 @@
+from gtrackcore import preprocess
 from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
 
 
@@ -39,6 +40,9 @@ class VirtualTrackColumn(VirtualNumpyArray):
             column = table.colinstances[column_name]
             self._shape = column.shape
             self._dtype = column.dtype
+
+            if preprocess.is_preprocessing:
+                self._db_reader.close()
 
     @property
     def offset(self):
@@ -111,7 +115,8 @@ class VirtualTrackColumn(VirtualNumpyArray):
         table = self._db_reader.get_table(self._table_node_names)
         column = table.colinstances[self._column_name]
         result = column[self._start_index:self._end_index:self._step]
-        self._db_reader.close()
+        if preprocess.is_preprocessing:
+            self._db_reader.close()
         return result
 
     def ends_as_numpy_array_points_func(self):
@@ -122,5 +127,8 @@ class VirtualTrackColumn(VirtualNumpyArray):
         table = self._db_reader.get_table(self._table_node_names)
         column = table.colinstances[self._column_name]
         result = column[self._start_index:self._end_index] + 1
-        self._db_reader.close()
+        if preprocess.is_preprocessing:
+            self._db_reader.close()
         return result
+
+

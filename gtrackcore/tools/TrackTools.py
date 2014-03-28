@@ -1,7 +1,9 @@
 import math
 import numpy
+from gtrackcore.metadata import GenomeInfo
 
 from gtrackcore.tools.ToolExceptions import OperationNotSupportedError
+from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.graph.GraphView import LazyProtoGraphView
@@ -155,4 +157,14 @@ def k_highest_values(track_view, k):
 
 
 if __name__ == '__main__':
-    pass
+    tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
+    from time import time
+
+    start = time()
+
+    count = count_elements(tn, False, (GenomeRegion('hg19', chr, 0, len)
+                                       for chr, len in GenomeInfo.GENOMES['hg19']['size'].iteritems()))
+
+    end = time()
+
+    print 'res:', count, '\ntime used:', end - start

@@ -7,6 +7,7 @@ from gtrackcore.test.track.common.SampleTrackView import getRandValList, getRand
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.pytables.TrackSource import TrackData
 
+@unittest.skip("skipping class")
 class TestTrackViewLoader(TestCaseWithImprovedAsserts):
     def setUp(self):
         self.prevCompBinSize = gtrackcore.util.CompBinManager.COMP_BIN_SIZE

@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 #import pyximport; pyximport.install()
+import gtrackcore
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.metadata.TrackInfo import TrackInfo
@@ -37,6 +38,8 @@ class PreProcessTracksJob(object):
 
     def process(self):
         assert self._genome is not None, 'Error: genome must be specified when preprocessing tracks.'
+
+        gtrackcore.preprocess.is_preprocessing = True
 
         atLeastOneFinalized = False
         for trackName in self._allTrackNames():
@@ -111,6 +114,9 @@ class PreProcessTracksJob(object):
         if self._raiseIfAnyWarnings and len(self._warningTrackNames) > 0:
             raise Warning('Warnings occurred in the following tracks: ' + \
                           ', '.join(prettyPrintTrackName(tn) for tn in self._warningTrackNames))
+
+        gtrackcore.preprocess.is_preprocessing = False
+
         return atLeastOneFinalized
 
     def _allTrackNames(self):
