@@ -29,7 +29,7 @@ class TrackSource:
         db_reader.close()
 
         for column_name in column_names:
-            track_data[column_name] = VirtualTrackColumn(column_name, db_reader, table_node_names,
+            track_data[column_name] = VirtualTrackColumn(column_name, database_filename, db_reader, table_node_names,
                                                          start_index=0, end_index=number_of_rows)
 
         return track_data
