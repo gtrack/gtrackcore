@@ -112,4 +112,5 @@ class DatabaseReader(Database):
         super(DatabaseReader, self).__init__(h5_filename)
 
     def open(self):
-        super(DatabaseReader, self).open(mode='r', lock_type=portalocker.LOCK_SH)
+        if (self._h5_file is not None and not self._h5_file.isopen) or self._h5_file is None:
+            super(DatabaseReader, self).open(mode='r', lock_type=portalocker.LOCK_SH)
