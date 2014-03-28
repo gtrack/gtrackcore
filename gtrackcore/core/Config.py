@@ -21,17 +21,22 @@ class Config(object):
     def initialize(cls, configFileName=None, dataDir=None):
         cls._INITIALIZED = True
 
-        gtrackcore_dir = os.environ.get('GTRACKCORE_DIR')
+        if dataDir is not None:
+            dataDir = '/'.join(dataDir.split('/')[:-1])
+            gtrackcore_dir = dataDir
 
-        if not gtrackcore_dir:
-            if os.environ.get('HOME') is not None:
-                print 'GTRACKCORE_DIR env should be defined. Using %s as data directory' % os.environ.get('HOME')
-                gtrackcore_dir = os.environ.get('HOME')
-            else:
-                raise EnvironmentError('Neither env GTRACKCORE_DIR nor HOME is set')
+        else:
+            gtrackcore_dir = os.environ.get('GTRACKCORE_DIR')
 
-        if gtrackcore_dir[-1] == '/':
-            gtrackcore_dir = gtrackcore_dir[:-1]
+            if not gtrackcore_dir:
+                if os.environ.get('HOME') is not None:
+                    print 'GTRACKCORE_DIR env should be defined. Using %s as data directory' % os.environ.get('HOME')
+                    gtrackcore_dir = os.environ.get('HOME')
+                else:
+                    raise EnvironmentError('Neither env GTRACKCORE_DIR nor HOME is set')
+
+            if gtrackcore_dir[-1] == '/':
+                gtrackcore_dir = gtrackcore_dir[:-1]
 
         data_dir = os.sep.join([gtrackcore_dir, 'gtrackcore_data'])
         config_filename = os.sep.join([gtrackcore_dir, 'gtrackcore_config'])
