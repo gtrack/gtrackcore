@@ -56,6 +56,7 @@ class Profiler:
     #    
     #    print str(HtmlCore().link('Call graph based on profile (id=%s)' % ':'.join(id), pngFile.getURL()))
 
+
 def profile_track_preprocessor(genome, track_name, stat_dir=None):
     from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
 
@@ -63,8 +64,10 @@ def profile_track_preprocessor(genome, track_name, stat_dir=None):
     profiler.run('PreProcessAllTracksJob(genome, track_name, username=\'\', mode=\'Real\').process()', globals(), locals())
     profiler.printStats(graphDir=stat_dir)
 
+
 def profile_operation(operation, track_name1, allow_overlaps1, genome_regions, track_name2=None, allow_overlaps2=None):
-    from gtrackcore.tools.TrackTools import *
+    from gtrackcore.tools.TrackTools import count_elements, sum_of_values, \
+        sum_of_weights, sum_of_weights_iter, coverage, overlap_iter, overlap
 
     if track_name1 is not None and track_name2 is not None:
         run_str = operation + '(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions)'
