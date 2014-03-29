@@ -15,5 +15,10 @@ def close_pytables_files():
             for fileh in handlers:
                 fileh.close()
     else:
-        for file in tables.file._open_files.values():
+        filenames = []
+        for filename, file in tables.file._open_files.items():
             file.close()
+            filenames.append(filename)
+        for filename in filenames:
+            if filename in tables.file._open_files:
+                del tables.file._open_files[filename]
