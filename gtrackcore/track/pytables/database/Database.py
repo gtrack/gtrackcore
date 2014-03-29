@@ -109,6 +109,17 @@ class DatabaseWriter(Database):
 
 class DatabaseReader(Database):
 
+    def __new__(cls, h5_filename):
+        if not hasattr(cls, '_db_readers'):
+            cls._db_readers = {}
+
+        try:
+            return cls._db_readers[h5_filename]
+        except KeyError:
+            new_db_readers = object.__new__(cls, h5_filename)
+            cls._db_readers[h5_filename] = new_db_readers
+            return new_db_readers
+
     def __init__(self, h5_filename):
         if not hasattr(self, '_h5_file'):
             super(DatabaseReader, self).__init__(h5_filename)
