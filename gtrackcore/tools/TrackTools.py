@@ -159,11 +159,16 @@ def k_highest_values(track_view, k):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print 'usage: TrackTools <tool name>'
+        sys.exit(1)
 
     operation = sys.argv[1]
 
     chromosomes = (GenomeRegion('hg19', chr, 0, len)
                       for chr, len in GenomeInfo.GENOMES['hg19']['size'].iteritems())
+
+    oper_func = lambda: 'N/A'
 
     if operation.startswith('overlap'):
         tn1 = 'Sequence:Repeating elements'.split(':')
@@ -172,8 +177,6 @@ if __name__ == '__main__':
             oper_func = partial(overlap_iter, tn1, True, tn2, True, chromosomes)
         elif operation == 'overlap':
             oper_func = partial(overlap, tn1, True, tn2, True, chromosomes)
-        else:
-            oper_func = lambda x: None
 
     elif operation == 'count':
         tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
@@ -183,4 +186,5 @@ if __name__ == '__main__':
     start = time()
     res = oper_func()
     end = time()
-    print 'Res', res, '\ntime used:', end - start
+    print 'Result for', operation + ':', res
+    print 'Time used:', end - start
