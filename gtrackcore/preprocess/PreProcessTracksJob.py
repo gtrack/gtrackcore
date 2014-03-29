@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 #import pyximport; pyximport.install()
+
 import gtrackcore
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
@@ -22,6 +23,7 @@ from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, pretty
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
 from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning
+
 
 class PreProcessTracksJob(object):
     VERSION = '1.0'

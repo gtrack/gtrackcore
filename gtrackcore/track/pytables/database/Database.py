@@ -3,6 +3,7 @@ import os
 
 import tables
 from tables.exceptions import ClosedFileError
+import gtrackcore.preprocess
 
 from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CommonConstants import GTRACKCORE_FORMAT_SUFFIX
@@ -109,8 +110,13 @@ class DatabaseWriter(Database):
 class DatabaseReader(Database):
 
     def __init__(self, h5_filename):
-        super(DatabaseReader, self).__init__(h5_filename)
+        if not hasattr(self, '_h5_file'):
+            super(DatabaseReader, self).__init__(h5_filename)
 
     def open(self):
-        if (self._h5_file is not None and not self._h5_file.isopen) or self._h5_file is None:
+        if self._h5_file is None or not self._h5_file.isopen:
             super(DatabaseReader, self).open(mode='r', lock_type=portalocker.LOCK_SH)
+
+    def close(self):
+        if gtrackcore.preprocess.is_preprocessing:
+            super(DatabaseReader, self).close()
