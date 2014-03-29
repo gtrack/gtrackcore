@@ -1,5 +1,7 @@
+from functools import partial
 import math
 import numpy
+import sys
 from gtrackcore.metadata import GenomeInfo
 
 from gtrackcore.tools.ToolExceptions import OperationNotSupportedError
@@ -157,14 +159,28 @@ def k_highest_values(track_view, k):
 
 
 if __name__ == '__main__':
-    tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
+
+    operation = sys.argv[1]
+
+    chromosomes = (GenomeRegion('hg19', chr, 0, len)
+                      for chr, len in GenomeInfo.GENOMES['hg19']['size'].iteritems())
+
+    if operation.startswith('overlap'):
+        tn1 = 'Sequence:Repeating elements'.split(':')
+        tn2 = 'Chromatin:Roadmap Epigenomics:H3K27me3:ENCODE_wgEncodeBroadHistoneGm12878H3k27me3StdPk'.split(':')
+        if operation == 'overlap_iter':
+            oper_func = partial(overlap_iter, tn1, True, tn2, True, chromosomes)
+        elif operation == 'overlap':
+            oper_func = partial(overlap, tn1, True, tn2, True, chromosomes)
+        else:
+            oper_func = lambda x: None
+
+    elif operation == 'count':
+        tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
+        oper_func = partial(count_elements, tn, False, chromosomes)
+
     from time import time
-
     start = time()
-
-    count = count_elements(tn, False, (GenomeRegion('hg19', chr, 0, len)
-                                       for chr, len in GenomeInfo.GENOMES['hg19']['size'].iteritems()))
-
+    res = oper_func()
     end = time()
-
-    print 'res:', count, '\ntime used:', end - start
+    print 'Res', res, '\ntime used:', end - start
