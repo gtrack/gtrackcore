@@ -183,6 +183,7 @@ if __name__ == '__main__':
         oper_func = partial(count_elements, tn, False, chromosomes)
 
     from time import time
+    print 'Running', operation + '...'
     start = time()
     res = oper_func()
     end = time()
