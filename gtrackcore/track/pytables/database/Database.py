@@ -15,7 +15,7 @@ class Database(object):
 
     def __init__(self, h5_filename):
         self._h5_filename = h5_filename
-        self._db_name = convert_to_natural_naming(h5_filename.split(os.sep)[-1][:len(GTRACKCORE_FORMAT_SUFFIX)])
+        self._db_name = h5_filename.split(os.sep)[-1][:-len(GTRACKCORE_FORMAT_SUFFIX)]
         self._h5_file = None
         self._cached_nodes = {}
 
