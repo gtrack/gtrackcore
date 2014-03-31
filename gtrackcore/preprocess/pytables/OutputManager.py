@@ -20,9 +20,9 @@ class OutputManager(object):
         self._table = None
         self._insert_counter = 0
 
-        self._create_single_track_database(track_name, allow_overlaps, ge_source_manager)
+        self._create_track_table_database(track_name, allow_overlaps, ge_source_manager)
 
-    def _create_single_track_database(self, track_name, allow_overlaps, ge_source_manager):
+    def _create_track_table_database(self, track_name, allow_overlaps, ge_source_manager):
         new_table_description = self._create_track_table_description(ge_source_manager)
 
         self._db_writer = DatabaseWriter(self._database_filename)
@@ -36,18 +36,18 @@ class OutputManager(object):
             assert set(new_table_description.keys()) == set(old_table_description.keys())
 
             if 'val' in new_table_description.keys() or 'edges' in new_table_description.keys():
-                self._update_table_description(old_table_description, new_table_description)
+                new_column_descriptions = self._get_new_column_descriptions(old_table_description, new_table_description)
+                if len(new_column_descriptions) > 0:  # need to create new table and copy content from old
+                    for column_name, column_description in new_column_descriptions.iteritems():
+                        new_table_description[column_name] = column_description
+                    self._db_writer.close()
+                    DatabaseUtils.resize_table_columns(self._database_filename, table_node_names,
+                                                       new_column_descriptions, ge_source_manager.getNumElements())
+                    self._db_writer.open()
         else:
             self._db_writer.create_table(table_node_names, new_table_description, ge_source_manager.getNumElements())
 
         self._table = self._db_writer.get_table(table_node_names)
-
-    @classmethod
-    def _update_table_description(cls, old_table_description, new_table_description):
-            new_column_descriptions = cls._get_new_column_descriptions(old_table_description, new_table_description)
-            if len(new_column_descriptions) > 0:  # need to create new table and copy content from old
-                for column_name, description in new_column_descriptions.iteritems():
-                    new_table_description[column_name] = description
 
     @classmethod
     def _should_use_new_shape(cls, old_shape, new_shape):
@@ -56,6 +56,20 @@ class OutputManager(object):
     @classmethod
     def _get_new_column_descriptions(cls, old_table_description, new_table_description):
         new_descriptions = {}
+        if 'id' in old_table_description:
+            updated_id_itemsize = cls.update_id_itemsize_if_needed(old_table_description, new_table_description)
+        else:
+            updated_id_itemsize = {}
+
+        updated_shapes = cls.update_shapes_if_needed(old_table_description, new_table_description)
+        new_descriptions.update(updated_shapes)
+        new_descriptions.update(updated_id_itemsize)
+
+        return new_descriptions
+
+    @classmethod
+    def update_shapes_if_needed(cls, old_table_description, new_table_description):
+        column_descriptions = {}
 
         for column_name in ('val', 'edges', 'weights'):
             if column_name in old_table_description:
@@ -66,12 +80,23 @@ class OutputManager(object):
                 if cls._should_use_new_shape(old_val_shape, result_val_shape):
                     dtype = old_table_description[column_name].type
                     if dtype == 'string':
-                        new_descriptions[column_name] = tables.StringCol(old_table_description[column_name].itemsize,
-                                                                         shape=result_val_shape)
+                        column_descriptions[column_name] = tables.StringCol(new_table_description[column_name].itemsize,
+                                                                            shape=result_val_shape)
                     else:
-                        new_descriptions[column_name] = tables.Col.from_type(dtype, shape=result_val_shape)
+                        column_descriptions[column_name] = tables.Col.from_type(dtype, shape=result_val_shape)
 
-        return new_descriptions
+        return column_descriptions
+
+    @classmethod
+    def update_id_itemsize_if_needed(cls, old_table_description, new_table_description):
+        column_description = {}
+
+        old_itemsize = old_table_description['id'].itemsize
+        new_itemsize = new_table_description['id'].itemsize
+        if new_itemsize > old_itemsize:
+            column_description['id'] = tables.StringCol(new_itemsize)
+
+        return column_description
 
     def _create_track_table_description(self, ge_source_manager):
         max_string_lengths = self._get_max_str_lens_over_all_chromosomes(ge_source_manager)

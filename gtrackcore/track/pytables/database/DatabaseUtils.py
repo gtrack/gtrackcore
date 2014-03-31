@@ -52,7 +52,7 @@ class DatabaseUtils(object):
             del table_description['chr']
 
         copy_func = partial(cls.copy_content_from_old_to_new_table_in_sorted_order, old_table, sort_order=sort_order)
-        cls.copy_from_old_to_new_table(db_writer, old_table, node_names, table_description, 0, copy_func)
+        cls.update_new_table(db_writer, old_table, node_names, table_description, 0, copy_func)
 
         db_writer.close()
 
@@ -67,12 +67,12 @@ class DatabaseUtils(object):
             table_description[column_name] = description
 
         copy_func = partial(cls.copy_content_from_old_to_new_table, old_table)
-        cls.copy_from_old_to_new_table(node_names, table_description, expected_new_rows, copy_func)
+        cls.update_new_table(db_writer, old_table, node_names, table_description, expected_new_rows, copy_func)
 
         db_writer.close()
 
     @classmethod
-    def copy_from_old_to_new_table(cls, db_writer, old_table, node_names, table_description, expected_new_rows, copy_func):
+    def update_new_table(cls, db_writer, old_table, node_names, table_description, expected_new_rows, copy_func):
         old_table.rename(old_table.name + '_tmp')
         old_table_node_names = node_names[:-1]
         old_table_node_names.append(old_table.name)
@@ -97,7 +97,7 @@ class DatabaseUtils(object):
     @classmethod
     def copy_content_from_old_to_new_table(cls, old_table, new_table):
         new_row = new_table.row
-        for i, old_row in enumerate(old_table.iterrows()):
+        for flush_counter, old_row in enumerate(old_table.iterrows()):
             for column_name in old_table.colnames:
                 if isinstance(old_row[column_name], numpy.ndarray):
                     new_row[column_name] = insert_into_array_of_larger_shape(old_row[column_name],
@@ -105,7 +105,7 @@ class DatabaseUtils(object):
                 else:
                     new_row[column_name] = old_row[column_name]
             new_row.append()
-            cls.flush(new_table, i)
+            cls.flush(new_table, flush_counter)
         new_table.flush()
 
     @classmethod
