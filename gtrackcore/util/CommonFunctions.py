@@ -641,7 +641,7 @@ def convert_to_natural_naming(name):
     is_list_type = isinstance(name, list)
     if not is_list_type:
         name = [name]
-    converted_name = [re.sub(r'(\d)', r'_\g<1>', re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part))).lower() for part in name]
+    converted_name = [re.sub(r'(^\d)', r'_\g<1>', re.sub(r'\W*', '', re.sub(r'(\s|-)+', '_', part))).lower() for part in name]
     if is_list_type:
         return converted_name
     else:
