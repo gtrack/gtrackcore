@@ -2,6 +2,7 @@ from functools import partial
 import math
 import numpy
 import sys
+
 from gtrackcore_memmap.metadata import GenomeInfo
 from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
 

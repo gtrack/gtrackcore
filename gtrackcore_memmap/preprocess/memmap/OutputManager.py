@@ -13,6 +13,8 @@ class OutputManager(object):
             return OutputManagerSeveralChrs.__new__(OutputManagerSeveralChrs, genome, trackName, \
                                                     allowOverlaps, geSourceManager)
 
+
+
     def _createOutputDirectory(self, genome, chr, trackName, allowOverlaps, geSourceManager):
         dirPath = createDirPath(trackName, genome, chr, allowOverlaps)
         
