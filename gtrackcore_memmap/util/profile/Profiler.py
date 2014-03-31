@@ -31,7 +31,7 @@ class Profiler:
         print Profiler.PROFILE_FOOTER
         
         if graphDir:
-            from gtrackcore.third_party.PstatsUtil import OverheadStats
+            from gtrackcore_memmap.third_party.PstatsUtil import OverheadStats
             import os
             id = str(id) if id else ''
             statsFn = os.path.join(graphDir, id + '_prof.stats')

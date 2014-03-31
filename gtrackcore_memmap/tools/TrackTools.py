@@ -1,5 +1,9 @@
+from functools import partial
 import math
 import numpy
+import sys
+from gtrackcore_memmap.metadata import GenomeInfo
+from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
 
 from gtrackcore_memmap.track.core.Track import Track
 from gtrackcore_memmap.track.format.TrackFormat import TrackFormatReq
@@ -136,4 +140,33 @@ def overlap(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_r
 
 
 if __name__ == '__main__':
-    pass
+    if len(sys.argv) < 2:
+        print 'usage: TrackTools <tool name>'
+        sys.exit(1)
+
+    operation = sys.argv[1]
+
+    chromosomes = (GenomeRegion('hg19', chr, 0, len)
+                   for chr, len in GenomeInfo.GENOMES['hg19']['size'].iteritems())
+
+    oper_func = lambda: 'N/A'
+
+    if operation.startswith('overlap'):
+        tn1 = 'Sequence:Repeating elements'.split(':')
+        tn2 = 'Chromatin:Roadmap Epigenomics:H3K27me3:ENCODE_wgEncodeBroadHistoneGm12878H3k27me3StdPk'.split(':')
+        if operation == 'overlap_iter':
+            oper_func = partial(overlap_iter, tn1, True, tn2, True, chromosomes)
+        elif operation == 'overlap':
+            oper_func = partial(overlap, tn1, True, tn2, True, chromosomes)
+
+    elif operation == 'count':
+        tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
+        oper_func = partial(count_elements, tn, False, chromosomes)
+
+    from time import time
+    print 'Running', operation + '...'
+    start = time()
+    res = oper_func()
+    end = time()
+    print 'Result for', operation + ':', res
+    print 'Time used:', end - start
