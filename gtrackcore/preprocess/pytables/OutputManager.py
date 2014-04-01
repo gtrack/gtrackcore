@@ -37,8 +37,8 @@ class OutputManager(object):
             updated_column_descriptions = table_describer.get_updated_column_descriptions(old_table_description, new_table_description)
 
             if len(updated_column_descriptions) > 0:  # need to create new table and copy content from old
-                for extra_col_names, column_description in updated_column_descriptions.iteritems():
-                    new_table_description[extra_col_names] = column_description
+                for column_name, column_description in updated_column_descriptions.iteritems():
+                    new_table_description[column_name] = column_description
                 self._db_writer.close()
                 DatabaseUtils.resize_table_columns(self._database_filename, table_node_names,
                                                    updated_column_descriptions, ge_source_manager.getNumElements())
