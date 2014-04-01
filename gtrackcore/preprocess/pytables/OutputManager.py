@@ -1,13 +1,11 @@
 import os
-from itertools import izip_longest
 from stat import S_IRWXU, S_IRWXG, S_IROTH
 
 import numpy
-import tables
 
+from gtrackcore.preprocess.pytables.TableDescriber import TableDescriber
 from gtrackcore.track.pytables.database.Database import DatabaseWriter
 from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
-from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.pytables.CommonNumpyFunctions import insert_into_array_of_larger_shape
 
 
@@ -23,7 +21,8 @@ class OutputManager(object):
         self._create_track_table_database(track_name, allow_overlaps, ge_source_manager)
 
     def _create_track_table_database(self, track_name, allow_overlaps, ge_source_manager):
-        new_table_description = self._create_track_table_description(ge_source_manager)
+        table_describer = TableDescriber(ge_source_manager, self._track_format)
+        new_table_description = table_describer.create_new_table_description()
 
         self._db_writer = DatabaseWriter(self._database_filename)
         self._db_writer.open()
@@ -34,131 +33,20 @@ class OutputManager(object):
             old_table_description = old_table.coldescrs
 
             assert set(new_table_description.keys()) == set(old_table_description.keys())
+            
+            updated_column_descriptions = table_describer.get_updated_column_descriptions(old_table_description, new_table_description)
 
-            if 'val' in new_table_description.keys() or 'edges' in new_table_description.keys():
-                new_column_descriptions = self._get_new_column_descriptions(old_table_description, new_table_description)
-                if len(new_column_descriptions) > 0:  # need to create new table and copy content from old
-                    for column_name, column_description in new_column_descriptions.iteritems():
-                        new_table_description[column_name] = column_description
-                    self._db_writer.close()
-                    DatabaseUtils.resize_table_columns(self._database_filename, table_node_names,
-                                                       new_column_descriptions, ge_source_manager.getNumElements())
-                    self._db_writer.open()
+            if len(updated_column_descriptions) > 0:  # need to create new table and copy content from old
+                for extra_col_names, column_description in updated_column_descriptions.iteritems():
+                    new_table_description[extra_col_names] = column_description
+                self._db_writer.close()
+                DatabaseUtils.resize_table_columns(self._database_filename, table_node_names,
+                                                   updated_column_descriptions, ge_source_manager.getNumElements())
+                self._db_writer.open()
         else:
             self._db_writer.create_table(table_node_names, new_table_description, ge_source_manager.getNumElements())
 
         self._table = self._db_writer.get_table(table_node_names)
-
-    @classmethod
-    def _should_use_new_shape(cls, old_shape, new_shape):
-        return any([x < y for x, y in izip_longest(old_shape, new_shape)])
-
-    @classmethod
-    def _get_new_column_descriptions(cls, old_table_description, new_table_description):
-        new_descriptions = {}
-        if 'id' in old_table_description:
-            updated_id_itemsize = cls.update_id_itemsize_if_needed(old_table_description, new_table_description)
-        else:
-            updated_id_itemsize = {}
-
-        updated_shapes = cls.update_shapes_if_needed(old_table_description, new_table_description)
-        new_descriptions.update(updated_shapes)
-        new_descriptions.update(updated_id_itemsize)
-
-        return new_descriptions
-
-    @classmethod
-    def update_shapes_if_needed(cls, old_table_description, new_table_description):
-        column_descriptions = {}
-
-        for column_name in ('val', 'edges', 'weights'):
-            if column_name in old_table_description:
-                old_val_shape = old_table_description[column_name].shape
-                new_val_shape = new_table_description[column_name].shape
-                result_val_shape = tuple([max(x, y) for x, y in izip_longest(old_val_shape, new_val_shape)])
-
-                if cls._should_use_new_shape(old_val_shape, result_val_shape):
-                    dtype = old_table_description[column_name].type
-                    if dtype == 'string':
-                        column_descriptions[column_name] = tables.StringCol(new_table_description[column_name].itemsize,
-                                                                            shape=result_val_shape)
-                    else:
-                        column_descriptions[column_name] = tables.Col.from_type(dtype, shape=result_val_shape)
-
-        return column_descriptions
-
-    @classmethod
-    def update_id_itemsize_if_needed(cls, old_table_description, new_table_description):
-        column_description = {}
-
-        old_itemsize = old_table_description['id'].itemsize
-        new_itemsize = new_table_description['id'].itemsize
-        if new_itemsize > old_itemsize:
-            column_description['id'] = tables.StringCol(new_itemsize)
-
-        return column_description
-
-    def _create_track_table_description(self, ge_source_manager):
-        max_string_lengths = self._get_max_str_lens_over_all_chromosomes(ge_source_manager)
-        max_num_edges = self._get_max_num_edges_over_all_chromosomes(ge_source_manager)
-        max_chr_len = ge_source_manager.getMaxChrStrLen()
-
-        data_type_dict = {}
-        if not self._track_format.reprIsDense():
-            data_type_dict['chr'] = tables.StringCol(max_chr_len)
-
-        for column in ge_source_manager.getPrefixList():
-            if column in ['start', 'end']:
-                data_type_dict[column] = tables.Int32Col()
-            elif column == 'strand':
-                data_type_dict[column] = tables.Int8Col()
-            elif column == 'id':
-                data_type_dict[column] = tables.StringCol(max_string_lengths[column])
-            elif column == 'edges':
-                shape = self._get_shape(max_num_edges, 1)
-                data_type_dict[column] = tables.StringCol(max_string_lengths[column], shape=shape)
-            elif column in ['val', 'weights']:
-                if column == 'val':
-                    data_type = ge_source_manager.getValDataType()
-                    val_dim = ge_source_manager.getValDim()
-                    shape = val_dim if val_dim > 1 else tuple()
-                elif column == 'weights':
-                    data_type = ge_source_manager.getEdgeWeightDataType()
-                    data_type_dim = ge_source_manager.getEdgeWeightDim()
-                    shape = self._get_shape(max_num_edges, data_type_dim)
-
-                data_type = 'S' if data_type.startswith('S') else data_type
-
-                data_type_dict[column] = {
-                    'int8': tables.Int8Col(shape=shape, dflt=BINARY_MISSING_VAL),
-                    'int32': tables.Int32Col(shape=shape, dflt=BINARY_MISSING_VAL),
-                    'float32': tables.Float32Col(shape=shape, dflt=numpy.nan),
-                    'float64': tables.Float64Col(shape=shape, dflt=numpy.nan),
-                    'float128': tables.Float128Col(shape=shape, dflt=numpy.nan),
-                    'S': tables.StringCol(max(1, max_string_lengths[column]), shape=shape, dflt='')
-                }.get(data_type, tables.Float64Col(shape=shape, dflt=numpy.nan))  # Defaults to Float64Col
-            else:
-                data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]), dflt='')
-
-        return data_type_dict
-
-    @staticmethod
-    def _get_shape(max_num_edges, data_type_dim):
-        return tuple([max(1, max_num_edges)] + ([data_type_dim] if data_type_dim > 1 else []))
-
-    @staticmethod
-    def _get_max_str_lens_over_all_chromosomes(ge_source_manager):
-        max_str_lens_dictionaries = [ge_source_manager.getMaxStrLensForChr(chr)
-                                     for chr in ge_source_manager.getAllChrs()]
-        from collections import Counter
-        from operator import or_
-
-        max_string_lengths = reduce(or_, map(Counter, max_str_lens_dictionaries))
-        return max_string_lengths
-
-    @staticmethod
-    def _get_max_num_edges_over_all_chromosomes(ge_source_manager):
-        return max(ge_source_manager.getMaxNumEdgesForChr(chr) for chr in ge_source_manager.getAllChrs())
 
     #Todo: refactor...
     def _add_element_as_row(self, genome_element):
