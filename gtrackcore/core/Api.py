@@ -39,6 +39,18 @@ def importFile(fileName, genome, trackName):
     from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
     PreProcessAllTracksJob(genome, trackName).process()
 
+
+def preprocessTrack(genome, track_name, force=False):
+    track_name = _convertTrackName(track_name)
+
+    if force:
+        from gtrackcore.metadata.TrackInfo import TrackInfo
+        TrackInfo(genome, track_name).resetTimeOfPreProcessing()
+
+    from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
+    PreProcessAllTracksJob(genome, track_name).process()
+
+
 #TODO: Confirm docstring
 def _convertTrackName(trackName):
     """ ?!
