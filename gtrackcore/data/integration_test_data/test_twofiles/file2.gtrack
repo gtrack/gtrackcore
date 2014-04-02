@@ -1,0 +1,9 @@
+##track type: linked valued segments
+##value type: category
+##value dimension: vector
+##edge weight type: category
+##edge weight dimension: vector
+##edge weights: true
+###seqid	start	end	value	id	edges	extra
+chrM	100	200	a,ab,abcd	B	A=a,ab;CC=a,abc	ab
+chrM	200	300	abcd,ab,a	CC	.	abc

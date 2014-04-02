@@ -1,41 +1,56 @@
 #!/usr/bin/env python
 import os
+import shutil
 import unittest
 
-from gtrackcore.core.Config import Config
 from gtrackcore.extract.fileformats.GtrackComposer import StdGtrackComposer
 from gtrackcore.input.adapters.TrackGenomeElementSource import FullTrackGenomeElementSource
 from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
-from gtrackcore.util.CommonFunctions import get_dir_path
+from gtrackcore.test import get_data_path
+from gtrackcore.util.CommonFunctions import createOrigPath
 
 
 class TestTrackPreProcessorTwoFiles(unittest.TestCase):
     def setUp(self):
         self.genome = 'testgenome'
-        self.track_name = ['integration_test_data', 'test_twofiles']
-        self.dir_path = get_dir_path(self.genome, self.track_name, base_path=Config.ORIG_DATA_PATH)
 
     def tearDown(self):
         pass
 
-    @unittest.skip
+    def _common_setup(self, track_name):
+        self.original_dir_path = createOrigPath(self.genome, track_name)
+        integration_test_data_dir_path = os.sep.join([get_data_path()] + track_name)
+
+        # ensure directories exists
+        if not os.path.exists(self.original_dir_path):
+            os.makedirs(self.original_dir_path)
+        assert os.path.isdir(integration_test_data_dir_path)
+        assert os.path.isdir(self.original_dir_path)
+
+        # copy test files to test data directory
+        for file_name in os.listdir(integration_test_data_dir_path):
+            full_file_name = os.path.join(integration_test_data_dir_path, file_name)
+            if os.path.isfile(full_file_name):
+                shutil.copy(full_file_name, self.original_dir_path)
+
     def test_preprocessor_with_two_files(self):
-        assert os.path.exists(self.dir_path)
-
-        from gtrackcore.metadata.TrackInfo import TrackInfo
-        TrackInfo(self.genome, self.track_name).resetTimeOfPreProcessing()
-
-        PreProcessAllTracksJob(self.genome, self.track_name).process()
+        track_name = ['integration_test_data', 'test_twofiles']
+        self._common_setup(track_name)
 
         before_preprocessing = []
-        for filename in (os.path.join(self.dir_path, fn) for fn in os.listdir(self.dir_path)):
-            for line in open(filename).readlines():
-                if not line.startswith('#'):
+        for file_path in (os.path.join(self.original_dir_path, fn) for fn in os.listdir(self.original_dir_path)):
+            for line in open(file_path).readlines():
+                if not line.startswith('#') and line != '':
                     before_preprocessing.append(line.rstrip())
 
-        after_preprocessing = [line.rstrip() for line in StdGtrackComposer(FullTrackGenomeElementSource(
-                               self.genome, self.track_name, allowOverlaps=True)).returnComposed().split('\n')
-                               if not line.startswith('#') and line != '']
+        PreProcessAllTracksJob(self.genome, track_name).process()
+
+        file_content = StdGtrackComposer(FullTrackGenomeElementSource(
+            self.genome, track_name, allowOverlaps=True)).returnComposed()
+        after_preprocessing = []
+        for line in (line.rstrip() for line in file_content.split('\n')):
+            if not line.startswith('#') and line != '':
+                after_preprocessing.append(line)
 
         assert set(before_preprocessing) == set(after_preprocessing), \
             '\nBefore preprocessing:\n%s\nis not the same as after preprocessing:\n%s' % \
