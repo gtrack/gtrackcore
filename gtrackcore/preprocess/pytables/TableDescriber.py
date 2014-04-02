@@ -1,13 +1,15 @@
 from itertools import izip_longest
-import numpy
+
 import tables
-from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL, RESERVED_PREFIXES
+
+from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
+from gtrackcore.util.pytables.CommonNumpyFunctions import get_default_numpy_value
 
 
 class TableDescriber(object):
 
-    def __init__(self, ge_source_maanger, track_format):
-        self._ge_source_manager = ge_source_maanger
+    def __init__(self, ge_source_manager, track_format):
+        self._ge_source_manager = ge_source_manager
         self._track_format = track_format
 
     def create_new_table_description(self):
@@ -42,15 +44,15 @@ class TableDescriber(object):
                 data_type = 'S' if data_type.startswith('S') else data_type
 
                 data_type_dict[column] = {
-                    'int8': tables.Int8Col(shape=shape, dflt=BINARY_MISSING_VAL),
-                    'int32': tables.Int32Col(shape=shape, dflt=BINARY_MISSING_VAL),
-                    'float32': tables.Float32Col(shape=shape, dflt=numpy.nan),
-                    'float64': tables.Float64Col(shape=shape, dflt=numpy.nan),
-                    'float128': tables.Float128Col(shape=shape, dflt=numpy.nan),
-                    'S': tables.StringCol(max(1, max_string_lengths[column]), shape=shape, dflt='')
-                }.get(data_type, tables.Float64Col(shape=shape, dflt=numpy.nan))  # Defaults to Float64Col
+                    'int8': tables.Int8Col(shape=shape, dflt=get_default_numpy_value('int')),
+                    'int32': tables.Int32Col(shape=shape, dflt=get_default_numpy_value('int')),
+                    'float32': tables.Float32Col(shape=shape, dflt=get_default_numpy_value('float')),
+                    'float64': tables.Float64Col(shape=shape, dflt=get_default_numpy_value('float')),
+                    'float128': tables.Float128Col(shape=shape, dflt=get_default_numpy_value('float')),
+                    'S': tables.StringCol(max(1, max_string_lengths[column]), shape=shape, dflt=get_default_numpy_value('str'))
+                }.get(data_type, tables.Float64Col(shape=shape, dflt=get_default_numpy_value('float')))  # Defaults to Float64Col
             else:
-                data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]), dflt='')
+                data_type_dict[column] = tables.StringCol(max(2, max_string_lengths[column]), dflt=get_default_numpy_value('str'))
 
         return data_type_dict
 
