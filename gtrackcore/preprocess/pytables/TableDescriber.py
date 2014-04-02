@@ -57,7 +57,7 @@ class TableDescriber(object):
     def get_updated_column_descriptions(self, old_table_description, new_table_description):
         new_column_descriptions = {}
         columns = [extra_col_names for extra_col_names in new_table_description if extra_col_names not in RESERVED_PREFIXES] + \
-                  [column_name for column_name in ('id', 'val', 'edges') if column_name in new_table_description]
+                  [column_name for column_name in ('id', 'val', 'edges', 'weights') if column_name in new_table_description]
 
         if len(columns) > 0:
             new_column_descriptions = self._get_new_column_descriptions(old_table_description,
@@ -88,6 +88,7 @@ class TableDescriber(object):
         itemsize = None
         shape = None
         for column_name in columns:
+            assert column_name in new_table_description
             old_column_description = old_table_description[column_name]
             new_column_description = new_table_description[column_name]
             dtype = old_table_description[column_name].type
