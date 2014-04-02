@@ -52,7 +52,7 @@ class OutputManager(object):
     def _add_element_as_row(self, genome_element):
         row = self._table.row
         for column in self._table.colnames:
-            if column in genome_element.__dict__ and column != 'extra':
+            if column in genome_element.__dict__:
                 if column in ['edges', 'weights']:
                     ge_len = sum(1 for _ in genome_element.__dict__[column])
                     if ge_len >= 1:
