@@ -45,16 +45,17 @@ class TestTrackPreProcessorTwoFiles(unittest.TestCase):
 
         PreProcessAllTracksJob(self.genome, track_name).process()
 
-        file_content = StdGtrackComposer(FullTrackGenomeElementSource(
-            self.genome, track_name, allowOverlaps=True)).returnComposed()
-        after_preprocessing = []
-        for line in (line.rstrip() for line in file_content.split('\n')):
-            if not line.startswith('#') and line != '':
-                after_preprocessing.append(line)
+        for allow_overlaps in [True, False]:
+            file_content = StdGtrackComposer(FullTrackGenomeElementSource(
+                self.genome, track_name, allowOverlaps=allow_overlaps)).returnComposed()
+            after_preprocessing = []
+            for line in (line.rstrip() for line in file_content.split('\n')):
+                if not line.startswith('#') and line != '':
+                    after_preprocessing.append(line)
 
-        assert set(before_preprocessing) == set(after_preprocessing), \
-            '\nBefore preprocessing:\n%s\nis not the same as after preprocessing:\n%s' % \
-            ('\n'.join(sorted(before_preprocessing)), '\n'.join(sorted(after_preprocessing)))
+            assert set(before_preprocessing) == set(after_preprocessing), \
+                '\nBefore preprocessing:\n%s\nis not the same as after preprocessing (allow overlaps: %s):\n%s' % \
+                ('\n'.join(sorted(before_preprocessing)), allow_overlaps, '\n'.join(sorted(after_preprocessing)))
 
 
 if __name__ == "__main__":
