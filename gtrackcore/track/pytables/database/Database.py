@@ -2,13 +2,13 @@ from abc import abstractmethod, ABCMeta
 import os
 
 import tables
-from tables.exceptions import ClosedFileError
-import gtrackcore.preprocess
+from tables.exceptions import ClosedFileError, NodeError
 
+import gtrackcore.preprocess
 from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CommonConstants import GTRACKCORE_FORMAT_SUFFIX
-from gtrackcore.util.CommonFunctions import convert_to_natural_naming
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
+
 
 class Database(object):
     __metaclass__ = ABCMeta
@@ -97,12 +97,18 @@ class DatabaseWriter(Database):
         self._h5_file.remove_node(group, table_name)
 
     def _create_groups(self, node_names):
-        group = self.get_node(node_names)
-        if group is None:
+        current_groups = '/' + node_names[0]
+        try:
             group = self._h5_file.create_group(self._h5_file.root, node_names[0], node_names[0])
+        except NodeError:
+            group = self._h5_file.get_node(current_groups)
 
-            for node_name in node_names[1:]:
+        for node_name in node_names[1:]:
+            try:
                 group = self._h5_file.create_group(group, node_name, node_name)
+            except NodeError:
+                current_groups += '/' + node_name
+                group = self._h5_file.get_node(current_groups)
 
         return group
 
