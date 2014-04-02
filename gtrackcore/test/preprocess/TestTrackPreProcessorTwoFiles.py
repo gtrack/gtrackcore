@@ -18,6 +18,7 @@ class TestTrackPreProcessorTwoFiles(unittest.TestCase):
     def tearDown(self):
         pass
 
+    @unittest.skip
     def test_preprocessor_with_two_files(self):
         assert os.path.exists(self.dir_path)
 
@@ -39,6 +40,7 @@ class TestTrackPreProcessorTwoFiles(unittest.TestCase):
         assert set(before_preprocessing) == set(after_preprocessing), \
             '\nBefore preprocessing:\n%s\nis not the same as after preprocessing:\n%s' % \
             ('\n'.join(sorted(before_preprocessing)), '\n'.join(sorted(after_preprocessing)))
+
 
 if __name__ == "__main__":
     unittest.main()
