@@ -20,7 +20,7 @@ class BoundingRegionHandler(object):
 
         self._database_filename = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
         self._db_reader = DatabaseReader(self._database_filename)
-        self._br_node_names = DatabaseUtils.get_br_table_node_names(track_name, allow_overlaps)
+        self._br_node_names = DatabaseUtils.get_br_table_node_names(genome, track_name, allow_overlaps)
         self._br_queries = BoundingRegionQueries(self._db_reader, self._br_node_names)
 
     def table_exists(self):

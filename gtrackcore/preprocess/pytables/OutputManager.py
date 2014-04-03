@@ -18,15 +18,15 @@ class OutputManager(object):
         self._table = None
         self._insert_counter = 0
 
-        self._create_track_table_database(track_name, allow_overlaps, ge_source_manager)
+        self._create_track_table_database(genome, track_name, allow_overlaps, ge_source_manager)
 
-    def _create_track_table_database(self, track_name, allow_overlaps, ge_source_manager):
+    def _create_track_table_database(self, genome, track_name, allow_overlaps, ge_source_manager):
         table_describer = TableDescriber(ge_source_manager, self._track_format)
         new_table_description = table_describer.create_new_table_description()
 
         self._db_writer = DatabaseWriter(self._database_filename)
         self._db_writer.open()
-        table_node_names = DatabaseUtils.get_track_table_node_names(track_name, allow_overlaps)
+        table_node_names = DatabaseUtils.get_track_table_node_names(genome, track_name, allow_overlaps)
 
         if self._db_writer.table_exists(table_node_names):
             old_table = self._db_writer.get_table(table_node_names)

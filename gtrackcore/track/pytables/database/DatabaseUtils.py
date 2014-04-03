@@ -15,24 +15,29 @@ class DatabaseUtils(object):
     WITH_OVERLAPS_NODE_NAME = 'with_overlaps'
     NO_OVERLAPS_NODE_NAME = 'no_overlaps'
     BOUNDING_REGIONS_NODE_NAME = 'bounding_regions'
+    TRACKINFO_NODE_NAME = 'trackinfo'
 
     @classmethod
-    def get_base_node_names(cls, track_name):
-        return convert_to_natural_naming(track_name)
+    def get_base_node_names(cls, genome, track_name):
+        return convert_to_natural_naming([genome] + track_name)
 
     @classmethod
-    def _get_table_node_names(cls, track_name, table_name, allow_overlaps):
-        node_names = cls.get_base_node_names(track_name) + convert_to_natural_naming([table_name])
+    def _get_table_node_names(cls, genome, track_name, table_name, allow_overlaps):
+        node_names = cls.get_base_node_names(genome, track_name) + convert_to_natural_naming([table_name])
         node_names.insert(len(node_names)-1, cls.WITH_OVERLAPS_NODE_NAME if allow_overlaps else cls.NO_OVERLAPS_NODE_NAME)
         return node_names
 
     @classmethod
-    def get_track_table_node_names(cls, track_name, allow_overlaps):
-        return cls._get_table_node_names(track_name, track_name[-1], allow_overlaps)
+    def get_track_table_node_names(cls, genome, track_name, allow_overlaps):
+        return cls._get_table_node_names(genome, track_name, track_name[-1], allow_overlaps)
 
     @classmethod
-    def get_br_table_node_names(cls, track_name, allow_overlaps):
-        return cls._get_table_node_names(track_name, cls.BOUNDING_REGIONS_NODE_NAME, allow_overlaps)
+    def get_br_table_node_names(cls, genome, track_name, allow_overlaps):
+        return cls._get_table_node_names(genome, track_name, cls.BOUNDING_REGIONS_NODE_NAME, allow_overlaps)
+
+    @classmethod
+    def get_trackinfo_node_names(cls, genome, track_name):
+        return cls.get_base_node_names(genome, track_name) + [cls.TRACKINFO_NODE_NAME]
 
     @classmethod
     def create_indices(cls, table, cols=None):
@@ -165,9 +170,8 @@ class DatabaseUtils(object):
             db_reader = DatabaseReader(with_overlap_db_path)
             db_reader.open()
 
-            base_node_names = DatabaseUtils.get_base_node_names(track_name)
+            base_node_names = DatabaseUtils.get_base_node_names(genome, track_name)
             with_overlap_base = base_node_names + [DatabaseUtils.WITH_OVERLAPS_NODE_NAME]
-            base_node_names = DatabaseUtils.get_base_node_names(track_name)
 
             with_overlap_base_node = db_reader.get_node(with_overlap_base)
             target_base_node = db_writer.get_node(base_node_names)
@@ -176,7 +180,7 @@ class DatabaseUtils(object):
             db_reader.close()
 
             os.remove(with_overlap_db_path)
-            with_overlap_node_names = DatabaseUtils.get_track_table_node_names(track_name, True)
+            with_overlap_node_names = DatabaseUtils.get_track_table_node_names(genome, track_name, True)
 
             with_overlap_table = db_writer.get_table(with_overlap_node_names)
             cls.create_indices(with_overlap_table)
@@ -184,7 +188,7 @@ class DatabaseUtils(object):
         db_path = cls.get_database_filename(genome, track_name, allow_overlaps=None)
         os.rename(no_overlap_db_path, db_path)
 
-        no_overlap_node_names = cls.get_track_table_node_names(track_name, False)
+        no_overlap_node_names = cls.get_track_table_node_names(genome, track_name, False)
         no_overlaps_table = db_writer.get_table(no_overlap_node_names)
         cls.create_indices(no_overlaps_table)
 

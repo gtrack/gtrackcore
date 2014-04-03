@@ -296,7 +296,7 @@ class TrackView(object):
         if self._should_use_pytables:
             database_filename = DatabaseUtils.get_database_filename(genomeAnchor.genome, track_name, allow_overlaps=allowOverlaps)
             self._db_handler = DatabaseReader(database_filename)
-            self._track_node_names = DatabaseUtils.get_track_table_node_names(self._track_name, self.allowOverlaps)
+            self._track_node_names = DatabaseUtils.get_track_table_node_names(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
             self._handle_points_and_partitions_for_pytables()
 
         self._updateNumListElements()

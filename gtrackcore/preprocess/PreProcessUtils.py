@@ -123,7 +123,7 @@ class PreProcessUtils(object):
 
         db_writer = DatabaseWriter(database_filename)
         db_writer.open()
-        table_node_names = DatabaseUtils.get_track_table_node_names(track_name, allow_overlaps)
+        table_node_names = DatabaseUtils.get_track_table_node_names(genome, track_name, allow_overlaps)
         table = db_writer.get_table(table_node_names)
 
         if 'start' in table.colinstances and 'end' in table.colinstances:
