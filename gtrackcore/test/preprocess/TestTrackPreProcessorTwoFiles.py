@@ -30,25 +30,37 @@ class TestTrackPreProcessorTwoFiles(unittest.TestCase):
         # copy test files to test data directory
         for file_name in os.listdir(integration_test_data_dir_path):
             full_file_name = os.path.join(integration_test_data_dir_path, file_name)
-            if os.path.isfile(full_file_name):
+            if os.path.isfile(full_file_name) and not full_file_name[-1] == '~':
                 shutil.copy(full_file_name, self.original_dir_path)
 
-    def test_preprocessor_with_two_files(self):
-        track_name = ['integration_test_data', 'test_twofiles']
+    def test_linked_valued_segments(self):
+        track_name = ['integration_test_data', 'test_twofiles', 'linked_valued_segments']
         self._common_setup(track_name)
 
+        PreProcessAllTracksJob(self.genome, track_name).process()
+
+        self.assert_equal_content_before_and_after_preprocessing(track_name, allow_overlaps=True)
+
+    @unittest.skip
+    def test_linked_genome_partition(self):
+        track_name = ['integration_test_data', 'test_twofiles', 'linked_genome_partition']
+        self._common_setup(track_name)
+
+        PreProcessAllTracksJob(self.genome, track_name).process()
+
+        self.assert_equal_content_before_and_after_preprocessing(track_name, allow_overlaps=False)
+
+    def assert_equal_content_before_and_after_preprocessing(self, track_name, allow_overlaps=False):
         before_preprocessing = []
         for file_path in (os.path.join(self.original_dir_path, fn) for fn in os.listdir(self.original_dir_path)):
             for line in open(file_path).readlines():
                 if not line.startswith('#') and line != '':
                     before_preprocessing.append(line.rstrip())
 
-        PreProcessAllTracksJob(self.genome, track_name).process()
-
-        file_content = StdGtrackComposer(FullTrackGenomeElementSource(
-            self.genome, track_name, allowOverlaps=True)).returnComposed()
         after_preprocessing = []
-        for line in (line.rstrip() for line in file_content.split('\n')):
+        track_content = StdGtrackComposer(FullTrackGenomeElementSource(
+            self.genome, track_name, allowOverlaps=allow_overlaps)).returnComposed()
+        for line in (line.rstrip() for line in track_content.split('\n')):
             if not line.startswith('#') and line != '':
                 after_preprocessing.append(line)
 

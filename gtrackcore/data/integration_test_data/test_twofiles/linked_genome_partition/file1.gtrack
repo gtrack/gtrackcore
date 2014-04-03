@@ -1,0 +1,7 @@
+##track type: linked genome partition
+##edge weight type: category
+##edge weight dimension: vector
+##edge weights: true
+###end	id	edges	extra
+####genome=testgenome; seqid=chr21; start=100; end=200
+200	A	B=a,ab	a
