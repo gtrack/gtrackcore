@@ -12,19 +12,27 @@ from gtrackcore.util.pytables.DatabaseConstants import FLUSH_LIMIT
 
 class DatabaseUtils(object):
 
+    WITH_OVERLAPS_NODE_NAME = 'with_overlaps'
+    NO_OVERLAPS_NODE_NAME = 'no_overlaps'
+    BOUNDING_REGIONS_NODE_NAME = 'bounding_regions'
+
     @classmethod
-    def _get_node_names(cls, track_name, table_name, allow_overlaps):
-        node_names = convert_to_natural_naming(track_name + [table_name])
-        node_names.insert(0, 'with_overlaps' if allow_overlaps else 'no_overlaps')
+    def get_base_node_names(cls, track_name):
+        return convert_to_natural_naming(track_name)
+
+    @classmethod
+    def _get_table_node_names(cls, track_name, table_name, allow_overlaps):
+        node_names = cls.get_base_node_names(track_name) + convert_to_natural_naming([table_name])
+        node_names.insert(len(node_names)-1, cls.WITH_OVERLAPS_NODE_NAME if allow_overlaps else cls.NO_OVERLAPS_NODE_NAME)
         return node_names
 
     @classmethod
     def get_track_table_node_names(cls, track_name, allow_overlaps):
-        return cls._get_node_names(track_name, track_name[-1], allow_overlaps)
+        return cls._get_table_node_names(track_name, track_name[-1], allow_overlaps)
 
     @classmethod
     def get_br_table_node_names(cls, track_name, allow_overlaps):
-        return cls._get_node_names(track_name, 'bounding_regions', allow_overlaps)
+        return cls._get_table_node_names(track_name, cls.BOUNDING_REGIONS_NODE_NAME, allow_overlaps)
 
     @classmethod
     def create_indices(cls, table, cols=None):
@@ -148,31 +156,36 @@ class DatabaseUtils(object):
         table is being open in append mode. Thus, the tables cannot be in the same file before the
         pre-processing is done.
         """
-        no_overlaps_db_path = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=False)
-        with_overlaps_db_path = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=True)
+        no_overlap_db_path = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=False)
+        with_overlap_db_path = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=True)
 
-        db_writer = DatabaseWriter(no_overlaps_db_path)
+        db_writer = DatabaseWriter(no_overlap_db_path)
         db_writer.open()
-        if os.path.isfile(with_overlaps_db_path):
-            db_reader = DatabaseReader(with_overlaps_db_path)
+        if os.path.isfile(with_overlap_db_path):
+            db_reader = DatabaseReader(with_overlap_db_path)
             db_reader.open()
-            with_overlaps_tree_node = db_reader.get_node(['with_overlaps'])
-            no_overlaps_tree_node = db_writer.get_node([])  # root node
 
-            db_reader.copy_node(with_overlaps_tree_node, target_node=no_overlaps_tree_node, recursive=True)
+            base_node_names = DatabaseUtils.get_base_node_names(track_name)
+            with_overlap_base = base_node_names + [DatabaseUtils.WITH_OVERLAPS_NODE_NAME]
+            base_node_names = DatabaseUtils.get_base_node_names(track_name)
+
+            with_overlap_base_node = db_reader.get_node(with_overlap_base)
+            target_base_node = db_writer.get_node(base_node_names)
+
+            db_reader.copy_node(with_overlap_base_node, target_node=target_base_node, recursive=True)
             db_reader.close()
 
-            os.remove(with_overlaps_db_path)
+            os.remove(with_overlap_db_path)
+            with_overlap_node_names = DatabaseUtils.get_track_table_node_names(track_name, True)
 
-            with_overlaps_node_names = cls.get_track_table_node_names(track_name, True)
-            with_overlaps_table = db_writer.get_table(with_overlaps_node_names)
-            cls.create_indices(with_overlaps_table)
+            with_overlap_table = db_writer.get_table(with_overlap_node_names)
+            cls.create_indices(with_overlap_table)
 
         db_path = cls.get_database_filename(genome, track_name, allow_overlaps=None)
-        os.rename(no_overlaps_db_path, db_path)
+        os.rename(no_overlap_db_path, db_path)
 
-        no_overlaps_node_names = cls.get_track_table_node_names(track_name, False)
-        no_overlaps_table = db_writer.get_table(no_overlaps_node_names)
+        no_overlap_node_names = cls.get_track_table_node_names(track_name, False)
+        no_overlaps_table = db_writer.get_table(no_overlap_node_names)
         cls.create_indices(no_overlaps_table)
 
         db_writer.close()
