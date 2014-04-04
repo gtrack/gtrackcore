@@ -6,6 +6,7 @@ import traceback
 #import pyximport; pyximport.install()
 
 import gtrackcore
+from gtrackcore.input.core.ToolGenomeElementSource import ToolGenomeElementSource
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.metadata.TrackInfo import TrackInfo
@@ -23,6 +24,7 @@ from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, pretty
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
 from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning
+from gtrackcore.track.core.GenomeRegion import  GenomeRegion
 
 
 class PreProcessTracksJob(object):
@@ -356,24 +358,93 @@ class PreProcessCustomTrackJob(PreProcessTracksJob):
         return self._mergeChrFolders
 
 
+class PreProcessToolOutputJob(PreProcessTracksJob):
+
+    def __init__(self, tool_name, tool_input, genome, new_track_name, username='', merge_chr_folders=True, **kwArgs):
+        PreProcessTracksJob.__init__(self, genome, username=username, **kwArgs)
+        self._new_track_name = new_track_name
+        self._tool_name = tool_name
+        self._tool_input = tool_input
+        self._mergeChrFolders = merge_chr_folders
+
+    def _allTrackNames(self):
+        return [self._new_track_name]
+
+    def _allGESources(self, track_name):
+        raise NotImplementedError
+
+    def _allGESourceManagers(self, track_name_list, allow_overlaps):
+        ge_source = ToolGenomeElementSource(self._tool_name, self._tool_input, self._genome, self._new_track_name)
+
+        collector = PreProcMetaDataCollector(self._genome, track_name_list)
+        if not allow_overlaps and collector.overlapRuleHasBeenFinalized(True):
+            return [self._getGESourceManagerFromTrack(track_name_list)]
+
+        if allow_overlaps and ge_source.hasNoOverlappingElements():
+            return []
+
+        return [self._getGESourceManagerFromGESource(ge_source)]
+
+    def _calcAndStoreSubTrackCount(self, trackName):
+        ti = TrackInfo(self._genome, trackName)
+        trackCount = 0
+        if ti.isValid():
+            trackCount += 1
+        ti.subTrackCount = trackCount
+        ti.store()
+
+    def _shouldMergeChrFolders(self):
+        return True
+
+
 if __name__ == "__main__":
-    if not len(sys.argv) in [2,3,4]:
-        print 'Syntax: python PreProcessTracksJob.py genome [trackName:subType] [mode=Real/Simulated/UpdateMeta]'
-        sys.exit(0)
 
-    if len(sys.argv) == 2:
-        tn = []
-        mode = 'Real'
-    elif len(sys.argv) == 3:
-        if sys.argv[2] in ['Real', 'Simulated', 'UpdateMeta']:
-            tn = []
-            mode = sys.argv[2]
-        else:
-            tn = sys.argv[2].split(':')
-            mode = 'Real'
-    else:
-        tn = sys.argv[2].split(':')
-        mode = sys.argv[3]
+    tool_input = {
+        'track1': {
+            'name': 'testcat:opertrack1'.split(':'),
+            'allow_overlaps': False
+        },
+        'track2': {
+            'name': 'testcat:opertrack2'.split(':'),
+            'allow_overlaps': False
+        },
+        'genome_regions': [GenomeRegion('testgenome', 'chr21', 0, 46944323)]
+    }
 
-    assert mode in ['Real', 'Simulated', 'UpdateMeta']
-    PreProcessAllTracksJob(sys.argv[1], tn, username='', mode=mode).process()
+    PreProcessToolOutputJob('union', tool_input, 'testgenome', ['testcat', 'union']).process()
+
+    #tool_input = {
+    #    'segment_track': {
+    #        'name': 'testcat:operations:mean:segment'.split(':'),
+    #        'allow_overlaps': False
+    #    },
+    #    'function_track': {
+    #        'name': 'testcat:operations:mean:function'.split(':'),
+    #        'allow_overlaps': False
+    #    },
+    #    'genome_regions': [GenomeRegion('testgenome', 'chr21', 0, 10)]
+    #}
+    #
+    #PreProcessToolOutputJob('mean', tool_input, 'testgenome', ['testcat', 'mean_result']).process()
+
+    #if not len(sys.argv) in [2,3,4]:
+    #    print 'Syntax: python PreProcessTracksJob.py genome [trackName:subType] [mode=Real/Simulated/UpdateMeta]'
+    #    sys.exit(0)
+    #
+    #if len(sys.argv) == 2:
+    #    tn = []
+    #    mode = 'Real'
+    #elif len(sys.argv) == 3:
+    #    if sys.argv[2] in ['Real', 'Simulated', 'UpdateMeta']:
+    #        tn = []
+    #        mode = sys.argv[2]
+    #    else:
+    #        tn = sys.argv[2].split(':')
+    #        mode = 'Real'
+    #else:
+    #    tn = sys.argv[2].split(':')
+    #    mode = sys.argv[3]
+    #
+    #assert mode in ['Real', 'Simulated', 'UpdateMeta']
+    #PreProcessAllTracksJob(sys.argv[1], tn, username='', mode=mode).process()
+

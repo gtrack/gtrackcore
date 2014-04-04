@@ -236,8 +236,8 @@ class GenomeInfo(object):
     @classmethod
     def getStdChrRegionList(cls, genome):
         from gtrackcore.track.core.GenomeRegion import GenomeRegion
-        return [GenomeRegion(self._genome, chr, 0, cls.getChrLen(self._genome, chr) ) \
-                for chr in cls.getChrList(self._genome)]
+        return [GenomeRegion(genome, chr, 0, cls.getChrLen(genome, chr))
+                for chr in cls.getChrList(genome)]
     
     @classmethod
     def getStdChrLengthDict(cls, genome):
