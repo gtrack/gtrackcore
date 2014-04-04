@@ -50,7 +50,7 @@ class GESourceManager(object):
         if not self._hasCalculatedStats:
             prevPrintWarnings = self._geSource.getPrintWarnings()
             self._geSource.setPrintWarnings(False)
-            
+
             for el in self._geSource:
                 chr = el.chr
                 self._numElements[chr] += 1

@@ -46,7 +46,7 @@ class GenomeElementSource(object):
     
     def __new__(cls, fn, genome=None, trackName=None, suffix=None, forPreProcessor=False, *args, **kwArgs):
         geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
-        return geSourceCls.__new__(geSourceCls, fn, genome=genome, trackName=trackName, *args, **kwArgs)
+        return geSourceCls.__new__(geSourceCls, fn, genome=genome, track_name=trackName, *args, **kwArgs)
     
     def __init__(self, fn, genome=None, trackName=None, external=False, printWarnings=True, strToUseInsteadOfFn='', *args, **kwArgs): #, depth=0
         self._fn = fn
