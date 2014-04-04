@@ -117,7 +117,7 @@ class TrackInfo(object):
         self.preProcVersion = ''
 
         self.__dict__.update(existingAttrs)
-        
+
     @staticmethod
     def createInstanceFromKey(key):
         key = key.split(':')
@@ -146,6 +146,7 @@ class TrackInfo(object):
         self.store()
     
     def store(self):
+        self.timeOfLastUpdate = datetime.datetime.now()
         trackInfoShelve = safeshelve.open(self.SHELVE_FN, protocol=self.PROTOCOL)
         trackInfoShelve[ constructKey(self.genome, self.trackName) ] = self
         trackInfoShelve.close()
@@ -251,8 +252,7 @@ class TrackInfo(object):
     def setAttrs(self, attrDict, username):
         self.__dict__.update(attrDict)
         self.lastUpdatedBy = username
-        self.timeOfLastUpdate = datetime.datetime.now()
-        
+
     @staticmethod
     def constructIdFromPath(genome, origPath, geSourceVersion, preProcVersion):
         if os.path.isdir(origPath):

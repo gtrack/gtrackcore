@@ -185,11 +185,11 @@ class DatabaseUtils(object):
             with_overlap_table = db_writer.get_table(with_overlap_node_names)
             cls.create_indices(with_overlap_table)
 
-        db_path = cls.get_database_filename(genome, track_name, allow_overlaps=None)
-        os.rename(no_overlap_db_path, db_path)
-
         no_overlap_node_names = cls.get_track_table_node_names(genome, track_name, False)
         no_overlaps_table = db_writer.get_table(no_overlap_node_names)
         cls.create_indices(no_overlaps_table)
-
         db_writer.close()
+
+        new_db_path = cls.get_database_filename(genome, track_name, allow_overlaps=None)
+        os.rename(no_overlap_db_path, new_db_path)
+
