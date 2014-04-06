@@ -1,4 +1,3 @@
-from gtrackcore import preprocess
 from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
 
 
@@ -127,4 +126,3 @@ class VirtualTrackColumn(VirtualNumpyArray):
         result = column[self._start_index:self._end_index] + 1
         self._db_reader.close()
         return result
-

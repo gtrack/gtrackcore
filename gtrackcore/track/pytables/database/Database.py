@@ -6,8 +6,8 @@ from tables.exceptions import ClosedFileError, NodeError
 
 import gtrackcore.preprocess
 from gtrackcore.third_party.portalocker import portalocker
-from gtrackcore.util.CommonConstants import GTRACKCORE_FORMAT_SUFFIX
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
+from gtrackcore.util.pytables.Constants import GTRACKCORE_FORMAT_SUFFIX
 
 
 class Database(object):

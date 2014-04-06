@@ -1,9 +1,9 @@
 import tables
 
 from gtrackcore.track.pytables.database.Database import DatabaseReader, DatabaseWriter
-from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
 from gtrackcore.util.CommonFunctions import prettyPrintTrackName
-from gtrackcore.util.pytables.DatabaseQueries import BoundingRegionQueries
+from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_br_table_node_names
+from gtrackcore.track.pytables.database.Queries import BoundingRegionQueries
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CustomExceptions import InvalidFormatError, BoundingRegionsNotAvailableError, DBNotExistError, \
@@ -18,10 +18,11 @@ class BoundingRegionHandler(object):
         self._allow_overlaps = allow_overlaps
         self._max_chr_len = 1
 
-        self._database_filename = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
+        self._database_filename = get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
         self._db_reader = DatabaseReader(self._database_filename)
-        self._br_node_names = DatabaseUtils.get_br_table_node_names(genome, track_name, allow_overlaps)
-        self._br_queries = BoundingRegionQueries(self._db_reader, self._br_node_names)
+        self._br_node_names = get_br_table_node_names(genome, track_name, allow_overlaps)
+
+        self._br_queries = BoundingRegionQueries(genome, track_name, allow_overlaps)
 
     def table_exists(self):
         try:

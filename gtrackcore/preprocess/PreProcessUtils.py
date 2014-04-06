@@ -9,11 +9,12 @@ from gtrackcore.metadata.TrackInfo import TrackInfo
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
-from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
 from gtrackcore.track.pytables.database.Database import DatabaseWriter
 from gtrackcore.track.pytables.TrackSource import TrackSource
+from gtrackcore.track.pytables.database.CommonTableFunctions import sort_table
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 from gtrackcore.util.CommonFunctions import get_dir_path
+from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
 
 
 class PreProcessUtils(object):
@@ -119,11 +120,11 @@ class PreProcessUtils(object):
 
     @staticmethod
     def sort_preprocessed_table(genome, track_name, allow_overlaps):
-        database_filename = DatabaseUtils.get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
+        database_filename = get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
 
         db_writer = DatabaseWriter(database_filename)
         db_writer.open()
-        table_node_names = DatabaseUtils.get_track_table_node_names(genome, track_name, allow_overlaps)
+        table_node_names = get_track_table_node_names(genome, track_name, allow_overlaps)
         table = db_writer.get_table(table_node_names)
 
         if 'start' in table.colinstances and 'end' in table.colinstances:
@@ -145,7 +146,7 @@ class PreProcessUtils(object):
 
         db_writer.close()
 
-        DatabaseUtils.sort_table(database_filename, table_node_names, sort_order)
+        sort_table(database_filename, table_node_names, sort_order)
 
     @staticmethod
     def create_bounding_regions(genome, track_name, allow_overlaps):

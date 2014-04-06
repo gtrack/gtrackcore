@@ -1,19 +1,29 @@
+from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
+from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_br_table_node_names, \
+    get_track_table_node_names
 
 
 class DatabaseQueries(object):
-    def __init__(self, db_reader):
-        self._db_reader = db_reader
 
+    def __init__(self, genome, track_name, allow_overlaps):
+        self._genome = genome
+        self._track_name = track_name
+        self._allow_overlaps = allow_overlaps
+
+        database_filename = get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
+        self._db_reader = DatabaseReader(database_filename)
 
 class BoundingRegionQueries(DatabaseQueries):
-    def __init__(self, db_reader, br_node_names):
-        super(BoundingRegionQueries, self).__init__(db_reader)
-        self._br_node_names = br_node_names
+
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(BoundingRegionQueries, self).__init__(genome, track_name, allow_overlaps)
+        self._table_node_names = get_br_table_node_names(genome, track_name, allow_overlaps)
+
 
     def total_element_count_for_chr(self, chromosome):
         self._db_reader.open()
-        table = self._db_reader.get_table(self._br_node_names)
+        table = self._db_reader.get_table(self._table_node_names)
 
         result = [row['element_count'] for row in table.where('(chr == region_chr)',
                                                               condvars={'region_chr': chromosome})]
@@ -36,7 +46,7 @@ class BoundingRegionQueries(DatabaseQueries):
 
     def all_bounding_regions(self):
         self._db_reader.open()
-        table = self._db_reader.get_table(self._br_node_names)
+        table = self._db_reader.get_table(self._table_node_names)
 
         bounding_regions = [{'chr': row['chr'],
                              'start': row['start'],
@@ -51,7 +61,7 @@ class BoundingRegionQueries(DatabaseQueries):
 
     def _all_bounding_regions_for_region(self, genome_region, query):
         self._db_reader.open()
-        table = self._db_reader.get_table(self._br_node_names)
+        table = self._db_reader.get_table(self._table_node_names)
 
         bounding_regions = [{'chr': row['chr'],
                              'start': row['start'],
@@ -72,9 +82,9 @@ class BoundingRegionQueries(DatabaseQueries):
 
 class TrackQueries(DatabaseQueries):
 
-    def __init__(self, db_reader, track_table_node_names):
-        super(TrackQueries, self).__init__(db_reader)
-        self._track_table_node_names = track_table_node_names
+    def __init__(self, genome, track_name, allow_overlaps):
+        super(TrackQueries, self).__init__(genome, track_name, allow_overlaps)
+        self._table_node_names = get_track_table_node_names(genome, track_name, allow_overlaps)
 
     @staticmethod
     def _build_start_and_end_indices_query(track_format):
@@ -92,11 +102,31 @@ class TrackQueries(DatabaseQueries):
 
         return query
 
-    def start_and_end_indices(self, genome_region, br_start, br_stop, track_format):
+    def start_and_end_indices(self, genome_region, track_format):
+        assert genome_region.genome == self._genome
+
+        br_queries = BoundingRegionQueries(self._genome, self._track_name, self._allow_overlaps)
+        bounding_region = br_queries.enclosing_bounding_region_for_region(genome_region)
+
+        if len(bounding_region) > 0:
+            br_start_index, br_end_index = (bounding_region[0]['start_index'], bounding_region[0]['end_index'])
+        else:
+            return 0, 0  # if region is empty
+
+        if track_format.reprIsDense():
+            start_index = br_start_index + (genome_region.start - bounding_region[0]['start'])
+            end_index = start_index + len(genome_region)
+        else:
+            start_index, end_index = self._get_region_start_and_end_indices(genome_region, br_start_index,
+                                                                            br_end_index, track_format)
+
+        return start_index, end_index
+
+    def _get_region_start_and_end_indices(self, genome_region, br_start, br_stop, track_format):
         query = self._build_start_and_end_indices_query(track_format)
 
         self._db_reader.open()
-        table = self._db_reader.get_table(self._track_table_node_names)
+        table = self._db_reader.get_table(self._table_node_names)
         region_indices = table.get_where_list(query, start=br_start, stop=br_stop,
                                               condvars={
                                                   'region_start': genome_region.start,
@@ -106,4 +136,3 @@ class TrackQueries(DatabaseQueries):
 
         # start_index, end_index
         return (region_indices[0], region_indices[-1] + 1) if len(region_indices) > 0 else (0, 0)
-

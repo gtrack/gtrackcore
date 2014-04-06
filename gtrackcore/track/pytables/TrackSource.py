@@ -1,6 +1,6 @@
-from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
+from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
 
 
 class TrackData(dict):
@@ -10,15 +10,17 @@ class TrackData(dict):
         else:
             dict.__init__(self)
 
+
 class TrackSource:
+
     def __init__(self):
         self._chrInUse = None
         self._fileDict = {}
 
     def get_track_data(self, genome, trackName, allowOverlaps):
         track_data = TrackData()
-        database_filename = DatabaseUtils.get_database_filename(genome, trackName, allow_overlaps=allowOverlaps)
-        table_node_names = DatabaseUtils.get_track_table_node_names(genome, trackName, allowOverlaps)
+        database_filename = get_database_filename(genome, trackName, allow_overlaps=allowOverlaps)
+        table_node_names = get_track_table_node_names(genome, trackName, allowOverlaps)
 
         db_reader = DatabaseReader(database_filename)
         db_reader.open()
@@ -33,4 +35,3 @@ class TrackSource:
                                                          start_index=0, end_index=number_of_rows)
 
         return track_data
-

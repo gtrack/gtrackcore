@@ -6,13 +6,14 @@ import numpy
 
 from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
-from gtrackcore.track.pytables.CommonFunctions import get_start_and_end_indices
-from gtrackcore.track.pytables.database.DatabaseUtils import DatabaseUtils
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
+from gtrackcore.track.pytables.database.Queries import TrackQueries
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
+from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
+
 
 def noneFunc():
     return None
@@ -134,6 +135,7 @@ class PytablesTrackElement(object):
 
 
 class AutonomousTrackElement(TrackElement):
+
     def __init__(self, start = None, end = None, val = None, strand = None, id = None, edges = None, weights = None, trackEl=None, **kwArgs):
         
         if trackEl is None:
@@ -294,9 +296,9 @@ class TrackView(object):
             self._pytables_track_element.weights = noneFunc
 
         if self._should_use_pytables:
-            database_filename = DatabaseUtils.get_database_filename(genomeAnchor.genome, track_name, allow_overlaps=allowOverlaps)
+            database_filename = get_database_filename(genomeAnchor.genome, track_name, allow_overlaps=allowOverlaps)
             self._db_handler = DatabaseReader(database_filename)
-            self._track_node_names = DatabaseUtils.get_track_table_node_names(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
+            self._track_node_names = get_track_table_node_names(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
             self._handle_points_and_partitions_for_pytables()
 
         self._updateNumListElements()
@@ -306,9 +308,10 @@ class TrackView(object):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
 
     def _generate_pytables_track_elements(self):
+
         if self._cached_start_and_end_indices is None:
-            self._cached_start_and_end_indices = get_start_and_end_indices(self.genomeAnchor, self._track_name,
-                                                                           self.allowOverlaps, self.trackFormat)
+            queries = TrackQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
+            self._cached_start_and_end_indices = queries.start_and_end_indices(self.genomeAnchor, self.trackFormat)
 
         start_index, end_index = self._cached_start_and_end_indices
         if start_index == end_index:

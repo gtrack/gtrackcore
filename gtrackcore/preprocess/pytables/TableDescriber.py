@@ -3,7 +3,7 @@ from itertools import izip_longest
 import tables
 
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
-from gtrackcore.util.pytables.CommonNumpyFunctions import get_default_numpy_value
+from gtrackcore.util.pytables.NumpyFunctions import get_default_numpy_value
 
 
 class TableDescriber(object):
