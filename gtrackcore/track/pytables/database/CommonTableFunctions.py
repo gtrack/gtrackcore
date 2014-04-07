@@ -109,14 +109,13 @@ def merge_and_rename_overlap_tables(genome, track_name):
         with_overlap_table = db_writer.get_table(with_overlap_node_names)
         create_table_indices(with_overlap_table)
 
-    db_path = get_database_filename(genome, track_name, allow_overlaps=None)
-    os.rename(no_overlap_db_path, db_path)
-
     no_overlap_node_names = get_track_table_node_names(genome, track_name, False)
     no_overlaps_table = db_writer.get_table(no_overlap_node_names)
     create_table_indices(no_overlaps_table)
-
     db_writer.close()
+
+    db_path = get_database_filename(genome, track_name, allow_overlaps=None)
+    os.rename(no_overlap_db_path, db_path)
 
 
 def create_table_indices(table, cols=None):

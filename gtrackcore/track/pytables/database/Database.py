@@ -8,6 +8,7 @@ import gtrackcore.preprocess
 from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 from gtrackcore.util.pytables.Constants import GTRACKCORE_FORMAT_SUFFIX
+from gtrackcore.util.pytables.NameFunctions import get_genome_and_trackname
 
 
 class Database(object):
@@ -26,6 +27,10 @@ class Database(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    @property
+    def h5_file(self):
+        return self._h5_file
+
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
         try:
@@ -35,10 +40,16 @@ class Database(object):
 
         portalocker.lock(self._h5_file, lock_type)
 
-    def close(self):
+    def close(self, store_metadata=True):
         self._cached_nodes = {}
         portalocker.unlock(self._h5_file)
         self._h5_file.close()
+
+        if store_metadata:
+            genome, track_name = get_genome_and_trackname(self._h5_filename)
+            from gtrackcore.track.pytables.database.MetadataHandler import MetadataHandler
+            metadata_handler = MetadataHandler(genome, track_name)
+            metadata_handler.store()
 
     def table_exists(self, node_names):
         table_path = self._get_node_path(node_names)
@@ -80,7 +91,7 @@ class DatabaseWriter(Database):
 
     def create_table(self, node_names, table_description, expectedrows):
         table_name = node_names[-1]
-        group = self._create_groups(node_names[:-1])
+        group = self.create_groups(node_names[:-1])
 
         try:
             table = self._h5_file.create_table(group, table_name,
@@ -96,7 +107,7 @@ class DatabaseWriter(Database):
         group = self.get_node(node_names[:-1])
         self._h5_file.remove_node(group, table_name)
 
-    def _create_groups(self, node_names):
+    def create_groups(self, node_names):
         current_groups = '/' + node_names[0]
         try:
             group = self._h5_file.create_group(self._h5_file.root, node_names[0], node_names[0])

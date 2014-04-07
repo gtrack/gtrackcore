@@ -1,5 +1,6 @@
 import os
 import re
+from gtrackcore.core.Config import Config
 from gtrackcore.util.CommonFunctions import get_dir_path
 from gtrackcore.util.CustomExceptions import DBNotExistError
 from gtrackcore.util.pytables.Constants import GTRACKCORE_FORMAT_SUFFIX
@@ -64,3 +65,10 @@ def _convert_to_natural_naming(name):
         return converted_name
     else:
         return converted_name[0]
+
+
+def get_genome_and_trackname(filename):
+    genome_track_name_list = filename.split(Config.PROCESSED_DATA_PATH)[1][1:].split(os.sep)
+    genome = genome_track_name_list[0]
+    track_name = genome_track_name_list[1:-1]
+    return genome, track_name

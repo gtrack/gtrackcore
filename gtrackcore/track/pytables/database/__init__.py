@@ -1,5 +1,9 @@
 import tables
 import atexit
+from gtrackcore.util.CustomExceptions import DBNotExistError
+from gtrackcore.track.pytables.database.MetadataHandler import MetadataHandler
+from gtrackcore.util.pytables.NameFunctions import get_genome_and_trackname
+
 
 @atexit.register
 def close_pytables_files():
@@ -12,8 +16,16 @@ def close_pytables_files():
         any_open_files = len(open_files.handlers) > 0
 
         if any_open_files:
+            filenames = tables.file._open_files.filenames
             for fileh in handlers:
                 fileh.close()
+            for filename in filenames:
+                genome, track_name = get_genome_and_trackname(filename)
+                metadata_handler = MetadataHandler(genome, track_name)
+                try:
+                    metadata_handler.store()
+                except DBNotExistError:
+                    pass
     else:
         filenames = []
         for filename, file in tables.file._open_files.items():
@@ -22,3 +34,6 @@ def close_pytables_files():
         for filename in filenames:
             if filename in tables.file._open_files:
                 del tables.file._open_files[filename]
+                genome, track_name = get_genome_and_trackname(filename)
+                metadata_handler = MetadataHandler(genome, track_name)
+                metadata_handler.store()
