@@ -1,6 +1,6 @@
 #import os
 #from config.Config import METADATA_FILES_PATH, IS_EXPERIMENTAL_INSTALLATION
-from gtrackcore.util.CustomExceptions import ArgumentValueError #, NotSupportedError
+from gtrackcore_memmap.util.CustomExceptions import ArgumentValueError #, NotSupportedError
 #from gtrackcore.util.CommonFunctions import strWithStdFormatting
 #from third_party.roman import fromRoman
 #from gtrackcore.result.HtmlCore import HtmlCore
@@ -235,7 +235,7 @@ class GenomeInfo(object):
         
     @classmethod
     def getStdChrRegionList(cls, genome):
-        from gtrackcore.track.core.GenomeRegion import GenomeRegion
+        from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
         return [GenomeRegion(self._genome, chr, 0, cls.getChrLen(self._genome, chr) ) \
                 for chr in cls.getChrList(self._genome)]
     
