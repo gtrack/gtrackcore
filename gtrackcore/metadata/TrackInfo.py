@@ -61,10 +61,6 @@ class TrackInfo(object):
         'lastUpdatedBy': FieldInfo('Last update by', 'text')}
 
     def __new__(cls, genome, trackName):
-        #Temporary hack
-        if genome in ['hg18','NCBI36']:
-            genome = 'NCBI36'
-
         createPath(cls.SHELVE_FN)
         trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'c', protocol=cls.PROTOCOL)
         dynamic_trackinfo = trackInfoShelve.get( constructKey(genome, trackName) )
@@ -329,9 +325,6 @@ class TrackInfo(object):
 
 class DynamicTrackInfo(TrackInfo):
     def __new__(cls, genome, trackName):
-        #Temporary hack
-        if genome in ['hg18','NCBI36']:
-            genome = 'NCBI36'
 
         createPath(cls.SHELVE_FN)
         trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'c', protocol=cls.PROTOCOL)
