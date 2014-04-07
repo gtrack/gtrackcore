@@ -38,6 +38,11 @@ class Config(object):
             if gtrackcore_dir[-1] == '/':
                 gtrackcore_dir = gtrackcore_dir[:-1]
 
+        # temp hack until GTRACKCORE_DIR is set on insilico
+        if gtrackcore_dir == '/cluster/home/ghbrowse':
+            gtrackcore_dir = '/hyperbrowser/staticFiles/gtrackcore'
+            print 'Using /hyperbrowser/staticFiles/gtrackcore as data directory...'
+
         data_dir = os.sep.join([gtrackcore_dir, 'gtrackcore_data'])
         config_filename = os.sep.join([gtrackcore_dir, 'gtrackcore_config'])
 
