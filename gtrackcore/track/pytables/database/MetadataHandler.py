@@ -1,8 +1,7 @@
 import pickle
 from tables.nodes import filenode
 
-from gtrackcore.metadata.TrackInfo import TrackInfo
-from gtrackcore.track.pytables.database.Database import DatabaseWriter
+from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import TRACKINFO_NODE_NAME, get_database_filename, get_trackinfo_node_names, \
     get_base_node_names
 
@@ -15,13 +14,41 @@ class MetadataHandler(object):
         self._trackinfo_node_names = get_trackinfo_node_names(self._genome, self._track_name)
 
 
-    def store(self):
+    def store(self, dynamic_trackinfo):
         database_filename = get_database_filename(self._genome, self._track_name, allow_overlaps=False)
-        self.update_db_trackinfo(database_filename)
+        self.update_persisted_trackinfo(database_filename, dynamic_trackinfo)
 
-    def update_db_trackinfo(self, database_filename):
-        dynamic_trackinfo = TrackInfo(self._genome, self._track_name)
+    def _dynamic_trackinfo_is_newest(self, dynamic_trackinfo, persisted_trackinfo):
+        return dynamic_trackinfo.timeOfLastUpdate is not None and dynamic_trackinfo.timeOfLastUpdate > persisted_trackinfo.timeOfLastUpdate
 
+    def _persisted_trackinfo_is_newest(self, dynamic_trackinfo, persisted_trackinfo):
+        return dynamic_trackinfo.timeOfLastUpdate is None or persisted_trackinfo.timeOfLastUpdate > dynamic_trackinfo.timeOfLastUpdate
+
+    def get_newest_trackinfo(self, database_filename, dynamic_trackinfo):
+        db_reader = DatabaseReader(database_filename)
+        db_reader.open()
+
+        persisted_ti_node = db_reader.get_node(self._trackinfo_node_names)
+        if persisted_ti_node is None:
+            trackinfo = dynamic_trackinfo
+        else:
+            trackinfo_file = filenode.open_node(persisted_ti_node, 'r')
+            persisted_trackinfo = pickle.load(trackinfo_file)
+            trackinfo_file.close()
+
+            if dynamic_trackinfo is None:
+                trackinfo = persisted_trackinfo
+            else:
+                if self._persisted_trackinfo_is_newest(dynamic_trackinfo, persisted_trackinfo):
+                    trackinfo = persisted_trackinfo
+                else:
+                    trackinfo = dynamic_trackinfo
+
+        db_reader.close(store_metadata=False)
+
+        return trackinfo
+
+    def update_persisted_trackinfo(self, database_filename, dynamic_trackinfo):
         db_writer = DatabaseWriter(database_filename)
         db_writer.open()
 
@@ -31,7 +58,7 @@ class MetadataHandler(object):
             persisted_trackinfo = pickle.load(trackinfo_file)
             trackinfo_file.close()
 
-            if dynamic_trackinfo.timeOfLastUpdate is not None and dynamic_trackinfo.timeOfLastUpdate > persisted_trackinfo.timeOfLastUpdate:
+            if self._dynamic_trackinfo_is_newest(dynamic_trackinfo, persisted_trackinfo):
                 self._remove_persisted_trackinfo(db_writer)
                 self._dump_dynamic_trackinfo(dynamic_trackinfo, db_writer)
         else:

@@ -9,19 +9,22 @@ import gtrackcore.third_party.safeshelve as safeshelve
 from gtrackcore.core.Config import Config
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.util.CommonFunctions import strWithStdFormatting, createPath
-from gtrackcore.util.CustomExceptions import ShouldNotOccurError
+from gtrackcore.util.CustomExceptions import ShouldNotOccurError, DBNotExistError
 from gtrackcore.util.HtmlCore import HtmlCore
 from gtrackcore.util.TextCore import TextCore
+from gtrackcore.util.pytables.NameFunctions import get_database_filename
 
 METADATA_FILES_PATH = Config.METADATA_FILES_PATH
 
 FieldInfo = namedtuple('FieldInfo', ['fullName', 'guiElementType'])
 
+
 def constructKey(genome, trackName):
     key = ':'.join([genome] + trackName)
     assert type(key) == str, 'Non-str key: ' + key + ' of type: ' + str(type(key)) + '. Specific types: ' + str([type(x) for x in [genome] + trackName])
     return key
-    
+
+
 class TrackInfo(object):
     SHELVE_FN = METADATA_FILES_PATH + os.sep + 'TrackInfo.shelve'
     SHELVE_COPY_FN = METADATA_FILES_PATH + os.sep + 'TrackInfo.shelve.copy'
@@ -61,13 +64,22 @@ class TrackInfo(object):
         #Temporary hack
         if genome in ['hg18','NCBI36']:
             genome = 'NCBI36'
-        
+
         createPath(cls.SHELVE_FN)
         trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'c', protocol=cls.PROTOCOL)
-        stored = trackInfoShelve.get( constructKey(genome, trackName) )
+        dynamic_trackinfo = trackInfoShelve.get( constructKey(genome, trackName) )
         trackInfoShelve.close()
-        if stored is not None:
-            return stored
+        try:
+            database_filename = get_database_filename(genome, trackName, allow_overlaps=False)
+            from gtrackcore.track.pytables.database.MetadataHandler import MetadataHandler
+
+            metadata_handler = MetadataHandler(genome, trackName)
+            newest_trackinfo = metadata_handler.get_newest_trackinfo(database_filename, dynamic_trackinfo)
+        except DBNotExistError:
+            newest_trackinfo = dynamic_trackinfo
+
+        if newest_trackinfo is not None:
+            return newest_trackinfo
         else:
             return object.__new__(cls)
     
@@ -313,3 +325,20 @@ class TrackInfo(object):
 
         trackInfoShelveCopy.close()
         trackInfoShelveErrors.close()
+
+
+class DynamicTrackInfo(TrackInfo):
+    def __new__(cls, genome, trackName):
+        #Temporary hack
+        if genome in ['hg18','NCBI36']:
+            genome = 'NCBI36'
+
+        createPath(cls.SHELVE_FN)
+        trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'c', protocol=cls.PROTOCOL)
+        dynamic_trackinfo = trackInfoShelve.get( constructKey(genome, trackName) )
+        trackInfoShelve.close()
+
+        if dynamic_trackinfo is not None:
+            return dynamic_trackinfo
+        else:
+            return object.__new__(cls)

@@ -14,6 +14,7 @@ class DatabaseQueries(object):
         database_filename = get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
         self._db_reader = DatabaseReader(database_filename)
 
+
 class BoundingRegionQueries(DatabaseQueries):
 
     def __init__(self, genome, track_name, allow_overlaps):

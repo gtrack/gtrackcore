@@ -3,6 +3,7 @@ import os
 
 import tables
 from tables.exceptions import ClosedFileError, NodeError
+from gtrackcore.metadata.TrackInfo import DynamicTrackInfo
 
 import gtrackcore.preprocess
 from gtrackcore.third_party.portalocker import portalocker
@@ -44,12 +45,14 @@ class Database(object):
         self._cached_nodes = {}
         portalocker.unlock(self._h5_file)
         self._h5_file.close()
-
         if store_metadata:
             genome, track_name = get_genome_and_trackname(self._h5_filename)
-            from gtrackcore.track.pytables.database.MetadataHandler import MetadataHandler
+
+            dynamic_trackinfo = DynamicTrackInfo(genome, track_name)
+            from gtrackcore.track.pytables.database import MetadataHandler
+
             metadata_handler = MetadataHandler(genome, track_name)
-            metadata_handler.store()
+            metadata_handler.store(dynamic_trackinfo)
 
     def table_exists(self, node_names):
         table_path = self._get_node_path(node_names)
@@ -145,6 +148,6 @@ class DatabaseReader(Database):
         if self._h5_file is None or not self._h5_file.isopen:
             super(DatabaseReader, self).open(mode='r', lock_type=portalocker.LOCK_SH)
 
-    def close(self):
+    def close(self, store_metadata=True):
         if gtrackcore.preprocess.is_preprocessing:
-            super(DatabaseReader, self).close()
+            super(DatabaseReader, self).close(store_metadata)
