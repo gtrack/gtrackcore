@@ -1,5 +1,8 @@
 import hotshot
 import hotshot.stats
+from gtrackcore.metadata import GenomeInfo
+from gtrackcore.track.core.GenomeRegion import GenomeRegion
+
 
 class Profiler:
     PROFILE_HEADER = '--- Profile ---'
@@ -79,3 +82,14 @@ def profile_operation(operation, track_name1, allow_overlaps1, genome_regions, t
     profiler = Profiler()
     profiler.run(run_str, globals(), locals())
     profiler.printStats()
+
+if __name__ == '__main__':
+
+    chromosomes = (GenomeRegion('hg19', chr, 0, len)
+                   for chr, len in GenomeInfo.GENOMES['hg19']['size'].iteritems())
+
+    tn1 = 'Sequence:Repeating elements'.split(':')
+    tn2 = 'Chromatin:Roadmap Epigenomics:H3K27me3:ENCODE_wgEncodeBroadHistoneGm12878H3k27me3StdPk'.split(':')
+
+    print "Running profiler of overlap operation"
+    profile_operation("overlap", tn1, False, chromosomes, track_name2=tn2, allow_overlaps2=False)

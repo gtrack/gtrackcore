@@ -5,7 +5,7 @@ import numpy
 
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_base_node_names, \
-    WITH_OVERLAPS_NODE_NAME, get_track_table_node_names
+    WITH_OVERLAPS_NODE_NAME
 from gtrackcore.util.pytables.NumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.Constants import FLUSH_LIMIT
 
@@ -46,7 +46,6 @@ def _update_new_table(db_writer, old_table, node_names, table_description, expec
     old_table_node_names.append(old_table.name)
 
     new_table = db_writer.create_table(node_names, table_description, old_table.nrows + expected_new_rows)
-    create_table_indices(new_table)
 
     copy_func(new_table)
 
@@ -104,14 +103,7 @@ def merge_and_rename_overlap_tables(genome, track_name):
         db_reader.close()
 
         os.remove(with_overlap_db_path)
-        with_overlap_node_names = get_track_table_node_names(genome, track_name, True)
 
-        with_overlap_table = db_writer.get_table(with_overlap_node_names)
-        create_table_indices(with_overlap_table)
-
-    no_overlap_node_names = get_track_table_node_names(genome, track_name, False)
-    no_overlaps_table = db_writer.get_table(no_overlap_node_names)
-    create_table_indices(no_overlaps_table)
     db_writer.close()
 
     db_path = get_database_filename(genome, track_name, allow_overlaps=None)

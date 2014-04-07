@@ -88,20 +88,23 @@ class TrackQueries(DatabaseQueries):
         self._table_node_names = get_track_table_node_names(genome, track_name, allow_overlaps)
 
     @staticmethod
-    def _build_start_and_end_indices_query(track_format):
+    def _build_start_and_end_index_queries(track_format):
         if track_format.isSegment():
-            query = '(end > region_start) & (start < region_end)'
+            start_index_query = '(end > region_start) & (start < region_end)'
+            end_index_query = '(start > region_end)'
 
         elif track_format.isPoint():
-            query = '(start >= region_start) & (start < region_end)'
+            start_index_query = '(start >= region_start) & (start < region_end)'
+            end_index_query = '(start > region_end)'
 
         elif track_format.isPartition():
-            query = '(end >= region_start) & (end <= region_end)'
+            start_index_query = '(end >= region_start) & (end <= region_end)'
+            end_index_query = '(end >= region_end)'
 
         else:
             raise ShouldNotOccurError
 
-        return query
+        return start_index_query, end_index_query
 
     def start_and_end_indices(self, genome_region, track_format):
         assert genome_region.genome == self._genome
@@ -123,17 +126,34 @@ class TrackQueries(DatabaseQueries):
 
         return start_index, end_index
 
+    def _get_index(self, table, query, start, stop, condvars):
+        for row in table.where(query, start=start, stop=stop, condvars=condvars):
+            return row.nrow
+        return None
+
     def _get_region_start_and_end_indices(self, genome_region, br_start, br_stop, track_format):
-        query = self._build_start_and_end_indices_query(track_format)
+        start_index_query, end_index_query = self._build_start_and_end_index_queries(track_format)
 
         self._db_reader.open()
         table = self._db_reader.get_table(self._table_node_names)
-        region_indices = table.get_where_list(query, start=br_start, stop=br_stop,
-                                              condvars={
-                                                  'region_start': genome_region.start,
-                                                  'region_end': genome_region.end
-                                              })
+
+        condvars = {
+            'region_start': genome_region.start,
+            'region_end': genome_region.end
+        }
+
+        start_index = self._get_index(table, start_index_query, br_start, br_stop, condvars)
+        end_index = self._get_index(table, end_index_query, br_start, br_stop, condvars)
+
         self._db_reader.close()
 
-        # start_index, end_index
-        return (region_indices[0], region_indices[-1] + 1) if len(region_indices) > 0 else (0, 0)
+        if track_format.isPartition() and end_index is not None:
+            end_index += 1
+
+        if start_index is not None and end_index is None:
+            end_index = br_stop
+
+        if start_index is None and end_index is None:
+            return 0, 0
+        else:
+            return start_index, end_index
