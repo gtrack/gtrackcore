@@ -13,10 +13,6 @@ class MetadataHandler(object):
         self._track_name = track_name
         self._trackinfo_node_names = get_trackinfo_node_names(self._genome, self._track_name)
 
-    def store(self, dynamic_trackinfo):
-        database_filename = get_database_filename(self._genome, self._track_name)
-        self.update_persisted_trackinfo(database_filename, dynamic_trackinfo)
-
     def _dynamic_trackinfo_is_newest(self, dynamic_trackinfo, persisted_trackinfo):
         return dynamic_trackinfo.timeOfLastUpdate is not None and dynamic_trackinfo.timeOfLastUpdate > persisted_trackinfo.timeOfLastUpdate
 
@@ -47,7 +43,9 @@ class MetadataHandler(object):
 
         return trackinfo
 
-    def update_persisted_trackinfo(self, database_filename, dynamic_trackinfo):
+    def update_persisted_trackinfo(self, dynamic_trackinfo):
+        database_filename = get_database_filename(self._genome, self._track_name)
+
         db_writer = DatabaseWriter(database_filename)
         db_writer.open()
 

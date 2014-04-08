@@ -27,12 +27,14 @@ def close_pytables_files():
             if filename in tables.file._open_files:
                 del tables.file._open_files[filename]
 
-    # common (persist metadata)
+    _persist_metadata(filenames)
+
+def _persist_metadata(filenames):
     for filename in filenames:
         genome, track_name = get_genome_and_trackname(filename)
         dynamic_trackinfo = DynamicTrackInfo(genome, track_name)
         metadata_handler = MetadataHandler(genome, track_name)
         try:
-            metadata_handler.store(dynamic_trackinfo)
+            metadata_handler.update_persisted_trackinfo(dynamic_trackinfo)
         except DBNotExistError:
             pass

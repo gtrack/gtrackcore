@@ -110,7 +110,11 @@ def merge_and_rename_overlap_tables(genome, track_name):
     db_path = get_database_filename(genome, track_name)
     os.rename(no_overlap_db_path, db_path)
 
-    #There might be some ramaining open filehandlers that are using the new db_path, so these must be closed
+    #There might be some remaining open file handlers that are using the new db_path, so these must be closed
+    _close_file_handlers(db_path)
+
+
+def _close_file_handlers(db_path):
     current_version = tuple(map(int, tables.__version__.split('.')))
     if current_version >= (3, 1, 0):
         handlers = list(tables.file._open_files.get_handlers_by_name(db_path))

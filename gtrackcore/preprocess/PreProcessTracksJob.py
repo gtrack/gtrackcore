@@ -128,7 +128,7 @@ class PreProcessTracksJob(object):
     def _persist_metadata(self, track_name):
         dynamic_trackinfo = DynamicTrackInfo(self._genome, track_name)
         metadata_handler = MetadataHandler(self._genome, track_name)
-        metadata_handler.store(dynamic_trackinfo)
+        metadata_handler.update_persisted_trackinfo(dynamic_trackinfo)
 
     def _allTrackNames(self):
         raise AbstractClassError
