@@ -1,6 +1,8 @@
+import sys
 import os
 import unittest
 import itertools
+
 from gtrackcore.core.LogSetup import logMessage
 from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
 from gtrackcore.tools.TrackTools import coverage, overlap, overlap_iter, count_elements, \
@@ -9,14 +11,21 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonFunctions import createOrigPath
 
 
+class MockPrint(object):
+    def write(self, s):
+        pass
+
+
 class TestTrackTools(unittest.TestCase):
     def setUp(self):
+        sys.stdout = MockPrint()
         for track_data in all_test_track_data.values():
             self._write_original_file(track_data)
             try:
                 PreProcessAllTracksJob(track_data['genome'], track_data['track_name']).process()
             except Exception:
                 logMessage('Could not preprocess %s (%s)' % (':'.join(track_data['track_name']), track_data['genome']))
+        sys.stdout = sys.__stdout__
 
     def tearDown(self):
         pass
