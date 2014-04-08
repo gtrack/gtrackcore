@@ -61,12 +61,10 @@ def sum_of_weights(track_name, allow_overlaps, genome_regions):
 
 
 def sum_of_weights_iter(track_name, allow_overlaps, genome_regions):
-    graph_view = get_graph_view(track_name, genome_regions, allow_overlaps)
+    graph_view = get_graph_view(track_name, allow_overlaps, genome_regions)
     weight_sum = numpy.float128(0)
     for edge in graph_view.getEdgeIter():
-        if isinstance(edge.weight, numpy.ndarray):
-            weight_sum += numpy.nansum(edge.weight)
-        elif not math.isnan(edge.weight):
+        if not math.isnan(edge.weight):
             weight_sum += edge.weight
     return weight_sum
 
@@ -174,9 +172,9 @@ if __name__ == '__main__':
         tn1 = 'Sequence:Repeating elements'.split(':')
         tn2 = 'Chromatin:Roadmap Epigenomics:H3K27me3:ENCODE_wgEncodeBroadHistoneGm12878H3k27me3StdPk'.split(':')
         if operation == 'overlap_iter':
-            oper_func = partial(overlap_iter, tn1, True, tn2, True, chromosomes)
+            oper_func = partial(overlap_iter, tn1, False, tn2, False, chromosomes)
         elif operation == 'overlap':
-            oper_func = partial(overlap, tn1, True, tn2, True, chromosomes)
+            oper_func = partial(overlap, tn1, False, tn2, False, chromosomes)
 
     elif operation == 'count':
         tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
