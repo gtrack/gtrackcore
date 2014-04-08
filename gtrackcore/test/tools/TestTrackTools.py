@@ -18,7 +18,7 @@ class MockPrint(object):
 
 class TestTrackTools(unittest.TestCase):
     def setUp(self):
-        sys.stdout = MockPrint()
+        sys.stdout = MockPrint()  # prevents a lot of annoying print messages
         for track_data in all_test_track_data.values():
             self._write_original_file(track_data)
             try:
