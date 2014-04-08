@@ -111,10 +111,23 @@ def merge_and_rename_overlap_tables(genome, track_name):
     os.rename(no_overlap_db_path, db_path)
 
     #There might be some ramaining open filehandlers that are using the new db_path, so these must be closed
-    handlers = list(tables.file._open_files.get_handlers_by_name(db_path))
-    if len(handlers) > 0:
-        for fileh in handlers:
-            fileh.close()
+    current_version = tuple(map(int, tables.__version__.split('.')))
+    if current_version >= (3, 1, 0):
+        handlers = list(tables.file._open_files.get_handlers_by_name(db_path))
+        if len(handlers) > 0:
+            for fileh in handlers:
+                fileh.close()
+    else:
+        filenames = []
+        open_files = tables.file._open_files.items()
+        for filename, file in open_files:
+            if filename == db_path:
+                file.close()
+                filenames.append(filename)
+        for filename in filenames:
+            if filename in tables.file._open_files:
+                del tables.file._open_files[filename]
+
 
 def create_table_indices(table, cols=None):
     if cols is None:
