@@ -324,6 +324,7 @@ class TrackInfo(object):
 
 
 class DynamicTrackInfo(TrackInfo):
+
     def __new__(cls, genome, trackName):
 
         createPath(cls.SHELVE_FN)

@@ -9,7 +9,7 @@ import gtrackcore
 from gtrackcore.input.core.ToolGenomeElementSource import ToolGenomeElementSource
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
-from gtrackcore.metadata.TrackInfo import TrackInfo
+from gtrackcore.metadata.TrackInfo import DynamicTrackInfo, TrackInfo
 from gtrackcore.preprocess.GESourceManager import GESourceManager, OverlapClusteringGESourceManager, RegionBasedGESourceManager
 from gtrackcore.preprocess.PreProcessGeSourceJob import PreProcessGeSourceJob
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
@@ -19,6 +19,7 @@ from gtrackcore.track.hierarchy.ExternalTrackManager import ExternalTrackManager
 from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
 from gtrackcore.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
+from gtrackcore.track.pytables.database.MetadataHandler import MetadataHandler
 from gtrackcore.track.pytables.database.CommonTableFunctions import merge_and_rename_overlap_tables
 from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
@@ -97,6 +98,7 @@ class PreProcessTracksJob(object):
                         if not atLeastOneFinalized:
                             atLeastOneFinalized = True
                         merge_and_rename_overlap_tables(self._genome, trackName)
+                        self._persist_metadata(trackName)
                 else:
                         collector.removeEntry()
 
@@ -122,6 +124,11 @@ class PreProcessTracksJob(object):
         gtrackcore.preprocess.is_preprocessing = False
 
         return atLeastOneFinalized
+
+    def _persist_metadata(self, track_name):
+        dynamic_trackinfo = DynamicTrackInfo(self._genome, track_name)
+        metadata_handler = MetadataHandler(self._genome, track_name)
+        metadata_handler.store(dynamic_trackinfo)
 
     def _allTrackNames(self):
         raise AbstractClassError

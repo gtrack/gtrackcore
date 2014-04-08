@@ -2,6 +2,7 @@ from functools import partial
 import os
 
 import numpy
+import tables
 
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_base_node_names, \
@@ -106,9 +107,14 @@ def merge_and_rename_overlap_tables(genome, track_name):
 
     db_writer.close()
 
-    db_path = get_database_filename(genome, track_name, allow_overlaps=None)
+    db_path = get_database_filename(genome, track_name)
     os.rename(no_overlap_db_path, db_path)
 
+    #There might be some ramaining open filehandlers that are using the new db_path, so these must be closed
+    handlers = list(tables.file._open_files.get_handlers_by_name(db_path))
+    if len(handlers) > 0:
+        for fileh in handlers:
+            fileh.close()
 
 def create_table_indices(table, cols=None):
     if cols is None:

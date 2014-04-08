@@ -13,9 +13,8 @@ class MetadataHandler(object):
         self._track_name = track_name
         self._trackinfo_node_names = get_trackinfo_node_names(self._genome, self._track_name)
 
-
     def store(self, dynamic_trackinfo):
-        database_filename = get_database_filename(self._genome, self._track_name, allow_overlaps=False)
+        database_filename = get_database_filename(self._genome, self._track_name)
         self.update_persisted_trackinfo(database_filename, dynamic_trackinfo)
 
     def _dynamic_trackinfo_is_newest(self, dynamic_trackinfo, persisted_trackinfo):
@@ -44,7 +43,7 @@ class MetadataHandler(object):
                 else:
                     trackinfo = dynamic_trackinfo
 
-        db_reader.close(store_metadata=False)
+        db_reader.close()
 
         return trackinfo
 
@@ -66,7 +65,7 @@ class MetadataHandler(object):
             db_writer.create_groups(trackinfo_base_nodes)
             self._dump_dynamic_trackinfo(dynamic_trackinfo, db_writer)
 
-        db_writer.close(store_metadata=False)
+        db_writer.close()
 
     def _dump_dynamic_trackinfo(self, dynamic_ti, db_writer):
         ti_group_path = '/' + '/'.join(self._trackinfo_node_names[:-1])
@@ -77,6 +76,3 @@ class MetadataHandler(object):
     def _remove_persisted_trackinfo(self, db_writer):
         ti_path = '/' + '/'.join(self._trackinfo_node_names)
         db_writer.h5_file.remove_node(ti_path, recursive=True)
-
-
-

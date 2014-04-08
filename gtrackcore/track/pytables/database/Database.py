@@ -35,24 +35,14 @@ class Database(object):
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
         try:
-            self._h5_file = tables.open_file(self._h5_filename, mode=mode, title=self._db_name)
+            self._h5_file = tables.open_file(self._h5_filename, mode=mode)
         except IOError, e:
             raise DBNotExistError(e)
-
         portalocker.lock(self._h5_file, lock_type)
 
-    def close(self, store_metadata=True):
+    def close(self):
         self._cached_nodes = {}
-        portalocker.unlock(self._h5_file)
         self._h5_file.close()
-        if store_metadata:
-            genome, track_name = get_genome_and_trackname(self._h5_filename)
-
-            dynamic_trackinfo = DynamicTrackInfo(genome, track_name)
-            from gtrackcore.track.pytables.database import MetadataHandler
-
-            metadata_handler = MetadataHandler(genome, track_name)
-            metadata_handler.store(dynamic_trackinfo)
 
     def table_exists(self, node_names):
         table_path = self._get_node_path(node_names)
@@ -148,6 +138,6 @@ class DatabaseReader(Database):
         if self._h5_file is None or not self._h5_file.isopen:
             super(DatabaseReader, self).open(mode='r', lock_type=portalocker.LOCK_SH)
 
-    def close(self, store_metadata=True):
+    def close(self):
         if gtrackcore.preprocess.is_preprocessing:
-            super(DatabaseReader, self).close(store_metadata)
+            super(DatabaseReader, self).close()
