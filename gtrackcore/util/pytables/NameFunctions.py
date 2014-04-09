@@ -33,6 +33,10 @@ def _get_table_node_names(genome, track_name, table_name, allow_overlaps):
     return node_names
 
 
+def get_node_path(node_names):
+    return '/%s' % ('/'.join(node_names))
+
+
 def get_database_filename(genome, track_name, allow_overlaps=None, create_path=False):
     dir_path = get_dir_path(genome, track_name)
     if create_path:

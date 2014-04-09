@@ -3,13 +3,12 @@ import os
 
 import tables
 from tables.exceptions import ClosedFileError, NodeError
-from gtrackcore.metadata.TrackInfo import DynamicTrackInfo
 
 import gtrackcore.preprocess
 from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 from gtrackcore.util.pytables.Constants import GTRACKCORE_FORMAT_SUFFIX
-from gtrackcore.util.pytables.NameFunctions import get_genome_and_trackname
+from gtrackcore.util.pytables.NameFunctions import get_node_path
 
 
 class Database(object):
@@ -45,7 +44,7 @@ class Database(object):
         self._h5_file.close()
 
     def table_exists(self, node_names):
-        table_path = self._get_node_path(node_names)
+        table_path = get_node_path(node_names)
         try:
             self._h5_file.get_node(table_path)
             return True
@@ -56,7 +55,7 @@ class Database(object):
         return self.get_node(node_names)
 
     def get_node(self, node_names):
-        node_path = self._get_node_path(node_names)
+        node_path = get_node_path(node_names)
         if node_path in self._cached_nodes:
             return self._cached_nodes[node_path]
         try:
@@ -68,9 +67,6 @@ class Database(object):
 
     def copy_node(self, node, target_node=None, recursive=True):
         self._h5_file.copy_node(node, newparent=target_node, recursive=recursive)
-
-    def _get_node_path(self, node_names):
-        return '/%s' % ('/'.join(node_names))
 
 
 class DatabaseWriter(Database):
