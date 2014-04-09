@@ -39,6 +39,8 @@ def _persist_metadata(filenames):
     for filename in filenames:
         try:
             genome, track_name = get_genome_and_trackname(filename)
+            if not track_name:
+                continue
         except IndexError:
             continue
         dynamic_trackinfo = DynamicTrackInfo(genome, track_name)
