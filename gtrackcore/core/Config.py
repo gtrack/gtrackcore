@@ -51,6 +51,7 @@ class Config(object):
 
             configDef['General'] = OrderedDict( \
                 [('LOG_PATH', os.sep.join([gtrackcore_dir, 'gtrackcore_logs'])), \
+                 ('RESOURCE_PATH', os.sep.join([data_dir, 'track_resources'])), \
                  ('ORIG_DATA_PATH', os.sep.join([data_dir, 'Original'])), \
                  ('PROCESSED_DATA_PATH', os.sep.join([data_dir, 'Processed'])), \
                  ('METADATA_FILES_PATH', os.sep.join([data_dir, 'Metadata'])), \
