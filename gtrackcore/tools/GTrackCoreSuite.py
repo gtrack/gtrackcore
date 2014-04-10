@@ -1,8 +1,9 @@
 import os
 import re
+import tarfile
 import urllib2
 from urlparse import urlparse
-from ftplib import FTP
+import zipfile
 
 from gtrackcore.core.Config import Config
 
@@ -71,49 +72,66 @@ def retrieve_resources(track_resources):
         scheme = parsed_url.scheme
 
         if scheme in ['http', 'file', 'ftp']:
-
-            if _resource_is_dir(resource):
-                if resource['compressed']:
-                    pass
-                else:
-                    raise NotImplementedError
+            if not _path_is_dir(parsed_url.path):
+                file_path = _retrieve_file_using_urllib2(parsed_url, Config.RESOURCE_PATH)
             else:
-                if resource['compressed']:
-                    _retrieve_file_using_urllib2(parsed_url, Config.RESOURCE_PATH)
+                raise NotImplementedError
 
-def _resource_is_dir(resource):
-    return resource['URL'][-1] == '/'
+            if file_path == None:
+                continue
+
+        if resource['compressed']:
+            _decompress_file(file_path, Config.RESOURCE_PATH)
+
+
+def _path_is_dir(path):
+    return path[-1] == '/'
+
 
 def _retrieve_from_file(parsed_url):
     return parsed_url.path
 
 
-def _retrieve_from_ftp(parsed_url):
-    ftp = FTP(parsed_url.geturl())
-    ftp.login()
-    #ftp.cwd(parsed_url.path)
-    #ftp.retrbinary('RETR README', open('README', 'wb').write)
-    ftp.quit()
+def _decompress_file(file_path, dest_dir):
+    _, file_ext = os.path.splitext(file_path)
+
+    file_name = file_path.split('/')[-1]
+    print 'Trying to extract "%s".' % file_name
+
+    if tarfile.is_tarfile(file_path):
+        if file_ext == '.gz':
+            tar = tarfile.open(file_path, mode='r:gz')
+        else:
+            tar = tarfile.open(file_path, mode='r')
+        tar.extractall(dest_dir)
+        tar.close()
+    elif zipfile.is_zipfile(file_path):
+        zip = zipfile.ZipFile(file_path, 'r')
+        zip.extractall(dest_dir)
+        zip.close()
+    else:
+        raise TypeError('Archive type not supported: %s' % file_ext)
+
+    print 'Archive extracted!'
 
 
 def _retrieve_file_using_urllib2(parsed_url, dest_dir):
     dest_dir = dest_dir if dest_dir[-1] is not '/' else dest_dir[:-1]
 
     filename = dest_dir + '/' + parsed_url.path.split('/')[-1]
-
     try:
         open_url = urllib2.urlopen(parsed_url.geturl())
     except urllib2.HTTPError, e:
         print e
-        return
+        return None
     except urllib2.URLError, e:
         print e
-        return
+        return None
 
     h5_file = open(filename, 'wb')
     meta = open_url.info()
     file_size = int(meta.getheaders("Content-Length")[0])
-    print "Downloading: %s Bytes: %s" % (filename, file_size)
+    print 'Downloading: %s Bytes: %s' % (filename, file_size)
 
     file_size_dl = 0
     block_size = 8192
@@ -124,11 +142,12 @@ def _retrieve_file_using_urllib2(parsed_url, dest_dir):
 
         file_size_dl += len(buffer)
         h5_file.write(buffer)
-        status = "%10d bytes,  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+        status = '%10d bytes,  [%3.2f%%]' % (file_size_dl, file_size_dl * 100. / file_size)
         status = status + chr(8)*(len(status)+1)
-        print status + "\r",
+        print status + '\r',
 
     h5_file.close()
+    return filename
 
 
 if __name__ == '__main__':
