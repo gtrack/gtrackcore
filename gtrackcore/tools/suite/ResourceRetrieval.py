@@ -23,7 +23,7 @@ def retrieve_resources(track_resources, download_path):
                 continue
             else:
                 file_resource = copy(resource)
-                file_resource['file_path'] = file_path
+                file_resource['download_path'] = file_path
                 fetched_paths.append(file_resource)
     return fetched_paths
 
