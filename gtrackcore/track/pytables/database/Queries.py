@@ -90,7 +90,7 @@ class TrackQueries(DatabaseQueries):
     @staticmethod
     def _build_start_and_end_index_queries(track_format):
         if track_format.isSegment():
-            start_index_query = '(end > region_start) & (start < region_end)'
+            start_index_query = '(start >= region_start) | ((end > region_start) & (start < region_end))'
             end_index_query = '(start > region_end)'
 
         elif track_format.isPoint():
@@ -123,10 +123,12 @@ class TrackQueries(DatabaseQueries):
         else:
             start_index, end_index = self._get_region_start_and_end_indices(genome_region, br_start_index,
                                                                             br_end_index, track_format)
+            #start_index, end_index = self._get_region_start_and_end_index_for_segments_and_points_tracks(
+            #    genome_region, br_start_index, br_end_index)
 
         return start_index, end_index
 
-    def _get_index(self, table, query, start, stop, condvars):
+    def _get_first_index(self, table, query, condvars, start, stop):
         for row in table.where(query, start=start, stop=stop, condvars=condvars):
             return row.nrow
         return None
@@ -142,8 +144,8 @@ class TrackQueries(DatabaseQueries):
             'region_end': genome_region.end
         }
 
-        start_index = self._get_index(table, start_index_query, br_start, br_stop, condvars)
-        end_index = self._get_index(table, end_index_query, br_start, br_stop, condvars)
+        start_index = self._get_first_index(table, start_index_query, condvars, br_start, br_stop)
+        end_index = self._get_first_index(table, end_index_query, condvars, br_start, br_stop)
 
         self._db_reader.close()
 
@@ -157,3 +159,42 @@ class TrackQueries(DatabaseQueries):
             return 0, 0
         else:
             return start_index, end_index
+
+    def _get_region_start_and_end_index_for_segments_tracks(self, genome_region, br_start, br_stop):
+        self._db_reader.open()
+        table = self._db_reader.get_table(self._table_node_names)
+        start_index = self._get_region_start_index_for_segments(table, genome_region, br_start, br_stop)
+        end_index = self._get_region_end_index_for_segments_and_points_tracks(table, genome_region, br_start, br_stop)
+        self._db_reader.close()
+
+        return (start_index, end_index) if end_index > start_index else (0, 0)
+
+    def _get_region_start_index_for_segments(self, table, genome_region, lower_limit, upper_limit):
+        while upper_limit - lower_limit > 1000:
+            mid_index = lower_limit + ((upper_limit - lower_limit) / 2)
+            row = table[mid_index]
+
+            if row['start'] > genome_region.start:
+                upper_limit = mid_index
+            else:
+                lower_limit = mid_index
+
+        for row in table.iterrows(start=lower_limit, stop=upper_limit):
+            if row['start'] < genome_region.start > row['end'] or row['start'] > genome_region.start:
+                return row.nrow
+
+    def _get_region_end_index_for_segments_and_points_tracks(self, table, genome_region, lower_limit, upper_limit):
+        while upper_limit - lower_limit > 1000:
+            mid_index = lower_limit + ((upper_limit - lower_limit) / 2)
+            row = table[mid_index]
+
+            if row['start'] > genome_region.end:
+                upper_limit = mid_index
+            else:
+                lower_limit = mid_index
+
+        for row in table.iterrows(start=lower_limit, stop=upper_limit):
+            if row['start'] > genome_region.end:
+                return row.nrow
+
+        return upper_limit
