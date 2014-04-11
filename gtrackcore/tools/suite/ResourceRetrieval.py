@@ -62,7 +62,8 @@ def _retrieve_file_using_urllib2(parsed_url, dest_dir):
         file_size_dl += len(buffer)
         h5_file.write(buffer)
         status = '%10d bytes,  [%3.2f%%]' % (file_size_dl, file_size_dl * 100. / file_size)
-        status = status + chr(8)*(len(status)+1)
+        progress = int(file_size_dl * 100. / file_size) / 2
+        status = status + ' |' + '#'*progress + '-'*(50-progress) + '|'
         print status + '\r',
 
     h5_file.close()

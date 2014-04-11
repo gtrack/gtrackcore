@@ -53,7 +53,7 @@ class Config(object):
                  ('ORIG_DATA_PATH', os.sep.join([data_dir, 'Original'])), \
                  ('PROCESSED_DATA_PATH', os.sep.join([data_dir, 'Processed'])), \
                  ('METADATA_FILES_PATH', os.sep.join([data_dir, 'Metadata'])), \
-                 ('RESOURCE_DONWLOAD_DIR', os.sep.join([data_dir, 'tmp/resource_downloads'])), \
+                 ('RESOURCE_DONWLOAD_DIR', os.sep.join([data_dir, 'tmp/downloads'])), \
                  ('RESOURCE_DIR', os.sep.join([data_dir, 'tmp/resources'])), \
                  ('MAX_CONCAT_LEN_FOR_OVERLAPPING_ELS', '20'), \
                  ('OUTPUT_PRECISION', '4'), \
