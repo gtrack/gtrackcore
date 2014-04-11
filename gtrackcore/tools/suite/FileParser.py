@@ -1,5 +1,6 @@
 import re
-import urllib2
+
+from gtrackcore.util.suite.CommonFunctions import convert_to_boolean, convert_track_name_str_to_list
 
 
 def parse_track_resource_file(resource_filename):
@@ -17,9 +18,9 @@ def parse_track_resource_file(resource_filename):
 
             url = _validate_url(parts[0])
             genome = _validate_genome(parts[1])
-            track_name = _convert_track_name_str_to_list(parts[2])
-            preprocessed = _convert_to_boolean(parts[3])
-            compressed = _convert_to_boolean(parts[4])
+            track_name = convert_track_name_str_to_list(parts[2])
+            preprocessed = convert_to_boolean(parts[3])
+            compressed = convert_to_boolean(parts[4])
 
             resource = {'URL': url, 'genome': genome, 'track_name': track_name,
                         'compressed': False, 'preprocessed': True}  # default values for compressed and preprocessed
@@ -48,24 +49,3 @@ def _validate_genome(genome):
         return None
     return genome
 
-
-def _convert_track_name_str_to_list(track_name_str):
-    if track_name_str == '.':
-        return None
-
-    track_name_str = track_name_str.strip()
-    track_name_list = re.split(':|\^|\|', track_name_str)
-    track_name_list = [urllib2.unquote(part) for part in track_name_list]
-    return track_name_list
-
-
-def _convert_to_boolean(text):
-    text_lower = text.lower()
-    if text_lower == 'true':
-        return True
-    elif text_lower == 'false':
-        return False
-    elif text_lower == '.':  # use default
-        return None
-    else:
-        raise TypeError

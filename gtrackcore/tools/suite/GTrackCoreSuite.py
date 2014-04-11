@@ -1,12 +1,12 @@
 import os
-import shutil
 import tarfile
 import zipfile
-import errno
 
 from gtrackcore.core.Config import Config
 from gtrackcore.tools.suite.FileParser import parse_track_resource_file
 from gtrackcore.tools.suite.ResourceRetrieval import retrieve_resources
+from gtrackcore.util.suite.CommonFunctions import custom_splitext, get_filename_and_file_ext, remove_file_or_dir, \
+    copy_file_or_dir, path_is_dir
 
 
 def load_track_suite(suite_filename):
@@ -23,40 +23,26 @@ def load_track_suite(suite_filename):
         print '\n'.join(unfetched_resources)
 
     compressed_fetched_resources = [resource for resource in fetched_resources if resource['compressed']]
-    not_compressed_fetched_resources = [resource for resource in fetched_resources if not resource['compressed']]
+    decompressed_fetched_resources = [resource for resource in fetched_resources if not resource['compressed']]
 
-    if len(not_compressed_fetched_resources) > 0:
-        print 'Copying %d resources.' % len(not_compressed_fetched_resources)
-        for resource in not_compressed_fetched_resources:
-            to_file_path = temp_resource_dir + os.sep + resource['file_path'].split(os.sep)[-1]
-            _copy_file_or_dir(resource['file_path'], to_file_path)
+    if len(decompressed_fetched_resources) > 0:
+        print 'Copying %d resources.' % len(decompressed_fetched_resources)
+        for resource in decompressed_fetched_resources:
+            if path_is_dir(resource['download_path']):
+                tmp_location = temp_resource_dir + os.sep + resource['download_path'].split(os.sep)[-2]
+            else:
+                tmp_location = temp_resource_dir + os.sep + resource['download_path'].split(os.sep)[-1]
+
+            copy_file_or_dir(resource['download_path'], tmp_location)
+            resource['tmp_location'] = tmp_location
 
     if len(compressed_fetched_resources) > 0:
         print 'Extracting %d archives.' % len(compressed_fetched_resources)
         for resource in compressed_fetched_resources:
-            _decompress_archive(resource['file_path'], temp_resource_dir)
+            tmp_location =_decompress_archive(resource['download_path'], temp_resource_dir)
+            resource['tmp_location'] = tmp_location
 
-
-def _copy_file_or_dir(src, dest):
-    try:
-        shutil.copytree(src, dest)
-    except OSError as e:
-        # If the error was caused because the source wasn't a directory
-        if e.errno == errno.ENOTDIR:
-            shutil.copy(src, dest)
-        else:
-            print('Unable to copy %s to %s. Error: %s' % (e, src, dest))
-
-
-def _remove_file_or_dir(path):
-    try:
-        shutil.rmtree(path)
-    except OSError as e:
-        # If the error was caused because the source wasn't a directory
-        if e.errno == errno.ENOTDIR:
-            os.remove(path)
-        else:
-            print('Unable to delete %s. Error: %s' % (path, e))
+    return fetched_resources
 
 
 def _setup_dirs():
@@ -66,34 +52,62 @@ def _setup_dirs():
 
     temp_resource_dir = Config.RESOURCE_DIR
     if os.path.exists(temp_resource_dir):
-        _remove_file_or_dir(temp_resource_dir)
+        remove_file_or_dir(temp_resource_dir)
     os.makedirs(temp_resource_dir)
 
     return download_dir, temp_resource_dir
 
 
 def _decompress_archive(file_path, dest_dir):
-    _, file_ext = os.path.splitext(file_path)
 
-    file_name = file_path.split('/')[-1]
+    file_name, file_ext = get_filename_and_file_ext(file_path)
     print 'Trying to extract "%s"...' % file_name,
-
     if tarfile.is_tarfile(file_path):
-        if file_ext == '.gz':
-            tar = tarfile.open(file_path, mode='r:gz')
-        else:
-            tar = tarfile.open(file_path, mode='r')
-        tar.extractall(dest_dir)
-        tar.close()
+        destination = _decompress_tarfile(file_path, dest_dir)
     elif zipfile.is_zipfile(file_path):
-        zip = zipfile.ZipFile(file_path, 'r')
-        zip.extractall(dest_dir)
-        zip.close()
+        destination = _decompress_zipfile(file_path, dest_dir)
     else:
         raise TypeError('Archive type not supported: %s' % file_ext)
 
     print 'Done!'
+    return destination
+
+
+def _decompress_tarfile(file_path, dest_dir):
+    _, file_ext = get_filename_and_file_ext(file_path)
+
+    if file_ext == '.gz':
+        tar = tarfile.open(file_path, mode='r:gz')
+    else:
+        tar = tarfile.open(file_path, mode='r')
+    members = tar.getmembers()
+    return _decompress_common(file_path, dest_dir, tar, members)
+
+
+def _decompress_zipfile(file_path, dest_dir):
+    zip = zipfile.ZipFile(file_path, 'r')
+    members = zip.namelist()
+    return _decompress_common(file_path, dest_dir, zip, members)
+
+
+def _decompress_common(file_path, dest_dir, decompressor, members):
+    file_name, file_ext =get_filename_and_file_ext(file_path)
+
+    if len(members) > 1:
+        dest_dir = dest_dir + os.sep + custom_splitext(file_name)[0] + os.sep
+        os.makedirs(dest_dir)
+        for member in members:
+            decompressor.extract(member, dest_dir)
+    elif len(members) == 1:
+        decompressor.extract(members[0], dest_dir)
+        decompressor.close()
+        dest_dir = dest_dir + os.sep + file_name
+    else:
+        print 'Archive is empty.',
+        return None
+
+    return dest_dir
 
 
 if __name__ == '__main__':
-    load_track_suite('/ifi/asgard/m00/henrigs/lol.suite')
+    load_track_suite('/Users/brynjar/lol.gsuite')
