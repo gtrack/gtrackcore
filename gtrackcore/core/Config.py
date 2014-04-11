@@ -45,16 +45,16 @@ class Config(object):
 
         data_dir = os.sep.join([gtrackcore_dir, 'gtrackcore_data'])
         config_filename = os.sep.join([gtrackcore_dir, 'gtrackcore_config'])
-
         try:
             configDef = OrderedDict()
 
             configDef['General'] = OrderedDict( \
                 [('LOG_PATH', os.sep.join([gtrackcore_dir, 'gtrackcore_logs'])), \
-                 ('RESOURCE_PATH', os.sep.join([data_dir, 'track_resources'])), \
                  ('ORIG_DATA_PATH', os.sep.join([data_dir, 'Original'])), \
                  ('PROCESSED_DATA_PATH', os.sep.join([data_dir, 'Processed'])), \
                  ('METADATA_FILES_PATH', os.sep.join([data_dir, 'Metadata'])), \
+                 ('RESOURCE_DONWLOAD_DIR', os.sep.join([data_dir, 'tmp/resource_downloads'])), \
+                 ('RESOURCE_DIR', os.sep.join([data_dir, 'tmp/resources'])), \
                  ('MAX_CONCAT_LEN_FOR_OVERLAPPING_ELS', '20'), \
                  ('OUTPUT_PRECISION', '4'), \
                  ('USE_SLOW_DEFENSIVE_ASSERTS', 'False')])
