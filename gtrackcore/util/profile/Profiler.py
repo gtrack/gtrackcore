@@ -69,7 +69,7 @@ def profile_track_preprocessor(genome, track_name, stat_dir=None):
 
 
 def profile_operation(operation, track_name1, allow_overlaps1, genome_regions, track_name2=None, allow_overlaps2=None):
-    from gtrackcore.tools.TrackTools import count_elements, sum_of_values, \
+    from gtrackcore.tools.TrackOperations import count_elements, sum_of_values, \
         sum_of_weights, sum_of_weights_iter, coverage, overlap_iter, overlap
 
     if track_name1 is not None and track_name2 is not None:

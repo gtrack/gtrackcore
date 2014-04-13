@@ -5,7 +5,7 @@ import itertools
 
 from gtrackcore.core.LogSetup import logMessage
 from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
-from gtrackcore.tools.TrackTools import coverage, overlap, overlap_iter, count_elements, \
+from gtrackcore.tools.TrackOperations import coverage, overlap, overlap_iter, count_elements, \
     count_elements_in_all_bounding_regions, sum_of_values, sum_of_weights, sum_of_weights_iter
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonFunctions import createOrigPath

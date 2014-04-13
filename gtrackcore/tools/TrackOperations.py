@@ -1,10 +1,11 @@
 from functools import partial
 import math
-import numpy
 import sys
-from gtrackcore.metadata import GenomeInfo
 
-from gtrackcore.tools.ToolExceptions import OperationNotSupportedError
+import numpy
+
+from gtrackcore.metadata import GenomeInfo
+from gtrackcore.util.tools.ToolExceptions import OperationNotSupportedError
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormatReq

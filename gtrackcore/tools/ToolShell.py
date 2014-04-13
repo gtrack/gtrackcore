@@ -3,7 +3,7 @@ import sys
 import os
 import cmd
 
-from gtrackcore.tools import TrackTools
+from gtrackcore.tools import TrackOperations
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import PlainTrack
 from gtrackcore.core.Config import Config
@@ -215,7 +215,7 @@ class ToolShell(cmd.Cmd):
             return
 
         track_view = self._get_track_view(track_name, genome_region)
-        coverage = TrackTools.coverage(track_view)
+        coverage = TrackOperations.coverage(track_view)
         self.print_result('coverage', track_name, coverage)
 
     def complete_coverage(self, text, line, begidx, endidx):
@@ -288,7 +288,7 @@ class ToolShell(cmd.Cmd):
             return
 
         track_view = self._get_track_view(track_name, genome_region)
-        k_elements_with_highest_values = TrackTools.k_highest_values(track_view, k)
+        k_elements_with_highest_values = TrackOperations.k_highest_values(track_view, k)
         self.print_result('k_highest_values', track_name, k_elements_with_highest_values)
 
     def complete_k_highest(self, text, line, begidx, endidx):
