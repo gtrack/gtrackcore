@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormat
-from gtrackcore.track.pytables.database.Queries import TrackQueries
+from gtrackcore.track.pytables.database.IndexRetrieval import start_and_end_indices
 from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 
 
@@ -18,8 +18,7 @@ class TrackViewLoader:
 
         track_format = TrackFormat(*(reserved_columns + [OrderedDict(zip(extra_column_names, extra_columns))]))
 
-        queries = TrackQueries(region.genome, trackName, allowOverlaps)
-        start_index, end_index = queries.start_and_end_indices(region, track_format)
+        start_index, end_index = start_and_end_indices(region, trackName, allowOverlaps, track_format)
 
         for column in reserved_columns + extra_columns:
             if column is not None:

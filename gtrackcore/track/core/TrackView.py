@@ -8,7 +8,7 @@ from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
-from gtrackcore.track.pytables.database.Queries import TrackQueries
+from gtrackcore.track.pytables.database.IndexRetrieval import start_and_end_indices
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
 
@@ -310,8 +310,8 @@ class TrackView(object):
     def _generate_pytables_track_elements(self):
 
         if self._cached_start_and_end_indices is None:
-            queries = TrackQueries(self.genomeAnchor.genome, self._track_name, self.allowOverlaps)
-            self._cached_start_and_end_indices = queries.start_and_end_indices(self.genomeAnchor, self.trackFormat)
+            self._cached_start_and_end_indices = start_and_end_indices(self.genomeAnchor, self._track_name,
+                                                                       self.allowOverlaps, self.trackFormat)
 
         start_index, end_index = self._cached_start_and_end_indices
         if start_index == end_index:
