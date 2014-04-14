@@ -138,7 +138,6 @@ def overlap(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_r
         track_view1 = get_track_view(track_name1, allow_overlaps1, region)
         track_view2 = get_track_view(track_name2, allow_overlaps2, region)
         intersection_sum += overlap_of_track_views(track_view1, track_view2)
-    print intersection_sum
     return intersection_sum
 
 
