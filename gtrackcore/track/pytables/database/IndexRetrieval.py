@@ -69,8 +69,9 @@ def _start_index_for_segments(table, genome_region, min_index, max_index):
     min_index, max_index = _improve_min_and_max_index(table, min_index, max_index, 'start', genome_region.start)
 
     for row in table.iterrows(start=min_index, stop=max_index):
-        if row['start'] >= genome_region.start or (row['end'] >= genome_region.start) and (row['start'] < genome_region.end):
+        if (row['start'] < genome_region.start < row['end']) or (genome_region.start <= row['start'] < genome_region.end):
             return row.nrow
+    return None
 
 
 def _start_index_for_points(table, genome_region, min_index, max_index):
@@ -79,36 +80,34 @@ def _start_index_for_points(table, genome_region, min_index, max_index):
     for row in table.iterrows(start=min_index, stop=max_index):
         if genome_region.start <= row['start'] < genome_region.end:
             return row.nrow
+    return None
 
 
 def _start_index_for_partitions(table, genome_region, min_index, max_index):
     min_index, max_index = _improve_min_and_max_index(table, min_index, max_index, 'end', genome_region.start)
 
     for row in table.iterrows(start=min_index, stop=max_index):
-        if genome_region.start <= row['end'] <= genome_region.end:
+        if genome_region.start <= row['end'] < genome_region.end:
             return row.nrow
+    return None
 
 
 def _end_index_for_segments_and_points(table, genome_region, min_index, max_index):
     min_index, max_index = _improve_min_and_max_index(table, min_index, max_index, 'start', genome_region.end)
 
-    end_index = min_index
     for row in table.iterrows(start=min_index, stop=max_index):
-        if row['start'] <= genome_region.end:
-            end_index = row.nrow
-        else:
-            return end_index
+        if row['start'] >= genome_region.end:
+            return row.nrow
+    return None
 
 
 def _end_index_for_partitions(table, genome_region, min_index, max_index):
     min_index, max_index = _improve_min_and_max_index(table, min_index, max_index, 'end', genome_region.end)
 
-    end_index = min_index
     for row in table.iterrows(start=min_index, stop=max_index):
-        if row['end'] <= genome_region.end:
-            end_index = row.nrow + 1
-        else:
-            return end_index
+        if row['end'] >= genome_region.end:
+            return row.nrow + 1
+    return None
 
 
 def _improve_min_and_max_index(table, min_index, max_index, column, region_side):
