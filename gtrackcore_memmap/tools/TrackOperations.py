@@ -11,6 +11,7 @@ from gtrackcore_memmap.track.core.Track import Track
 from gtrackcore_memmap.track.format.TrackFormat import TrackFormatReq
 from gtrackcore_memmap.track.graph.GraphView import LazyProtoGraphView
 from gtrackcore_memmap.track.memmap.BoundingRegionShelve import BoundingRegionShelve
+from gtrackcore_memmap.util.tools.ToolExceptions import OperationNotSupportedError
 
 
 def get_track_format(track_name, allow_overlaps, genome_regions):
