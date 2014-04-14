@@ -405,20 +405,40 @@ class PreProcessToolOutputJob(PreProcessTracksJob):
 
 
 if __name__ == "__main__":
+    if not len(sys.argv) in [2,3,4]:
+        print 'Syntax: python PreProcessTracksJob.py genome [trackName:subType] [mode=Real/Simulated/UpdateMeta]'
+        sys.exit(0)
 
-    tool_input = {
-        'track1': {
-            'name': 'testcat:opertrack1'.split(':'),
-            'allow_overlaps': False
-        },
-        'track2': {
-            'name': 'testcat:opertrack2'.split(':'),
-            'allow_overlaps': False
-        },
-        'genome_regions': [GenomeRegion('testgenome', 'chr21', 0, 46944323)]
-    }
+    if len(sys.argv) == 2:
+        tn = []
+        mode = 'Real'
+    elif len(sys.argv) == 3:
+        if sys.argv[2] in ['Real', 'Simulated', 'UpdateMeta']:
+            tn = []
+            mode = sys.argv[2]
+        else:
+            tn = sys.argv[2].split(':')
+            mode = 'Real'
+    else:
+        tn = sys.argv[2].split(':')
+        mode = sys.argv[3]
 
-    PreProcessToolOutputJob('union', tool_input, 'testgenome', ['testcat', 'union']).process()
+    assert mode in ['Real', 'Simulated', 'UpdateMeta']
+    PreProcessAllTracksJob(sys.argv[1], tn, username='', mode=mode).process()
+
+    #tool_input = {
+    #    'track1': {
+    #        'name': 'testcat:opertrack1'.split(':'),
+    #        'allow_overlaps': False
+    #    },
+    #    'track2': {
+    #        'name': 'testcat:opertrack2'.split(':'),
+    #        'allow_overlaps': False
+    #    },
+    #    'genome_regions': [GenomeRegion('testgenome', 'chr21', 0, 46944323)]
+    #}
+    #
+    #PreProcessToolOutputJob('union', tool_input, 'testgenome', ['testcat', 'union']).process()
 
     #tool_input = {
     #    'segment_track': {
@@ -433,25 +453,3 @@ if __name__ == "__main__":
     #}
     #
     #PreProcessToolOutputJob('mean', tool_input, 'testgenome', ['testcat', 'mean_result']).process()
-
-    #if not len(sys.argv) in [2,3,4]:
-    #    print 'Syntax: python PreProcessTracksJob.py genome [trackName:subType] [mode=Real/Simulated/UpdateMeta]'
-    #    sys.exit(0)
-    #
-    #if len(sys.argv) == 2:
-    #    tn = []
-    #    mode = 'Real'
-    #elif len(sys.argv) == 3:
-    #    if sys.argv[2] in ['Real', 'Simulated', 'UpdateMeta']:
-    #        tn = []
-    #        mode = sys.argv[2]
-    #    else:
-    #        tn = sys.argv[2].split(':')
-    #        mode = 'Real'
-    #else:
-    #    tn = sys.argv[2].split(':')
-    #    mode = sys.argv[3]
-    #
-    #assert mode in ['Real', 'Simulated', 'UpdateMeta']
-    #PreProcessAllTracksJob(sys.argv[1], tn, username='', mode=mode).process()
-
