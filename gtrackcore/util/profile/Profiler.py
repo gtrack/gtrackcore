@@ -73,17 +73,18 @@ def profile_operation(operation, track_name1, allow_overlaps1, genome_regions, t
     from gtrackcore.tools.TrackOperations import count_elements, sum_of_values, \
         sum_of_weights, sum_of_weights_iter, coverage, overlap_iter, overlap
 
+    result = []
     if track_name1 is not None and track_name2 is not None:
-        run_str = operation + '(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions)'
+        run_str = 'result.append(' + operation + '(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_regions))'
     elif track_name1 is not None:
-        run_str = operation + '(track_name1, allow_overlaps1, genome_regions)'
+        run_str = 'result.append(' + operation + '(track_name1, allow_overlaps1, genome_regions))'
     else:
         return None
 
     profiler = Profiler()
     profiler.run(run_str, globals(), locals())
 
-    return profiler
+    return profiler, result[0]
 
 if __name__ == '__main__':
 
