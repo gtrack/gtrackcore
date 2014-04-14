@@ -6,7 +6,7 @@ import tables
 
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_base_node_names, \
-    WITH_OVERLAPS_NODE_NAME
+    WITH_OVERLAPS_NODE_NAME, get_br_table_node_names
 from gtrackcore.util.pytables.NumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.Constants import FLUSH_LIMIT
 
@@ -87,10 +87,11 @@ def merge_and_rename_overlap_tables(genome, track_name):
     """
     no_overlap_db_path = get_database_filename(genome, track_name, allow_overlaps=False)
     with_overlap_db_path = get_database_filename(genome, track_name, allow_overlaps=True)
-
-    db_writer = DatabaseWriter(no_overlap_db_path)
-    db_writer.open()
+    with_overlap_exist = False
     if os.path.isfile(with_overlap_db_path):
+        with_overlap_exist = True
+        db_writer = DatabaseWriter(no_overlap_db_path)
+        db_writer.open()
         db_reader = DatabaseReader(with_overlap_db_path)
         db_reader.open()
 
@@ -104,14 +105,29 @@ def merge_and_rename_overlap_tables(genome, track_name):
         db_reader.close()
 
         os.remove(with_overlap_db_path)
-
-    db_writer.close()
-
+        db_writer.close()
     db_path = get_database_filename(genome, track_name)
     os.rename(no_overlap_db_path, db_path)
 
     #There might be some remaining open file handlers that are using the new db_path, so these must be closed
     _close_file_handlers(db_path)
+
+    _create_br_indices(db_path, genome, track_name, with_overlap_exist)
+
+
+def _create_br_indices(db_path, genome, track_name, with_overlap_exist):
+    db_writer = DatabaseWriter(db_path)
+    db_writer.open()
+    _create_br_index(genome, track_name, False, db_writer)
+    if with_overlap_exist:
+        _create_br_index(genome, track_name, True, db_writer)
+    db_writer.close()
+
+
+def _create_br_index(genome, track_name, allow_overlaps, db_writer):
+    br_table_node_names = get_br_table_node_names(genome, track_name, allow_overlaps)
+    br_table = db_writer.get_table(br_table_node_names)
+    create_table_indices(br_table)
 
 
 def _close_file_handlers(db_path):
