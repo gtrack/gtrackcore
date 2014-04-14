@@ -1,7 +1,8 @@
 from functools import partial
 import math
-import numpy
 import sys
+
+import numpy
 
 from gtrackcore_memmap.metadata import GenomeInfo
 from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
@@ -9,6 +10,7 @@ from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
 from gtrackcore_memmap.track.core.Track import Track
 from gtrackcore_memmap.track.format.TrackFormat import TrackFormatReq
 from gtrackcore_memmap.track.graph.GraphView import LazyProtoGraphView
+from gtrackcore_memmap.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 
 
 def get_track_format(track_name, allow_overlaps, genome_regions):
@@ -60,12 +62,10 @@ def sum_of_weights(track_name, allow_overlaps, genome_regions):
 
 
 def sum_of_weights_iter(track_name, allow_overlaps, genome_regions):
-    graph_view = get_graph_view(track_name, genome_regions, allow_overlaps)
+    graph_view = get_graph_view(track_name, allow_overlaps, genome_regions)
     weight_sum = numpy.float128(0)
     for edge in graph_view.getEdgeIter():
-        if isinstance(edge.weight, numpy.ndarray):
-            weight_sum += numpy.nansum(edge.weight)
-        elif not math.isnan(edge.weight):
+        if not math.isnan(edge.weight):
             weight_sum += edge.weight
     return weight_sum
 
@@ -137,7 +137,25 @@ def overlap(track_name1, allow_overlaps1, track_name2, allow_overlaps2, genome_r
         track_view1 = get_track_view(track_name1, allow_overlaps1, region)
         track_view2 = get_track_view(track_name2, allow_overlaps2, region)
         intersection_sum += overlap_of_track_views(track_view1, track_view2)
+    print intersection_sum
     return intersection_sum
+
+
+def count_elements_in_all_bounding_regions(genome, track_name, allow_overlaps):
+    bounding_regions = BoundingRegionShelve(genome, track_name, allow_overlaps).get_all_bounding_regions()
+    return count_elements(track_name, allow_overlaps, bounding_regions)
+
+
+def k_highest_values(track_view, k):
+    if not track_view.trackFormat.isValued():
+        raise OperationNotSupportedError
+    print len(track_view)
+    if k > track_view.getNumElements():
+        raise ValueError('The given k is larger than the number of elements of the TrackView')
+
+    values = track_view.valsAsNumpyArray()
+
+    return values.argsort()[-k:]
 
 
 if __name__ == '__main__':
@@ -156,9 +174,9 @@ if __name__ == '__main__':
         tn1 = 'Sequence:Repeating elements'.split(':')
         tn2 = 'Chromatin:Roadmap Epigenomics:H3K27me3:ENCODE_wgEncodeBroadHistoneGm12878H3k27me3StdPk'.split(':')
         if operation == 'overlap_iter':
-            oper_func = partial(overlap_iter, tn1, True, tn2, True, chromosomes)
+            oper_func = partial(overlap_iter, tn1, False, tn2, False, chromosomes)
         elif operation == 'overlap':
-            oper_func = partial(overlap, tn1, True, tn2, True, chromosomes)
+            oper_func = partial(overlap, tn1, False, tn2, False, chromosomes)
 
     elif operation == 'count':
         tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
