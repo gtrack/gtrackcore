@@ -65,7 +65,8 @@ def profile_track_preprocessor(genome, track_name, stat_dir=None):
 
     profiler = Profiler()
     profiler.run('PreProcessAllTracksJob(genome, track_name, username=\'\', mode=\'Real\').process()', globals(), locals())
-    profiler.printStats(graphDir=stat_dir)
+
+    return profiler
 
 
 def profile_operation(operation, track_name1, allow_overlaps1, genome_regions, track_name2=None, allow_overlaps2=None):
@@ -77,11 +78,12 @@ def profile_operation(operation, track_name1, allow_overlaps1, genome_regions, t
     elif track_name1 is not None:
         run_str = operation + '(track_name1, allow_overlaps1, genome_regions)'
     else:
-        return
+        return None
 
     profiler = Profiler()
     profiler.run(run_str, globals(), locals())
-    profiler.printStats()
+
+    return profiler
 
 if __name__ == '__main__':
     chromosomes = (GenomeRegion('hg19', chr, 0, len)
@@ -91,4 +93,7 @@ if __name__ == '__main__':
     tn2 = 'Chromatin:Roadmap Epigenomics:H3K27me3:ENCODE_wgEncodeBroadHistoneGm12878H3k27me3StdPk'.split(':')
 
     print "Running profiler of overlap operation"
-    profile_operation("overlap", tn1, False, chromosomes, track_name2=tn2, allow_overlaps2=False)
+    profiler = profile_operation("overlap", tn1, False, chromosomes, track_name2=tn2, allow_overlaps2=False)
+
+    if profiler is not None:
+        profiler.printStats()
