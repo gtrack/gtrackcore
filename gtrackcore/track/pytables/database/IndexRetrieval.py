@@ -1,10 +1,12 @@
+from tables.parameters import ITERSEQ_MAX_ELEMENTS
+
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.database.Queries import BoundingRegionQueries
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
 
 
-ITERATION_THRESHOLD = 1000  # the critical region length where iteration is better performance-wise:
+ITERATION_THRESHOLD = ITERSEQ_MAX_ELEMENTS  # the critical region length where iteration is better performance-wise
 
 
 def start_and_end_indices(genome_region, track_name, allow_overlaps, track_format):
