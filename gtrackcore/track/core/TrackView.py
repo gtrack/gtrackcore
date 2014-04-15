@@ -128,7 +128,7 @@ class PytablesTrackElement(object):
         return None
 
     def points_end_func(self):
-        return self.row['start'] + 1
+        return self.start() + 1
 
     def partition_start_func(self):
         return self.partition_start
