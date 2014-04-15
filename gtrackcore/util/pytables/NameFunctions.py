@@ -10,9 +10,12 @@ NO_OVERLAPS_NODE_NAME = 'no_overlaps'
 BOUNDING_REGIONS_NODE_NAME = 'bounding_regions'
 TRACKINFO_NODE_NAME = 'trackinfo'
 
+illegal_starts = re.compile(r'(^\d|^_[cfgv]_)')
+non_alphanumeric = re.compile(r'\W')
+
 
 def get_base_node_names(genome, track_name):
-    return _convert_to_natural_naming([genome] + track_name)
+    return _convert_list_to_natural_naming([genome] + track_name)
 
 
 def get_track_table_node_names(genome, track_name, allow_overlaps):
@@ -28,7 +31,7 @@ def get_trackinfo_node_names(genome, track_name):
 
 
 def _get_table_node_names(genome, track_name, table_name, allow_overlaps):
-    node_names = get_base_node_names(genome, track_name) + _convert_to_natural_naming([table_name])
+    node_names = get_base_node_names(genome, track_name) + [_convert_string_to_natural_naming(table_name)]
     node_names.insert(len(node_names)-1, WITH_OVERLAPS_NODE_NAME if allow_overlaps else NO_OVERLAPS_NODE_NAME)
     return node_names
 
@@ -57,18 +60,15 @@ def get_database_filename(genome, track_name, allow_overlaps=None, create_path=F
 def get_db_name(track_name, allow_overlaps):
     track_name = track_name if allow_overlaps is None else \
         track_name + ('_with_overlaps' if allow_overlaps else '_no_overlaps')
-    return _convert_to_natural_naming(track_name)
+    return _convert_string_to_natural_naming(track_name)
 
 
-def _convert_to_natural_naming(name):
-    is_list_type = isinstance(name, list)
-    if not is_list_type:
-        name = [name]
-    converted_name = [re.sub(r'(^\d)', r'_\g<1>', re.sub(r'\W', '_', re.sub(r'(\s|-)+', '_', part))).lower() for part in name]
-    if is_list_type:
-        return converted_name
-    else:
-        return converted_name[0]
+def _convert_list_to_natural_naming(name):
+    return [re.sub(illegal_starts, r'_\g<1>', re.sub(non_alphanumeric, '_', part)).lower() for part in name]
+
+
+def _convert_string_to_natural_naming(name):
+    return re.sub(illegal_starts, r'_\g<1>', re.sub(non_alphanumeric, '_', name.lower()))
 
 
 def get_genome_and_trackname(filename):
