@@ -44,70 +44,82 @@ class TestTrackTools(unittest.TestCase):
         track_data2 = all_test_track_data['segment2']
         result = overlap(track_data1['track_name'], False,
                          track_data2['track_name'], False, track_data1['genome_regions'])
+        result_should_be = 200
 
-        self.assertEqual(result, 200, msg='overlap result was %d, but should be %d for track %s and %s' %
-                                          (result, 200, ':'.join(track_data1['track_name']),
-                                           ':'.join(track_data2['track_name'])))
+        self.assertEqual(result, result_should_be, msg='overlap result was %d, but should be %d for track %s and %s' %
+                                                       (result, result_should_be, ':'.join(track_data1['track_name']),
+                                                        ':'.join(track_data2['track_name'])))
 
     def test_overlap_with_iterator(self):
         track_data1 = all_test_track_data['segment1']
         track_data2 = all_test_track_data['segment2']
         result = overlap_iter(track_data1['track_name'], False,
                               track_data2['track_name'], False, track_data1['genome_regions'])
+        result_should_be = 200
 
-        self.assertEqual(result, 200, msg='overlap_iter result was %d, but should be %d for track %s and %s' %
-                                          (result, 200, ':'.join(track_data1['track_name']),
-                                           ':'.join(track_data2['track_name'])))
+        self.assertEqual(result, result_should_be, msg='overlap iter result was %d, but should be %d for track %s and %s'
+                                                       % (result, result_should_be, ':'.join(track_data1['track_name']),
+                                                          ':'.join(track_data2['track_name'])))
 
     def test_coverage(self):
         track_data = all_test_track_data['segment1']
         result = coverage(track_data['track_name'], False, track_data['genome_regions'])
+        result_should_be = 250
 
-        self.assertEqual(result, 250, msg='coverage result was %d, but should be %d for track %s' %
-                                          (result, 250, ':'.join(track_data['track_name'])))
+        self.assertEqual(result, result_should_be, msg='coverage result was %d, but should be %d for track %s' %
+                                                       (result, result_should_be, ':'.join(track_data['track_name'])))
 
     def test_count_elements(self):
         track_data = all_test_track_data['genome_partition1']
         result = count_elements(track_data['track_name'], False, track_data['genome_regions'])
+        result_should_be = 5
 
-        self.assertEqual(result, 5, msg='element count result was %d, but should be %d for track %s' %
-                                        (result, 5, ':'.join(track_data['track_name'])))
+        self.assertEqual(result, result_should_be, msg='element count result was %d, but should be %d for track %s' %
+                                                       (result, result_should_be, ':'.join(track_data['track_name'])))
 
     def test_count_elements_in_all_bounding_regions(self):
         track_data = all_test_track_data['genome_partition1']
         result = count_elements_in_all_bounding_regions(track_data['genome'], track_data['track_name'], False)
+        result_should_be = 5
 
-        self.assertEqual(result, 5, msg='element count in all bounding regions result was %d, but should be %d '
-                                        'for track %s' % (result, 5, ':'.join(track_data['track_name'])))
+        self.assertEqual(result, result_should_be, msg='element count in all bounding regions result was %d, but should'
+                                                       ' be %d for track %s' % (result, result_should_be,
+                                                                                ':'.join(track_data['track_name'])))
 
     def test_sum_of_values(self):
         track_data = all_test_track_data['function1']
         result = sum_of_values(track_data['track_name'], False, track_data['genome_regions'])
+        result_should_be = 18.0
 
-        self.assertAlmostEqual(result, 18.0, msg='sum of values result was %f, but should be %f for track %s' %
-                                                 (result, 18.0, ':'.join(track_data['track_name'])), places=2)
+        self.assertAlmostEqual(result, result_should_be, msg='sum of values result was %f, but should be %f for track'
+                                                             ' %s' % (result, result_should_be,
+                                                                      ':'.join(track_data['track_name'])), places=2)
 
         track_data = all_test_track_data['valued_segment1']
         result = sum_of_values(track_data['track_name'], True, track_data['genome_regions'])
+        result_should_be = 400.4
 
-        self.assertAlmostEqual(result, 400.4, msg='sum of values result was %f, but should be %f for track %s' %
-                                                  (result, 400.4, ':'.join(track_data['track_name'])), places=2)
+        self.assertAlmostEqual(result, result_should_be, msg='sum of values result was %f, but should be %f for track '
+                                                             '%s' % (result, result_should_be,
+                                                                     ':'.join(track_data['track_name'])), places=2)
 
     def test_sum_of_weights(self):
         track_data = all_test_track_data['linked_segments1']
         result = sum_of_weights(track_data['track_name'], True, track_data['genome_regions'])
+        result_should_be = 6.6
 
-        self.assertAlmostEqual(result, 6.6, msg='sum of values result was %f, but should be %f for track %s' %
-                                                (result, 6.6, ':'.join(track_data['track_name'])), places=2)
+        self.assertAlmostEqual(result, result_should_be, msg='sum of values result was %f, but should be %f for track '
+                                                             '%s' % (result, result_should_be,
+                                                                     ':'.join(track_data['track_name'])), places=2)
 
-    @unittest.skip(reason='Edge iterator in GraphView uses TrackElement and not PytablesTrackElement '
-                          'which causes this test to fail with index out of bounds')
     def test_sum_of_weights_with_iterator(self):
         track_data = all_test_track_data['linked_segments1']
         result = sum_of_weights_iter(track_data['track_name'], True, track_data['genome_regions'])
+        result_should_be = 6.6
 
-        self.assertAlmostEqual(result, 6.6, msg='sum of values result was %f, but should be %f for track %s' %
-                                                (result, 6.6, ':'.join(track_data['track_name'])), places=2)
+        self.assertAlmostEqual(result, result_should_be, msg='sum of values result was %f, but should be %f for track '
+                                                             '%s' % (result, result_should_be,
+                                                                     ':'.join(track_data['track_name'])), places=2)
 
 all_test_track_data = {
     'segment1': {

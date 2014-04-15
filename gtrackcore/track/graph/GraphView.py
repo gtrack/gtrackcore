@@ -1,7 +1,7 @@
 import numpy as np
 from collections import OrderedDict
 from copy import copy
-from gtrackcore.track.graph.NodeElement import NodeElement
+from gtrackcore.track.graph.NodeElement import PytablesNodeElement
 from gtrackcore.track.graph.Edge import Edge
 
 class BaseGraphView(object):
@@ -37,7 +37,7 @@ class GraphView(BaseGraphView):
         if not id in self._id2nodes:
             reg,pos = self._id2index[id]
             #te = TrackElement(self._trackViewDict[reg],index=pos)            
-            self._id2nodes[id] = NodeElement(self._trackViewDict[reg], pos, self)
+            self._id2nodes[id] = PytablesNodeElement(self._trackViewDict[reg], pos, self)
         return self._id2nodes[id]
            
     def getNodeIter(self):
