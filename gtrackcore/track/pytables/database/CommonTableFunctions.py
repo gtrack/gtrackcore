@@ -6,7 +6,7 @@ import tables
 
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_base_node_names, \
-    WITH_OVERLAPS_NODE_NAME
+    WITH_OVERLAPS_NODE_NAME, get_br_table_node_names
 from gtrackcore.util.pytables.NumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.Constants import FLUSH_LIMIT
 
@@ -87,10 +87,9 @@ def merge_and_rename_overlap_tables(genome, track_name):
     """
     no_overlap_db_path = get_database_filename(genome, track_name, allow_overlaps=False)
     with_overlap_db_path = get_database_filename(genome, track_name, allow_overlaps=True)
-
-    db_writer = DatabaseWriter(no_overlap_db_path)
-    db_writer.open()
     if os.path.isfile(with_overlap_db_path):
+        db_writer = DatabaseWriter(no_overlap_db_path)
+        db_writer.open()
         db_reader = DatabaseReader(with_overlap_db_path)
         db_reader.open()
 
@@ -104,8 +103,7 @@ def merge_and_rename_overlap_tables(genome, track_name):
         db_reader.close()
 
         os.remove(with_overlap_db_path)
-
-    db_writer.close()
+        db_writer.close()
 
     db_path = get_database_filename(genome, track_name)
     os.rename(no_overlap_db_path, db_path)
