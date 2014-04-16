@@ -93,8 +93,14 @@ if __name__ == '__main__':
 
     tn1 = 'Sequence:Repeating elements'.split(':')
     tn2 = 'Chromatin:Roadmap Epigenomics:H3K27me3:ENCODE_wgEncodeBroadHistoneGm12878H3k27me3StdPk'.split(':')
+    tn3 = 'DNA structure:Hi-C:Inter- and intrachromosomal:hESC:hESC-1M'.split(':')
 
     print "Running profiler of overlap operation"
-    profiler = profile_operation("overlap", tn1, False, chromosomes, track_name2=tn2, allow_overlaps2=False)
+    profiler, res = profile_operation("overlap", tn1, False, chromosomes, track_name2=tn2, allow_overlaps2=False)
+
+    #print "Running profiler of 'sum of weight numpy'-operation",
+    #profiler, res = profile_operation("sum_of_weights_iter", tn3, False, chromosomes)
+
     if profiler is not None:
+        print "Result: ", res
         profiler.printStats()

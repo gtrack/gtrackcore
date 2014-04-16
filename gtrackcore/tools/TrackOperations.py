@@ -57,7 +57,9 @@ def sum_of_weights(track_name, allow_overlaps, genome_regions):
     weight_sum = numpy.float128(0)
     for region in genome_regions:
         track_view = get_track_view(track_name, allow_overlaps, region)
-        weight_sum += numpy.nansum(track_view.weightsAsNumpyArray())
+        weights = track_view.weightsAsNumpyArray()
+        if len(weights) > 0:
+            weight_sum += numpy.nansum(weights)
     return weight_sum
 
 
