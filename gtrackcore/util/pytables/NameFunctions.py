@@ -64,7 +64,7 @@ def get_db_name(track_name, allow_overlaps):
 
 
 def _convert_list_to_natural_naming(name):
-    return [re.sub(illegal_starts, r'_\g<1>', re.sub(non_alphanumeric, '_', part)).lower() for part in name]
+    return [re.sub(illegal_starts, r'_\g<1>', re.sub(non_alphanumeric, '_', part.lower())) for part in name]
 
 
 def _convert_string_to_natural_naming(name):
