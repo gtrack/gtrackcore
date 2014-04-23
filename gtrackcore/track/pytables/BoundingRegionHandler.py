@@ -94,11 +94,11 @@ class BoundingRegionHandler(object):
     def _create_table_description(self):
         return {
             'chr': tables.StringCol(self._max_chr_len, pos=0),
-            'start': tables.Int32Col(pos=1),
-            'end': tables.Int32Col(pos=2),
-            'start_index': tables.Int32Col(pos=3),
-            'end_index': tables.Int32Col(pos=4),
-            'element_count': tables.Int32Col(pos=5)
+            'start': tables.Int64Col(pos=1),
+            'end': tables.Int64Col(pos=2),
+            'start_index': tables.Int64Col(pos=3),
+            'end_index': tables.Int64Col(pos=4),
+            'element_count': tables.Int64Col(pos=5)
         }
 
     def get_enclosing_bounding_region(self, region):
