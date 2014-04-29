@@ -258,7 +258,7 @@ class TrackView(object):
                                          for l in [startList, endList, valList, edgesList] if l is not None])
         self._trackElement = TrackElement(self)
         self._pytables_track_element = PytablesTrackElement(self)
-        self._cached_start_and_end_indices = start_index, end_index
+        self.cached_start_and_end_indices = start_index, end_index
         #self._bpLevelArray = None
 
         self._startList = startList
@@ -309,11 +309,11 @@ class TrackView(object):
 
     def _generate_pytables_track_elements(self):
 
-        if self._cached_start_and_end_indices is None:
-            self._cached_start_and_end_indices = start_and_end_indices(self.genomeAnchor, self._track_name,
+        if self.cached_start_and_end_indices is None:
+            self.cached_start_and_end_indices = start_and_end_indices(self.genomeAnchor, self._track_name,
                                                                        self.allowOverlaps, self.trackFormat)
 
-        start_index, end_index = self._cached_start_and_end_indices
+        start_index, end_index = self.cached_start_and_end_indices
         if start_index == end_index:
             return
 
@@ -503,7 +503,7 @@ class TrackView(object):
         else:
             slicedTV._doScatteredSlicing()
 
-        self._cached_start_and_end_indices = None
+        self.cached_start_and_end_indices = None
         return slicedTV
     
     def _getBpLevelModificationArray(self, indexes, vals):
