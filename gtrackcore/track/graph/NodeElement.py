@@ -55,7 +55,7 @@ class PytablesNodeElement(object):
         table = db_reader.get_table(table_node_names)
 
         # offset must be set to start of track_view since we work directly on the db.
-        index = index + track_view._cached_start_and_end_indices[0]
+        index = index + track_view.cached_start_and_end_indices[0]
         self._row = table[index]
 
     def getNeighborIter(self):
