@@ -33,10 +33,14 @@ class GffGenomeElementSource(GenomeElementSource):
         ge = GenomeElement(self._genome)
         ge.chr = self._checkValidChr(cols[0])
         ge.source = cols[1]
-        ge.type = cols[2]
+
+        self._parseThirdCol(ge, cols[2])
+
         ge.start = self._checkValidStart(ge.chr, int(cols[3]) - 1)
         ge.end =  self._checkValidEnd(ge.chr, int(cols[4]), start=ge.start)
-        ge.val = numpy.float(self._handleNan(cols[5]))
+
+        self._parseSixthCol(ge, cols[5])
+
         ge.strand = self._getStrandFromString(cols[6])
         ge.phase = cols[7]
         ge.attributes = cols[8]
@@ -52,9 +56,28 @@ class GffGenomeElementSource(GenomeElementSource):
 
         return ge
 
+    def _parseThirdCol(self, ge, contents):
+        ge.type = contents
+
+    def _parseSixthCol(self, ge, contents):
+        ge.val = numpy.float(self._handleNan(contents))
+
     @classmethod
     def _getStrandFromString(cls, val):
         if val == '?':
             return BINARY_MISSING_VAL
         else:
             return GenomeElementSource._getStrandFromString(val)
+
+class GffCategoryGenomeElementSource(GffGenomeElementSource):
+    FILE_SUFFIXES = ['category.gff', 'category.gff3']
+    FILE_FORMAT_NAME = 'Category GFF'
+
+    def _parseThirdCol(self, ge, contents):
+        ge.val = contents
+
+    def _parseSixthCol(self, ge, contents):
+        ge.score = self._handleNan(contents)
+
+    def getValDataType(self):
+        return 'S'
