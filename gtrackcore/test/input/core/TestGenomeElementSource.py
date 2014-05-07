@@ -10,7 +10,7 @@ from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
 from gtrackcore.input.fileformats.BedGenomeElementSource import BedGenomeElementSource, PointBedGenomeElementSource, \
                                                             BedCategoryGenomeElementSource, BedValuedGenomeElementSource
-from gtrackcore.input.fileformats.GffGenomeElementSource import GffGenomeElementSource
+from gtrackcore.input.fileformats.GffGenomeElementSource import GffCategoryGenomeElementSource, GffGenomeElementSource
 from gtrackcore.input.fileformats.FastaGenomeElementSource import FastaGenomeElementSource
 from gtrackcore.input.fileformats.HBFunctionGenomeElementSource import HBFunctionGenomeElementSource
 from gtrackcore.input.fileformats.BedGraphGenomeElementSource import BedGraphGenomeElementSource, BedGraphTargetControlGenomeElementSource
@@ -33,10 +33,10 @@ class BaseCase(object):
         self.lines = lines
         self.trackName = trackName
         self.targetClass = targetClass
-        
+
     def open(self):
         self.tf = tempfile.NamedTemporaryFile(suffix=self.suffix)
-       
+
         if self.suffix.endswith('.gz'):
             self.tf.write(self.lines[0])
         else:
@@ -46,14 +46,14 @@ class BaseCase(object):
 
         self.tf.seek(0)
         self.name = self.tf.name
-        
+
         f = open(self.tf.name)
         while True:
             l = f.readline()
             if l=='':
                 break
             #print repr(l)
-        
+
     def close(self):
         self.tf.close()
 
@@ -78,7 +78,7 @@ class ExceptionCase(BaseCase):
 class TestGenomeElementSource(TestCaseWithImprovedAsserts):
     def setUp(self):
         self.cases = OrderedDict()
-        
+
         # Testing:
         # - Basic 3-column BED file
         self.cases['gtrack_t0'] = \
@@ -100,7 +100,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: points
         # - Column specification line
@@ -124,7 +124,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: segments
         # - Case-insensitive headers
@@ -153,7 +153,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: genome partition
         # - Uninterrupted data lines = True
@@ -180,7 +180,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['gtrack_t3_hb'] = \
             Case(None,
                  'TestGenome',
@@ -204,7 +204,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: valued points
         # - Track elements in unsorted order
@@ -230,10 +230,10 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: valued segments
-        # - No specified genome + invalid chr + positions outside sequence 
+        # - No specified genome + invalid chr + positions outside sequence
         # - Value: binary
         # - Value column: case
         # - Explicit specification of value dimension: scalar
@@ -262,7 +262,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # - No specified genome + valid chr and positions
         self.cases['gtrack_t5_hb'] = \
             Case(None,
@@ -288,7 +288,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: step function
         # - Value: category
@@ -317,7 +317,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['gtrack_t6_hb'] = \
             Case(None,
                  'TestGenome',
@@ -341,7 +341,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: function
         # - Value dimension: vector of single number
@@ -372,7 +372,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # - Value dimension: vector of two numbers
         self.cases['gtrack_t7a_no_check_expand_hb'] = \
             Case(None,
@@ -400,7 +400,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 2,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: function
         # - Value: pair of characters
@@ -435,7 +435,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 2,
                 'float64',
                 1)
-        
+
         # - Multiple bounding regions in sorted order
         self.cases['gtrack_t7b_no_types_expanded_hb'] = \
             Case(None,
@@ -466,7 +466,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 2,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: linked points
         # - Edges with no weights
@@ -492,7 +492,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: linked segments
         # - Edges with weights
@@ -533,7 +533,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Testing:
         # - Track type: genome partition
         # - Edge weights: binary
@@ -576,7 +576,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'int8',
                 1)
-        
+
         self.cases['gtrack_t10_no_check_expand_hb'] = \
             Case(None,
                  'TestGenome',
@@ -614,7 +614,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'int8',
                 1)
-        
+
         # Testing:
         # - Track type: linked valued points
         # - Value: Mean/sd (pair)
@@ -644,7 +644,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 2,
                 'S',
                 1)
-        
+
         # Testing:
         # - Track type: linked valued points
         # - Value: Mean/sd (pair)
@@ -677,7 +677,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 2,
                 'S',
                 1)
-        
+
         # Testing:
         # - Track type: linked valued segments
         # - Value: vector of numbers
@@ -716,7 +716,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 3,
                 'S1',
                 1)
-        
+
         # Testing:
         # - Same genome in bounding regions
         self.cases['gtrack_t12_no_check_track_extract_hb'] = \
@@ -749,7 +749,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 3,
                 'S1',
                 1)
-        
+
         # Testing:
         # - Track type: linked step function
         # - Value: list of binary
@@ -790,7 +790,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 0,
                 'float128',
                 2)
-        
+
         # - Same genome, correct seqid
         # - Bounding regions immediately following
         # - Value: vector of binary
@@ -826,7 +826,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 4,
                 'float128',
                 2)
-        
+
         # Testing:
         # - Track type: linked function
         # - Value: vector of characters
@@ -865,7 +865,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 3,
                 'S1',
                 0)
-        
+
         # - Edge weights: vector of characters
         self.cases['gtrack_t14_no_types_expanded_hb'] = \
             Case(None,
@@ -899,7 +899,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 3,
                 'S1',
                 3)
-        
+
         # Testing:
         # - Track type: linked base pairs
         # - Undirected edges
@@ -930,7 +930,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'S',
                 2)
-        
+
         #t16: GTrack compression, simple file (e.g. t1)
         self.cases['gtrack_t16_no_expand_no_sort'] = \
             Case(None,
@@ -949,7 +949,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t17: Subtype adhersion: strict
         self.cases['gtrack_t17'] = \
             Case(GtrackGenomeElementSource,
@@ -968,7 +968,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t18: Subtype adhersion: strict, bounding region with seqid, no seqid column, fixed length
         self.cases['gtrack_t18_no_hb'] = \
             Case(GtrackGenomeElementSource,
@@ -990,7 +990,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['gtrack_t18_hb'] = \
             Case(None,
                  'TestGenome',
@@ -1012,7 +1012,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t18.1: Subtype with fixed length, fixed gap size and no column specification line
         self.cases['gtrack_t18.1'] = \
             Case(GtrackGenomeElementSource,
@@ -1035,7 +1035,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t19: Subtype adhersion: extensible, url without http
         self.cases['gtrack_t19_no_check_track_extract_no_check_expand'] = \
             Case(GtrackGenomeElementSource,
@@ -1055,7 +1055,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t20: Subtype adhersion: redefinable
         self.cases['gtrack_no_check_track_extract_t20'] = \
             Case(GtrackGenomeElementSource,
@@ -1076,7 +1076,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t21: Subtype adhersion: reorderable
         self.cases['gtrack_t21'] = \
             Case(GtrackGenomeElementSource,
@@ -1097,7 +1097,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 2,
                 'float64',
                 1)
-        
+
         #t22: Subtype adhersion: free
         self.cases['gtrack_t22'] = \
             Case(GtrackGenomeElementSource,
@@ -1117,7 +1117,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t23: Sliding window
         self.cases['gtrack_t23'] = \
             Case(GtrackGenomeElementSource,
@@ -1144,7 +1144,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t24: Circular elements
         self.cases['gtrack_t24_no_hb'] = \
             Case(GtrackGenomeElementSource,
@@ -1162,8 +1162,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
-        #t25: No data lines 
+
+        #t25: No data lines
         self.cases['gtrack_t25_no_print_no_expand_no_sort_no_standard_no_hb'] = \
             Case(GtrackGenomeElementSource,
                  'TestGenome',
@@ -1179,7 +1179,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t26: edge weight vector of length 1, no edges in first element
         self.cases['gtrack_t26_no_printcheck_no_check_expand_no_sort_no_standard_no_hb'] = \
             Case(GtrackGenomeElementSource,
@@ -1201,7 +1201,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         #t27: special cases of undirected edges
         self.cases['gtrack_t27'] = \
             Case(GtrackGenomeElementSource,
@@ -1223,7 +1223,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['bed_3'] = \
             Case(None,
                  'TestGenome',
@@ -1243,7 +1243,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['bed_12'] = \
             Case(None,
                  'TestGenome',
@@ -1269,7 +1269,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['bed_12_no_check_prints_compose_no_overlaps_no_hb'] = \
             Case(None,
                  'TestGenome',
@@ -1295,7 +1295,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['bed_strand'] = \
             Case(None,
                  'TestGenome',
@@ -1315,7 +1315,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['point.bed_strand'] = \
             Case(None,
                  'TestGenome',
@@ -1335,7 +1335,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['category.bed'] = \
             Case(None,
                  'TestGenome',
@@ -1355,7 +1355,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['valued.bed'] = \
             Case(None,
                  'TestGenome',
@@ -1375,8 +1375,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
-        
+
+
         self.cases['microarray'] = \
             Case(None,
                  'TestGenome',
@@ -1396,7 +1396,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 3,
                 'float64',
                 1)
-        
+
         self.cases['bedgraph'] = \
             Case(None,
                  'TestGenome',
@@ -1416,7 +1416,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['targetcontrol.bedgraph'] = \
             Case(None,
                  'TestGenome',
@@ -1436,7 +1436,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['wig_fixed_function'] = \
             Case(WigGenomeElementSource,
                  'TestGenome',
@@ -1467,7 +1467,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['wig_fixed_points'] = \
             Case(WigGenomeElementSource,
                  'TestGenome',
@@ -1498,7 +1498,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['wig_fixed_segments'] = \
             Case(WigGenomeElementSource,
                  'TestGenome',
@@ -1529,7 +1529,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['wig_fixed_segments_sliding_window'] = \
             Case(WigGenomeElementSource,
                  'TestGenome',
@@ -1560,7 +1560,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['wig_fixed_step_function'] = \
             Case(WigGenomeElementSource,
                  'TestGenome',
@@ -1594,7 +1594,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         # Bounding regions, in sorted order, with no gaps, and with dense elements
         self.cases['wig_fixed_step_function_no_gaps'] = \
             Case(WigGenomeElementSource,
@@ -1627,7 +1627,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['wig_variable_points'] = \
             Case(WigGenomeElementSource,
                  'TestGenome',
@@ -1652,7 +1652,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['wig_variable_segments'] = \
             Case(WigGenomeElementSource,
                  'TestGenome',
@@ -1676,7 +1676,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['gff'] = \
             Case(None,
                  'TestGenome',
@@ -1706,7 +1706,68 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-                                        
+
+        self.cases['category.gff'] = \
+            Case(None,
+                 'TestGenome',
+                [],
+                ['\t'.join(['chr21', 'RNG', 'Genes', '13332357', '13412440', '1.8', '+', '0', \
+                            'ID=30313;Accession=NR_026916;Name=C21orf99;color=9400D3;url=http://genome.ucsc.edu/cgi-bin/hgTracks?&clade=vertebrate&org=Human&db=hg18&position=chr21:13332357-13412440&pix620&Submit=submit;']),
+                 '\t'.join(['chr21', 'RNG', 'Genes', '13904368', '13935777', '2.3', '+', '0', \
+                            'ID=771;Accession=NM_174981;Name=POTED;color=9400D3;url=http://genome.ucsc.edu/cgi-bin/hgTracks?&clade=vertebrate&org=Human&db=hg18&position=chr21:13904368-13935777&pix620&Submit=submit;']),
+                 '\t'.join(['chr21', 'RNG', 'Other', '14510336', '14522564', '-1.0', '+', '0', \
+                            'ID=773;Accession=NM_144770;Name=RBM11;color=9400D3;url=http://genome.ucsc.edu/cgi-bin/hgTracks?&clade=vertebrate&org=Human&db=hg18&position=chr21:14510336-14522564&pix620&Submit=submit;'])],
+                '.category.gff',
+                ['My','category-gff-track'],
+                [GenomeElement('TestGenome', 'chr21', start=13332356, end=13412440, val='Genes', strand=True, id='30313', \
+                               extra=OrderedDict([('source', 'RNG'), ('score', '1.8'), ('phase', '0'), \
+                                                  ('attributes', 'ID=30313;Accession=NR_026916;Name=C21orf99;color=9400D3;url=http://genome.ucsc.edu/cgi-bin/hgTracks?&clade=vertebrate&org=Human&db=hg18&position=chr21:13332357-13412440&pix620&Submit=submit;'), \
+                                                  ('name', 'C21orf99')])), \
+                 GenomeElement('TestGenome', 'chr21', start=13904367, end=13935777, val='Genes', strand=True, id='771', \
+                               extra=OrderedDict([('source', 'RNG'), ('score', '2.3'), ('phase', '0'), ('attributes', 'ID=771;Accession=NM_174981;Name=POTED;color=9400D3;url=http://genome.ucsc.edu/cgi-bin/hgTracks?&clade=vertebrate&org=Human&db=hg18&position=chr21:13904368-13935777&pix620&Submit=submit;'), \
+                                                  ('name', 'POTED')])), \
+                 GenomeElement('TestGenome', 'chr21', start=14510335, end=14522564, val='Other', strand=True, id='773', \
+                               extra=OrderedDict([('source', 'RNG'), ('score', '-1.0'), ('phase', '0'), ('attributes', 'ID=773;Accession=NM_144770;Name=RBM11;color=9400D3;url=http://genome.ucsc.edu/cgi-bin/hgTracks?&clade=vertebrate&org=Human&db=hg18&position=chr21:14510336-14522564&pix620&Submit=submit;'), \
+                                                  ('name', 'RBM11')]))],
+                [],
+                GffCategoryGenomeElementSource,
+                ['start', 'end', 'val', 'strand', 'id', 'source', 'score', 'phase', 'attributes', 'name'],
+                'S',
+                1,
+                'float64',
+                1)
+
+        #self.cases['fasta'] = \
+        #    Case(None,
+        #         'TestGenome',
+        #        [],
+        #        ['>chrM Description'] +
+        #         ['ac',
+        #         'gt'] * 40 +
+        #        ['acg'] +
+        #        ['>chr21 Description'] +
+        #        ['gca'],
+        #        '.fa',
+        #        ['My','fasta-track'],
+        #        [GenomeElement('TestGenome', 'chrM', val='a'),
+        #         GenomeElement('TestGenome', 'chrM', val='c'),
+        #         GenomeElement('TestGenome', 'chrM', val='g'),
+        #         GenomeElement('TestGenome', 'chrM', val='t')]*40 +
+        #        [GenomeElement('TestGenome', 'chrM', val='a'),
+        #         GenomeElement('TestGenome', 'chrM', val='c'),
+        #         GenomeElement('TestGenome', 'chrM', val='g')] +
+        #        [GenomeElement('TestGenome', 'chr21', val='g'),
+        #         GenomeElement('TestGenome', 'chr21', val='c'),
+        #         GenomeElement('TestGenome', 'chr21', val='a')],
+        #        [BoundingRegionTuple(region=GenomeRegion('TestGenome', 'chrM', start=0, end=163), elCount=163),
+        #         BoundingRegionTuple(region=GenomeRegion('TestGenome', 'chr21', start=0, end=3), elCount=3)],
+        #        FastaGenomeElementSource,
+        #        ['val'],
+        #        'S1',
+        #        1,
+        #        'float64',
+        #        1)
+
         self.cases['fasta'] = \
             Case(None,
                  'TestGenome',
@@ -1719,16 +1780,10 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['gca'],
                 '.fa',
                 ['My','fasta-track'],
-                [GenomeElement('TestGenome', 'chrM', val='a'),
-                 GenomeElement('TestGenome', 'chrM', val='c'),
-                 GenomeElement('TestGenome', 'chrM', val='g'),
-                 GenomeElement('TestGenome', 'chrM', val='t')]*40 +
-                [GenomeElement('TestGenome', 'chrM', val='a'),
-                 GenomeElement('TestGenome', 'chrM', val='c'),
-                 GenomeElement('TestGenome', 'chrM', val='g')] +
-                [GenomeElement('TestGenome', 'chr21', val='g'),
-                 GenomeElement('TestGenome', 'chr21', val='c'),
-                 GenomeElement('TestGenome', 'chr21', val='a')],
+                [GenomeElement('TestGenome', 'chrM', val=numpy.array(['a','c'], dtype='S1')),
+                 GenomeElement('TestGenome', 'chrM', val=numpy.array(['g','t'], dtype='S1'))]*40 +
+                [GenomeElement('TestGenome', 'chrM', val=numpy.array(['a','c','g'], dtype='S1')),
+                 GenomeElement('TestGenome', 'chr21', val=numpy.array(['g','c','a'], dtype='S1'))],
                 [BoundingRegionTuple(region=GenomeRegion('TestGenome', 'chrM', start=0, end=163), elCount=163),
                  BoundingRegionTuple(region=GenomeRegion('TestGenome', 'chr21', start=0, end=3), elCount=3)],
                 FastaGenomeElementSource,
@@ -1737,7 +1792,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.cases['hbfunction'] = \
             Case(None,
                  'TestGenome',
@@ -1753,9 +1808,9 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 1,
                 'float64',
                 1)
-        
+
         self.exceptionCases = OrderedDict()
-        
+
         #Testing: Header line with space before/after variable name
         self.exceptionCases['gtrack_e0'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1766,7 +1821,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e0','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Header line with malplaced tab
         self.exceptionCases['gtrack_e1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1777,7 +1832,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Column spec line before header line
         self.exceptionCases['gtrack_e1.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1789,7 +1844,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e1.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region spec line before header line
         self.exceptionCases['gtrack_e1.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1801,7 +1856,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e1.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region spec line before column spec line
         self.exceptionCases['gtrack_e1.3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1813,7 +1868,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e1.3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Data line before header line
         self.exceptionCases['gtrack_e1.4'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1827,7 +1882,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e1.4','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Empty lines with whitespace
         self.exceptionCases['gtrack_e1.5'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1839,7 +1894,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e1.5','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value type not in allowed list
         self.exceptionCases['gtrack_e2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1850,7 +1905,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Header line with illegal values
         self.exceptionCases['gtrack_e2.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1861,7 +1916,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e2.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         self.exceptionCases['gtrack_e2.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  'TestGenome',
@@ -1871,7 +1926,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e2.2','gtrack'],
                 GtrackGenomeElementSource,
                 ValueError)
-        
+
         #Tesitng: Incorrect gtrack version
         self.exceptionCases['gtrack_e2.3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1882,7 +1937,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e2.3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Edge weight dimension not in allowed list
         self.exceptionCases['gtrack_e3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1893,7 +1948,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: start <= end
         self.exceptionCases['gtrack_e3.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1904,7 +1959,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e3.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: start <= end in bounding region
         self.exceptionCases['gtrack_e3.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1915,7 +1970,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e3.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: No overlapping segments=true: consecutive overlapping data lines
         self.exceptionCases['gtrack_e4'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1927,7 +1982,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e4','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: No overlapping segments=true: consecutive overlapping data lines og points
         self.exceptionCases['gtrack_e4.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1941,7 +1996,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e4.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Sorted elements=true for unsorted track elements
         self.exceptionCases['gtrack_e5'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1954,7 +2009,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e5','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Sorted elements=true for unsorted bounding regions
         self.exceptionCases['gtrack_e6'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1968,7 +2023,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e6','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         ##Testing: Unsorted bounding regions in HbGtrackGenomeElementSource
         #self.exceptionCases['gtrack_e6_hb'] = \
         #    ExceptionCase(None,
@@ -1982,7 +2037,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #        ['e6_hb','gtrack'],
         #        HbGtrackGenomeElementSource,
         #        InvalidFormatError)
-        
+
         #Testing: unsorted elements in dense bounding region
         self.exceptionCases['gtrack_e6.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -1996,7 +2051,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e6.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Column specification that misses one needed column (linked track type without 'id')
         self.exceptionCases['gtrack_e7'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2008,7 +2063,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e7','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Column specification with a core column too many (segment track type with value)
         self.exceptionCases['gtrack_e7.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2020,7 +2075,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e7.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value column with wrong column name
         self.exceptionCases['gtrack_e7.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2033,7 +2088,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e7.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Duplicate in column spec. line
         self.exceptionCases['gtrack_e7.3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2046,7 +2101,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e7.3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Header variable "Edges column" with "edges" in column spec. line
         self.exceptionCases['gtrack_e7.4'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2060,7 +2115,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e7.4','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Column name starting/ending with space
         self.exceptionCases['gtrack_e8'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2071,7 +2126,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e8','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Column name with illegal character
         self.exceptionCases['gtrack_e8.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2082,7 +2137,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e8.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Dataline and column-specification do not have same amount of elements
         self.exceptionCases['gtrack_e9'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2093,7 +2148,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e9','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Dataline with forbidden character
         self.exceptionCases['gtrack_e10'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2105,7 +2160,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e10','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Dataline with content that starts with space
         self.exceptionCases['gtrack_e10.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2117,7 +2172,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e10.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Strand is not +/-/.
         self.exceptionCases['gtrack_e11'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2128,7 +2183,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e11','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Start, end < 0
         self.exceptionCases['gtrack_e12'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2139,7 +2194,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e12','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Start/end outside seqid if genome specified
         self.exceptionCases['gtrack_e13'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2150,7 +2205,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e13','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value: number value not a number
         self.exceptionCases['gtrack_e14'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2162,7 +2217,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e14','gtrack'],
                 GtrackGenomeElementSource,
                 ValueError)
-        
+
         #Testing: Value: category value empty
         self.exceptionCases['gtrack_e14.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2175,7 +2230,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e14.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value: value=NA
         self.exceptionCases['gtrack_e14.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2187,7 +2242,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e14.2','gtrack'],
                 GtrackGenomeElementSource,
                 ValueError)
-        
+
         #Testing: Value dimension: list and HB
         self.exceptionCases['gtrack_e14.3_hb'] = \
             ExceptionCase(None,
@@ -2200,7 +2255,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e14.3_hb','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Edge weight dimension: list and HB
         self.exceptionCases['gtrack_e14.4_hb'] = \
             ExceptionCase(None,
@@ -2214,7 +2269,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e14.4_hb','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Weights: space before/after equals
         self.exceptionCases['gtrack_e15'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2228,7 +2283,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e15','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Weights: binary weight not a binary
         self.exceptionCases['gtrack_e16'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2243,8 +2298,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e16','gtrack'],
                 GtrackGenomeElementSource,
                 ValueError)
-        
-        #Testing: Value: character value not a character        
+
+        #Testing: Value: character value not a character
         self.exceptionCases['gtrack_e17'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  'TestGenome',
@@ -2256,7 +2311,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e17','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Weights: pair of number not a pair
         self.exceptionCases['gtrack_e18'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2272,7 +2327,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e18','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value: vector of numbers not equal length
         self.exceptionCases['gtrack_e19'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2286,7 +2341,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e19','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value: vector of numbers with single missing value
         self.exceptionCases['gtrack_e19.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2300,7 +2355,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e19.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value: pair of binary with single missing value
         self.exceptionCases['gtrack_e19.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2315,7 +2370,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e19.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Value: vector of numbers with length 1
         self.exceptionCases['gtrack_e19.3_hb'] = \
             ExceptionCase(None,
@@ -2329,7 +2384,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e19.3_hb','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Edge weight: vector, with no edges defined
         self.exceptionCases['gtrack_e19.4_hb'] = \
             ExceptionCase(None,
@@ -2344,7 +2399,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e19.4_hb','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Weights: vector of binary with comma
         self.exceptionCases['gtrack_e20'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2360,7 +2415,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e20','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Weights: list of category with spaces
         self.exceptionCases['gtrack_e21'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2376,7 +2431,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e21','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Seqid not same in bounding region and column
         self.exceptionCases['gtrack_e22'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2389,7 +2444,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e22','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Genome not same in bounding region and column
         self.exceptionCases['gtrack_e23'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2402,7 +2457,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e23','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Genome not same in gesource and gtrack
         self.exceptionCases['gtrack_e24'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2414,7 +2469,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e24','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Seqid not in genome
         self.exceptionCases['gtrack_e25'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2426,7 +2481,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e25','gtrack'],
                 GtrackGenomeElementSource,
                 ArgumentValueError)
-        
+
         #Testing: Circular elements without correct header
         self.exceptionCases['gtrack_e26'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2437,7 +2492,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e26','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         self.exceptionCases['gtrack_e26.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  'TestGenome',
@@ -2447,7 +2502,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e26.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: HyperBrowser does not support circular elements at all
         self.exceptionCases['gtrack_e26.2_hb'] = \
             ExceptionCase(None,
@@ -2458,7 +2513,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e26.2_hb','gtrack'],
                 HbGtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: non-unique id
         self.exceptionCases['gtrack_e27'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2471,7 +2526,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e27','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: edges without match in id column
         self.exceptionCases['gtrack_e27.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2484,7 +2539,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e27.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: duplicate edge
         self.exceptionCases['gtrack_e27.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2497,7 +2552,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e27.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: empty id
         self.exceptionCases['gtrack_e27.3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2510,7 +2565,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e27.3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Undirected edges=true with unpaired edges
         self.exceptionCases['gtrack_e28'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2525,7 +2580,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e28','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Undirected edges=true with paired edges with different weights
         self.exceptionCases['gtrack_e28.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2541,7 +2596,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e28.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Edge weights=true without edge weights and opposite
         self.exceptionCases['gtrack_e29'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2555,7 +2610,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e29','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         self.exceptionCases['gtrack_e30'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  'TestGenome',
@@ -2568,7 +2623,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e30','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Uninterrupted data lines with multiple bounding regions
         self.exceptionCases['gtrack_e31'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2582,7 +2637,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e31','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Uninterrupted data lines with comments
         self.exceptionCases['gtrack_e31.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2595,7 +2650,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e31.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Uninterrupted data lines with empty lines
         self.exceptionCases['gtrack_e31.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2609,7 +2664,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e31.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Fixed-size data lines with more than one column or column not value
         self.exceptionCases['gtrack_e32'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2622,7 +2677,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e32','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         self.exceptionCases['gtrack_e32.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  'TestGenome',
@@ -2634,7 +2689,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e32.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         self.exceptionCases['gtrack_e32.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  'TestGenome',
@@ -2647,7 +2702,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e32.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Fixed-size data lines with line sep in the middle of a data line
         self.exceptionCases['gtrack_e33'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2665,7 +2720,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e33','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Fixed length == 0
         self.exceptionCases['gtrack_e33.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2677,7 +2732,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e33.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Fixed length + fixed gap size <= 0
         self.exceptionCases['gtrack_e33.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2691,7 +2746,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e33.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Fixed gap size outside of bounding region type B
         self.exceptionCases['gtrack_e33.3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2705,7 +2760,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e33.3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Data line size < 1
         self.exceptionCases['gtrack_e34'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2719,7 +2774,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e34','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region GTrack file with data lines before first b.r.
         self.exceptionCases['gtrack_e35'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2732,7 +2787,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e35','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Overlapping bounding regions
         self.exceptionCases['gtrack_e36'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2748,7 +2803,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e36','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding regions with no gaps in unsorted order
         self.exceptionCases['gtrack_e36.1_hb'] = \
             ExceptionCase(None,
@@ -2764,7 +2819,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e36.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding regions of type A and B in same file
         self.exceptionCases['gtrack_e37'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2777,7 +2832,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e37','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding regions of type B with no data lines between (GP)
         self.exceptionCases['gtrack_e37.1_hb'] = \
             ExceptionCase(None,
@@ -2791,7 +2846,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e37.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Track-type = gp/sf/f and no bounding region type b fails
         self.exceptionCases['gtrack_e38'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2805,7 +2860,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e38','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region end not end of last data line (gp & f)
         self.exceptionCases['gtrack_e39'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2819,7 +2874,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e39','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         self.exceptionCases['gtrack_e40'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  'TestGenome',
@@ -2832,7 +2887,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e40','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region with space after '####'
         self.exceptionCases['gtrack_e41'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2843,7 +2898,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e41','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region with no semicolons
         self.exceptionCases['gtrack_e41.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2854,7 +2909,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e41.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region with attribute without value.
         self.exceptionCases['gtrack_e41.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2865,7 +2920,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e41.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region with tab.
         self.exceptionCases['gtrack_e41.3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2876,7 +2931,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e41.3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region with attribute not in specification
         self.exceptionCases['gtrack_e42'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2887,7 +2942,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e42','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region with data lines outside of region
         self.exceptionCases['gtrack_e42.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2899,7 +2954,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e42.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         self.exceptionCases['gtrack_e42.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
                  None,
@@ -2910,7 +2965,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e42.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region with illegal character
         self.exceptionCases['gtrack_e42.3'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2922,7 +2977,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e42.3','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region type B for track type F without end and genome
         self.exceptionCases['gtrack_e42.4'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2935,7 +2990,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e42.4','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding region type B for track type GP without end and genome
         self.exceptionCases['gtrack_e42.5'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2947,7 +3002,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e42.5','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Subtype not equal to subtype spec
         self.exceptionCases['gtrack_e43'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2959,7 +3014,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e43','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Subtype does not exist
         self.exceptionCases['gtrack_e43.1'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2970,7 +3025,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e43.1','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Subtype contains header variable 'subtype url'. No subtype adherence]
         self.exceptionCases['gtrack_e43.2'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2981,7 +3036,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e43.2','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Subtype version not equal to subtype spec
         self.exceptionCases['gtrack_e44'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -2993,7 +3048,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e44','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Strict with changed header
         self.exceptionCases['gtrack_e45'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3005,7 +3060,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e45','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Strict with changed column description line
         self.exceptionCases['gtrack_e46'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3017,7 +3072,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e46','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Extensible with changed header
         self.exceptionCases['gtrack_e47'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3029,7 +3084,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e47','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Extensible with illegal column description line
         self.exceptionCases['gtrack_e48'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3041,7 +3096,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e48','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Redefinable with illegal header
         self.exceptionCases['gtrack_e49'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3053,7 +3108,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e49','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Redefinable with illegal column description line
         self.exceptionCases['gtrack_e50'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3065,7 +3120,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e50','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Reorderable with illegal header
         self.exceptionCases['gtrack_e51'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3078,7 +3133,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e51','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Reorderable with illegal column description file
         self.exceptionCases['gtrack_e52'] = \
             ExceptionCase(GtrackGenomeElementSource,
@@ -3091,7 +3146,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e52','gtrack'],
                 GtrackGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Mixing variableStep and fixedStep in the same file
         self.exceptionCases['wig_e0'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3107,7 +3162,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e0','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: fixedStep with variable step values
         self.exceptionCases['wig_e1'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3123,7 +3178,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e1','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: fixedStep with variable span values
         self.exceptionCases['wig_e2'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3139,7 +3194,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e2','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: step < 1
         self.exceptionCases['wig_e3'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3152,7 +3207,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e3','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: span < 1
         self.exceptionCases['wig_e4'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3165,7 +3220,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e4','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: no chrom
         self.exceptionCases['wig_e4.1'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3178,7 +3233,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e4.1','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: fixedStep with no start or step
         self.exceptionCases['wig_e4.2'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3191,7 +3246,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e4.2','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-    
+
         #Testing: variableStep with start and step
         self.exceptionCases['wig_e4.3'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3204,7 +3259,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e4.3','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-    
+
         #Testing: Overlapping bounding regions
         self.exceptionCases['wig_e5'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3220,7 +3275,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e5','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: Bounding regions with no gaps
         self.exceptionCases['wig_e6_hb'] = \
             ExceptionCase(None,
@@ -3236,7 +3291,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e6','wig'],
                 HbWigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: variableStep with one column
         self.exceptionCases['wig_e7'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3249,7 +3304,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e7','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: fixedStep with two columns
         self.exceptionCases['wig_e8'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3262,7 +3317,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e8','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-        
+
         #Testing: no declaration line
         self.exceptionCases['wig_e9'] = \
             ExceptionCase(WigGenomeElementSource,
@@ -3274,7 +3329,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                 ['e9','wig'],
                 WigGenomeElementSource,
                 InvalidFormatError)
-    
+
     def _getGeSource(self, case, addGEDependentAttributesHolder=True, **kwArgs):
         if case.sourceClass is None:
             sourceClass = GenomeElementSource
@@ -3282,27 +3337,27 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         else:
             sourceClass = case.sourceClass
             forPreProcessor = False
-        
+
         if addGEDependentAttributesHolder:
             return GEDependentAttributesHolder(sourceClass(case.name, case.genome, printWarnings=False, \
                                                forPreProcessor=forPreProcessor,**kwArgs))
         else:
             return sourceClass(case.name, case.genome, printWarnings=False, \
                                forPreProcessor=forPreProcessor, **kwArgs)
-    
+
     def _testIterator(self, case, geSource):
         self.assertGenomeElementLists([x.getCopy() for x in case.assertElementList], geSource)
-                
+
         boundingRegions = geSource.getBoundingRegionTuples()
         self.assertEqual(len(case.boundingRegionsAssertList), len(boundingRegions))
-        
+
         for i, br in enumerate( boundingRegions ):
             try:
                 assertBr = None
                 assertBr = copy.copy(case.boundingRegionsAssertList[i])
                 self.assertEqual(assertBr.region, br.region)
                 self.assertEqual(assertBr.elCount, br.elCount)
-                
+
             except Exception, e:
                 print str(case.trackName) + ': ' + str(assertBr) + ' != ' + str(br)
                 raise
@@ -3317,15 +3372,15 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             for i in range(2):
                 self._testIterator(case, geSource)
             case.close()
-                
+
     def _assertException(self, case):
         storedStdOut = sys.stdout
         sys.stdout = open(os.devnull, 'w')
-            
+
         try:
             for ge in self._getGeSource(case):
                 pass
-                
+
         except Exception, e:
             #import traceback
             #traceback.print_exc(e)
@@ -3335,9 +3390,9 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             return
         finally:
             sys.stdout = storedStdOut
-        
+
         self.fail('Exception of class %s was not raised.' % str(case.exceptionClass.__name__))
-    
+
     def testExceptions(self):
         #print 'testExceptions'
         for case in self.exceptionCases.values():
@@ -3345,11 +3400,11 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #print case.trackName
             self._assertException(case)
             case.close()
-        
+
     def _assertNew(self, case):
         elSource = self._getGeSource(case, addGEDependentAttributesHolder=False)
         self.assertEqual(elSource.__class__, case.targetClass)
-        
+
     def testNew(self):
         #print 'testNew turned off'
         #print 'testNew'
@@ -3358,7 +3413,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #print case.trackName
             self._assertNew(case)
             case.close()
-            
+
     def _assertPrefixList(self, case):
         elSource = self._getGeSource(case)
         try:
@@ -3367,7 +3422,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #import traceback
             #traceback.print_exc(e)
             self.assertEqual(Warning, e.__class__)
-        
+
     def testGetPrefixList(self):
         #print 'testGetPrefixList turned off'
         #print 'testGetPrefixList'
@@ -3376,11 +3431,11 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #print case.trackName
             self._assertPrefixList(case)
             case.close()
-        
+
     def _assertValDataType(self, case):
         elSource = self._getGeSource(case)
         self.assertEqual(case.valDataType, elSource.getValDataType())
-            
+
     def testGetValDataType(self):
         #print 'testGetValDataType turned off'
         #print 'testGetValDataType'
@@ -3389,12 +3444,12 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #print case.trackName
             self._assertValDataType(case)
             case.close()
-        
+
     def _assertValDim(self, case):
         elSource = self._getGeSource(case)
         [el for el in elSource]
         self.assertEqual(case.valDim, elSource.getValDim())
-            
+
     def testGetValDim(self):
         #print 'testGetValDim turned off'
         #print 'testGetValDim'
@@ -3403,11 +3458,11 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #print case.trackName
             self._assertValDim(case)
             case.close()
-    
+
     def _assertEdgeWeightDataType(self, case):
         elSource = self._getGeSource(case)
         self.assertEqual(case.edgeWeightDataType, elSource.getEdgeWeightDataType())
-            
+
     def testGetEdgeWeightDataType(self):
         #print 'testGetEdgeWeightDataType turned off'
         #print 'testGetEdgeWeightDataType'
@@ -3416,12 +3471,12 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #print case.trackName
             self._assertEdgeWeightDataType(case)
             case.close()
-    
+
     def _assertEdgeWeightDim(self, case):
         elSource = self._getGeSource(case)
         [el for el in elSource]
         self.assertEqual(case.edgeWeightDim, elSource.getEdgeWeightDim())
-            
+
     def testGetEdgeWeightDim(self):
         #print 'testGetEdgeWeightDim turned off'
         #print 'testGetEdgeWeightDim'
@@ -3430,11 +3485,11 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
             #print case.trackName
             self._assertEdgeWeightDim(case)
             case.close()
-    
+
     def runTest(self):
         pass
         #self.testDirtyFlagSortedWigFixedElementSource()
-    
+
 if __name__ == "__main__":
 #    TestGenomeElementSource().debug()
-    unittest.main()         
+    unittest.main()
