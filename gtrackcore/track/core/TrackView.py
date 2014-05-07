@@ -349,7 +349,7 @@ class TrackView(object):
     
     def _updateNumListElements(self):
         self._numListElements = self._computeNumListElements()
-        
+
         if self.allowOverlaps and self._numListElements > 0:
             self._numIterElements = self._computeNumIterElements()
         else:
@@ -364,13 +364,36 @@ class TrackView(object):
     def _computeNumIterElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:
-                #TODO: test
-                if isinstance(list, numpy.ndarray) or isinstance(list, VirtualTrackColumn):
+                if isinstance(list, VirtualTrackColumn):
+                    return self._substract_blindpassengers_from_number_of_elements()
+                elif isinstance(list, numpy.ndarray):
                     return len(self._removeBlindPassengersFromNumpyArray(list))
                 else:
                     return sum(1 for _ in self)
         raise ShouldNotOccurError
-            
+
+    def _substract_blindpassengers_from_number_of_elements(self):
+        number_of_elements = self._numListElements
+
+        if self.cached_start_and_end_indices is None:
+            self.cached_start_and_end_indices = start_and_end_indices(self.genomeAnchor, self._track_name,
+                                                                      self.allowOverlaps, self.trackFormat)
+
+        start_index, end_index = self.cached_start_and_end_indices
+        if start_index == end_index:
+            return number_of_elements
+
+        with self._db_handler as db_reader:
+            track_table = db_reader.get_table(self._track_node_names)
+            rows = track_table.iterrows(start=start_index, stop=end_index)
+            for row in rows:
+                if 'end' in track_table.colnames and (row['end'] <= self.genomeAnchor.start):
+                    number_of_elements -= 1
+                if row['start'] > self.genomeAnchor.start:
+                    break
+
+        return number_of_elements
+
     def __len__(self):
         return self._bpSize()
     

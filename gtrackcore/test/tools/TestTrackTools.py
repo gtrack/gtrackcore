@@ -106,7 +106,7 @@ class TestTrackTools(unittest.TestCase):
     def test_sum_of_weights(self):
         track_data = all_test_track_data['linked_segments1']
         result = sum_of_weights(track_data['track_name'], True, track_data['genome_regions'])
-        result_should_be = 6.6
+        result_should_be = 23.1
 
         self.assertAlmostEqual(result, result_should_be, msg='sum of values result was %f, but should be %f for track '
                                                              '%s' % (result, result_should_be,
@@ -115,7 +115,7 @@ class TestTrackTools(unittest.TestCase):
     def test_sum_of_weights_with_iterator(self):
         track_data = all_test_track_data['linked_segments1']
         result = sum_of_weights_iter(track_data['track_name'], True, track_data['genome_regions'])
-        result_should_be = 6.6
+        result_should_be = 23.1
 
         self.assertAlmostEqual(result, result_should_be, msg='sum of values result was %f, but should be %f for track '
                                                              '%s' % (result, result_should_be,
@@ -186,9 +186,9 @@ all_test_track_data = {
         ],
         'data': [
             '\t'.join(map(str, ['chr21', 100, 200, 'a', 'b=1.1'])),
-            '\t'.join(map(str, ['chr21', 150, 250, 'b', 'a=1.1;c=1.1'])),
-            '\t'.join(map(str, ['chr21', 200, 250, 'c', 'a=1.1;d=1.1'])),
-            '\t'.join(map(str, ['chrM', 100, 200, 'd', 'c=1.1'])),
+            '\t'.join(map(str, ['chr21', 150, 250, 'b', 'a=2.2;c=3.3'])),
+            '\t'.join(map(str, ['chr21', 200, 250, 'c', 'a=4.4;d=5.5'])),
+            '\t'.join(map(str, ['chrM', 100, 200, 'd', 'c=6.6'])),
         ],
         'genome_regions': [
             GenomeRegion('testgenome', 'chr21', 0, 46944323),
