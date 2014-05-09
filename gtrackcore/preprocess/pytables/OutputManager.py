@@ -1,3 +1,4 @@
+from itertools import izip
 import os
 from stat import S_IRWXU, S_IRWXG, S_IROTH
 
@@ -49,55 +50,47 @@ class OutputManager(object):
 
         self._table = self._db_writer.get_table(table_node_names)
 
-    #Todo: refactor...
-    def _add_element_as_row(self, genome_element):
+    def _add_ge_dict_as_row(self, ge_dict):
         row = self._table.row
         for column in self._table.colnames:
-            if column in genome_element.__dict__:
+            if column in ge_dict:
                 if column in ['edges', 'weights']:
-                    ge_len = sum(1 for _ in genome_element.__dict__[column])
+                    ge_len = sum(1 for _ in ge_dict[column])
                     if ge_len >= 1:
-                        row[column] = numpy.array(genome_element.__dict__[column] + list(row[column][ge_len:]))
+                        row[column] = numpy.array(ge_dict[column] + list(row[column][ge_len:]))
                 elif column == 'val' and isinstance(row['val'], numpy.ndarray):
-                    new_val = genome_element.__dict__['val']
+                    new_val = ge_dict['val']
                     if isinstance(new_val, list) or isinstance(new_val, tuple):
                         new_val = numpy.array(new_val)
                     row['val'] = insert_into_array_of_larger_shape(new_val, row['val'].shape)
                 else:
-                    row[column] = genome_element.__dict__[column]
+                    row[column] = ge_dict[column]
             else:  # Get extra column
-                row[column] = genome_element.__dict__['extra'][column]
+                row[column] = ge_dict['extra'][column]
             self._insert_counter += 1
         row.append()
         flush_table(self._table, self._insert_counter)
 
-    def _add_slice_element_as_rows(self, genome_element):
-
-        slice_dict = {key: val for key, val in genome_element.__dict__.iteritems()
-                      if ((isinstance(val, numpy.ndarray) and val.any()) or val)
-                      and key not in ['extra', 'orderedExtraKeys', 'genome']}
-
-        slice_dict.update(genome_element.__dict__['extra'])
-        keys = slice_dict.keys()
-
-        assert self._table.colnames == keys
-
-        ge_dicts = [dict(zip(keys, vals)) for vals in zip(*(slice_dict[k] for k in keys))]
-
-        for el in ge_dicts:
-            row = self._table.row
-            for key in keys:
-                row[key] = el[key]
-            row.append()
-            self._insert_counter += 1
-            flush_table(self._table, self._insert_counter)
+    def _add_slice_element_as_chunk(self, chunk):
+        self._table.append(chunk)
+        self._insert_counter += 1
+        flush_table(self._table, self._insert_counter)  # flush for each chuck
 
     def writeElement(self, genome_element):
-        self._add_element_as_row(genome_element)
+        self._add_ge_dict_as_row(genome_element.__dict__)
 
     def writeRawSlice(self, genome_element):
-        """What's the purpose of this?"""
-        self._add_slice_element_as_rows(genome_element)
+        if 'val' in self._table.colnames and len(self._table.colnames) == 1:
+            self._add_slice_element_as_chunk(genome_element.__dict__['val'])
+        else:
+            raw_slices = {column: genome_element.__dict__[column] for column in self._table.colnames
+                          if column not in ['orderedExtraKeys', 'genome']}
+
+            keys = raw_slices.keys()
+            assert self._table.colnames == keys
+
+            for genome_element_dict in [dict(izip(keys, vals)) for vals in izip(*(raw_slices[k] for k in keys))]:
+                self._add_ge_dict_as_row(genome_element_dict)
 
     def close(self):
         self._db_writer.close()
