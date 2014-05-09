@@ -16,7 +16,7 @@ from gtrackcore_memmap.util.CustomExceptions import NotSupportedError
 class GESourceManager(object):
     def __init__(self, geSource):
         self._geSource = self._decorateGESource(geSource)
-        self._boundingRegionsAndGEsCorresponds = None
+        self._boundingRegionsAndGEsCorrespond = None
 
         self._areValsCategorical = TrackFormat.createInstanceFromGeSource(geSource).getValTypeName() == 'Category'
         self._areEdgeWeightsCategorical = TrackFormat.createInstanceFromGeSource(geSource).getWeightTypeName() == 'Category'
@@ -26,16 +26,16 @@ class GESourceManager(object):
         self._numElements = OrderedDefaultDict(int)
         self._maxStrLens = OrderedDefaultDict(partial(self._initMaxStrLens, self._getMaxStrLensKeys()))
         self._maxNumEdges = OrderedDefaultDict(int)
-        
+
         self._hasCalculatedStats = False
 #        self._calcStatisticsInExtraPass()
-        
+
     def _decorateGESource(self, geSource):
         return GEDependentAttributesHolder(geSource)
 
     def _getMaxStrLensKeys(self):
         prefixSet = set(self._geSource.getPrefixList())
-            
+
         return (['val'] if 'val' in prefixSet and self._geSource.getValDataType() == 'S' else []) + \
                (['id'] if 'id' in prefixSet else []) + \
                (['edges'] if 'edges' in prefixSet else []) + \
@@ -50,42 +50,51 @@ class GESourceManager(object):
         if not self._hasCalculatedStats:
             prevPrintWarnings = self._geSource.getPrintWarnings()
             self._geSource.setPrintWarnings(False)
-            
-            for el in self._geSource:
-                chr = el.chr
-                self._numElements[chr] += 1
-                
-                if el.isBlankElement:
-                    continue
-                
-                if self._areValsCategorical:
-                    self._valCategories.add(el.val)
-                    
-                if self._areEdgeWeightsCategorical:
-                    self._edgeWeightCategories |= set(el.weights)
-            
-                for prefix in self._maxStrLens[chr]:
-                    content = getattr(el, prefix, None)
-                    
-                    if content is not None:
-                        self._maxStrLens[chr][prefix] = \
-                                max( self._maxStrLens[chr][prefix], \
-                                     max(1, len(content)) if isinstance(content, basestring) else \
-                                        max([1] + [len(x) for x in flatten(content)]) )
-                        
-                        if prefix == 'edges':
-                            self._maxNumEdges[chr] = max(self._maxNumEdges[chr], len(el.edges))
-                        
+
+            if self._geSource.isSliceSource():
+                if len(self._getMaxStrLensKeys()):
+                    raise NotImplementedError('Dimension calculation not yet implemented for slice-based GenomeElementSources.')
+
+                prefixList = self._geSource.getPrefixList()
+                for el in self._geSource:
+                    chr = el.chr
+                    self._numElements[chr] += len(getattr(el, prefixList[0]))
+            else:
+                for el in self._geSource:
+                    chr = el.chr
+                    self._numElements[chr] += 1
+
+                    if el.isBlankElement:
+                        continue
+
+                    if self._areValsCategorical:
+                        self._valCategories.add(el.val)
+
+                    if self._areEdgeWeightsCategorical:
+                        self._edgeWeightCategories |= set(el.weights)
+
+                    for prefix in self._maxStrLens[chr]:
+                        content = getattr(el, prefix, None)
+
+                        if content is not None:
+                            self._maxStrLens[chr][prefix] = \
+                                    max( self._maxStrLens[chr][prefix], \
+                                         max(1, len(content)) if isinstance(content, basestring) else \
+                                            max([1] + [len(x) for x in flatten(content)]) )
+
+                            if prefix == 'edges':
+                                self._maxNumEdges[chr] = max(self._maxNumEdges[chr], len(el.edges))
+
             self._geSource.setPrintWarnings(prevPrintWarnings)
             self._hasCalculatedStats = True
 
     def getGESource(self):
         return self._geSource
-        
+
     def getBoundingRegionTuples(self):
         boundingRegionTuples = [x for x in self._getBoundingRegionTuples() \
                                 if x.region.chr is not None]
-        
+
         if len(boundingRegionTuples) == 0:
             from gtrackcore_memmap.input.core.GenomeElementSource import BoundingRegionTuple
             from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
@@ -96,45 +105,45 @@ class GESourceManager(object):
                                      GenomeRegion(chr=chr, start=0, end=GenomeInfo.getChrLen(self._geSource.genome, chr)), \
                                      self.getNumElementsForChr(chr) ) \
                                     for chr in geChrList]
-            self._boundingRegionsAndGEsCorresponds = False
+            self._boundingRegionsAndGEsCorrespond = False
         else:
-            self._boundingRegionsAndGEsCorresponds = True
-            
+            self._boundingRegionsAndGEsCorrespond = True
+
         return boundingRegionTuples
-        
+
     def _getBoundingRegionTuples(self):
         return self._geSource.getBoundingRegionTuples()
-        
-    def boundingRegionsAndGEsCorresponds(self):
-        assert self._boundingRegionsAndGEsCorresponds is not None
-        return self._boundingRegionsAndGEsCorresponds
+
+    def boundingRegionsAndGEsCorrespond(self):
+        assert self._boundingRegionsAndGEsCorrespond is not None
+        return self._boundingRegionsAndGEsCorrespond
 
     def getPrefixList(self):
         return self._geSource.getPrefixList()
-        
+
     def getValDataType(self):
         return self._geSource.getValDataType()
-        
+
     def getValDim(self):
         return self._geSource.getValDim()
-        
+
     def getEdgeWeightDataType(self):
         return self._geSource.getEdgeWeightDataType()
-        
+
     def getEdgeWeightDim(self):
         return self._geSource.getEdgeWeightDim()
-        
+
     def isSorted(self):
         return self._geSource.isSorted()
-        
+
     def getAllChrs(self):
         self._calcStatisticsInExtraPass()
         return self._numElements.keys()
-    
+
     def getNumElements(self):
         self._calcStatisticsInExtraPass()
         return sum(self._numElements.values())
-        
+
     def getNumElementsForChr(self, chr):
         self._calcStatisticsInExtraPass()
         return self._numElements[chr]
@@ -142,7 +151,7 @@ class GESourceManager(object):
     def getValCategories(self):
         self._calcStatisticsInExtraPass()
         return self._valCategories
-    
+
     def getEdgeWeightCategories(self):
         self._calcStatisticsInExtraPass()
         return self._edgeWeightCategories
@@ -150,19 +159,23 @@ class GESourceManager(object):
     def getMaxNumEdges(self):
         self._calcStatisticsInExtraPass()
         return max(self._maxNumEdges.values())
-        
+
     def getMaxNumEdgesForChr(self, chr):
         self._calcStatisticsInExtraPass()
         return self._maxNumEdges[chr]
-        
+
     def getMaxStrLens(self):
         self._calcStatisticsInExtraPass()
-        reduce(lambda x,y:dict((key, max(x[key], y[key])) for key in x.keys()), \
+        return reduce(lambda x,y:dict((key, max(x[key], y[key])) for key in x.keys()), \
                self._maxStrLens.values())
-        
+
     def getMaxStrLensForChr(self, chr):
         self._calcStatisticsInExtraPass()
         return self._maxStrLens[chr]
+
+    def getMaxChrStrLen(self):
+        self._calcStatisticsInExtraPass()
+        return max(len(chr) for chr in self._maxStrLens.keys())
 
 
 class OverlapClusteringGESourceManager(GESourceManager):
@@ -171,10 +184,10 @@ class OverlapClusteringGESourceManager(GESourceManager):
         trackGESource = TrackGenomeElementSource(genome, trackName, \
                                                  [br.region for br in self._origBrTuples],
                                                  allowOverlaps=True)
-        
+
         GESourceManager.__init__(self, trackGESource)
         self._brTuplesForClusteredElements = None
-        
+
     def _decorateGESource(self, geSource):
         return GEBoundingRegionElementCounter(GEOverlapClusterer(geSource), \
                                               self._origBrTuples)
@@ -187,7 +200,7 @@ class RegionBasedGESourceManager(GESourceManager):
         self._calcStatsInExtraPass = calcStatsInExtraPass
         self._countElsInBoundingRegions = countElsInBoundingRegions
         GESourceManager.__init__(self, geSource)
-    
+
     def _decorateGESource(self, geSource):
         if self._countElsInBoundingRegions:
             brTuples = [BoundingRegionTuple(region, 0) for region in self._brRegionList]
@@ -195,7 +208,7 @@ class RegionBasedGESourceManager(GESourceManager):
         else:
             brTuples = [BoundingRegionTuple(region, len(region)) for region in self._brRegionList]
             return BrTuplesGESourceWrapper(geSource, brTuples)
-            
+
     def _calcStatisticsInExtraPass(self):
         if not self._hasCalculatedStats:
             if self._calcStatsInExtraPass:
