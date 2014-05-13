@@ -10,8 +10,6 @@ ITERATION_THRESHOLD = ITERSEQ_MAX_ELEMENTS  # the critical region length where i
 
 
 def start_and_end_indices(genome_region, track_name, allow_overlaps, track_format):
-    assert genome_region.genome == genome_region.genome
-
     br_queries = BoundingRegionQueries(genome_region.genome, track_name, allow_overlaps)
     bounding_region = br_queries.enclosing_bounding_region_for_region(genome_region)
 

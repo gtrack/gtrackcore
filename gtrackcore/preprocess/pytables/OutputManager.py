@@ -5,7 +5,7 @@ import numpy
 
 from gtrackcore.preprocess.pytables.TableDescriber import TableDescriber
 from gtrackcore.track.pytables.database.Database import DatabaseWriter
-from gtrackcore.track.pytables.database.CommonTableFunctions import resize_table_columns, flush_table
+from gtrackcore.preprocess.pytables.CommonTableFunctions import resize_table_columns, flush_table
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
 from gtrackcore.util.pytables.NumpyFunctions import insert_into_array_of_larger_shape
 
@@ -14,7 +14,7 @@ class OutputManager(object):
     def __init__(self, genome, track_name, allow_overlaps, ge_source_manager, track_format):
         self._track_format = track_format
         self._database_filename = get_database_filename(genome, track_name,
-                                                                      allow_overlaps=allow_overlaps, create_path=True)
+                                                        allow_overlaps=allow_overlaps, create_path=True)
         self._db_writer = None
         self._table = None
         self._insert_counter = 0
@@ -34,7 +34,7 @@ class OutputManager(object):
             old_table_description = old_table.coldescrs
 
             assert set(new_table_description.keys()) == set(old_table_description.keys())
-            
+
             updated_column_descriptions = table_describer.get_updated_column_descriptions(old_table_description,
                                                                                           new_table_description)
 

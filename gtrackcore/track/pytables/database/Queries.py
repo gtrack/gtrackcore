@@ -1,6 +1,7 @@
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_br_table_node_names
 
+
 class DatabaseQueries(object):
 
     def __init__(self, genome, track_name, allow_overlaps):
@@ -17,7 +18,6 @@ class BoundingRegionQueries(DatabaseQueries):
     def __init__(self, genome, track_name, allow_overlaps):
         super(BoundingRegionQueries, self).__init__(genome, track_name, allow_overlaps)
         self._table_node_names = get_br_table_node_names(genome, track_name, allow_overlaps)
-
 
     def total_element_count_for_chr(self, chromosome):
         self._db_reader.open()

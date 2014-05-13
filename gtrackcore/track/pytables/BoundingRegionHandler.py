@@ -1,5 +1,4 @@
 import tables
-from gtrackcore.track.pytables.database.CommonTableFunctions import create_table_indices
 
 from gtrackcore.track.pytables.database.Database import DatabaseReader, DatabaseWriter
 from gtrackcore.util.CommonFunctions import prettyPrintTrackName

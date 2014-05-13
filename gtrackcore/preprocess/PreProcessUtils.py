@@ -11,7 +11,7 @@ from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore.track.pytables.BoundingRegionHandler import BoundingRegionHandler
 from gtrackcore.track.pytables.database.Database import DatabaseWriter
 from gtrackcore.track.pytables.TrackSource import TrackSource
-from gtrackcore.track.pytables.database.CommonTableFunctions import sort_table
+from gtrackcore.preprocess.pytables.CommonTableFunctions import sort_table
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 from gtrackcore.util.CommonFunctions import get_dir_path
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
