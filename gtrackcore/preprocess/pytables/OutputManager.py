@@ -20,9 +20,9 @@ class OutputManager(object):
         self._table = None
         self._insert_counter = 0
 
-        self._create_track_table_database(genome, track_name, allow_overlaps, ge_source_manager)
+        self._setup_track_table_database(genome, track_name, allow_overlaps, ge_source_manager)
 
-    def _create_track_table_database(self, genome, track_name, allow_overlaps, ge_source_manager):
+    def _setup_track_table_database(self, genome, track_name, allow_overlaps, ge_source_manager):
         table_describer = TableDescriber(ge_source_manager, self._track_format)
         new_table_description = table_describer.create_new_table_description()
 
