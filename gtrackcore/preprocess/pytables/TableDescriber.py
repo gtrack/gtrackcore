@@ -29,17 +29,17 @@ class TableDescriber(object):
             elif column == 'id':
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column])
             elif column == 'edges':
-                shape = self._get_shape(max_num_edges, 1)
+                shape = self._get_edges_shape(max_num_edges)
                 data_type_dict[column] = tables.StringCol(max_string_lengths[column], shape=shape)
             elif column in ['val', 'weights']:
                 if column == 'val':
                     data_type = self._ge_source_manager.getValDataType()
                     val_dim = self._ge_source_manager.getValDim()
-                    shape = val_dim if val_dim > 1 else tuple()
+                    shape = self._get_val_shape(val_dim)
                 elif column == 'weights':
                     data_type = self._ge_source_manager.getEdgeWeightDataType()
                     data_type_dim = self._ge_source_manager.getEdgeWeightDim()
-                    shape = self._get_shape(max_num_edges, data_type_dim)
+                    shape = self._get_weights_shape(max_num_edges, data_type_dim)
 
                 data_type = 'S' if data_type.startswith('S') else data_type
 
@@ -80,8 +80,16 @@ class TableDescriber(object):
         return max(self._ge_source_manager.getMaxNumEdgesForChr(chr) for chr in self._ge_source_manager.getAllChrs())
 
     @classmethod
-    def _get_shape(cls, max_num_edges, data_type_dim):
-        return tuple([max(1, max_num_edges)] + ([data_type_dim] if data_type_dim > 1 else []))
+    def _get_weights_shape(cls, max_num_edges, data_type_dim):
+        return tuple([(max_num_edges, ) if max_num_edges > 1 else (1,)] + ([data_type_dim] if data_type_dim > 1 else []))
+
+    @classmethod
+    def _get_val_shape(cls, val_dim):
+        return (val_dim, ) if val_dim > 1 else ()
+
+    @classmethod
+    def _get_edges_shape(cls, max_num_edges):
+        return (max_num_edges, ) if max_num_edges > 1 else (1,)
 
     @classmethod
     def _get_new_column_descriptions(cls, old_table_description, new_table_description, columns):
@@ -96,9 +104,9 @@ class TableDescriber(object):
             dtype = old_table_description[column_name].type
 
             if column_name in ('val', 'edges', 'weights'):
-                shape = cls._get_new_shape(old_column_description, new_column_description)
+                shape = cls._get_new_shape(old_column_description.shape, new_column_description.shape)
             if dtype == 'string':
-                itemsize = cls._get_new_itemsize(old_column_description, new_column_description)
+                itemsize = cls._get_new_itemsize(old_column_description.itemsize, new_column_description.itemsize)
 
             if itemsize is not None or shape is not None:
                 new_descriptions[column_name] = cls._get_new_column_description(old_column_description, itemsize, shape)
@@ -128,26 +136,17 @@ class TableDescriber(object):
                 return tables.Col.from_type(dtype, shape=shape, dflt=old_column_description.dflt)
 
     @classmethod
-    def _get_new_itemsize(cls, old_column_description, new_column_description):
-        old_itemsize = old_column_description.itemsize
-        new_itemsize = new_column_description.itemsize
-
+    def _get_new_itemsize(cls, old_itemsize, new_itemsize):
         if new_itemsize > old_itemsize:
             return new_itemsize
-
-        return None
-
-    @classmethod
-    def _get_new_shape(cls, old_column_description, new_column_description):
-        old_val_shape = old_column_description.shape
-        new_val_shape = new_column_description.shape
-        result_val_shape = tuple([max(x, y) for x, y in izip_longest(old_val_shape, new_val_shape)])
-
-        if cls._should_use_new_shape(old_val_shape, result_val_shape):
-            return result_val_shape
-
-        return None
+        else:
+            return None
 
     @classmethod
-    def _should_use_new_shape(cls, old_shape, new_shape):
-        return any([x < y for x, y in izip_longest(old_shape, new_shape)])
+    def _get_new_shape(cls, old_shape, new_shape):
+        result_shape = tuple([max(x, y) for x, y in izip_longest(old_shape, new_shape)])
+
+        if result_shape > old_shape:
+            return result_shape
+        else:
+            return None
