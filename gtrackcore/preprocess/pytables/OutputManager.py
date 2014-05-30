@@ -43,7 +43,7 @@ class OutputManager(object):
                 new_table_description.update(updated_column_descriptions)
                 self._db_writer.close()
                 resize_table_columns(self._database_filename, table_node_names,
-                                     updated_column_descriptions, ge_source_manager.getNumElements())
+                                     new_table_description, ge_source_manager.getNumElements())
                 self._db_writer.open()
         else:
             self._db_writer.create_table(table_node_names, new_table_description, ge_source_manager.getNumElements())

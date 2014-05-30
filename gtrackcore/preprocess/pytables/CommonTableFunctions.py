@@ -26,14 +26,10 @@ def sort_table(h5_filename, node_names, sort_order):
     db_writer.close()
 
 
-def resize_table_columns(h5_filename, node_names, new_column_descriptions, expected_new_rows):
+def resize_table_columns(h5_filename, node_names, table_description, expected_new_rows):
     db_writer = DatabaseWriter(h5_filename)
     db_writer.open()
     old_table = db_writer.get_table(node_names)
-
-    table_description = old_table.coldescrs
-    for column_name, description in new_column_descriptions.iteritems():
-        table_description[column_name] = description
 
     copy_func = partial(_copy_content_from_old_to_new_table, old_table)
     _update_new_table(db_writer, old_table, node_names, table_description, expected_new_rows, copy_func)
