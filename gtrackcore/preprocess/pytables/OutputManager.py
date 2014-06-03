@@ -54,15 +54,9 @@ class OutputManager(object):
         row = self._table.row
         for column in self._table.colnames:
             if column in ge_dict:
-                if column in ['edges', 'weights']:
-                    ge_len = sum(1 for _ in ge_dict[column])
-                    if ge_len >= 1:
-                        row[column] = numpy.array(ge_dict[column] + list(row[column][ge_len:]))
-                elif column == 'val' and isinstance(row['val'], numpy.ndarray):
-                    new_val = ge_dict['val']
-                    if isinstance(new_val, list) or isinstance(new_val, tuple):
-                        new_val = numpy.array(new_val)
-                    row['val'] = insert_into_array_of_larger_shape(new_val, row['val'].shape)
+                if column in ['edges', 'weights'] or (column == 'val' and isinstance(row['val'], numpy.ndarray)):
+                    if len(ge_dict[column]) > 0:
+                        row[column] = self._convert_list_attr_to_array(ge_dict[column], row[column].shape)
                 else:
                     row[column] = ge_dict[column]
             else:  # Get extra column
@@ -70,6 +64,13 @@ class OutputManager(object):
             self._insert_counter += 1
         row.append()
         flush_table(self._table, self._insert_counter)
+
+    def _convert_list_attr_to_array(self, list, row_field_shape):
+        ndarray_col = numpy.asarray(list)
+        if ndarray_col.shape == row_field_shape:
+            return ndarray_col
+        else:
+            return insert_into_array_of_larger_shape(ndarray_col, row_field_shape)
 
     def _add_slice_element_as_chunk(self, chunk):
         self._table.append(chunk)
