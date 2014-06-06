@@ -53,6 +53,15 @@ def sum_of_values(track_name, allow_overlaps, genome_regions):
     return value_sum
 
 
+def sum_of_values_iter(track_name, allow_overlaps, genome_regions):
+    value_sum = numpy.float128(0)
+    for region in genome_regions:
+        track_view = get_track_view(track_name, allow_overlaps, region)
+        for track_element in track_view:
+            value_sum += track_element.val()
+    return value_sum
+
+
 def sum_of_weights(track_name, allow_overlaps, genome_regions):
     weight_sum = numpy.float128(0)
     for region in genome_regions:
@@ -182,6 +191,10 @@ if __name__ == '__main__':
     elif operation == 'count':
         tn = 'Phenotype and disease associations:GWAS:NHGRI GWAS Catalog:Parkinson\'s disease'.split(':')
         oper_func = partial(count_elements, tn, False, chromosomes)
+
+    elif operation == 'sum_of_vals':
+        tn = 'testcat:midval'.split(':')
+        oper_func = partial(sum_of_values_iter, tn, True, [GenomeRegion('testgenome', 'chr21', 0, 46944323)])
 
     from time import time
     print 'Running', operation + '...'
