@@ -18,7 +18,7 @@ def inferValType(valList, shapeOffset=0):
     elif type(valList) in [list,tuple]:
         return 'number'
     elif isinstance(valList, numpy.ndarray) or isinstance(valList, SmartMemmap) or \
-            isinstance(valList, VirtualTrackColumn):  # May have to create out own checks??
+            isinstance(valList, VirtualTrackColumn):
         if len(valList.shape) == 2 + shapeOffset and valList.shape[1 + shapeOffset] == 2 and valList.dtype == numpy.dtype('float128'):
             return 'mean_sd'
         elif any(valList.dtype == numpy.dtype(x) for x in ['float32', 'float64', 'float128']):
