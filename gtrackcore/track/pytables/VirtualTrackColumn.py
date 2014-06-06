@@ -3,44 +3,22 @@ from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
 
 class VirtualTrackColumn(VirtualNumpyArray):
 
-    COPIED_SUFFIX = '___MazUqfTWOQQF248kxQie2B1sA6nhRLtV6nmDRuFJVolL5uyp3SpXNSHiy760aDrlwkH8te9bxpzE3RZZ___'
+    def __init__(self, column_name, db_reader, table_node_names, start_index=-1, end_index=-1):
+        VirtualNumpyArray.__init__(self)
 
-    def __new__(cls, column_name, database_filename, db_reader, table_node_names, start_index=-1, end_index=-1):
-        if not hasattr(cls, '_columns'):
-            cls._columns = {}
+        self._column_name = column_name
+        self._db_reader = db_reader
+        self._table_node_names = table_node_names
+        self._start_index = start_index
+        self._end_index = end_index
+        self._step = 1
 
-        key = database_filename + '_' + column_name
-
-        try:
-            cls._columns[key].offset = (start_index, end_index)
-            return cls._columns[key]
-        except KeyError:
-            new_column = object.__new__(cls, column_name, database_filename, db_reader, table_node_names, start_index, end_index)
-            cls._columns[key] = new_column
-            return new_column
-
-    def __init__(self, column_name, database_filename, db_reader, table_node_names, start_index=-1, end_index=-1):
-        if not hasattr(self, '_database_filename'):
-            VirtualNumpyArray.__init__(self)
-
-            if column_name.endswith(VirtualTrackColumn.COPIED_SUFFIX):
-                column_name = column_name[:-len(VirtualTrackColumn.COPIED_SUFFIX)]
-
-            self._database_filename = database_filename
-            self._column_name = column_name
-            self._db_reader = db_reader
-            self._table_node_names = table_node_names
-            self._start_index = start_index
-            self._end_index = end_index
-            self._step = 1
-
-            self._db_reader.open()
-            table = db_reader.get_table(table_node_names)
-            column = table.colinstances[column_name]
-            self._shape = column.shape
-            self._dtype = column.dtype
-
-            self._db_reader.close()
+        self._db_reader.open()
+        table = db_reader.get_table(table_node_names)
+        column = table.colinstances[column_name]
+        self._shape = column.shape
+        self._dtype = column.dtype
+        self._db_reader.close()
 
     @property
     def offset(self):
@@ -100,8 +78,8 @@ class VirtualTrackColumn(VirtualNumpyArray):
         self._set_offset(start_index, end_index, step)
 
     def __copy__(self):
-        vtc = VirtualTrackColumn(self._column_name + VirtualTrackColumn.COPIED_SUFFIX, self._database_filename,
-                                 self._db_reader, self._table_node_names, self._start_index, self._end_index)
+        vtc = VirtualTrackColumn(self._column_name, self._db_reader, self._table_node_names,
+                                 self._start_index, self._end_index)
         vtc._cachedNumpyArray = self._cachedNumpyArray
         return vtc
 

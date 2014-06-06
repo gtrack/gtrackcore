@@ -30,8 +30,7 @@ class TrackSource:
 
         for column_name in column_names:
             if column_name not in self.track_data[allowOverlaps]:
-                self.track_data[allowOverlaps][column_name] = VirtualTrackColumn(column_name, database_filename,
-                                                                                 db_reader, table_node_names,
+                self.track_data[allowOverlaps][column_name] = VirtualTrackColumn(column_name, db_reader, table_node_names,
                                                                                  start_index=0, end_index=num_of_rows)
 
         return self.track_data[allowOverlaps]
