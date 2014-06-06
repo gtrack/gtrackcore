@@ -1,4 +1,3 @@
-import sys
 import os
 import unittest
 import itertools
@@ -11,26 +10,20 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonFunctions import createOrigPath
 
 
-class MockPrint(object):
-    def write(self, s):
-        pass
-
-
 class TestTrackTools(unittest.TestCase):
     def setUp(self):
-        sys.stdout = MockPrint()  # prevents a lot of annoying print messages
         for track_data in all_test_track_data.values():
             self._write_original_file(track_data)
             try:
                 PreProcessAllTracksJob(track_data['genome'], track_data['track_name']).process()
             except Exception:
                 logMessage('Could not preprocess %s (%s)' % (':'.join(track_data['track_name']), track_data['genome']))
-        sys.stdout = sys.__stdout__
 
     def tearDown(self):
         pass
 
-    def _write_original_file(self, track_data):
+    @staticmethod
+    def _write_original_file(track_data):
         dir_path = createOrigPath(track_data['genome'], track_data['track_name'])
         filename = dir_path + os.sep + 'file.gtrack'
         if not os.path.isdir(dir_path):
