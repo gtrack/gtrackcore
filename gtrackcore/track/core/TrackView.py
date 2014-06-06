@@ -509,24 +509,23 @@ class TrackView(object):
                              self._valList, self._strandList, self._idList, \
                              self._edgesList, self._weightsList, \
                              self.borderHandling, self.allowOverlaps, \
-                             extraLists=self._extraLists)
+                             extraLists=self._extraLists, track_name=self._track_name)
         slicedTV.trackFormat = self.trackFormat
         
         slicedTV.genomeAnchor.start += i
-        if j>=0:
+        if j >= 0:
             try:
                 slicedTV.genomeAnchor.end = min(self.genomeAnchor.end, self.genomeAnchor.start + j)
-            except FloatingPointError: # Caused by trackView[:] with self.genomeAnchor.start > 0
+            except FloatingPointError:  # Caused by trackView[:] with self.genomeAnchor.start > 0
                 slicedTV.genomeAnchor.end = self.genomeAnchor.end
-        if j<0:
+        if j < 0:
             slicedTV.genomeAnchor.end += j
 
         if self.trackFormat.reprIsDense():
-            slicedTV._doDenseSlicing(i,j)
+            slicedTV._doDenseSlicing(i, j)
         else:
             slicedTV._doScatteredSlicing()
 
-        self.cached_start_and_end_indices = None
         return slicedTV
     
     def _getBpLevelModificationArray(self, indexes, vals):
