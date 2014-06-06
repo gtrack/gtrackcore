@@ -14,11 +14,9 @@ class TrackData(dict):
 class TrackSource:
 
     def __init__(self):
-        self._chrInUse = None
-        self._fileDict = {}
+        self.track_data = {key: TrackData() for key in [True, False]}
 
     def get_track_data(self, genome, trackName, allowOverlaps):
-        track_data = TrackData()
         database_filename = get_database_filename(genome, trackName, allow_overlaps=allowOverlaps)
         table_node_names = get_track_table_node_names(genome, trackName, allowOverlaps)
 
@@ -27,11 +25,13 @@ class TrackSource:
         table = db_reader.get_table(table_node_names)
 
         column_names = table.colnames
-        number_of_rows = table.nrows
+        num_of_rows = table.nrows
         db_reader.close()
 
         for column_name in column_names:
-            track_data[column_name] = VirtualTrackColumn(column_name, database_filename, db_reader, table_node_names,
-                                                         start_index=0, end_index=number_of_rows)
+            if column_name not in self.track_data[allowOverlaps]:
+                self.track_data[allowOverlaps][column_name] = VirtualTrackColumn(column_name, database_filename,
+                                                                                 db_reader, table_node_names,
+                                                                                 start_index=0, end_index=num_of_rows)
 
-        return track_data
+        return self.track_data[allowOverlaps]
