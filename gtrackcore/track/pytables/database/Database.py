@@ -11,9 +11,6 @@ from gtrackcore.util.pytables.Constants import GTRACKCORE_FORMAT_SUFFIX
 from gtrackcore.util.pytables.NameFunctions import get_node_path
 
 
-FILTERS = tables.Filters(complib='blosc', complevel=5)
-
-
 class Database(object):
     __metaclass__ = ABCMeta
 
@@ -37,7 +34,7 @@ class Database(object):
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
         try:
-            self._h5_file = tables.open_file(self._h5_filename, mode=mode, filters=FILTERS)
+            self._h5_file = tables.open_file(self._h5_filename, mode=mode)
         except IOError, e:
             raise DBNotExistError(e)
         portalocker.lock(self._h5_file, lock_type)
