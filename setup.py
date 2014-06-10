@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
 
-name='gtrackcore',
+name='gtrackcore_compressed',
 version='0.1.0',
 packages = find_packages(),
-package_data={'gtrackcore': ['data/*\.*', 'data/gtrack/*', 'data/GESourceTracks/*/*']},
+package_data={'gtrackcore_compressed': ['data/*\.*', 'data/gtrack/*', 'data/GESourceTracks/*/*']},
 
 author='Sveinung Gundersen, Marcin Cieslik, Stephen Hoang, Tobias G. Waaler',
 author_email='sveinugu@gmail.com',
