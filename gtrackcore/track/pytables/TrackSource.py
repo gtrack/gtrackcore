@@ -1,6 +1,6 @@
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
-from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
+from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names, get_array_group_node_names
 
 
 class TrackData(dict):
@@ -23,14 +23,16 @@ class TrackSource:
         db_reader = DatabaseReader(database_filename)
         db_reader.open()
         table = db_reader.get_table(table_node_names)
-
         column_names = table.colnames
-        num_of_rows = table.nrows
+        num_of_elements = table.nrows
         db_reader.close()
+
+        array_group_node_names = get_array_group_node_names(genome, trackName, allowOverlaps)
 
         for column_name in column_names:
             if column_name not in self.track_data[allowOverlaps]:
-                self.track_data[allowOverlaps][column_name] = VirtualTrackColumn(column_name, db_reader, table_node_names,
-                                                                                 start_index=0, end_index=num_of_rows)
+                array_node_names = array_group_node_names + [column_name]
+                self.track_data[allowOverlaps][column_name] = VirtualTrackColumn(array_node_names, db_reader,
+                                                                                 start_index=0, end_index=num_of_elements)
 
         return self.track_data[allowOverlaps]

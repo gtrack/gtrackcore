@@ -9,6 +9,7 @@ WITH_OVERLAPS_NODE_NAME = 'with_overlaps'
 NO_OVERLAPS_NODE_NAME = 'no_overlaps'
 BOUNDING_REGIONS_NODE_NAME = 'bounding_regions'
 TRACKINFO_NODE_NAME = 'trackinfo'
+TRACK_ARRAY_GROUP_NODE_NAME = 'column_carrays'
 
 illegal_starts = re.compile(r'(^\d|^_[cfgv]_)')
 non_alphanumeric = re.compile(r'\W')
@@ -19,19 +20,23 @@ def get_base_node_names(genome, track_name):
 
 
 def get_track_table_node_names(genome, track_name, allow_overlaps):
-    return _get_table_node_names(genome, track_name, track_name[-1], allow_overlaps)
+    return _get_leaf_node_names(genome, track_name, allow_overlaps, track_name[-1])
 
 
 def get_br_table_node_names(genome, track_name, allow_overlaps):
-    return _get_table_node_names(genome, track_name, BOUNDING_REGIONS_NODE_NAME, allow_overlaps)
+    return _get_leaf_node_names(genome, track_name, allow_overlaps, BOUNDING_REGIONS_NODE_NAME)
+
+
+def get_array_group_node_names(genome, track_name, allow_overlaps):
+    return _get_leaf_node_names(genome, track_name, allow_overlaps, TRACK_ARRAY_GROUP_NODE_NAME)
 
 
 def get_trackinfo_node_names(genome, track_name):
     return get_base_node_names(genome, track_name) + [TRACKINFO_NODE_NAME]
 
 
-def _get_table_node_names(genome, track_name, table_name, allow_overlaps):
-    node_names = get_base_node_names(genome, track_name) + [_convert_string_to_natural_naming(table_name)]
+def _get_leaf_node_names(genome, track_name, allow_overlaps, leaf_node_name):
+    node_names = get_base_node_names(genome, track_name) + [_convert_string_to_natural_naming(leaf_node_name)]
     node_names.insert(len(node_names)-1, WITH_OVERLAPS_NODE_NAME if allow_overlaps else NO_OVERLAPS_NODE_NAME)
     return node_names
 

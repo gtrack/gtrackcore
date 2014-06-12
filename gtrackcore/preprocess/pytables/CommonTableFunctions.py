@@ -6,7 +6,7 @@ import tables
 
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_base_node_names, \
-    WITH_OVERLAPS_NODE_NAME, get_br_table_node_names
+    WITH_OVERLAPS_NODE_NAME, get_br_table_node_names, get_array_group_node_names, get_track_table_node_names
 from gtrackcore.util.pytables.NumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.Constants import FLUSH_LIMIT
 
@@ -106,6 +106,24 @@ def merge_and_rename_overlap_tables(genome, track_name):
 
     #There might be some remaining open file handlers that are using the new db_path, so these must be closed
     _close_file_handlers(db_path)
+
+
+def create_c_arrays_from_table(genome, track_name, allow_overlaps):
+    database_filename = get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
+
+    db_writer = DatabaseWriter(database_filename)
+    db_writer.open()
+
+    table_node_names = get_track_table_node_names(genome, track_name, allow_overlaps)
+    table = db_writer.get_table(table_node_names)
+
+    array_group_node_names = get_array_group_node_names(genome, track_name, allow_overlaps)
+
+    for column_name, column in table.colinstances.iteritems():
+        c_array_node_names = array_group_node_names + [column_name]
+        db_writer.create_c_array_from_array(c_array_node_names, column[:])
+
+    db_writer.close()
 
 
 def _close_file_handlers(db_path):

@@ -20,7 +20,7 @@ from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
 from gtrackcore.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
 from gtrackcore.track.pytables.database.MetadataHandler import MetadataHandler
-from gtrackcore.preprocess.pytables.CommonTableFunctions import merge_and_rename_overlap_tables
+from gtrackcore.preprocess.pytables.CommonTableFunctions import merge_and_rename_overlap_tables, create_c_arrays_from_table
 from gtrackcore.util.CommonFunctions import createOrigPath, get_dir_path, prettyPrintTrackName, \
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
@@ -83,6 +83,9 @@ class PreProcessTracksJob(object):
                         if self._mode == 'Real' and self._shouldMergeChrFolders():
                             PreProcessUtils.sort_preprocessed_table(self._genome, trackName, allowOverlaps)
                             PreProcessUtils.create_bounding_regions(self._genome, trackName, allowOverlaps)
+
+                            print '\tCreating c-arrays from table columns'
+                            create_c_arrays_from_table(self._genome, trackName, allowOverlaps)
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)
