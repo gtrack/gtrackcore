@@ -6,22 +6,42 @@ import tables
 
 from gtrackcore.track.pytables.database.Database import DatabaseWriter, DatabaseReader
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_base_node_names, \
-    WITH_OVERLAPS_NODE_NAME, get_br_table_node_names, get_array_group_node_names, get_track_table_node_names
+    WITH_OVERLAPS_NODE_NAME, get_array_group_node_names, get_track_table_node_names
 from gtrackcore.util.pytables.NumpyFunctions import insert_into_array_of_larger_shape
 from gtrackcore.util.pytables.Constants import FLUSH_LIMIT
 
 
-def sort_table(h5_filename, node_names, sort_order):
-    db_writer = DatabaseWriter(h5_filename)
-    db_writer.open()
-    old_table = db_writer.get_table(node_names)
+def sort_preprocessed_table(genome, track_name, allow_overlaps):
+    database_filename = get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
 
-    table_description = old_table.coldescrs
+    db_writer = DatabaseWriter(database_filename)
+    db_writer.open()
+    table_node_names = get_track_table_node_names(genome, track_name, allow_overlaps)
+    table = db_writer.get_table(table_node_names)
+
+    if 'start' in table.colinstances and 'end' in table.colinstances:
+        chr_column = table.colinstances['chr'][:]
+        start_column = table.colinstances['start'][:]
+        end_column = table.colinstances['end'][:]
+        sort_order = numpy.lexsort((end_column, start_column, chr_column))
+    elif 'start' in table.colinstances:
+        chr_column = table.colinstances['chr'][:]
+        start_column = table.colinstances['start'][:]
+        sort_order = numpy.lexsort((start_column, chr_column))
+    elif 'end' in table.colinstances:
+        chr_column = table.colinstances['chr'][:]
+        end_column = table.colinstances['end'][:]
+        sort_order = numpy.lexsort((end_column, chr_column))
+    else:
+        db_writer.close()
+        return
+
+    table_description = table.coldescrs
     if 'chr' in table_description:
         del table_description['chr']
 
-    copy_func = partial(_copy_content_from_old_to_new_table_in_sorted_order, old_table, sort_order=sort_order)
-    _update_new_table(db_writer, old_table, node_names, table_description, 0, copy_func)
+    copy_func = partial(_copy_content_from_old_to_new_table_in_sorted_order, table, sort_order=sort_order)
+    _create_updated_table(db_writer, table, table_node_names, table_description, 0, copy_func)
 
     db_writer.close()
 
@@ -32,12 +52,12 @@ def resize_table_columns(h5_filename, node_names, table_description, expected_ne
     old_table = db_writer.get_table(node_names)
 
     copy_func = partial(_copy_content_from_old_to_new_table, old_table)
-    _update_new_table(db_writer, old_table, node_names, table_description, expected_new_rows, copy_func)
+    _create_updated_table(db_writer, old_table, node_names, table_description, expected_new_rows, copy_func)
 
     db_writer.close()
 
 
-def _update_new_table(db_writer, old_table, node_names, table_description, expected_new_rows, copy_func):
+def _create_updated_table(db_writer, old_table, node_names, table_description, expected_new_rows, copy_func):
     old_table.rename(old_table.name + '_tmp')
     old_table_node_names = node_names[:-1]
     old_table_node_names.append(old_table.name)
