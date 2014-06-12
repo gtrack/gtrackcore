@@ -9,12 +9,9 @@ from gtrackcore_compressed.metadata.TrackInfo import TrackInfo
 from gtrackcore_compressed.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore_compressed.track.memmap.BoundingRegionShelve import BoundingRegionShelve
 from gtrackcore_compressed.track.pytables.BoundingRegionHandler import BoundingRegionHandler
-from gtrackcore_compressed.track.pytables.database.Database import DatabaseWriter
 from gtrackcore_compressed.track.pytables.TrackSource import TrackSource
-from gtrackcore_compressed.preprocess.pytables.CommonTableFunctions import sort_table
 from gtrackcore_compressed.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 from gtrackcore_compressed.util.CommonFunctions import get_dir_path
-from gtrackcore_compressed.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
 
 
 class PreProcessUtils(object):
@@ -117,36 +114,6 @@ class PreProcessUtils(object):
         if mode == 'Real':
             ti = TrackInfo(genome, trackName)
             ti.resetTimeOfPreProcessing()
-
-    @staticmethod
-    def sort_preprocessed_table(genome, track_name, allow_overlaps):
-        database_filename = get_database_filename(genome, track_name, allow_overlaps=allow_overlaps)
-
-        db_writer = DatabaseWriter(database_filename)
-        db_writer.open()
-        table_node_names = get_track_table_node_names(genome, track_name, allow_overlaps)
-        table = db_writer.get_table(table_node_names)
-
-        if 'start' in table.colinstances and 'end' in table.colinstances:
-            chr_column = table.colinstances['chr'][:]
-            start_column = table.colinstances['start'][:]
-            end_column = table.colinstances['end'][:]
-            sort_order = numpy.lexsort((end_column, start_column, chr_column))
-        elif 'start' in table.colinstances:
-            chr_column = table.colinstances['chr'][:]
-            start_column = table.colinstances['start'][:]
-            sort_order = numpy.lexsort((start_column, chr_column))
-        elif 'end' in table.colinstances:
-            chr_column = table.colinstances['chr'][:]
-            end_column = table.colinstances['end'][:]
-            sort_order = numpy.lexsort((end_column, chr_column))
-        else:
-            db_writer.close()
-            return
-
-        db_writer.close()
-
-        sort_table(database_filename, table_node_names, sort_order)
 
     @staticmethod
     def create_bounding_regions(genome, track_name, allow_overlaps):

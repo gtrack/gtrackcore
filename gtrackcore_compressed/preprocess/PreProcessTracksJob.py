@@ -20,10 +20,8 @@ from gtrackcore_compressed.track.hierarchy.ProcTrackOptions import ProcTrackOpti
 from gtrackcore_compressed.track.hierarchy.RenameTrack import renameTrack
 from gtrackcore_compressed.track.hierarchy.OrigTrackFnSource import OrigTrackNameSource
 from gtrackcore_compressed.track.pytables.database.MetadataHandler import MetadataHandler
-from gtrackcore_compressed.preprocess.pytables.CommonTableFunctions import merge_and_rename_overlap_tables
-from gtrackcore_compressed.util.CommonFunctions import createOrigPath, get_dir_path, prettyPrintTrackName, \
-                                        reorderTrackNameListFromTopDownToBottomUp, \
-                                        replaceIllegalElementsInTrackNames
+from gtrackcore_compressed.preprocess.pytables.CommonTableFunctions import merge_and_rename_overlap_tables, sort_preprocessed_table, create_c_arrays_from_table
+from gtrackcore_compressed.util.CommonFunctions import createOrigPath, get_dir_path, prettyPrintTrackName, replaceIllegalElementsInTrackNames, reorderTrackNameListFromTopDownToBottomUp
 from gtrackcore_compressed.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning
 from gtrackcore_compressed.track.core.GenomeRegion import  GenomeRegion
 
@@ -81,8 +79,11 @@ class PreProcessTracksJob(object):
                     # Finalize overlapRule output if needed
                     if anyGeSourceManagers and self._shouldFinalize() and collector.preProcIsDirty():
                         if self._mode == 'Real' and self._shouldMergeChrFolders():
-                            PreProcessUtils.sort_preprocessed_table(self._genome, trackName, allowOverlaps)
+                            sort_preprocessed_table(self._genome, trackName, allowOverlaps)
                             PreProcessUtils.create_bounding_regions(self._genome, trackName, allowOverlaps)
+
+                            print '\tCreating c-arrays from table columns'
+                            create_c_arrays_from_table(self._genome, trackName, allowOverlaps)
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)

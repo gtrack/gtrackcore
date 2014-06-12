@@ -94,6 +94,12 @@ class DatabaseWriter(Database):
 
         return table
 
+    def create_c_array_from_array(self, node_names, array):
+        c_array_name = node_names[-1]
+        group = self.create_groups(node_names[:-1])
+
+        self._h5_file.create_carray(group, c_array_name, obj=array, filters=None)
+
     def remove_table(self, node_names):
         table_name = node_names[-1]
         group = self.get_node(node_names[:-1])
