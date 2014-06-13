@@ -6,6 +6,7 @@ import traceback
 #import pyximport; pyximport.install()
 
 import gtrackcore
+from gtrackcore.TestSettings import test_settings
 from gtrackcore.input.core.ToolGenomeElementSource import ToolGenomeElementSource
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
@@ -84,8 +85,9 @@ class PreProcessTracksJob(object):
                             sort_preprocessed_table(self._genome, trackName, allowOverlaps)
                             PreProcessUtils.create_bounding_regions(self._genome, trackName, allowOverlaps)
 
-                            print '\tCreating c-arrays from table columns'
-                            create_c_arrays_from_table(self._genome, trackName, allowOverlaps)
+                            if test_settings['preprocessor_create_arrays']:
+                                print '\tCreating c-arrays from table columns'
+                                create_c_arrays_from_table(self._genome, trackName, allowOverlaps)
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)
