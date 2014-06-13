@@ -1,21 +1,28 @@
 from gtrackcore.track.core.VirtualNumpyArray import VirtualNumpyArray
-
+from gtrackcore.TestSettings import test_settings
 
 class VirtualTrackColumn(VirtualNumpyArray):
 
-    def __init__(self, array_node_names, db_reader, start_index=-1, end_index=-1):
+    def __init__(self, node_names, db_reader, start_index=-1, end_index=-1, column_name=None):
         VirtualNumpyArray.__init__(self)
 
         self._db_reader = db_reader
-        self._array_node_names = array_node_names
+        self._node_names = node_names
+        self._column_name = column_name
         self._start_index = start_index
         self._end_index = end_index
         self._step = 1
 
         self._db_reader.open()
-        array = self._db_reader.get_node(self._array_node_names)
-        self._shape = array.shape
-        self._dtype = array.dtype
+        if test_settings['virtualtrackcolumn_uses_table']:
+            table = db_reader.get_table(self._node_names)
+            column = table.colinstances[column_name]
+            self._shape = column.shape
+            self._dtype = column.dtype
+        else:
+            array = self._db_reader.get_node(self._node_names)
+            self._shape = array.shape
+            self._dtype = array.dtype
         self._db_reader.close()
 
     @property
@@ -76,7 +83,8 @@ class VirtualTrackColumn(VirtualNumpyArray):
         self._set_offset(start_index, end_index, step)
 
     def __copy__(self):
-        vtc = VirtualTrackColumn(self._array_node_names, self._db_reader, self._start_index, self._end_index)
+        vtc = VirtualTrackColumn(self._node_names, self._db_reader, self._start_index, self._end_index,
+                                 column_name=self._column_name)
         vtc._cachedNumpyArray = self._cachedNumpyArray
         return vtc
 
@@ -85,8 +93,13 @@ class VirtualTrackColumn(VirtualNumpyArray):
 
     def as_numpy_array(self):
         self._db_reader.open()
-        array = self._db_reader.get_node(self._array_node_names)
-        result = array[self._start_index:self._end_index:self._step]
+        if test_settings['virtualtrackcolumn_uses_table']:
+            table = self._db_reader.get_table(self._node_names)
+            column = table.colinstances[self._column_name]
+            result = column[self._start_index:self._end_index:self._step]
+        else:
+            array = self._db_reader.get_node(self._node_names)
+            result = array[self._start_index:self._end_index:self._step]
         self._db_reader.close()
         return result
 
@@ -95,7 +108,12 @@ class VirtualTrackColumn(VirtualNumpyArray):
         Used for points tracks for ends (== starts + 1)
         """
         self._db_reader.open()
-        array = self._db_reader.get_node(self._array_node_names)
-        result = array[self._start_index:self._end_index:self._step] + 1
+        if test_settings['virtualtrackcolumn_uses_table']:
+            table = self._db_reader.get_table(self._node_names)
+            column = table.colinstances[self._column_name]
+            result = column[self._start_index:self._end_index:self._step] + 1
+        else:
+            array = self._db_reader.get_node(self._node_names)
+            result = array[self._start_index:self._end_index:self._step] + 1
         self._db_reader.close()
         return result
