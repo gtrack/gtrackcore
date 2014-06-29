@@ -14,6 +14,8 @@ from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_tr
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
 
+from gtrackcore.TestSettings import test_settings
+
 
 def noneFunc():
     return None
@@ -346,8 +348,12 @@ class TrackView(object):
         else:
             self._trackElement._index = -1
             return self
-    
+
     def _updateNumListElements(self):
+        if test_settings['count_elements_using_iterator']:
+            self._numIterElements = sum(1 for _ in self)
+            return
+
         self._numListElements = self._computeNumListElements()
 
         if self.allowOverlaps and self._numListElements > 0:
