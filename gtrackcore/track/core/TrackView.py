@@ -350,8 +350,9 @@ class TrackView(object):
             return self
 
     def _updateNumListElements(self):
-        if test_settings['count_elements_using_iterator']:
+        if test_settings['count_elements_using_iterator']: # Note: Should only be used for allowOverlaps=False
             self._numIterElements = sum(1 for _ in self)
+            self._numListElements = self._numIterElements
             return
 
         self._numListElements = self._computeNumListElements()
