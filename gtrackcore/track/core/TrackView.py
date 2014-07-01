@@ -8,13 +8,16 @@ from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
-from gtrackcore.track.pytables.database.IndexRetrieval import start_and_end_indices
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
+from gtrackcore.TestSettings import test_settings
+
+if test_settings['start_and_end_indices_query']:
+    from gtrackcore.track.pytables.database.IndexRetrievalQuery import start_and_end_indices
+else:
+    from gtrackcore.track.pytables.database.IndexRetrieval import start_and_end_indices
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
-
-from gtrackcore.TestSettings import test_settings
 
 
 def noneFunc():
