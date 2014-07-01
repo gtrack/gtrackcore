@@ -6,8 +6,10 @@ from gtrackcore.util.CommonConstants import RESERVED_PREFIXES
 
 from gtrackcore.TestSettings import test_settings
 
-if test_settings['start_and_end_indices_query']:
+if test_settings['start_and_end_indices_method'] == 'query':
     from gtrackcore.track.pytables.database.IndexRetrievalQuery import start_and_end_indices
+elif test_settings['start_and_end_indices_method'] == 'query_improved':
+    from gtrackcore.track.pytables.database.IndexRetrievalImprovedQuery import start_and_end_indices
 else:
     from gtrackcore.track.pytables.database.IndexRetrieval import start_and_end_indices
 
