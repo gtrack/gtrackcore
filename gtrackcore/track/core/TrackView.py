@@ -8,9 +8,16 @@ from gtrackcore.track.core.VirtualPointEnd import VirtualPointEnd
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.pytables.database.Database import DatabaseReader
 from gtrackcore.track.pytables.VirtualTrackColumn import VirtualTrackColumn
-from gtrackcore.track.pytables.database.IndexRetrieval import start_and_end_indices
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.pytables.NameFunctions import get_database_filename, get_track_table_node_names
+from gtrackcore.TestSettings import test_settings
+
+if test_settings['start_and_end_indices_method'] == 'query':
+    from gtrackcore.track.pytables.database.IndexRetrievalQuery import start_and_end_indices
+elif test_settings['start_and_end_indices_method'] == 'query_improved':
+    from gtrackcore.track.pytables.database.IndexRetrievalImprovedQuery import start_and_end_indices
+else:
+    from gtrackcore.track.pytables.database.IndexRetrieval import start_and_end_indices
 
 numpy.seterr(all='raise', under='ignore', invalid='ignore')
 
@@ -346,8 +353,13 @@ class TrackView(object):
         else:
             self._trackElement._index = -1
             return self
-    
+
     def _updateNumListElements(self):
+        if test_settings['count_elements_using_iterator']: # Note: Should only be used for allowOverlaps=False
+            self._numIterElements = sum(1 for _ in self)
+            self._numListElements = self._numIterElements
+            return
+
         self._numListElements = self._computeNumListElements()
 
         if self.allowOverlaps and self._numListElements > 0:

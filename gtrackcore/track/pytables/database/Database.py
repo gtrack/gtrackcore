@@ -9,6 +9,10 @@ from gtrackcore.third_party.portalocker import portalocker
 from gtrackcore.util.CustomExceptions import DBNotOpenError, DBNotExistError
 from gtrackcore.util.pytables.Constants import GTRACKCORE_FORMAT_SUFFIX
 from gtrackcore.util.pytables.NameFunctions import get_node_path
+from gtrackcore.TestSettings import test_settings
+
+
+FILTERS = tables.Filters(complib='blosc', complevel=test_settings['compression_level'])
 
 
 class Database(object):
@@ -34,7 +38,7 @@ class Database(object):
     @abstractmethod
     def open(self, mode='r', lock_type=portalocker.LOCK_SH):
         try:
-            self._h5_file = tables.open_file(self._h5_filename, mode=mode)
+            self._h5_file = tables.open_file(self._h5_filename, mode=mode, filters=FILTERS)
         except IOError, e:
             raise DBNotExistError(e)
         portalocker.lock(self._h5_file, lock_type)
@@ -95,7 +99,7 @@ class DatabaseWriter(Database):
         c_array_name = node_names[-1]
         group = self.create_groups(node_names[:-1])
 
-        self._h5_file.create_carray(group, c_array_name, obj=array, filters=None)
+        self._h5_file.create_carray(group, c_array_name, obj=array, filters=FILTERS)
 
     def remove_table(self, node_names):
         table_name = node_names[-1]
