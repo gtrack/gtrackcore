@@ -24,21 +24,14 @@ def sort_preprocessed_table(genome, track_name, allow_overlaps):
         start_column = table.colinstances['start'][:]
         end_column = table.colinstances['end'][:]
         sort_order = numpy.lexsort((end_column, start_column, chr_column))
-        table.colinstances['start'][:] = start_column[sort_order]
-        table.colinstances['end'][:] = end_column[sort_order]
-
     elif 'start' in table.colinstances:
         chr_column = table.colinstances['chr'][:]
         start_column = table.colinstances['start'][:]
         sort_order = numpy.lexsort((start_column, chr_column))
-        table.colinstances['start'][:] = start_column[sort_order]
-
     elif 'end' in table.colinstances:
         chr_column = table.colinstances['chr'][:]
         end_column = table.colinstances['end'][:]
         sort_order = numpy.lexsort((end_column, chr_column))
-        table.colinstances['end'][:] = end_column[sort_order]
-
     else:
         db_writer.close()
         return
@@ -47,9 +40,8 @@ def sort_preprocessed_table(genome, track_name, allow_overlaps):
     if 'chr' in table_description:
         del table_description['chr']
 
-    for column_name, column_val in table.colinstances.iteritems():
-        if column_name not in ['seqid', 'start', 'end']:
-            column_val[:] = column_val[:][sort_order]
+    copy_func = partial(_copy_content_from_old_to_new_table_in_sorted_order, table, sort_order=sort_order)
+    _create_updated_table(db_writer, table, table_node_names, table_description, 0, copy_func)
 
     db_writer.close()
 
