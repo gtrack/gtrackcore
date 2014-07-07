@@ -38,8 +38,6 @@ class Config(object):
             gtrackcore_dir = '/hyperbrowser/staticFiles/gtrackcore'
             print 'Using /hyperbrowser/staticFiles/gtrackcore as data directory...'
 
-        gtrackcore_dir = '/test/gtrackcore'
-
         data_dir = os.sep.join([gtrackcore_dir, 'gtrackcore_data'])
         config_filename = os.sep.join([gtrackcore_dir, 'gtrackcore_config'])
 
