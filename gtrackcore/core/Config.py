@@ -44,8 +44,7 @@ class Config(object):
             gtrackcore_dir = '/hyperbrowser/staticFiles/gtrackcore'
             print 'Using /hyperbrowser/staticFiles/gtrackcore as data directory...'
 
-        if test_settings['used_for_retrieval']:
-            gtrackcore_dir = '/test/gtrackcore'
+        gtrackcore_dir = '/test/gtrackcore'
 
         data_dir = os.sep.join([gtrackcore_dir, 'gtrackcore_data'])
         config_filename = os.sep.join([gtrackcore_dir, 'gtrackcore_config'])
