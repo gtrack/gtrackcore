@@ -3,6 +3,7 @@ import os
 from ConfigParser import SafeConfigParser
 from collections import OrderedDict
 from itertools import chain
+from gtrackcore.TestSettings import test_settings
 
 
 class ConfigInit(type):
@@ -42,6 +43,9 @@ class Config(object):
         if gtrackcore_dir == '/cluster/home/ghbrowse':
             gtrackcore_dir = '/hyperbrowser/staticFiles/gtrackcore'
             print 'Using /hyperbrowser/staticFiles/gtrackcore as data directory...'
+
+        if test_settings['used_for_retrieval']:
+            gtrackcore_dir = '/test/gtrackcore'
 
         data_dir = os.sep.join([gtrackcore_dir, 'gtrackcore_data'])
         config_filename = os.sep.join([gtrackcore_dir, 'gtrackcore_config'])
