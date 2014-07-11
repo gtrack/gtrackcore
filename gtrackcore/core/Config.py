@@ -3,6 +3,7 @@ import os
 from ConfigParser import SafeConfigParser
 from collections import OrderedDict
 from itertools import chain
+from gtrackcore.TestSettings import test_settings
 
 
 class ConfigInit(type):
