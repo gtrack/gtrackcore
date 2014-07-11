@@ -1,5 +1,5 @@
-import hotshot
-import hotshot.stats
+import cProfile
+import pstats
 from gtrackcore_memmap.metadata import GenomeInfo
 from gtrackcore_memmap.track.core.GenomeRegion import GenomeRegion
 
@@ -9,30 +9,30 @@ class Profiler:
     PROFILE_FOOTER = '--- End Profile ---'
 
     def __init__(self):
-        #self._prof = cProfile.Profile()
-        self._prof = hotshot.Profile("hotspot.prof")
+        self._prof = cProfile.Profile()
+        #self._prof = hotshot.Profile("hotspot.prof")
         self._stats = None
 
     def run(self, runStr, globals, locals):
         self._prof = self._prof.runctx(runStr, globals, locals)
-        self._prof.close()
-        #self._stats = pstats.Stats(self._prof)
-        self._stats = hotshot.stats.load("hotspot.prof")
+        #self._prof.close()
+        self._stats = pstats.Stats(self._prof)
+        #self._stats = hotshot.stats.load("hotspot.prof")
 
     def printStats(self, graphDir=None, id=None):
         if self._stats == None:
             return
-        
+
         print Profiler.PROFILE_HEADER
         self._stats.sort_stats('cumulative')
         self._stats.print_stats()
         print Profiler.PROFILE_FOOTER
-        
+
         print Profiler.PROFILE_HEADER
         self._stats.sort_stats('time')
         self._stats.print_stats()
         print Profiler.PROFILE_FOOTER
-        
+
         if graphDir:
             from gtrackcore_memmap.third_party.PstatsUtil import OverheadStats
             import os
@@ -49,14 +49,14 @@ class Profiler:
     #    statsFile = GalaxyRunSpecificFile(id + ['pstats.dump'], galaxyFn)
     #    dotFile = GalaxyRunSpecificFile(id + ['callGraph.dot'], galaxyFn)
     #    pngFile = GalaxyRunSpecificFile(id + ['callGraph.png'], galaxyFn)
-    #    
+    #
     #    ensurePathExists(statsFile.getDiskPath())
-    #    
+    #
     #    self._stats.dump_stats(statsFile.getDiskPath())
     #    stats = OverheadStats(statsFile.getDiskPath())
     #    stats.writeDotGraph(dotFile.getDiskPath(), prune=prune)
     #    stats.renderGraph(dotFile.getDiskPath(), pngFile.getDiskPath())
-    #    
+    #
     #    print str(HtmlCore().link('Call graph based on profile (id=%s)' % ':'.join(id), pngFile.getURL()))
 
 
