@@ -1,5 +1,5 @@
-import hotshot
-import hotshot.stats
+import cProfile
+import pstats
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 
@@ -9,15 +9,15 @@ class Profiler:
     PROFILE_FOOTER = '--- End Profile ---'
 
     def __init__(self):
-        #self._prof = cProfile.Profile()
-        self._prof = hotshot.Profile("hotspot.prof")
+        self._prof = cProfile.Profile()
+        #self._prof = hotshot.Profile("hotspot.prof")
         self._stats = None
 
     def run(self, runStr, globals, locals):
         self._prof = self._prof.runctx(runStr, globals, locals)
-        self._prof.close()
-        #self._stats = pstats.Stats(self._prof)
-        self._stats = hotshot.stats.load("hotspot.prof")
+        #self._prof.close()
+        self._stats = pstats.Stats(self._prof)
+        #self._stats = hotshot.stats.load("hotspot.prof")
 
     def printStats(self, graphDir=None, id=None):
         if self._stats == None:
