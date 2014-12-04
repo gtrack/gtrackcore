@@ -19,7 +19,7 @@ class BoundingRegionTuple:
         self.elCount = elCount
 
     def getCopy(self):
-        return BoundingRegionTuple(copy(self.region), self.elCount)
+        return BoundingRegionTuple(self.region.getCopy(), self.elCount)
 
     def __str__(self):
         return 'BoundingRegionTuple(region = %s, elCount = %s)' % (self.region, self.elCount)

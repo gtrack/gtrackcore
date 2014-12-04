@@ -3,7 +3,6 @@ import tempfile
 import os
 import sys
 import numpy
-import copy
 from collections import OrderedDict
 
 from gtrackcore.input.core.GenomeElement import GenomeElement
@@ -3354,7 +3353,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         for i, br in enumerate( boundingRegions ):
             try:
                 assertBr = None
-                assertBr = copy.copy(case.boundingRegionsAssertList[i])
+                assertBr = case.boundingRegionsAssertList[i].getCopy()
                 self.assertEqual(assertBr.region, br.region)
                 self.assertEqual(assertBr.elCount, br.elCount)
 

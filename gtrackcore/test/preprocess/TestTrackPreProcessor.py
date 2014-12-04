@@ -4,7 +4,7 @@ import os
 import sys
 
 from collections import OrderedDict
-from copy import copy
+from copy import deepcopy
 
 import gtrackcore.test
 
@@ -115,7 +115,7 @@ class TestTrackPreProcessor(ProfiledIntegrationTest, TestWithGeSourceData):
                 for prefix in case.prefixList:
                     contents = getattr(assertEl, prefix)
                     for i in range(len(contents)):
-                        el = copy(assertEl)
+                        el = deepcopy(assertEl)
                         setattr(el, prefix, contents[i])
                         expandedAssertElList.append(el)
             sortedAssertElList = expandedAssertElList

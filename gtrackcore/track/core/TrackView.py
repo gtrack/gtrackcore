@@ -22,7 +22,7 @@ class TrackElement(object):
         # Weak proxy is used to remove memory leak caused by circular reference when TrackView is deleted
         self._trackView = weakref.proxy(trackView)
         self._index = index
-        
+
     def start(self):
         candidate = self._trackView._startList[self._index] - self._trackView.genomeAnchor.start
         return candidate if candidate>0 else 0
@@ -31,7 +31,7 @@ class TrackElement(object):
         rawEnd = self._trackView._endList[self._index]
         anchorEnd = self._trackView.genomeAnchor.end
         return (rawEnd if rawEnd<anchorEnd else anchorEnd) - self._trackView.genomeAnchor.start
-    
+
     def val(self):
         return self._trackView._valList[self._index]
 
@@ -60,15 +60,15 @@ class TrackElement(object):
 
     def none(self):
         return None
-    
+
     def __len__(self):
         length = self.end() - self.start()
         assert(length >= 0)
         return length
-    
+
 class AutonomousTrackElement(TrackElement):
     def __init__(self, start = None, end = None, val = None, strand = None, id = None, edges = None, weights = None, trackEl=None, **kwArgs):
-        
+
         if trackEl is None:
             self._start = start
             self._end = end
@@ -93,13 +93,13 @@ class AutonomousTrackElement(TrackElement):
             self._weights = trackEl.weights()
             self._orderedExtraKeys = trackEl.getAllExtraKeysInOrder()
             self._extra = dict([(key, getattr(trackEl, key)()) for key in self._orderedExtraKeys])
-            
+
     def start(self):
         return self._start
 
     def end(self):
         return self._end
-    
+
     def val(self):
         return self._val
 
@@ -125,7 +125,7 @@ class AutonomousTrackElement(TrackElement):
             return extra
         except KeyError:
             raise AttributeError
-    
+
 class TrackView(object):
     def _handlePointsAndPartitions(self):
         if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
@@ -146,17 +146,17 @@ class TrackView(object):
                     self._extraLists[key] = extraList[1:]
         if not self.trackFormat.isDense() and not self.trackFormat.isInterval():
             self._endList = VirtualPointEnd(self._startList)
-    
+
     def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
                  weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict()):
         assert startList!=None or endList!=None or valList!=None or edgesList!=None
         assert borderHandling in ['crop']
-        
-        self.genomeAnchor = copy(genomeAnchor)
+
+        self.genomeAnchor = genomeAnchor.getCopy()
         self.trackFormat = TrackFormat(startList, endList, valList, strandList, idList, edgesList, weightsList, extraLists)
         self.borderHandling = borderHandling
         self.allowOverlaps = allowOverlaps
-        
+
         self._trackElement = TrackElement(self)
         #self._bpLevelArray = None
 
@@ -168,9 +168,9 @@ class TrackView(object):
         self._edgesList = edgesList
         self._weightsList = weightsList
         self._extraLists = copy(extraLists)
-        
+
         self._handlePointsAndPartitions()
-        
+
         if self._startList is None:
             self._trackElement.start = noneFunc
         if self._endList is None:
@@ -185,32 +185,32 @@ class TrackView(object):
             self._trackElement.edges = noneFunc
         if self._weightsList is None:
             self._trackElement.weights = noneFunc
-        
+
         self._updateNumListElements()
-            
+
         for i, list in enumerate([self._startList, self._endList, self._valList, self._strandList, self._idList, self._edgesList, self._weightsList] \
             + [extraList for extraList in self._extraLists.values()]):
                 assert list is None or len(list) == self._numListElements, 'List (%s): ' % i + str(list) + ' (expected %s elements, found %s)' % (self._numListElements, len(list))
-    
+
     def __iter__(self):
         self._trackElement._index = -1
         return self
-    
+
     def _updateNumListElements(self):
         ""
         self._numListElements = self._computeNumListElements()
-        
+
         if self.allowOverlaps and self._numListElements > 0:
             self._numIterElements = self._computeNumIterElements()
         else:
             self._numIterElements = self._numListElements
-            
+
     def _computeNumListElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:
                 return len(list)
         raise ShouldNotOccurError
-        
+
     def _computeNumIterElements(self):
         for list in [self._startList, self._endList, self._valList, self._edgesList]:
             if list is not None:
@@ -219,26 +219,26 @@ class TrackView(object):
                 else:
                     return sum(1 for x in self)
         raise ShouldNotOccurError
-            
+
     def __len__(self):
         ""
         return self._bpSize()
-    
+
     def getNumElements(self):
         return self._numIterElements
-    
-    def _bpSize(self):        
+
+    def _bpSize(self):
         return len(self.genomeAnchor)
-    
+
     def next(self):
         self._trackElement._index += 1
-        
+
         #To remove any blind passengers - segments entirely in front of genomeanchor,
         # but sorted after a larger segment crossing the border
         if self.allowOverlaps and not self.trackFormat.reprIsDense():
             while self._trackElement._index < self._numListElements and self._endList[self._trackElement._index] <= self.genomeAnchor.start: #self._trackElement.end() <= 0:
                 self._trackElement._index += 1
-            
+
         if self._trackElement._index < self._numListElements:
             return self._trackElement
         else:
@@ -250,24 +250,24 @@ class TrackView(object):
         while leftIndex < len(self._endList) and self._endList[leftIndex] <= self.genomeAnchor.start:
             leftIndex += 1
         return leftIndex
-        
+
     def _findRightIndex(self):
         rightIndex = self._numListElements
         while rightIndex > 0 and self._startList[rightIndex-1] >= self.genomeAnchor.end:
             rightIndex -= 1
         return rightIndex
-        
+
     def sliceElementsAccordingToGenomeAnchor(self):
         assert( not self.trackFormat.reprIsDense() )
         self._doScatteredSlicing()
-        
+
     def _doScatteredSlicing(self):
-        leftIndex = self._findLeftIndex()  
-        rightIndex = self._findRightIndex()    
-        
+        leftIndex = self._findLeftIndex()
+        rightIndex = self._findRightIndex()
+
         if self._bpSize() == 0:
             rightIndex = leftIndex
-        
+
         self._startList = self._startList[leftIndex:rightIndex]
         self._endList = self._endList[leftIndex:rightIndex]
 
@@ -299,7 +299,7 @@ class TrackView(object):
         for key, extraList in self._extraLists.items():
             self._extraLists[key] = extraList[i:j]
         self._updateNumListElements()
-            
+
     def __getslice__(self, i, j):
         slicedTV = TrackView(self.genomeAnchor, self._startList, self._endList, \
                              self._valList, self._strandList, self._idList, \
@@ -307,7 +307,7 @@ class TrackView(object):
                              self.borderHandling, self.allowOverlaps, \
                              extraLists=self._extraLists)
         slicedTV.trackFormat = self.trackFormat
-        
+
         slicedTV.genomeAnchor.start += i
         if j>=0:
             try:
@@ -322,14 +322,14 @@ class TrackView(object):
         else:
             slicedTV._doScatteredSlicing()
         return slicedTV
-    
+
     def _getBpLevelModificationArray(self, indexes, vals):
         bpLevelMod = numpy.bincount(indexes, vals)
         origLen = len(bpLevelMod)
         bpLevelMod.resize(self._bpSize()+1)
         bpLevelMod[origLen:] = 0
         return bpLevelMod
-    
+
     def _commonGetBpLevelArray(self, vals):
         if self.trackFormat.reprIsDense():
             if self.allowOverlaps:
@@ -343,28 +343,28 @@ class TrackView(object):
                 bpLevelArray -= self._getBpLevelModificationArray(self.endsAsNumpyArray(), vals)
                 bpLevelArray = bpLevelArray.cumsum()
             return bpLevelArray[:-1]
-            
+
     def getBinaryBpLevelArray(self):
         vals = numpy.ones(self.getNumElements(), dtype='int32')
         return numpy.array(self._commonGetBpLevelArray(vals), dtype='bool8')
-        
+
     def getCoverageBpLevelArray(self):
         vals = numpy.ones(self.getNumElements(), dtype='int32')
         return numpy.array(self._commonGetBpLevelArray(vals), dtype='int32')
-        
+
     def getValueBpLevelArray(self, voidValue=0):
         '''
         Creates a bp-level function of any valued track. In case of scattered tracks,
         uncovered aras are filled with voidValue (which would typically be set to 0 or numpy.nan).
         In the case of overlapping regions, the values are added.'''
-        
+
         assert self.trackFormat.isValued('number'), self.trackFormat
         vals = self.valsAsNumpyArray()
         bpLevelArray = numpy.array(self._commonGetBpLevelArray(vals), dtype=vals.dtype)
         if voidValue != 0:
             bpLevelArray[~self.getBinaryBpLevelArray()] = voidValue
         return bpLevelArray
-            
+
     def _removeBlindPassengersFromNumpyArray(self, numpyArray):
         '''
         To remove any blind passengers - segments entirely in front of genomeanchor,
@@ -373,14 +373,14 @@ class TrackView(object):
         if self.allowOverlaps and len(numpyArray) > 0:
             numpyArray = numpyArray[numpy.where(self._endList > self.genomeAnchor.start)]
         return numpyArray
-                   
+
     def _commonAsNumpyArray(self, numpyArray, numpyArrayModMethod, name):
         assert(self.borderHandling in ['crop'])
         if numpyArray is None:
             return None
 
         numpyArray = self._removeBlindPassengersFromNumpyArray(numpyArray)
-        
+
         if numpyArrayModMethod is not None:
             return numpyArrayModMethod(numpyArray)
         else:
@@ -388,44 +388,44 @@ class TrackView(object):
 
     def startsAsNumpyArray(self):
         return self._commonAsNumpyArray(self._startList, self._startListModMethod, 'starts')
-    
+
     def _startListModMethod(self, startList):
         return numpy.maximum(startList - self.genomeAnchor.start, \
                              numpy.zeros(len(startList), dtype='int32'))
-    
-    def endsAsNumpyArray(self):    
+
+    def endsAsNumpyArray(self):
         return self._commonAsNumpyArray(self._endList, self._endListModMethod, 'ends')
-    
+
     def _endListModMethod(self, endList):
         return numpy.minimum(endList - self.genomeAnchor.start, \
                              numpy.zeros(len(endList), dtype='int32') + len(self.genomeAnchor))
-    
+
     def valsAsNumpyArray(self):
         return self._commonAsNumpyArray(self._valList, None, 'vals')
-    
+
     def strandsAsNumpyArray(self):
         return self._commonAsNumpyArray(self._strandList, None, 'strands')
-    
+
     def idsAsNumpyArray(self):
         return self._commonAsNumpyArray(self._idList, None, 'ids')
-    
+
     def edgesAsNumpyArray(self):
         return self._commonAsNumpyArray(self._edgesList, None, 'edges')
-    
+
     def weightsAsNumpyArray(self):
         return self._commonAsNumpyArray(self._weightsList, None, 'weights')
-        
+
     def extrasAsNumpyArray(self, key):
         assert self.hasExtra(key)
         from functools import partial
         return self._commonAsNumpyArray(self._extraLists[key], None, 'extras')
-    
+
     def allExtrasAsDictOfNumpyArrays(self):
         return OrderedDict([(key,self.extrasAsNumpyArray(key)) for key in self._extraLists])
-        
+
     def hasExtra(self, key):
         return key in self._extraLists
-    
+
 class TrackViewSlider(object):
     def __init__(self, fullTV):
         self._fullTV = fullTV
@@ -434,28 +434,28 @@ class TrackViewSlider(object):
         self._prevEnd = None
         self._prevLeftIndex = None
         self._prevRightIndex = None
-        
+
     def slideTo(self, start, end):
         if self._fullTV.trackFormat.reprIsDense():
             return self._fullTV[start:end]
-        
+
         if self._slideTV is None:
             self._slideTV = self._fullTV[start:end]
             self._prevStart = start
             self._prevEnd = end
-            
+
             tempFullTVStart = self._fullTV.genomeAnchor.start
             tempFullTVEnd = self._fullTV.genomeAnchor.end
             self._fullTV.genomeAnchor.start = start
             self._fullTV.genomeAnchor.end = end
-            self._prevLeftIndex = self._fullTV._findLeftIndex()  
+            self._prevLeftIndex = self._fullTV._findLeftIndex()
             self._prevRightIndex = self._fullTV._findRightIndex()
             self._fullTV.genomeAnchor.start = tempFullTVStart
             self._fullTV.genomeAnchor.end = tempFullTVEnd
-        else:        
+        else:
             assert start in [self._prevStart, self._prevStart+1]
             assert end in [self._prevEnd, self._prevEnd+1]
-        
+
             if start == self._prevStart+1:
                 self._slideStart()
             if end == self._prevEnd+1:
@@ -467,11 +467,11 @@ class TrackViewSlider(object):
         if len(self._slideTV._endList) == 0:
             self._prevStart += 1
             return
-        
+
         if self._slideTV._endList[0] <= start:
             self._slideTV._startList = self._slideTV._startList[1:]
             self._slideTV._endList = self._slideTV._endList[1:]
-    
+
             if self._slideTV._valList != None:
                 self._slideTV._valList = self._slideTV._valList[1:]
             if self._slideTV._strandList != None:
@@ -487,10 +487,10 @@ class TrackViewSlider(object):
                     self._slideTV._extraLists[key] = extraList[1:]
             self._slideTV._updateNumListElements()
             self._prevLeftIndex += 1
-            
-        self._slideTV.genomeAnchor.start += 1         
+
+        self._slideTV.genomeAnchor.start += 1
         self._prevStart = start
-        
+
     def _slideEnd(self):
         end = self._prevEnd+1
         endIndex = self._prevRightIndex
@@ -501,7 +501,7 @@ class TrackViewSlider(object):
         if self._fullTV._startList[endIndex] < end:
             self._slideTV._startList = self._fullTV._startList[self._prevLeftIndex:endIndex+1]
             self._slideTV._endList = self._fullTV._endList[self._prevLeftIndex:endIndex+1]
-    
+
             if self._slideTV._valList != None:
                 self._slideTV._valList = self._fullTV._valList[self._prevLeftIndex:endIndex+1]
             if self._slideTV._strandList != None:
@@ -517,6 +517,6 @@ class TrackViewSlider(object):
                     self._slideTV._extraLists[key] = self._fullTV._extraLists[key][self._prevLeftIndex:endIndex+1]
             self._slideTV._updateNumListElements()
             self._prevRightIndex = endIndex + 1
-        
-        self._slideTV.genomeAnchor.end += 1         
+
+        self._slideTV.genomeAnchor.end += 1
         self._prevEnd = end
