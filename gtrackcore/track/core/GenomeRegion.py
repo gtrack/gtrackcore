@@ -134,7 +134,7 @@ class GenomeRegion(object):
         if [self.genome, self.chr] != [other.genome, other.chr]:
             return [self]
 
-        before, after = [copy(self) for i in range(2)]
+        before, after = [self.getCopy() for i in range(2)]
         before.end = min(before.end, other.start)
         after.start = max(after.start, other.end)
         return [reg for reg in [before,after] if reg.end>reg.start]
