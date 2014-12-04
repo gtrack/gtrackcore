@@ -57,7 +57,7 @@ class GenomeElement(GenomeRegion):
 
     def __copy__(self):
         raise NotSupportedError('Shallow copy.copy() of GenomeElement objects is not supported, '
-                                'as this gives unwanted effects. Please use instance method '
+                                'as this produces unwanted effects. Please use instance method '
                                 'getCopy() or copy.deepcopy() instead. getCopy() is by far the '
                                 'most efficient of the two.')
 
