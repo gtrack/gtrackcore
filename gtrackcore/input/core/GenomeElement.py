@@ -1,6 +1,7 @@
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import isNan
+from gtrackcore.util.CustomExceptions import NotSupportedError
 
 class GenomeElement(GenomeRegion):
     @staticmethod
@@ -53,6 +54,12 @@ class GenomeElement(GenomeRegion):
         for kw in kwArgs:
             members['orderedExtraKeys'].append(kw)
             members['extra'][kw] = kwArgs[kw]
+
+    def __copy__(self):
+        raise NotSupportedError('Shallow copy.copy() of GenomeElement objects is not supported, '
+                                'as this gives unwanted effects. Please use instance method '
+                                'getCopy() or copy.deepcopy() instead. getCopy() is by far the '
+                                'most efficient of the two.')
 
     def getCopy(self):
         extraCopy = dict(self.extra)
