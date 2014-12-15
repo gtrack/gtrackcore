@@ -10,7 +10,7 @@ ColumnInfo = namedtuple('ColumnInfo', ['colIdx', 'defaultVal'])
 class GffComposer(FileFormatComposer):
     FILE_SUFFIXES = ['gff', 'gff3']
     FILE_FORMAT_NAME = 'GFF'
-    
+
     _GFF_COLUMNS_LIST = [('chr', 0, ''), \
                          ('source', 1, '.'), \
                          ('type', 2, '.'), \
@@ -20,30 +20,30 @@ class GffComposer(FileFormatComposer):
                          ('strand', 6, '.'), \
                          ('phase', 7, '0'), \
                          ('attributes', 8, '.')]
-    
+
     def __init__(self, geSource):
         FileFormatComposer.__init__(self, geSource)
         self._gffColumnsDict = OrderedDict([(colName, ColumnInfo(colIdx, defaultVal)) for \
                                             colName, colIdx, defaultVal in self._GFF_COLUMNS_LIST])
-        
+
     @staticmethod
     def matchesTrackFormat(trackFormat):
         trackFormatName = ''
         if trackFormat.getValTypeName() in ['Number', 'Number (integer)']:
             trackFormatName += 'valued '
-        
+
         trackFormatName += 'segments'
-        
+
         return MatchResult(match=trackFormat.isInterval() and not trackFormat.isDense(), \
                            trackFormatName=trackFormatName)
 
     # Compose methods
-    
+
     def _compose(self, out):
         print >>out, '##gff-version 3'
-    
+
         gffColumnsList = list(self._gffColumnsDict.iteritems())
-        
+
         numCols = 9
         for ge in self._geSource:
             cols = [''] * numCols
@@ -61,7 +61,10 @@ class GffComposer(FileFormatComposer):
                 if colName == 'start':
                     value = value + 1
                 elif colName == 'val':
-                    value = self._commonFormatNumberVal(value)
+                    try:
+                        value = self._commonFormatNumberVal(value)
+                    except:
+                        value = '.'
                 elif colName == 'strand':
                     value = getStringFromStrand(value)
                 elif colName == 'attributes':
@@ -73,7 +76,7 @@ class GffComposer(FileFormatComposer):
                             attrs += 'Name=%s;' % quote(ge.name, safe=' |')
                         if attrs != '':
                             value = attrs
-                    
+
                 cols[i] = value if value is not None else colInfo.defaultVal
-                
+
             print >>out, '\t'.join([str(x) for x in cols])
