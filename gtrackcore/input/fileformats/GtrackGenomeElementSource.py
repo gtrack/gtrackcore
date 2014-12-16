@@ -718,7 +718,7 @@ class GtrackGenomeElementSource(GenomeElementSource):
         for curLine in dataLines:
             self._updateCounts()
 
-            cols = curLine.split('\t')
+            cols = [x.rstrip() for x in curLine.split('\t')]
             for col in cols:
                 self._checkCharUsageOfPhrase(col)
 
