@@ -175,8 +175,17 @@ class GenomeInfo(object):
         "Returns a list of all chromosomes of the genome build file set."
         if genome.lower() in ['testgenome']:
             return ['chr21', 'chrM']
-            
-        raise NotImplementedError
+        else:
+            try:
+                chr_dict = GENOMES[genome.lower()]['size']
+            except KeyError:
+                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+
+            try:
+                return chr_dict.keys()
+            except KeyError:
+                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+
 
 #        else:
 #            from gtrackcore.util.CommonFunctions import createOrigPath
@@ -196,8 +205,17 @@ class GenomeInfo(object):
         
         if genome.lower() in ['testgenome']:
             return ['chr21', 'chrM']
-            
-        raise NotImplementedError
+        else:
+            try:
+                chr_dict = GENOMES[genome.lower()]['size']
+            except KeyError:
+                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+
+            try:
+                return chr_dict.keys()
+            except KeyError:
+                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+
 #        else:
 #            chrListFn = cls.getChrRegsFn(genome)
 #            if chrListFn is None:
@@ -218,8 +236,8 @@ class GenomeInfo(object):
     @classmethod
     def getStdChrRegionList(cls, genome):
         from gtrackcore.track.core.GenomeRegion import GenomeRegion
-        return [GenomeRegion(self._genome, chr, 0, cls.getChrLen(self._genome, chr) ) \
-                for chr in cls.getChrList(self._genome)]
+        return [GenomeRegion(genome, chr, 0, cls.getChrLen(genome, chr))
+                for chr in cls.getChrList(genome)]
     
     @classmethod
     def getStdChrLengthDict(cls, genome):
@@ -262,9 +280,17 @@ class GenomeInfo(object):
                 return 16571
             else:
                 raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
-                
-        raise NotImplementedError
-#
+        else:
+            try:
+                chr_dict = GENOMES[genome.lower()]['size']
+            except KeyError:
+                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+
+            try:
+                return chr_dict[chr]
+            except KeyError:
+                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+
 #        if genome in cls._chrLengths and \
 #            chr in cls._chrLengths[genome]:
 #            return cls._chrLengths[genome][chr]
@@ -537,4 +563,94 @@ class GenomeInfo(object):
 #            if i >= 0:
 #                return inStr[:i] + str(fromRoman(romanStr)) + inStr[i+len(romanStr):]
 #        
-#        return inStr    
+#        return inStr
+
+GENOMES = {
+    "hg18": {
+        "name":"HG18",
+        "size": {
+            "chr1":    247249719,
+            "chr2":    242951149,
+            "chr3":    199501827,
+            "chr4":    191273063,
+            "chr5":    180857866,
+            "chr6":    170899992,
+            "chr7":    158821424,
+            "chr8":    146274826,
+            "chr9":    140273252,
+            "chr10":   135374737,
+            "chr11":   134452384,
+            "chr12":   132349534,
+            "chr13":   114142980,
+            "chr14":   106368585,
+            "chr15":   100338915,
+            "chr16":   88827254,
+            "chr17":   78774742,
+            "chr18":   76117153,
+            "chr19":   63811651,
+            "chr20":   62435964,
+            "chr21":   46944323,
+            "chr22":   49691432,
+            "chrX":    154913754,
+            "chrY":    57772954,
+            "chrM":    16571
+        },
+    },
+    "hg19": {
+        "name":"HG19",
+        "size": {
+            "chr1":    249250621,
+            "chr2":    243199373,
+            "chr3":    198022430,
+            "chr4":    191154276,
+            "chr5":    180915260,
+            "chr6":    171115067,
+            "chr7":    159138663,
+            "chr8":    146364022,
+            "chr9":    141213431,
+            "chr10":   135534747,
+            "chr11":   135006516,
+            "chr12":   133851895,
+            "chr13":   115169878,
+            "chr14":   107349540,
+            "chr15":   102531392,
+            "chr16":   90354753,
+            "chr17":   81195210,
+            "chr18":   78077248,
+            "chr19":   59128983,
+            "chr20":   63025520,
+            "chr21":   48129895,
+            "chr22":   51304566,
+            "chrX":    155270560,
+            "chrY":    59373566,
+            "chrM":    16571
+        },
+        "code": {
+            "chr1":    0,
+            "chr2":    1,
+            "chr3":    2,
+            "chr4":    3,
+            "chr5":    4,
+            "chr6":    5,
+            "chr7":    6,
+            "chr8":    7,
+            "chr9":    8,
+            "chr10":   9,
+            "chr11":   10,
+            "chr12":   11,
+            "chr13":   12,
+            "chr14":   13,
+            "chr15":   14,
+            "chr16":   15,
+            "chr17":   16,
+            "chr18":   17,
+            "chr19":   18,
+            "chr20":   19,
+            "chr21":   21,
+            "chr22":   22,
+            "chrX":    23,
+            "chrY":    24,
+            "chrM":    25
+        }
+    }
+}
