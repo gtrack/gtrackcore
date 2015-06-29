@@ -28,7 +28,7 @@ class Operator(object):
 
             trackReq = self._TRACK_REQUIREMENTS[i]
             trackFormat = arg.firstTrackView().trackFormat
-            if not trackReq.isCompatibleWith(trackFormat)
+            if not trackReq.isCompatibleWith(trackFormat):
                 raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
                                            "the following requirements: %s. " % trackReq +
                                            "The format of the supplied track is: %s" % trackFormat)
@@ -52,8 +52,9 @@ class Operator(object):
     def _call(self, *args):
         pass
 
-    def _createTrackView(region, startList=None, endList=None, valList=None, strandList=None, idList=None,
+    def _createTrackView(self, region, startList=None, endList=None, valList=None, strandList=None, idList=None,
                         edgesList=None, weightsList=None, extraLists=OrderedDict()):
+
         return TrackView(region, startList, endList, valList, strandList, idList, edgesList, weightsList,
                          borderHandling='crop', allowOverlaps=self._RESULT_ALLOW_OVERLAPS, extraLists=extraLists)
 

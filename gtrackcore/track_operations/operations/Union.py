@@ -1,7 +1,7 @@
 __author__ = 'skh'
 
 
-from gtrackcore.track_operations.operations import Operator
+from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
