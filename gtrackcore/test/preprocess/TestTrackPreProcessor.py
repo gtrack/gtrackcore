@@ -9,8 +9,9 @@ from copy import deepcopy
 import gtrackcore.test
 
 from gtrackcore.input.core.GenomeElementSource import BoundingRegionTuple
+from gtrackcore.input.adapters.TrackGenomeElementSource import FullTrackGenomeElementSource
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
-from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
+from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob, PreProcessTrackGESourceJob
 from gtrackcore.test.common.TestWithGeSourceData import TestWithGeSourceData
 from gtrackcore.test.preprocess.ProfiledIntegrationTest import ProfiledIntegrationTest
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
@@ -48,6 +49,20 @@ class TestTrackPreProcessor(ProfiledIntegrationTest, TestWithGeSourceData):
             self.assertChrElCounts(trackName, withOverlapsChrElCount, True, customBins)
 
         #self._storeProfile()
+
+    def _preProcessTrackToTrack(self, fromTrackName, toTrackName, allowOverlaps):
+        fromTrackName = self.TRACK_NAME_PREFIX + fromTrackName
+        toTrackName = self.TRACK_NAME_PREFIX + toTrackName
+
+        noOverlapsPath = createDirPath(toTrackName, self.GENOME, allowOverlaps=False)
+        withOverlapsPath = createDirPath(toTrackName, self.GENOME, allowOverlaps=True)
+        self._removeDir(noOverlapsPath, toTrackName)
+        self._removeDir(withOverlapsPath, toTrackName)
+
+        trackGESource = FullTrackGenomeElementSource(self.GENOME, fromTrackName, allowOverlaps=allowOverlaps)
+        self._runWithProfiling('PreProcessTrackGESourceJob(' + repr(self.GENOME) + ',' + repr(toTrackName) +
+                               ', trackGESource=trackGESource, username="Test").process()',\
+                                   globals(), locals())
 
     def assertChrElCounts(self, trackName, chrElCountDict, allowOverlaps, customBins):
         for chr in chrElCountDict.keys():
@@ -164,7 +179,17 @@ class TestGESourceTestsPreprocessing(TestTrackPreProcessor):
             self._preProcess(case.trackName)
 
             allowOverlaps = True if ('start' in case.prefixList) and '_no_overlaps' not in caseName else False
+
             self._testTrackReading(case, allowOverlaps=allowOverlaps)
+
+            # TrackGenomeElementSource does not work correctly for partitions etc.
+            if not ('end' in case.prefixList and not 'start' in case.prefixList):
+                copyTrackName = case.trackName + ['copy']
+                self._preProcessTrackToTrack(case.trackName, copyTrackName, allowOverlaps)
+
+                copyCase = deepcopy(case)
+                copyCase.trackName = copyTrackName
+                self._testTrackReading(copyCase, allowOverlaps=allowOverlaps)
 
     def testAllExceptions(self):
         testGESource = self._commonSetup()

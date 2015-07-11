@@ -202,8 +202,10 @@ class RegionBasedGESourceManager(GESourceManager):
         GESourceManager.__init__(self, geSource)
 
     def _decorateGESource(self, geSource):
+        brRegionList = geSource.getBoundingRegionTuples()
+        
         if self._countElsInBoundingRegions:
-            brTuples = [BoundingRegionTuple(region, 0) for region in self._brRegionList]
+            brTuples = [BoundingRegionTuple(region, 0) for region in brRegionList]
             return GEBoundingRegionElementCounter(geSource, brTuples)
         else:
             brTuples = [BoundingRegionTuple(region, len(region)) for region in self._brRegionList]
@@ -217,3 +219,53 @@ class RegionBasedGESourceManager(GESourceManager):
                 for br in self._brRegionList:
                     self._numElements[br.chr] += len(br)
                 self._hasCalculatedStats = True
+
+
+class TrackGESourceManager(GESourceManager):
+    def __init__(self, geSource):
+        assert isinstance(geSource, TrackGenomeElementSource)
+        GESourceManager.__init__(self, geSource)
+
+    def getBoundingRegionTuples(self):
+        return self._geSource.getBoundingRegionTuples()
+
+    def boundingRegionsAndGEsCorrespond(self):
+        return True
+
+    def _decorateGESource(self, geSource):
+        return geSource
+    
+    def _calcStatisticsInExtraPass(self):
+        if not self._hasCalculatedStats:
+            for brTuple in self._geSource.getBoundingRegionTuples():
+                chr = brTuple.region.chr
+                
+                self._numElements[chr] += brTuple.elCount
+                track = self._geSource._getTrack()
+                tv = self._geSource._getTrackView(track, brTuple.region)
+
+                if self._areValsCategorical:
+                    from numpy import unique
+                    self._valCategories |= set(unique(tv.valsAsNumpyArray()))
+
+                if self._areEdgeWeightsCategorical:
+                    from numpy import unique
+                    self._edgeWeightCategories |= set(unique(tv.weightsAsNumpyArray()))
+
+                for prefix in self._maxStrLens[chr]:
+                    if prefix in ['val', 'id']:
+                        array = getattr(tv, prefix + 'sAsNumpyArray')()
+                    elif prefix in ['edges', 'weights']:
+                        array = getattr(tv, prefix + 'AsNumpyArray')()
+                    else:
+                        array = tv.extrasAsNumpyArray(prefix)
+
+                    dtypeStr = str(array.dtype).replace('|', '')
+                    assert dtypeStr[0] == 'S', dtypeStr + ', ' + prefix
+                    strLen = int(dtypeStr[1:])
+                    self._maxStrLens[chr][prefix] = max(self._maxStrLens[chr][prefix], strLen)
+
+                    if prefix == 'edges':
+                        self._maxNumEdges[chr] = max(self._maxNumEdges[chr], array.shape[1])
+
+            self._hasCalculatedStats = True

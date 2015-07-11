@@ -8,7 +8,7 @@ from gtrackcore.metadata.TrackInfo import TrackInfo
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
-from gtrackcore.track.format.TrackFormat import TrackFormatReq
+from gtrackcore.track.format.TrackFormat import TrackFormat, TrackFormatReq
 from gtrackcore.track.memmap.TrackSource import TrackSource
 
 class TrackGenomeElementSource(GenomeElementSource):
@@ -43,12 +43,13 @@ class TrackGenomeElementSource(GenomeElementSource):
         self._undirectedEdges = None
         self._foundTrackInfoBasedMetaData = False
 
+        self._doneCalculatingTrackViewBasedValues = False
         self._fixedLength = None
         self._fixedGapSize = None
         self._reprIsDense = None
 
-    def _calcFixedValues(self):
-        if all(x is not None for x in [self._fixedLength, self._fixedGapSize]):
+    def _calcTrackViewBasedValues(self):
+        if self._doneCalculatingTrackViewBasedValues:
             return
 
         self._reprIsDense = False
@@ -90,12 +91,14 @@ class TrackGenomeElementSource(GenomeElementSource):
         self._fixedLength = list(fixedLengths)[0] if len(fixedLengths) == 1 and not None in fixedLengths else 1
         self._fixedGapSize = list(fixedGapSizes)[0] if len(fixedGapSizes) == 1 and not None in fixedGapSizes else 0
 
+        self._doneCalculatingTrackViewBasedValues = True
+
     def getFixedLength(self):
-        self._calcFixedValues()
+        self._calcTrackViewBasedValues()
         return self._fixedLength
 
     def getFixedGapSize(self):
-        self._calcFixedValues()
+        self._calcTrackViewBasedValues()
         return self._fixedGapSize
 
     def isSorted(self):
@@ -136,7 +139,7 @@ class TrackGenomeElementSource(GenomeElementSource):
             for region,tv in ((region, self._getTrackView(track, region)) for region in self._boundingRegions):
                 self._boundingRegionTuples.append(BoundingRegionTuple(region, tv.getNumElements()))
 
-            self._removeBoundingRegionTuplesIfFullChrsAndNotFixedGapSize()
+            #self._removeBoundingRegionTuplesIfFullChrsAndNotFixedGapSize()
 
         return self._boundingRegionTuples
 
@@ -240,9 +243,10 @@ class TrackGenomeElementSource(GenomeElementSource):
         self._findTrackInfoBasedMetaData()
         return self._undirectedEdges
 
+
 class FullTrackGenomeElementSource(TrackGenomeElementSource):
     def __init__(self, genome, trackName, allowOverlaps=False, *args, **kwArgs):
-        from gtrackcore.track.BoundingRegionShelve import BoundingRegionShelve
+        from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve
         brShelve = BoundingRegionShelve(genome, trackName, allowOverlaps)
         if brShelve.fileExists():
             boundingRegions = list(brShelve.getAllBoundingRegions())
@@ -251,6 +255,7 @@ class FullTrackGenomeElementSource(TrackGenomeElementSource):
         TrackGenomeElementSource.__init__(self, genome=genome, trackName=trackName, \
                                           boundingRegions=boundingRegions, globalCoords=True, \
                                           allowOverlaps=allowOverlaps, printWarnings=True)
+
 
 class TrackViewListGenomeElementSource(TrackGenomeElementSource):
     def __init__(self, genome, trackViewList, trackName, *args, **kwArgs):
@@ -282,8 +287,9 @@ class TrackViewListGenomeElementSource(TrackGenomeElementSource):
     def getBoundingRegionTuples(self):
         if self._boundingRegionTuples is None:
             self._boundingRegionTuples = [BoundingRegionTuple(tv.genomeAnchor, tv.getNumElements()) for tv in self._trackViewDict.values()]
-            self._removeBoundingRegionTuplesIfFullChrsAndNotFixedGapSize()
+            #self._removeBoundingRegionTuplesIfFullChrsAndNotFixedGapSize()
         return self._boundingRegionTuples
+
 
 class TrackViewGenomeElementSource(TrackViewListGenomeElementSource):
     def __init__(self, genome, trackView, trackName, *args, **kwArgs):
