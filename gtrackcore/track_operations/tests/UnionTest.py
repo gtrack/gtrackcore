@@ -1,10 +1,8 @@
-__author__ = 'skh'
-
 import unittest
 import numpy as np
 import os
 
-from gtrackcore.track_operations.operations import Union
+from gtrackcore.track_operations.operations.Union import Union
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.core.Api import importFile
@@ -14,6 +12,8 @@ from gtrackcore.track.core.TrackView import TrackView
 #from OperationTest import createTrackView
 #import gtrackcore.track_operations.tests.OperationTest.createTrackView
 
+
+from collections import OrderedDict
 from gtrackcore.track_operations.tests.OperationTest import createTrackView
 
 class UnionTest(unittest.TestCase):
@@ -54,8 +54,8 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
 
+        print "testtype: %s " % type(track2).__name__
         u = Union(track1, track2)
-
         tvList = u()
 
         print tvList
@@ -88,9 +88,9 @@ class UnionTest(unittest.TestCase):
         tv = createTrackView(region=self.chr1, startList=start, endList=end,
                                allow_overlap=False)
 
-        # Otdered dict!
-
-        return TrackContents('hg19', tv)
+        d = OrderedDict()
+        d[self.chr1] = tv
+        return TrackContents('hg19', d)
 
 
     def test_union_no_overlap(self):
