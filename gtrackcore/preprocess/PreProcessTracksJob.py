@@ -49,6 +49,7 @@ class PreProcessTracksJob(object):
 
                 for allowOverlaps in [True, False]:
                     anyGeSourceManagers = False
+
                     for geSourceManager in self._allGESourceManagers(trackName, allowOverlaps):
                         anyGeSourceManagers = True
 
@@ -311,6 +312,31 @@ class PreProcessCustomTrackJob(PreProcessTracksJob):
 
     def _shouldMergeChrFolders(self):
         return self._mergeChrFolders
+
+
+class PreProcessTrackGESourceJob(PreProcessTracksJob):
+    PASS_ON_EXCEPTIONS = True
+
+    def __init__(self, genome, trackName, trackGESource, username=''):
+        from gtrackcore.input.adapters.TrackGenomeElementSource import TrackGenomeElementSource
+
+        PreProcessTracksJob.__init__(self, genome, username=username)
+        self._trackName = trackName
+        assert isinstance(trackGESource, TrackGenomeElementSource)
+        self._geSource = trackGESource
+
+    def _allTrackNames(self):
+        return [self._trackName]
+
+    def _allGESources(self, trackName):
+        return [self._geSource]
+
+    def _getGESourceManagerFromGESource(self, geSource):
+        from gtrackcore.preprocess.GESourceManager import TrackGESourceManager
+        return TrackGESourceManager(geSource)
+
+    def _shouldPrintProcessMessages(self):
+        return True
 
 
 if __name__ == "__main__":

@@ -15,7 +15,6 @@ class OutputManager(object):
 
     def _createOutputDirectory(self, genome, chr, trackName, allowOverlaps, geSourceManager):
         dirPath = createDirPath(trackName, genome, chr, allowOverlaps)
-        
         from gtrackcore.metadata.GenomeInfo import GenomeInfo
         return  OutputDirectory(dirPath, geSourceManager.getPrefixList(), \
                                 geSourceManager.getNumElementsForChr(chr), \

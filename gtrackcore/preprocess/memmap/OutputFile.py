@@ -22,7 +22,7 @@ class OutputFile(object):
     
     def __init__(self, path, prefix, size, valDataType='float64', valDim=1, weightDataType='float64', weightDim=1, maxNumEdges=0, maxStrLens={}, allowAppend=True):
         assert valDim >= 1 and weightDim >= 1
-        
+
         if valDataType == 'S':
             valDataType = 'S' + str(max(2, maxStrLens['val']))
         if weightDataType == 'S':
