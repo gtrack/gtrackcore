@@ -15,10 +15,7 @@ class Union(Operator):
                            TrackFormatReq(dense=False, allowOverlaps=False)]
     _RESULT_ALLOW_OVERLAPS = False
 
-    def _call(self, region, trackContent1, trackContent2):
-
-        tv1 = trackContent1.getTrackView(region)
-        tv2 = trackContent2.getTrackView(region)
+    def _call(self, region, tv1, tv2):
 
         t1Starts = tv1.startsAsNumpyArray()
         t1Ends = tv1.endsAsNumpyArray()

@@ -44,9 +44,17 @@ class Operator(object):
                 raise InvalidArgumentError("All tracks must have the same genome")
 
     def __call__(self):
+        out = OrderedDict()
+
         for region in self._args[0].regions:
             trackViewPerArg = [arg.getTrackView(region) for arg in self._args]
-            self._call(region, *trackViewPerArg)
+            tv = self._call(region, *trackViewPerArg)
+
+            out[region] = tv
+
+        #TODO get the genome from the trackview
+        return TrackContents('hg19', out)
+
 
     @abc.abstractmethod
     def _call(self, *args):

@@ -5,14 +5,19 @@ from gtrackcore.track.core.TrackView import TrackView
 
 
 class TrackContents(object):
+
     def __init__(self, genome, trackViewList):
-
-        print trackViewList
-
         self.genome = genome
-        print "before"
         self._trackViews = OrderedDict([(r, tv) for r, tv in trackViewList.items()])
-        print "after"
+
+    def getTrackViews(self):
+        """
+        Get the TrackContents trackViews as a OrderedDict.
+        Possible improvement: Make the trackContents iterable instead..
+
+        :return: OrderedDict of trackViews.
+        """
+        return self._trackViews
 
     @property
     def regions(self):
