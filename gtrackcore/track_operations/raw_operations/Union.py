@@ -1,7 +1,7 @@
 
 import numpy
 
-def union(t1Starts, t1Ends1, t2Starts, t2Ends2):
+def union(t1Starts, t1Ends, t2Starts, t2Ends):
     """
     Find the union of to tracs
     :param t1Starts: Numpy starts array of track 1
@@ -16,9 +16,9 @@ def union(t1Starts, t1Ends1, t2Starts, t2Ends2):
 
     # TODO index, add in the coded part.
     t1CodedStarts = t1Starts * 8 + 5
-    t1CodedEnds = t1Ends1 * 8 + 3
+    t1CodedEnds = t1Ends * 8 + 3
     t2CodedStarts = t2Starts * 8 + 6
-    t2CodedEnds = t2Ends2 * 8 + 2
+    t2CodedEnds = t2Ends * 8 + 2
 
     #TODO finne ut hvilke track verdien kommer fra
     allSortedCodedEvents = numpy.concatenate((t1CodedStarts, t1CodedEnds, t2CodedStarts, t2CodedEnds))

@@ -5,6 +5,7 @@ from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
+from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track_operations.raw_operations.Union import union
 
 
@@ -14,6 +15,9 @@ class Union(Operator):
     _TRACK_REQUIREMENTS = [TrackFormatReq(dense=False, allowOverlaps=False),
                            TrackFormatReq(dense=False, allowOverlaps=False)]
     _RESULT_ALLOW_OVERLAPS = False
+    _RESULT_IS_TRACK = True
+    # Find out how the TrackFormat works..
+    _RESULT_TRACK_REQUIREMENTS = TrackFormat([], [], None, None, None, None, None, None)
 
     def _call(self, region, tv1, tv2):
 
