@@ -33,7 +33,6 @@ def union(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlaps = False,
     if not resOverlap:
         # Remove any overlapping points
         starts = np.unique(starts)
-
     ends = starts
 
     return starts, ends
