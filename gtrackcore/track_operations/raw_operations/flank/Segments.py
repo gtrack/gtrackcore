@@ -16,8 +16,8 @@ def flank(starts, ends, nrBp, chromoLength, before=False, after=False):
 
     if before:
         # Create flank at the start of the segments
-        flankStarts = starts
-        flankEnds = starts - nrBp
+        flankStarts = starts - nrBp
+        flankEnds = starts
 
         if (flankStarts < 0).all():
             # Starts outside the genome..
