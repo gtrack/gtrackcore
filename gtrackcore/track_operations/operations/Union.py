@@ -7,9 +7,9 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.TrackContents import TrackContents
-import gtrackcore.track_operations.raw_operations.Union.Segments as Segments
-import gtrackcore.track_operations.raw_operations.Union.Points as Points
-import gtrackcore.track_operations.raw_operations.Union.ValuedPoints as \
+import gtrackcore.track_operations.raw_operations.union.Segments as Segments
+import gtrackcore.track_operations.raw_operations.union.Points as Points
+import gtrackcore.track_operations.raw_operations.union.ValuedPoints as \
     ValuedPoints
 
 from gtrackcore.track_operations.exeptions.Operations import \
