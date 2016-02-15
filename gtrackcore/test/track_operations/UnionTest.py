@@ -20,6 +20,88 @@ class UnionTest(unittest.TestCase):
                             for c, l in
                             GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
+    def _runUnionPointsTest(self, startsA, endsA, startsB, endsB, expStarts,
+                            expEnds):
+        """
+        Run a union test over two points tracks.
+        The test expects there to only to be segments in chr1,
+        All other chromosomes need to be of size zero.
+        :param startsA: Arrays of starts in track A
+        :param endsA: Array of ends in track A
+        :param startsB: Array of starts in track B
+        :param endsB: Array of ends in track B
+        :param expStarts: Expected startss after union
+        :param expEnds: Expected ends after union
+        :return:
+        """
+        track1 = self._createTrackContent(startsA, endsA)
+        track2 = self._createTrackContent(startsB, endsB)
+
+        u = Union(track1, track2)
+
+        tc = u()
+
+        for (k, v) in tc.getTrackViews().items():
+            if cmp(k, self.chr1) == 0:
+                # All test tracks are in chr1
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               expStarts))
+                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+            else:
+                # Tests if all tracks no in chr1 have a size of 0.
+                self.assertEqual(v.startsAsNumpyArray().size, 0)
+                self.assertEqual(v.endsAsNumpyArray().size, 0)
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+
+    def _runUnionValuedPointsTest(self, startsA, endsA, valsA, startsB, endsB,
+                                valsB, expStarts, expEnds, expVals):
+        """
+        Run a union test over two Valued points tracks.
+        The test expects there to only to be segments in chr1,
+        All other chromosomes need to be of size zero.
+        :param startsA: Arrays of starts in track A
+        :param endsA: Array of ends in track A
+        :param valsA: Array of values in track A
+        :param startsB: Array of starts in track B
+        :param endsB: Array of ends in track B
+        :param valsB: Array of values in track B
+        :param expStarts: Expected startss after union
+        :param expEnds: Expected ends after union
+        :param expVals: Expected values after union
+        :
+        :return:
+        """
+        track1 = self._createTrackContent(startsA, endsA, valsA)
+        track2 = self._createTrackContent(startsB, endsB, valsB)
+
+        u = Union(track1, track2)
+
+        # Set result track type to Valued Points
+        resReq = TrackFormat([], None, [], None, None, None, None, None)
+        u.setResultTrackRequirements(resReq)
+
+        tc = u()
+
+        for (k, v) in tc.getTrackViews().items():
+            if cmp(k, self.chr1) == 0:
+                # All test tracks are in chr1
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               expStarts))
+                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+                self.assertTrue(np.array_equal(v.valsAsNumpyArray(), expVals))
+            else:
+                # Tests if all tracks no in chr1 have a size of 0.
+                self.assertEqual(v.startsAsNumpyArray().size, 0)
+                self.assertEqual(v.endsAsNumpyArray().size, 0)
+                self.assertEqual(v.valsAsNumpyArrat().size, 0)
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+
     def _runUnionSegmentsTest(self, startsA, endsA, startsB, endsB,
                               expStarts, expEnds):
         """
@@ -40,8 +122,7 @@ class UnionTest(unittest.TestCase):
         u = Union(track1, track2)
 
         # Set result track type to Segments
-        resReq = TrackFormat([], [], None, None, None, None,
-                                             None, None)
+        resReq = TrackFormat([], [], None, None, None, None, None, None)
         u.setResultTrackRequirements(resReq)
 
         tc = u()
@@ -58,46 +139,7 @@ class UnionTest(unittest.TestCase):
                 self.assertEqual(v.startsAsNumpyArray().size, 0)
                 self.assertEqual(v.endsAsNumpyArray().size, 0)
 
-    def _runUnionPointsTest(self, startsA, endsA, startsB, endsB, expStarts,
-                            expEnds):
-        """
-        Run a union test over two points tracks.
-        The test expects there to only to be segments in chr1,
-        All other chromosomes need to be of size zero.
-        :param startsA: Arrays of starts in track A
-        :param endsA: Array of ends in track B
-        :param startsB: Array of starts in track B
-        :param endsB: Array of ends in track B
-        :param expStarts: Expected startss after union
-        :param expEnds: Expected ends after union
-        :return:
-        """
-        track1 = self._createTrackContent(startsA, endsA)
-        track2 = self._createTrackContent(startsB, endsB)
-
-        u = Union(track1, track2)
-
-        tc = u()
-
-        for (k, v) in tc.getTrackViews().items():
-            print expStarts
-            print v.startsAsNumpyArray()
-            print v.endsAsNumpyArray()
-            if cmp(k, self.chr1) == 0:
-                # All test tracks are in chr1
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-            else:
-                # Tests if all tracks no in chr1 have a size of 0.
-                self.assertEqual(v.startsAsNumpyArray().size, 0)
-                self.assertEqual(v.endsAsNumpyArray().size, 0)
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-
-    def _createTrackContent(self, starts, ends):
+    def _createTrackContent(self, starts, ends, vals=None):
         """
         Create a track view a start, end list pair.
         Help method used in testing. This method will create a hg19 tracks with
@@ -108,8 +150,15 @@ class UnionTest(unittest.TestCase):
         """
         starts = np.array(starts)
         ends = np.array(ends)
+        if vals is not None:
+            vals = np.array(vals)
+
         tv = createTrackView(region=self.chr1, startList=starts, endList=ends,
-                             allow_overlap=False)
+                             allow_overlap=False, valList=vals)
+
+        if vals is not None:
+            print vals
+            print tv.valsAsNumpyArray()
         d = OrderedDict()
         d[self.chr1] = tv
         return TrackContents('hg19', d)
@@ -127,6 +176,34 @@ class UnionTest(unittest.TestCase):
                                    startsB=[45,463], endsB=[45,463],
                                    expStarts=[14,45,463],
                                    expEnds=[14,45,463])
+
+    # **** Valued Points tests ****
+
+    def ttestUnionValuedPointsSorted(self):
+        """
+        Simple test. No overlap. Pre sorted. Values not sorted.
+        :return: None
+        """
+        self._runUnionValuedPointsTest(startsA=[1,2,3], endsA=[1,2,3],
+                                       valsA=[4,5,6], startsB=[4,5,6],
+                                       endsB=[4,5,6], valsB=[1,2,3],
+                                       expStarts=[1,2,3,4,5,6],
+                                       expEnds=[1,2,3,4,5,6],
+                                       expVals=[4,5,6,1,2,3])
+
+    def testUnionValuedPointsNotSorted(self):
+        """
+        Simple test. No overlap. Not sorted. Values not sorted.
+        :return: None
+        """
+        self._runUnionValuedPointsTest(startsA=[1,3],
+                                       endsA=[1,3], valsA=[6,7],
+                                       startsB=[2],
+                                       endsB=[2], valsB=[8],
+                                       expStarts=[1,2,3],
+                                       expEnds=[1,2,3],
+                                       expVals=[6,8,7])
+
 
     # **** Segments tests ****
 

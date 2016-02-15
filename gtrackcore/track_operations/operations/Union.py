@@ -9,6 +9,9 @@ from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.TrackContents import TrackContents
 import gtrackcore.track_operations.raw_operations.union.Segments as Segments
 import gtrackcore.track_operations.raw_operations.union.Points as Points
+import gtrackcore.track_operations.raw_operations.union.ValuedPoints as \
+    ValuedPoints
+
 from gtrackcore.track_operations.exeptions.Operations import \
     OutputTrackTypeNotSupportedError
 
@@ -32,7 +35,7 @@ class Union(Operator):
         # Points.
         req = self._RESULT_TRACK_REQUIREMENTS
         if req.isDense():
-            # GP, SP, F, LGP, LSF, LF, LBS
+            # GP, SP, F, LGP, LSF, LF, LBP
             # A dense output track type is not supported.
             # The input tracks is defined to not be dense, and a union of
             # such tracks does not make sense in this context.
@@ -54,13 +57,23 @@ class Union(Operator):
                 else:
                     # VP, LVP
                     if req.isLinked():
-                        # VP
-                        raise OutputTrackTypeNotSupportedError(
-                            "Valued Points", "Union")
-                    else:
                         # LVP
                         raise OutputTrackTypeNotSupportedError(
                             "Linked Valued Points", "Union")
+                    else:
+                        # VP
+                        t1Starts = tv1.startsAsNumpyArray()
+                        t1Ends = tv1.endsAsNumpyArray()
+                        t1Vals = tv1.valsAsNumpyArray()
+                        t2Starts = tv2.startsAsNumpyArray()
+                        t2Ends = tv2.endsAsNumpyArray()
+                        t2Vals = tv2.valsAsNumpyArray()
+
+                        (starts, ends, values) = \
+                            ValuedPoints.union(t1Starts, t1Ends, t1Vals,
+                                               t2Starts, t2Ends, t2Vals)
+                        return self._createTrackView(region, starts, ends,
+                                                     values)
             else:
                 # P, S, LP, LS
                 if req.isInterval():
