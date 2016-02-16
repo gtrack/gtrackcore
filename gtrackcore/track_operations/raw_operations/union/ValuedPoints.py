@@ -14,9 +14,11 @@ def union(t1Starts, t1Ends, t1Vals, t2Starts, t2Ends, t2Vals,
     produce the output ends.
 
     :param t1Starts: Numpy starts array of track 1
-    :param t1Ends1:  Numpy ends array of track 1
+    :param t1Ends: Numpy ends array of track 1 (Not used)
+    :param t1Vals: Numpy value array of track 1
     :param t2Starts: Numpy starts array of track 2 (Not used)
-    :param t2Ends2:  Numpy ends array of track 2 (Not used)
+    :param t2Ends:  Numpy ends array of track 2 (Not used)
+    :param t2Vals: Numpy value array of track 2
     :param allowOverlaps: Boolean. Inputs can overlap.
     :param resOverlap: Boolean. Output can overlap.
     :return: The union as to arrays, (starts, ends)
@@ -26,7 +28,6 @@ def union(t1Starts, t1Ends, t1Vals, t2Starts, t2Ends, t2Vals,
     _ALLOW_OVERLAP = allowOverlaps
     _RES_ALLOW_OVERLAP = resOverlap
 
-    # Combine the starts and values.
     t1Encode = np.zeros(len(t1Starts)) + 1
     t2Encode = np.zeros(len(t2Starts)) + 2
 
@@ -34,9 +35,6 @@ def union(t1Starts, t1Ends, t1Vals, t2Starts, t2Ends, t2Vals,
     t2 = np.column_stack((t2Starts, t2Vals, t2Encode))
 
     combined = np.concatenate((t1, t2))
-
-    # Sort the result on the first column.
-    #union = combined[combined[:, 0].argsort()]
 
     # Sort the new array of position and then on encoding.
     # TODO: Check runtime
