@@ -36,18 +36,19 @@ def union(t1Starts, t1Ends, t1Vals, t2Starts, t2Ends, t2Vals,
     combined = np.concatenate((t1, t2))
 
     # Sort the result on the first column.
-    union = combined[combined[:, 0].argsort()]
+    #union = combined[combined[:, 0].argsort()]
 
-    # TODO remove overlap
-    #if not resOverlap:
-    #    # Remove any overlapping points
-    #    starts = np.unique(starts)
-    #ends = starts
+    # Sort the new array of position and then on encoding.
+    # TODO: Check runtime
+    res = combined[np.lexsort((combined[:, 2], combined[:, 0]))]
 
-    starts = union[:, 0]
-    values = union[:, 1]
+    if not resOverlap:
+        # Remove any overlapping points
+        res = res[np.unique(res[:, 0], return_index=True)[1]]
+
+    # Extract the starts and values
+    starts = res[:, 0]
+    values = res[:, 1]
     ends = starts
-
-    print starts
 
     return starts, ends, values

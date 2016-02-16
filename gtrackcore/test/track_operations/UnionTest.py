@@ -156,9 +156,6 @@ class UnionTest(unittest.TestCase):
         tv = createTrackView(region=self.chr1, startList=starts, endList=ends,
                              allow_overlap=False, valList=vals)
 
-        if vals is not None:
-            print vals
-            print tv.valsAsNumpyArray()
         d = OrderedDict()
         d[self.chr1] = tv
         return TrackContents('hg19', d)
@@ -204,6 +201,52 @@ class UnionTest(unittest.TestCase):
                                        expEnds=[1,2,3],
                                        expVals=[6,8,7])
 
+    def testUnionValuedPointsOverlapEnd(self):
+        """
+        Simple test. Overlap. Not sorted.
+        Overlap at the end of the track.
+        When overlapping it should return the value from track A not B
+        :return: None
+        """
+        self._runUnionValuedPointsTest(startsA=[1,3,10],
+                                       endsA=[1,3,10], valsA=[6,7,45],
+                                       startsB=[2,10],
+                                       endsB=[2,10], valsB=[8,100],
+                                       expStarts=[1,2,3,10],
+                                       expEnds=[1,2,3,10],
+                                       expVals=[6,8,7,45])
+
+    def testUnionValuedPointsOverlapStart(self):
+        """
+        Simple test. Overlap. Not sorted.
+        Overlap at the start of the track.
+        When overlapping it should return the value from track A not B
+        :return: None
+        """
+        self._runUnionValuedPointsTest(startsA=[2,3,10],
+                                       endsA=[2,3,10], valsA=[6,7,45],
+                                       startsB=[2,15],
+                                       endsB=[2,15], valsB=[8,100],
+                                       expStarts=[2,3,10,15],
+                                       expEnds=[2,3,10,15],
+                                       expVals=[6,7,45,100])
+
+    def testUnionValuedPointsOverlapMultiple(self):
+        """
+        Simple test. Overlap. Not sorted.
+        Multiple overlapping points
+        When overlapping it should return the value from track A not B
+        :return: None
+        """
+        self._runUnionValuedPointsTest(startsA=[1,3,6,10,20],
+                                       endsA=[1,3,6,10,20],
+                                       valsA=[6,7,45,5,3],
+                                       startsB=[2,3,8,10,24],
+                                       endsB=[2,3,8,10,24],
+                                       valsB=[8,100,42,3,2],
+                                       expStarts=[1,2,3,6,8,10,20,24],
+                                       expEnds=[1,2,3,6,8,10,20,24],
+                                       expVals=[6,8,7,45,42,5,3,2])
 
     # **** Segments tests ****
 
@@ -213,7 +256,7 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[4], startsB=[5],
-                                 endsB=[8], expStarts=[2, 5], expEnds=[4, 8])
+                                   endsB=[8], expStarts=[2,5], expEnds=[4,8])
 
     def testUnionSegmentsOverlapABeforeB(self):
         """
