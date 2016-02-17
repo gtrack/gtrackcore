@@ -68,14 +68,13 @@ class UnionTest(unittest.TestCase):
         :param startsB: Array of starts in track B
         :param endsB: Array of ends in track B
         :param valsB: Array of values in track B
-        :param expStarts: Expected startss after union
-        :param expEnds: Expected ends after union
-        :param expVals: Expected values after union
-        :
+        :param expStarts: Array of expected starts after union
+        :param expEnds: Array of expected ends after union
+        :param expVals: Array of expected values after union
         :return:
         """
-        track1 = self._createTrackContent(startsA, endsA, valsA)
-        track2 = self._createTrackContent(startsB, endsB, valsB)
+        track1 = self._createTrackContent(startsA, endsA, vals=valsA)
+        track2 = self._createTrackContent(startsB, endsB, vals=valsB)
 
         u = Union(track1, track2)
 
@@ -98,7 +97,109 @@ class UnionTest(unittest.TestCase):
                 # Tests if all tracks no in chr1 have a size of 0.
                 self.assertEqual(v.startsAsNumpyArray().size, 0)
                 self.assertEqual(v.endsAsNumpyArray().size, 0)
-                self.assertEqual(v.valsAsNumpyArrat().size, 0)
+                self.assertEqual(v.valsAsNumpyArray().size, 0)
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+
+    def _runUnionLinkedPointsTest(self, startsA, endsA, edgesA, startsB, endsB,
+                                  edgesB, expStarts, expEnds, expEdges):
+        """
+        Run a union test over two Linked points tracks.
+        The test expects there to only to be segments in chr1,
+        All other chromosomes need to be of size zero.
+        :param startsA: Arrays of starts in track A
+        :param endsA: Array of ends in track A
+        :param edgesA: Array of edges in track A
+        :param startsB: Array of starts in track B
+        :param endsB: Array of ends in track B
+        :param edgesB: Array of edges in track B
+        :param expStarts: Array of expected starts after union
+        :param expEnds: Array of expected ends after union
+        :param expEdges: Array of expected edges after union
+        :return:
+        """
+        track1 = self._createTrackContent(startsA, endsA, edges=edgesA)
+        track2 = self._createTrackContent(startsB, endsB, edges=edgesB)
+
+        u = Union(track1, track2)
+
+        # Set result track type to Linked Points
+        # TODO: weights?
+        resReq = TrackFormat([], None, None, None, None, [], None, None)
+        u.setResultTrackRequirements(resReq)
+
+        tc = u()
+
+        for (k, v) in tc.getTrackViews().items():
+            if cmp(k, self.chr1) == 0:
+                # All test tracks are in chr1
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               expStarts))
+                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+                self.assertTrue(np.array_equal(v.edgesAsNumpyArray(),
+                                               expEdges))
+            else:
+                # Tests if all tracks no in chr1 have a size of 0.
+                self.assertEqual(v.startsAsNumpyArray().size, 0)
+                self.assertEqual(v.endsAsNumpyArray().size, 0)
+                self.assertEqual(v.edgesAsNumpyArray().size, 0)
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+
+    def _runUnionLinkedValuedPointsTest(self, startsA, endsA, valsA, edgesA,
+                                        startsB, endsB, valsB, edgesB,
+                                        expStarts, expEnds, expVals, expEdges):
+        """
+        Run a union test over two Linke Valued points tracks.
+        The test expects there to only to be segments in chr1,
+        All other chromosomes need to be of size zero.
+        :param startsA: Arrays of starts in track A
+        :param endsA: Array of ends in track A
+        :param valsA: Array of values in track A
+        :param edgesA: Array of edges in track A
+        :param startsB: Array of starts in track B
+        :param endsB: Array of ends in track B
+        :param valsB: Array of values in track B
+        :param edgesB: Array of edges in track A
+        :param expStarts: Array of expected starts after union
+        :param expEnds: Array of expected ends after union
+        :param expVals: Array of expected values after union
+        :param expEdges: Array of expected edges after union
+        :return:
+        """
+        track1 = self._createTrackContent(startsA, endsA, vals=valsA,
+                                          edges=edgesA)
+        track2 = self._createTrackContent(startsB, endsB, vals=valsB,
+                                          edges=edgesB)
+
+        u = Union(track1, track2)
+
+        # Set result track type to Linked Valued Points
+        # TODO weights?
+        resReq = TrackFormat([], None, [], None, None, [], None, None)
+        u.setResultTrackRequirements(resReq)
+
+        tc = u()
+
+        for (k, v) in tc.getTrackViews().items():
+            if cmp(k, self.chr1) == 0:
+                # All test tracks are in chr1
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               expStarts))
+                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
+                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
+                                               v.endsAsNumpyArray()))
+                self.assertTrue(np.array_equal(v.valsAsNumpyArray(), expVals))
+                self.assertTrue(np.array_equal(v.edgesAsNumpyArray(),
+                                               expEdges))
+            else:
+                # Tests if all tracks no in chr1 have a size of 0.
+                self.assertEqual(v.startsAsNumpyArray().size, 0)
+                self.assertEqual(v.endsAsNumpyArray().size, 0)
+                self.assertEqual(v.valsAsNumpyArray().size, 0)
+                self.assertEqual(v.edgesAsNumpyArray().size, 0)
                 self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
                                                v.endsAsNumpyArray()))
 
@@ -112,9 +213,9 @@ class UnionTest(unittest.TestCase):
         :param endsA: Array of ends in track B
         :param startsB: Array of starts in track B
         :param endsB: Array of ends in track B
-        :param expStarts: Expected startss after union
-        :param expEnds: Expected ends after union
-        :return:
+        :param expStarts: Array of expected starts after union
+        :param expEnds: Array of expected ends after union
+        :return: None
         """
         track1 = self._createTrackContent(startsA, endsA)
         track2 = self._createTrackContent(startsB, endsB)
@@ -139,13 +240,15 @@ class UnionTest(unittest.TestCase):
                 self.assertEqual(v.startsAsNumpyArray().size, 0)
                 self.assertEqual(v.endsAsNumpyArray().size, 0)
 
-    def _createTrackContent(self, starts, ends, vals=None):
+    def _createTrackContent(self, starts, ends, vals=None, edges=None):
         """
         Create a track view a start, end list pair.
         Help method used in testing. This method will create a hg19 tracks with
         data in chromosome 1 only.
-        :param starts: List of track start positions
-        :param ends: List of track end positions
+        :param starts: Array of track start positions
+        :param ends: Array of track end positions
+        :param vals: Array of track values
+        :param edges: Array of track edges
         :return: A TrackContent object
         """
         starts = np.array(starts)
@@ -153,8 +256,12 @@ class UnionTest(unittest.TestCase):
         if vals is not None:
             vals = np.array(vals)
 
+        if edges is not None:
+            edges = np.array(vals)
+
         tv = createTrackView(region=self.chr1, startList=starts, endList=ends,
-                             allow_overlap=False, valList=vals)
+                             allow_overlap=False, valList=vals,
+                             edgesList=edges)
 
         d = OrderedDict()
         d[self.chr1] = tv
