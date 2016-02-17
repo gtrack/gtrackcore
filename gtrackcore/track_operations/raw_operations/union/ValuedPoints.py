@@ -38,7 +38,7 @@ def union(t1Starts, t1Ends, t1Vals, t2Starts, t2Ends, t2Vals,
 
     # Sort the new array of position and then on encoding.
     # TODO: Check runtime
-    res = combined[np.lexsort((combined[:, 2], combined[:, 0]))]
+    res = combined[np.lexsort((combined[:, -1], combined[:, 0]))]
 
     if not resOverlap:
         # Remove any overlapping points

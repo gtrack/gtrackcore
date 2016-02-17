@@ -11,6 +11,10 @@ import gtrackcore.track_operations.raw_operations.union.Segments as Segments
 import gtrackcore.track_operations.raw_operations.union.Points as Points
 import gtrackcore.track_operations.raw_operations.union.ValuedPoints as \
     ValuedPoints
+import gtrackcore.track_operations.raw_operations.union.LinkedPoints as \
+    LinkedPoints
+import gtrackcore.track_operations.raw_operations.union.LinkedValuedPoints \
+    as LinkedValuedPoints
 
 from gtrackcore.track_operations.exeptions.Operations import \
     OutputTrackTypeNotSupportedError
@@ -24,7 +28,7 @@ class Union(Operator):
     _RESULT_ALLOW_OVERLAPS = False
     _RESULT_IS_TRACK = True
 
-    # Minimum output track (Points)
+    # Output track (Points)
     _RESULT_TRACK_REQUIREMENTS = TrackFormat([], None, None, None, None, None,
                                              None, None)
 
@@ -57,23 +61,35 @@ class Union(Operator):
                 else:
                     # VP, LVP
                     if req.isLinked():
-                        # LVP
-                        raise OutputTrackTypeNotSupportedError(
-                            "Linked Valued Points", "Union")
+                        # Linked Valued Points
+                        t1Starts = tv1.startsAsNumpyArray()
+                        t1Ends = tv1.endsAsNumpyArray()
+                        t1Vals = tv1.valsAsNumpyArray()
+                        t1Edges = tv1.edgesAsNumpyArray()
+                        t2Starts = tv2.startsAsNumpyArray()
+                        t2Ends = tv2.endsAsNumpyArray()
+                        t2Vals = tv2.valsAsNumpyArray()
+                        t2Edges = tv2.edgesAsNumpyArray()
+                        (starts, ends, values, edges) = \
+                            LinkedValuedPoints.union(t1Starts, t1Ends, t1Vals,
+                                                     t1Edges, t2Starts,
+                                                     t2Ends, t2Vals, t2Edges)
+                        return self._createTrackView(region, starts, ends,
+                                                     valList=values,
+                                                     edgesList=edges)
                     else:
-                        # VP
+                        # Valued Points
                         t1Starts = tv1.startsAsNumpyArray()
                         t1Ends = tv1.endsAsNumpyArray()
                         t1Vals = tv1.valsAsNumpyArray()
                         t2Starts = tv2.startsAsNumpyArray()
                         t2Ends = tv2.endsAsNumpyArray()
                         t2Vals = tv2.valsAsNumpyArray()
-
                         (starts, ends, values) = \
                             ValuedPoints.union(t1Starts, t1Ends, t1Vals,
                                                t2Starts, t2Ends, t2Vals)
                         return self._createTrackView(region, starts, ends,
-                                                     values)
+                                                     valList=values)
             else:
                 # P, S, LP, LS
                 if req.isInterval():
@@ -96,8 +112,19 @@ class Union(Operator):
                     # P, LP
                     if req.isLinked():
                         # Linked Points
-                        raise OutputTrackTypeNotSupportedError(
-                            "Linked Points", "Union")
+                        # Edge wights are save in the edge..
+                        # TODO: add strands..?
+                        t1Starts = tv1.startsAsNumpyArray()
+                        t1Ends = tv1.endsAsNumpyArray()
+                        t1Edges = tv1.edgesAsNumpyArray()
+                        t2Starts = tv2.startsAsNumpyArray()
+                        t2Ends = tv2.endsAsNumpyArray()
+                        t2Edges = tv2.edgesAsNumpyArray()
+                        (starts, ends, edges) = \
+                            LinkedPoints.union(t1Starts, t1Ends, t1Edges,
+                                               t2Starts, t2Ends, t2Edges)
+                        return self._createTrackView(region, starts, ends,
+                                                     edgesList=edges)
                     else:
                         # Points
                         t1Starts = tv1.startsAsNumpyArray()

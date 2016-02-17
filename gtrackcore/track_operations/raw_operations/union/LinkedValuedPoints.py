@@ -1,8 +1,8 @@
 
 import numpy as np
 
-def union(t1Starts, t1Ends, t1Values, t1Links, t2Starts, t2Ends, t2Values,
-          t2Links, allowOverlaps = False, resOverlap = False):
+def union(t1Starts, t1Ends, t1Values, t1Edges, t2Starts, t2Ends, t2Values,
+          t2Edges, allowOverlaps = False, resOverlap = False):
     """
     Find the union of to Linked Valued Point tracks.
 
@@ -16,11 +16,11 @@ def union(t1Starts, t1Ends, t1Values, t1Links, t2Starts, t2Ends, t2Values,
     :param t1Starts:Numpy array. Starts of track 1
     :param t1Ends:  Numpy array. Ends of track 1 (Not used)
     :param t1Values:Numpy array. Values of track 1
-    :param t1Links: Numpy array. Links of track 1
+    :param t1Edges: Numpy array. Edges of track 1
     :param t2Starts:Numpy array. Starts of track 2
     :param t2Ends:  Numpy array. Ends of track 2 (Not used)
     :param t2Values:Numpy array. Values of track 2
-    :param t2Links: Numpy array. Links of track 2
+    :param t2Edges: Numpy array. Edge of track 2
     :param allowOverlaps: Boolean. Inputs can overlap.
     :param resOverlap: Boolean. Output can overlap.
     :return: The union as to arrays, (starts, ends)
@@ -33,8 +33,8 @@ def union(t1Starts, t1Ends, t1Values, t1Links, t2Starts, t2Ends, t2Values,
     t1Encode = np.zeros(len(t1Starts)) + 1
     t2Encode = np.zeros(len(t2Starts)) + 2
 
-    t1 = np.column_stack((t1Starts, t1Values, t1Links, t1Encode))
-    t2 = np.column_stack((t2Starts, t2Values, t2Links, t2Encode))
+    t1 = np.column_stack((t1Starts, t1Values, t1Edges, t1Encode))
+    t2 = np.column_stack((t2Starts, t2Values, t2Edges, t2Encode))
 
     combined = np.concatenate((t1, t2))
 
@@ -44,12 +44,14 @@ def union(t1Starts, t1Ends, t1Values, t1Links, t2Starts, t2Ends, t2Values,
 
     if not resOverlap:
         # Remove any overlapping points
+        # Only values and edges from A are saved.
+        # TODO: combine edges?
         res = res[np.unique(res[:, 0], return_index=True)[1]]
 
     # Extract the starts, values and links
     starts = res[:, 0]
     values = res[:, 1]
-    links = res[:, 2]
+    edges = res[:, 2]
     ends = starts
 
-    return starts, ends, values, links
+    return starts, ends, values, edges

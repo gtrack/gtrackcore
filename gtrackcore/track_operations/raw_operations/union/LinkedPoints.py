@@ -13,12 +13,12 @@ def union(t1Starts, t1Ends, t1Links, t2Starts, t2Ends, t2Links,
     array. When doing the calculation we only use the start and copy it to
     produce the output ends.
 
-    :param t1Starts: Numpy starts array of track 1
-    :param t1Ends:  Numpy ends array of track 1 (Not used)
-    :param t1Links: Numpy links array of track 1
-    :param t2Starts: Numpy starts array of track 2
-    :param t2Ends:  Numpy ends array of track 2 (Not used)
-    :param t2Links: Numpy links array of track 2
+    :param t1Starts: Numpy array. Starts of track 1
+    :param t1Ends:   Numpy array. Ends of track 1 (Not used)
+    :param t1Edges:  Numpy array. Edges of track 1
+    :param t2Starts: Numpy array. Starts of track 2
+    :param t2Ends:   Numpy array. Ends of track 2 (Not used)
+    :param t2Edges:  Numpy array. Edges of track 2
     :param allowOverlaps: Boolean. Inputs can overlap.
     :param resOverlap: Boolean. Output can overlap.
     :return: The union as to arrays, (starts, ends)
@@ -38,7 +38,7 @@ def union(t1Starts, t1Ends, t1Links, t2Starts, t2Ends, t2Links,
 
     # Sort the new array on position and then on encoding.
     # TODO: Check runtime
-    res = combined[np.lexsort((combined[:, 2], combined[:, 0]))]
+    res = combined[np.lexsort((combined[:, -1], combined[:, 0]))]
 
     if not resOverlap:
         # Remove any overlapping points
@@ -46,7 +46,7 @@ def union(t1Starts, t1Ends, t1Links, t2Starts, t2Ends, t2Links,
 
     # Extract the starts and values
     starts = res[:, 0]
-    links = res[:, 1]
+    edges = res[:, 1]
     ends = starts
 
-    return starts, ends, links
+    return starts, ends, edges
