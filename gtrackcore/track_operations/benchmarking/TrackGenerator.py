@@ -29,18 +29,18 @@ def generateTrack(niceness=10, values=False):
     createTime = int(time.time())
 
     headerP = ("##gtrack version: 1.0\n"
-              "##track type: points\n"
-              "##uninterrupted data lines: true\n"
-              "##sorted elements: true\n"
-              "##no overlapping elements: true\n"
-              "###seqid\tstart\n")
+               "##track type: points\n"
+               "##uninterrupted data lines: true\n"
+               "##sorted elements: true\n"
+               "##no overlapping elements: true\n"
+               "###seqid\tstart\n")
 
     headerVP = ("##gtrack version: 1.0\n"
-              "##track type: valued points\n"
-              "##uninterrupted data lines: true\n"
-              "##sorted elements: true\n"
-              "##no overlapping elements: true\n"
-              "###seqid\tstart\tvalue\n")
+                "##track type: valued points\n"
+                "##uninterrupted data lines: true\n"
+                "##sorted elements: true\n"
+                "##no overlapping elements: true\n"
+                "###seqid\tstart\tvalue\n")
 
     start = timeit.default_timer()
     with open("./test_tracks/p-odd-{0}.gtrack".format(createTime), 'w+') as \
