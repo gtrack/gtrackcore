@@ -2,10 +2,12 @@ __author__ = 'skh'
 
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
+import numpy as np
 
 import timeit
+import time
 
-def generateWorstCasePoints(niceness=10):
+def generateTrack(niceness=10, values=False):
     """
     Generate two worst case point tracks
     :param niceness: int. Divide the length of chr1 with this number. The
@@ -24,38 +26,74 @@ def generateWorstCasePoints(niceness=10):
 
     chr1 = (GenomeRegion('hg18', 'chr1', 0,
             GenomeInfo.GENOMES['hg18']['size']['chr1']))
+    createTime = int(time.time())
 
-    header = ("##gtrack version: 1.0\n"
+    headerP = ("##gtrack version: 1.0\n"
               "##track type: points\n"
               "##uninterrupted data lines: true\n"
               "##sorted elements: true\n"
               "##no overlapping elements: true\n"
               "###seqid\tstart\n")
 
+    headerVP = ("##gtrack version: 1.0\n"
+              "##track type: valued points\n"
+              "##uninterrupted data lines: true\n"
+              "##sorted elements: true\n"
+              "##no overlapping elements: true\n"
+              "###seqid\tstart\tvalue\n")
+
     start = timeit.default_timer()
-    with open("./test_tracks/wc-points-odd.gtrack", 'w+') as point:
-        point.write(header)
+    with open("./test_tracks/p-odd-{0}.gtrack".format(createTime), 'w+') as \
+            point:
 
         print("Starting generation odd track of {0}".format(chr1.chr))
-        positions = range(1, len(chr1)/niceness, 2)
+        length = len(chr1)/niceness
+        positions = range(1, length, 2)
 
-        for position in positions:
-            out = "{0}\t{1}\n".format(chr1.chr, position)
-            point.write(out)
+        if values:
+            point.write(headerVP)
+            print("Starting to generate random values")
+            randStart = timeit.default_timer()
+            val = np.random.random((length, 1))
+            randEnd = timeit.default_timer()
+            print("Finished generating random values")
+            print("Random generation runtime: {0}".format(randEnd-randStart))
 
-    with open("./test_tracks/wc-points-even.gtrack", 'w+') as point:
-        point.write(header)
+            for position, v in zip(positions, val):
+                out = "{0}\t{1}\t{2}\n".format(chr1.chr, position, v[0])
+                point.write(out)
+        else:
+            point.write(headerP)
+            for position in positions:
+                out = "{0}\t{1}\n".format(chr1.chr, position)
+                point.write(out)
 
+    with open("./test_tracks/p-even-{0}.gtrack".format(createTime), 'w+') as \
+            point:
         print("Starting generation even track of {0}".format(chr1.chr))
-        positions = range(0, len(chr1)/niceness, 2)
+        length = len(chr1)/niceness
+        positions = range(1, length, 2)
 
-        for position in positions:
-            out = "{0}\t{1}\n".format(chr1.chr, position)
-            point.write(out)
+        if values:
+            point.write(headerVP)
+            print("Starting to generate random values")
+            randStart = timeit.default_timer()
+            val = np.random.random((length, 1))
+            randEnd = timeit.default_timer()
+            print("Finished generating random values")
+            print("Random generation runtime: {0}".format(randEnd-randStart))
+
+            for position, v in zip(positions, val):
+                out = "{0}\t{1}\t{2}\n".format(chr1.chr, position, v[0])
+                point.write(out)
+        else:
+            point.write(headerP)
+            for position in positions:
+                out = "{0}\t{1}\n".format(chr1.chr, position)
+                point.write(out)
 
     end = timeit.default_timer()
-
     print("Generation finished! Total time {0}".format(end-start))
 
 if __name__ == '__main__':
-    generateWorstCasePoints()
+    generateTrack(10, values=True)
