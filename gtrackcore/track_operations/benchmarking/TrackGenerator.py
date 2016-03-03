@@ -72,7 +72,7 @@ def generateTrack(niceness=10, values=False):
             point:
         print("Starting generation even track of {0}".format(chr1.chr))
         length = len(chr1)/niceness
-        positions = range(1, length, 2)
+        positions = range(0, length, 2)
 
         if values:
             point.write(headerVP)

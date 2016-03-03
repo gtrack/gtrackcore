@@ -4,6 +4,8 @@ from line_profiler import LineProfiler
 import time
 import timeit
 import sys
+import os
+import glob
 from collections import OrderedDict
 from cStringIO import StringIO
 
@@ -33,14 +35,16 @@ class UnionBenchmark(object):
                             'size'].iteritems()))
 
         self._importTrack()
-        self.trackA = self._createTrackContent('h4k20me1', False)
-        self.trackB = self._createTrackContent('h4k20me3', False)
-        self.trackC = self._createTrackContent('lk-test1', False)
-        self.trackD = self._createTrackContent('lk-test2', False)
-        self.trackE = self._createTrackContent('wc-points-odd', False)
-        self.trackF = self._createTrackContent('wc-points-even', False)
+        #self.trackA = self._createTrackContent('h4k20me1', False)
+        #self.trackB = self._createTrackContent('h4k20me3', False)
+        #self.trackC = self._createTrackContent('lk-test1', False)
+        #self.trackD = self._createTrackContent('lk-test2', False)
+        #self.trackE = self._createTrackContent('wc-points-odd', False)
+        #self.trackF = self._createTrackContent('wc-points-even', False)
+        self.trackG = self._createTrackContent('p-odd-1456576672', False)
+        self.trackH = self._createTrackContent('p-even-1456662688', False)
 
-    def runUnionV(self):
+    def runUnionP(self):
         resReq = TrackFormat([], None, None, None, None, None, None, None)
         #resReq = TrackFormat(name='segments')
 
@@ -54,14 +58,39 @@ class UnionBenchmark(object):
         stop = timeit.default_timer()
 
         print("Total runtime: Union of points: {0}".format(stop-start))
-        """
+
         for r in tc.regions:
-            print "======"
-            print len(self.trackA.getTrackView(r).startsAsNumpyArray())
-            print len(self.trackB.getTrackView(r).startsAsNumpyArray())
-            print len(tc.getTrackView(r).startsAsNumpyArray())
-            print "======"
-        """
+
+            if r.chr == 'chr1':
+                print "======"
+                print len(tc.getTrackView(r).startsAsNumpyArray())
+                print tc.getTrackView(r).startsAsNumpyArray()[:100]
+                print "======"
+
+    def runUnionVP(self):
+        resReq = TrackFormat([], None, [], None, None, None, None, None)
+        #resReq = TrackFormat(name='segments')
+
+        u = Union(self.trackG, self.trackH)
+        u.setResultTrackRequirements(resReq)
+
+        start = timeit.default_timer()
+
+        tc = u()
+
+        stop = timeit.default_timer()
+
+        print("Total runtime: Union of valued points: {0}".format(stop-start))
+
+        for r in tc.regions:
+
+            if r.chr == 'chr1':
+                print "======"
+                print len(tc.getTrackView(r).startsAsNumpyArray())
+                print tc.getTrackView(r).startsAsNumpyArray()[:100]
+                print tc.getTrackView(r).valsAsNumpyArray()[:100]
+                print "======"
+
 
     def runUnionLP(self):
         resReq = TrackFormat([], None, None, None, None, [], None, None)
@@ -114,7 +143,6 @@ class UnionBenchmark(object):
         for i in output:
             if trackName in i:
                 return True
-
         return False
 
     def _createTrackContent(self, trackName, allowOverlaps):
@@ -134,46 +162,17 @@ class UnionBenchmark(object):
 
     def _importTrack(self):
         """
-        Imports the test tracks
+        Loads all gtrack files in the test_tracks folder into GTrackCore.
+        Will ignore tracks already in GTrackCore.
         """
-
-        track1Path = "./test_tracks/segment-h4k20me1.gtrack"
-        track2Path = "./test_tracks/segment-h4k20me3.gtrack"
-        track3Path = "./test_tracks/LK-test1.gtrack"
-        track4Path = "./test_tracks/LK-test1.gtrack"
-        track5Path = "./test_tracks/wc-points-odd.gtrack"
-        track6Path = "./test_tracks/wc-points-even.gtrack"
         genome = 'hg18'
+        for path in glob.glob("./test_tracks/*.gtrack"):
+            name = os.path.splitext(path.split('/')[-1])[0]
+            if not self._trackInGtrack(genome, name):
+                importFile(path, genome, name)
+            else:
+                print("Track already imported into gtrack")
 
-        if not self._trackInGtrack(genome, 'h4k20me1'):
-            importFile(track1Path, genome, 'h4k20me1')
-        else:
-            print("Track already imported into gtrack")
-
-        if not self._trackInGtrack(genome, 'h4k20me3'):
-            importFile(track2Path, genome, 'h4k20me3')
-        else:
-            print("Track already imported into gtrack")
-
-        if not self._trackInGtrack(genome, 'lk-test1'):
-            importFile(track3Path, genome, 'lk-test1')
-        else:
-            print("Track already imported into gtrack")
-
-        if not self._trackInGtrack(genome, 'lk-test2'):
-            importFile(track4Path, genome, 'lk-test2')
-        else:
-            print("Track already imported into gtrack")
-
-        if not self._trackInGtrack(genome, 'wc-points-odd'):
-            importFile(track5Path, genome, 'wc-points-odd')
-        else:
-            print("Track already imported into gtrack")
-
-        if not self._trackInGtrack(genome, 'wc-points-even'):
-            importFile(track6Path, genome, 'wc-points-even')
-        else:
-            print("Track already imported into gtrack")
 
 class Capturing(list):
     """
@@ -196,6 +195,7 @@ if __name__ == '__main__':
 
     a = UnionBenchmark()
 
-    a.runUnionV()
+    #a.runUnionP()
+    a.runUnionVP()
     #a.runUnionLP()
     #a.runUnionS()
