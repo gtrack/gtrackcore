@@ -3,11 +3,13 @@ __author__ = 'skh'
 from collections import OrderedDict
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track_operations.exeptions.Track import TrackContentsEmptyError
+from gtrackcore.track_operations.Genome import Genome
 
 
 class TrackContents(object):
 
     def __init__(self, genome, trackViewList):
+        assert isinstance(genome, Genome)
         self.genome = genome
         self._trackViews = OrderedDict([(r, tv) for r, tv in trackViewList.items()])
 
@@ -23,6 +25,10 @@ class TrackContents(object):
     @property
     def regions(self):
         return self._trackViews.keys()
+
+    def getTrackFormat(self):
+        pass
+        #TODO
 
     def getTrackView(self, region):
         return self._trackViews[region]
