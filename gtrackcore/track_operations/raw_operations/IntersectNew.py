@@ -21,46 +21,58 @@ def intersect(track1, track2, resultReq):
     encode = np.concatenate((t1Encode,t1Encode,t2Encode,t2Encode))
 
     combined = np.column_stack((allCodedEvents, index, encode))
-    print("combined ->{0}<-".format(combined))
     combined = combined[np.lexsort((combined[:, -1], combined[:, 0]))]
 
+    combinedIndex = np.arange(0,len(combined))
+
+    combined = np.column_stack((combined, combinedIndex))
+
+    print("new combined : ->{0}<-".format(combined))
+
     allSortedEvents = combined[:, 0]
-
-    print("allSortedEvents : ->{0}<-".format(allSortedEvents))
-    print(allSortedEvents / 8)
-
-
     allEventCodes = (allSortedEvents % 8) - 4
     allSortedDecodedEvents = allSortedEvents / 8
 
-    print("allEventCodes : ->{0}<-".format(allEventCodes))
-    print("allSotedDecodedEventes : ->{0}<-".format(allSortedDecodedEvents))
-
     allEventLengths = allSortedDecodedEvents[1:] - allSortedDecodedEvents[:-1]
-    print("allEventLengths : ->{0}<-".format(allEventLengths))
     cumulativeCoverStatus = np.add.accumulate(allEventCodes)
 
-    print("cumulativeCoverStatus : ->{}<-".format(cumulativeCoverStatus))
-
-    allStartIndexes = np.where(cumulativeCoverStatus[:-1] >= 3)
-
-    # TODO: update indexes, to reflect track A onty
-    # If track A starts inside track B -> Index OK
-    # If track B starts inside track A -> Index needs to be updated.
-    # If track A start is equal to track B -> Update?
+    allStartIndexes = np.where(cumulativeCoverStatus[:-2] >= 3)
 
     result = combined[allStartIndexes]
 
-    starts = result[:,0] / 8
+    print("**** Result before index update ****")
+    print(result)
+    print("------------------")
+    # Find segments with index from track B
+    wrongIndex = np.where(result[:,-2] == 2)
+    elementsToUpdate = result[wrongIndex]
+
+    while len(elementsToUpdate) > 0:
+        updatedCombinedIndex = elementsToUpdate[:,-1]
+        updatedCombinedIndex -= 1
+        # TODO: check for underflow?
+
+        newElements = combined[updatedCombinedIndex]
+
+        updatedEncoding = newElements[:,-2]
+        updatedIndex = newElements[:,-3]
+
+        # Update result array
+        result[wrongIndex,-1] = updatedCombinedIndex
+        result[wrongIndex,-2] = updatedEncoding
+        result[wrongIndex,-3] = updatedIndex
+
+        # Update elementsToUpdate
+        wrongIndex = np.where(result[:,-2] == 2)
+        elementsToUpdate = combined[wrongIndex]
+
+    print("**** Result after index update ****")
+    starts = result[:,0]/8
+    print("starts \n {0}".format(starts))
     ends = starts + allEventLengths[allStartIndexes]
+    print("ends \n {0}".format(ends))
+    print("index \n {0}".format(result[:,-3]))
+    print("encode \n {0}".format(result[:,-2]))
+    print("------------------")
 
-    index = result[:,-2]
-    encode = result[:,-1]
-
-    print("starts : ->{0}<-".format(starts))
-    print("ends : ->{0}<-".format(ends))
-    print("index : ->{0}<-".format(index))
-    print("encode : ->{0}<-".format(encode))
-
-
-    return combined
+    return result
