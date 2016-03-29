@@ -1,71 +1,76 @@
 import numpy as np
 
-from gtrackcore.track_operations.exeptions.Track import TrackIncompatibleException
+def intersect(track1, track2, resultReq):
 
-def intersect(t1Starts, t2Starts, **kwargs):
+    t1Index = np.arange(0, len(track1), 1)
+    t2Index = np.arange(0, len(track2), 1)
+    t1Encode = np.zeros(len(track1), dtype=np.int) + 1
+    t2Encode = np.zeros(len(track2), dtype=np.int) + 2
 
-    if 't1Ends' not in kwargs:
-        # A point type
+    t1CodedStarts = track1.starts * 8 + 5
+    t1CodedEnds = track1.ends * 8 + 3
+    t2CodedStarts = track2.starts * 8 + 6
+    t2CodedEnds = track2.ends * 8 + 2
 
-        if 't1Vals' not in kwargs or kwargs['t1Vals'] is not None:
-            # Points (P)
-            return np.intersect1d(t1Starts,t2Starts)
-        else:
-            # Valued Points (VP)
+    allCodedEvents = np.concatenate((t1CodedStarts, t1CodedEnds,
+                                     t2CodedStarts, t2CodedEnds))
 
-            if len(t1Starts) == 0 or len(t2Starts) == 0:
-                # If t1 or t2 is empty, then can not be a intersect.
-                return (np.array([]), np.array([]))
+    index = np.concatenate((t1Index,t1Index,t2Index,t2Index))
+    encode = np.concatenate((t1Encode,t1Encode,t2Encode,t2Encode))
 
-            else:
-                inter = np.intersect1d(t1Starts, t2Starts)
+    combined = np.column_stack((allCodedEvents, index, encode))
+    combined = combined[np.lexsort((combined[:, -1], combined[:, 0]))]
 
-                if len(inter) == 0:
-                    # If there is no intersect we return
-                    # two empty numpy arrays
-                    return np.array([]), np.array([])
+    combinedIndex = np.arange(0,len(combined))
 
-                outVal = []
-                j = 0
-                for i, v in enumerate(t1Starts):
-                    while j < len(inter) and v >= inter[j]:
-                        if v == inter[j]:
-                            outVal.append(kwargs['t1Val'][i])
-                            j += 1
+    combined = np.column_stack((combined, combinedIndex))
 
-                    if j >= len(inter):
-                        break
+    print("new combined : ->{0}<-".format(combined))
 
-                return inter, np.array(outVal)
+    allSortedEvents = combined[:, 0]
+    allEventCodes = (allSortedEvents % 8) - 4
+    allSortedDecodedEvents = allSortedEvents / 8
 
-    elif 't1Val' not in kwargs:
-        # Segments (S) or Genome Partition (GP)
+    allEventLengths = allSortedDecodedEvents[1:] - allSortedDecodedEvents[:-1]
+    cumulativeCoverStatus = np.add.accumulate(allEventCodes)
 
-        # Check if t2Ends are defined.
-        if 't2Ends' not in kwargs:
-            raise TrackIncompatibleException("Comparing segments with points")
+    allStartIndexes = np.where(cumulativeCoverStatus[:-2] >= 3)
 
-        t1CodedStarts = t1Starts * 8 + 5
-        t1CodedEnds = kwargs['t1Ends'] * 8 + 3
-        t2CodedStarts = t2Starts * 8 + 6
-        t2CodedEnds = kwargs['t2Ends'] * 8 + 2
+    result = combined[allStartIndexes]
 
-        allSortedCodedEvents = np.concatenate((t1CodedStarts, t1CodedEnds, t2CodedStarts, t2CodedEnds))
-        allSortedCodedEvents.sort()
+    print("**** Result before index update ****")
+    print(result)
+    print("------------------")
+    # Find segments with index from track B
+    wrongIndex = np.where(result[:,-2] == 2)
+    elementsToUpdate = result[wrongIndex]
 
-        allEventCodes = (allSortedCodedEvents % 8) - 4
+    while len(elementsToUpdate) > 0:
+        updatedCombinedIndex = elementsToUpdate[:,-1]
+        updatedCombinedIndex -= 1
+        # TODO: check for underflow?
 
-        allSortedDecodedEvents = allSortedCodedEvents / 8
-        allEventLengths = allSortedDecodedEvents[1:] - allSortedDecodedEvents[:-1]
+        newElements = combined[updatedCombinedIndex]
 
-        cumulativeCoverStatus = np.add.accumulate(allEventCodes)
+        updatedEncoding = newElements[:,-2]
+        updatedIndex = newElements[:,-3]
 
-        allStarts = allSortedDecodedEvents[cumulativeCoverStatus[:-1] >= 3]
-        allLengths = allEventLengths[cumulativeCoverStatus[:-1] >= 3]
-        allEnds = allStarts + allLengths
+        # Update result array
+        result[wrongIndex,-1] = updatedCombinedIndex
+        result[wrongIndex,-2] = updatedEncoding
+        result[wrongIndex,-3] = updatedIndex
 
-        return (allStarts, allEnds)
+        # Update elementsToUpdate
+        wrongIndex = np.where(result[:,-2] == 2)
+        elementsToUpdate = combined[wrongIndex]
 
-    else:
-        # Valued Segments (VS) og Step Function (SF)
-        return False
+    print("**** Result after index update ****")
+    starts = result[:,0]/8
+    print("starts \n {0}".format(starts))
+    ends = starts + allEventLengths[allStartIndexes]
+    print("ends \n {0}".format(ends))
+    print("index \n {0}".format(result[:,-3]))
+    print("encode \n {0}".format(result[:,-2]))
+    print("------------------")
+
+    return result
