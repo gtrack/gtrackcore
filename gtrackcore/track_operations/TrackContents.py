@@ -10,7 +10,7 @@ class TrackContents(object):
 
     def __init__(self, genome, trackViewList):
         assert isinstance(genome, Genome)
-        self.genome = genome
+        self._genome = genome
         self._trackViews = OrderedDict([(r, tv) for r, tv in trackViewList.items()])
 
     def getTrackViews(self):
@@ -26,9 +26,17 @@ class TrackContents(object):
     def regions(self):
         return self._trackViews.keys()
 
+    @property
+    def genome(self):
+        return self._genome
+
+    @genome.setter
+    def genome(self, genome):
+        self._genome = genome
+
     def getTrackFormat(self):
         pass
-        #TODO
+        # TODO
 
     def getTrackView(self, region):
         return self._trackViews[region]
