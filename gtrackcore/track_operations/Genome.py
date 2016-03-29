@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import json
+import yaml
 
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 
@@ -10,7 +12,7 @@ class Genome(object):
     """
     def __init__(self, name, regionDefinition):
         self.__name = name
-        self.__regions = self._generateGenomeRegions(regionDefinition)
+        self.__regions = self._generateGenomeRegions(name, regionDefinition)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -40,7 +42,11 @@ class Genome(object):
         else:
             raise TypeError("Regions needs to be a dict")
 
-    def _generateGenomeRegions(self, regionDefinition):
+    def getTrackViewList(self):
+        pass
+
+    @classmethod
+    def _generateGenomeRegions(cls, name, regionDefinition):
         """
         Helper method for setting the genome regions. Takes a simple genome
         definition dict and creates a GenomeRegion list.
@@ -61,8 +67,24 @@ class Genome(object):
         :param regionDefinition: Dict defining the length of the regions
         :return: OrderedDict of GenomeRegions
         """
-        return OrderedDict((c, GenomeRegion(self.__name, c, 0, l))
-                           for c, l in regionDefinition.iteritems())
+
+        return list((GenomeRegion(name, c, 0, l)
+                        for c, l in regionDefinition.iteritems()))
+
+    @classmethod
+    def createFromJson(cls, path):
+
+        # Check if file exists?
+
+        with open(path) as jsonFile:
+            g = yaml.safe_load(jsonFile)
+            #g = json.load(jsonFile)
+
+        assert "name" in g.keys()
+        assert "size" in g.keys()
+
+        gen = Genome(g['name'], g['size'])
+        return gen
 
     def getRegionLength(self, region):
         """
