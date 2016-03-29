@@ -1,7 +1,10 @@
 __author__ = 'skh'
 
 import abc
+import glob
 from collections import OrderedDict
+from os.path import dirname, basename, isfile
+
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
@@ -9,7 +12,6 @@ import inspect
 
 class InvalidArgumentError(Exception):
     pass
-
 
 class Operator(object):
     __metaclass__ = abc.ABCMeta
@@ -49,6 +51,7 @@ class Operator(object):
 
         regionsFirstArg = self.getResultRegion()
         genomeFirstArg = self.getResultGenome()
+        self._resultGenome = genomeFirstArg
         for i, arg in enumerate(self._args[1:]):
             if isinstance(arg, Operator):
                 if arg.getResultRegion() != regionsFirstArg:
@@ -88,14 +91,30 @@ class Operator(object):
             out[region] = tv
 
         if self._RESULT_IS_TRACK:
-            #TODO get the genome from the trackview
-            return TrackContents('hg19', out)
+            return TrackContents(self._resultGenome, out)
         else:
             # The result is not a track. Int, float, etc.
             return out
 
     @abc.abstractmethod
     def _call(self, *args):
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def createSubParser(cls, subparsers):
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def createOperation(cls, args):
+        """
+        Used by GTools.
+        Create a operation object from the arguments given from GTools.
+
+        :param args: Arguments from the parser in GTools
+        :return: A operation object.
+        """
         pass
 
     def isNestable(self):
@@ -117,6 +136,8 @@ class Operator(object):
         :return:
         """
         if self.isNestable():
+            # TODO: Se paa denne!
+            # Use extended genome
             if isinstance(self._args[0], Operator):
                 return self._args[0].getResultRegion()
             else:
@@ -155,3 +176,26 @@ class Operator(object):
         return TrackView(region, startList, endList, valList, strandList, idList, edgesList, weightsList,
                          borderHandling='crop', allowOverlaps=self._RESULT_ALLOW_OVERLAPS, extraLists=extraLists)
 
+
+def getOperation():
+    """
+    Returns all defined operations. This method is used to create a dynamic
+    cli.
+
+    Works in a normal python way. Will ignore any files starting with a
+    underscore.
+
+    TODO: Check that we only add valid operations.
+
+    :return: A list of all operations in the operations folder.
+    """
+
+    name = __name__.split('.')[-1]
+    files = glob.glob(dirname(__file__)+"/*.py")
+    operations = [basename(file)[:-3] for file in files if isfile(file) and
+                  not basename(file)[:-3].startswith('_') and basename(
+                  file)[:-3] != name]
+
+    module = '.'.join(__name__.split('.')[:-1])
+
+    return module, operations
