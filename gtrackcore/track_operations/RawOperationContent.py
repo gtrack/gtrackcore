@@ -46,14 +46,15 @@ class RawOperationContent(object):
         :param tv:
         :return:
         """
-        self.starts = tv.startsAsNumpyArray()
-        self.ends = tv.endsAsNumpyArray()
-        self.vals = tv.valsAsNumpyArray()
-        self.strands = tv.strandsAsNumpyArray()
-        self.ids = tv.idsAsNumpyArray()
-        self.edges = tv.edgesAsNumpyArray()
-        self.weights = tv.weightsAsNympyArray()
-        self.extras = tv.extrasAsNumpyArray()
+        self.__starts = tv.startsAsNumpyArray()
+        self.__ends = tv.endsAsNumpyArray()
+        self.__vals = tv.valsAsNumpyArray()
+        self.__strands = tv.strandsAsNumpyArray()
+        self.__ids = tv.idsAsNumpyArray()
+        self.__edges = tv.edgesAsNumpyArray()
+        self.__weights = tv.weightsAsNumpyArray()
+        # Extras need key. Fixing this later
+        # self.extras = tv.extrasAsNumpyArray()
 
     # **** Properties ****
     @property
