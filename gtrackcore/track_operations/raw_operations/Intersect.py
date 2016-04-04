@@ -1,6 +1,14 @@
 import numpy as np
 
-def intersect(track1, track2, resultReq):
+def intersect(track1, track2):
+
+    # A intersect only works on dense tracks.
+    # If track1 do not have any starts the track is empty.
+    assert track1.starts is not None
+
+    # For debugging. Remove later..
+    if len(track1.starts) == 0:
+        return None
 
     t1Index = np.arange(0, len(track1), 1)
     t2Index = np.arange(0, len(track2), 1)
@@ -25,8 +33,6 @@ def intersect(track1, track2, resultReq):
 
     combined = np.column_stack((combined, combinedIndex))
 
-    print("new combined : ->{0}<-".format(combined))
-
     allSortedEvents = combined[:, 0]
     allEventCodes = (allSortedEvents % 8) - 4
     allSortedDecodedEvents = allSortedEvents / 8
@@ -36,41 +42,36 @@ def intersect(track1, track2, resultReq):
 
     allStartIndexes = np.where(cumulativeCoverStatus[:-2] >= 3)
 
-    result = combined[allStartIndexes]
+    tmpStarts = combined[allStartIndexes]
 
-    print("**** Result before index update ****")
-    print(result)
-    print("------------------")
     # Find segments with index from track B
-    wrongIndex = np.where(result[:,-2] == 2)
-    elementsToUpdate = result[wrongIndex]
+    wrongIndex = np.where(tmpStarts[:, -2] == 2)
+    elementsToUpdate = tmpStarts[wrongIndex]
 
     while len(elementsToUpdate) > 0:
-        updatedCombinedIndex = elementsToUpdate[:,-1]
-        updatedCombinedIndex -= 1
-        # TODO: check for underflow?
+        combinedIndex = elementsToUpdate[:,-1]
+        updatedCombinedIndex = combinedIndex - 1
 
+        # TODO: check for underflow?
         newElements = combined[updatedCombinedIndex]
 
-        updatedEncoding = newElements[:,-2]
-        updatedIndex = newElements[:,-3]
-
-        # Update result array
-        result[wrongIndex,-1] = updatedCombinedIndex
-        result[wrongIndex,-2] = updatedEncoding
-        result[wrongIndex,-3] = updatedIndex
+        # Update combined index
+        tmpStarts[wrongIndex,-1] = newElements[:,-1]
+        # Update encoding
+        tmpStarts[wrongIndex,-2] = newElements[:,-2]
+        # Update index
+        tmpStarts[wrongIndex,-3] = newElements[:,-3]
 
         # Update elementsToUpdate
-        wrongIndex = np.where(result[:,-2] == 2)
-        elementsToUpdate = combined[wrongIndex]
+        wrongIndex = np.where(tmpStarts[:,-2] == 2)
+        elementsToUpdate = tmpStarts[wrongIndex]
 
-    print("**** Result after index update ****")
-    starts = result[:,0]/8
-    print("starts \n {0}".format(starts))
+    # Res
+    # Codedvalue, index, encoding, combinedIndex
+
+    starts = tmpStarts[:,0]/8
     ends = starts + allEventLengths[allStartIndexes]
-    print("ends \n {0}".format(ends))
-    print("index \n {0}".format(result[:,-3]))
-    print("encode \n {0}".format(result[:,-2]))
-    print("------------------")
 
-    return result
+    trackIndex = tmpStarts[:-1]
+
+    return (starts, ends, trackIndex)
