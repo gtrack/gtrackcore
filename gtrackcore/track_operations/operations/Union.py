@@ -7,19 +7,16 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.TrackContents import TrackContents
-import gtrackcore.track_operations.raw_operations.union.Segments as Segments
-import gtrackcore.track_operations.raw_operations.union.Points as Points
-import gtrackcore.track_operations.raw_operations.union.ValuedPoints as \
-    ValuedPoints
-import gtrackcore.track_operations.raw_operations.union.LinkedPoints as \
-    LinkedPoints
-import gtrackcore.track_operations.raw_operations.union.LinkedValuedPoints \
-    as LinkedValuedPoints
-
-from gtrackcore.track_operations.exeptions.Operations import \
-    OutputTrackTypeNotSupportedError
+from gtrackcore.track_operations.raw_operations.Union import union
 
 
+from gtrackcore.track_operations.RawOperationContent import RawOperationContent
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createRawResultTrackView
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createTrackContentFromFile
+
+from gtrackcore.track_operations.Genome import Genome
 
 class Union(Operator):
     _NUM_TRACKS = 2
@@ -29,111 +26,60 @@ class Union(Operator):
     _RESULT_IS_TRACK = True
 
     # Output track (Points)
+    # Change to trackFormatReq
     _RESULT_TRACK_REQUIREMENTS = TrackFormat([], None, None, None, None, None,
                                              None, None)
 
-    def _call(self, region, tv1, tv2):
-        # TODO, test if input track are compatible with output requirements.
-        # TODO. support overlapping tracks.
-        # TODO, check for "stupid" usage. If input is Segments, and out is
-        # Points.
-        req = self._RESULT_TRACK_REQUIREMENTS
-        if req.isDense():
-            # GP, SP, F, LGP, LSF, LF, LBP
-            # A dense output track type is not supported.
-            # The input tracks is defined to not be dense, and a union of
-            # such tracks does not make sense in this context.
-            raise OutputTrackTypeNotSupportedError("Dense", "Union")
-        else:
-            # P, VP, S, VS, LP, LVP, LS, LVS
-            if req.isValued():
-                # VP, VS LVP LVS
-                if req.isInterval():
-                    # VS, LVS
-                    if req.isLinked():
-                        # LVS
-                        raise OutputTrackTypeNotSupportedError(
-                            "Linked Valued Segments", "Union")
-                    else:
-                        # VS
-                        raise OutputTrackTypeNotSupportedError(
-                            "Valued Segments", "Union")
-                else:
-                    # VP, LVP
-                    if req.isLinked():
-                        # Linked Valued Points
-                        t1Starts = tv1.startsAsNumpyArray()
-                        t1Ends = tv1.endsAsNumpyArray()
-                        t1Vals = tv1.valsAsNumpyArray()
-                        t1Edges = tv1.edgesAsNumpyArray()
-                        t2Starts = tv2.startsAsNumpyArray()
-                        t2Ends = tv2.endsAsNumpyArray()
-                        t2Vals = tv2.valsAsNumpyArray()
-                        t2Edges = tv2.edgesAsNumpyArray()
-                        (starts, ends, values, edges) = \
-                            LinkedValuedPoints.union(t1Starts, t1Ends, t1Vals,
-                                                     t1Edges, t2Starts,
-                                                     t2Ends, t2Vals, t2Edges)
-                        return self._createTrackView(region, starts, ends,
-                                                     valList=values,
-                                                     edgesList=edges)
-                    else:
-                        # Valued Points
-                        t1Starts = tv1.startsAsNumpyArray()
-                        t1Ends = tv1.endsAsNumpyArray()
-                        t1Vals = tv1.valsAsNumpyArray()
-                        t2Starts = tv2.startsAsNumpyArray()
-                        t2Ends = tv2.endsAsNumpyArray()
-                        t2Vals = tv2.valsAsNumpyArray()
-                        (starts, ends, values) = \
-                            ValuedPoints.union(t1Starts, t1Ends, t1Vals,
-                                               t2Starts, t2Ends, t2Vals)
-                        return self._createTrackView(region, starts, ends,
-                                                     valList=values)
-            else:
-                # P, S, LP, LS
-                if req.isInterval():
-                    # S, LS
-                    if req.isLinked():
-                        # LS
-                        raise OutputTrackTypeNotSupportedError(
-                            "Linked Segments", "Union")
-                    else:
-                        # Segments
-                        t1Starts = tv1.startsAsNumpyArray()
-                        t1Ends = tv1.endsAsNumpyArray()
-                        t2Starts = tv2.startsAsNumpyArray()
-                        t2Ends = tv2.endsAsNumpyArray()
-                        (starts, ends) = Segments.union(t1Starts,t1Ends,
-                                                        t2Starts, t2Ends)
-                        return self._createTrackView(region, starts, ends)
+    _TEST = TrackFormatReq(name="points")
 
-                else:
-                    # P, LP
-                    if req.isLinked():
-                        # Linked Points
-                        # Edge wights are save in the edge..
-                        # TODO: add strands..?
-                        t1Starts = tv1.startsAsNumpyArray()
-                        t1Ends = tv1.endsAsNumpyArray()
-                        t1Edges = tv1.edgesAsNumpyArray()
-                        t2Starts = tv2.startsAsNumpyArray()
-                        t2Ends = tv2.endsAsNumpyArray()
-                        t2Edges = tv2.edgesAsNumpyArray()
-                        (starts, ends, edges) = \
-                            LinkedPoints.union(t1Starts, t1Ends, t1Edges,
-                                               t2Starts, t2Ends, t2Edges)
-                        return self._createTrackView(region, starts, ends,
-                                                     edgesList=edges)
-                    else:
-                        # Points
-                        t1Starts = tv1.startsAsNumpyArray()
-                        t1Ends = tv1.endsAsNumpyArray()
-                        t2Starts = tv2.startsAsNumpyArray()
-                        t2Ends = tv2.endsAsNumpyArray()
-                        (starts, ends) = Points.union(t1Starts, t1Ends,
-                                                      t2Starts, t2Ends)
-                        return self._createTrackView(region, starts, ends)
+    def _call(self, region, tv1, tv2):
+        rawTrack1 = RawOperationContent(self._resultGenome, region, tv=tv1)
+        rawTrack2 = RawOperationContent(self._resultGenome, region, tv=tv2)
+
+        ret = union(rawTrack1, rawTrack2)
+
+        if ret is not None:
+            assert len(ret) == 3
+            return createRawResultTrackView(ret[1], ret[1], ret[2],
+                                            rawTrack1,
+                                            self._RESULT_ALLOW_OVERLAPS)
+        else:
+            return None
+
+    @classmethod
+    def createSubParser(cls, subparsers):
+        """
+        Creates a subparser. Used by GTool
+        :param subparsers:
+        :return: None
+        """
+        parser = subparsers.add_parser('intersect', help='Find the intersect of two tracks')
+        parser.add_argument('trackA', help='File path of track A')
+        parser.add_argument('trackB', help='File path of track B')
+        parser.add_argument('genome', help='File path of Genome definition')
+        parser.add_argument('--allowOverlap', action='store_true',
+                            help="Allow overlap in the resulting track")
+        parser.set_defaults(which='Intersect')
+
+    @classmethod
+    def createOperation(cls, args):
+        """
+        Generator classmethod used by GTool
+
+        :param args: args from GTool
+        :return: Intersect object
+        """
+        genome = Genome.createFromJson(args.genome)
+
+        trackA = createTrackContentFromFile(genome, args.trackA,
+                                            args.allowOverlap)
+        trackB = createTrackContentFromFile(genome, args.trackB,
+                                            args.allowOverlap)
+
+        allowOverlap = args.allowOverlap
+        # TODO: use overlap...
+
+        return Union(trackA, trackB)
 
     def setResultTrackRequirements(self, trackFormat):
         """
@@ -173,3 +119,5 @@ class Union(Operator):
                                                        allowOverlaps=False),
                                         TrackFormatReq(dense=False,
                                                        allowOverlaps=False)]
+
+
