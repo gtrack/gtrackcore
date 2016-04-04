@@ -33,6 +33,8 @@ def union(t1Starts, t1Ends, t1Values, t1Edges, t2Starts, t2Ends, t2Values,
     t1Encode = np.zeros(len(t1Starts)) + 1
     t2Encode = np.zeros(len(t2Starts)) + 2
 
+    # Bytte ut values og edges med range(0, len(t1Start)
+
     t1 = np.column_stack((t1Starts, t1Values, t1Edges, t1Encode))
     t2 = np.column_stack((t2Starts, t2Values, t2Edges, t2Encode))
 
