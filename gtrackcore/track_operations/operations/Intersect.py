@@ -11,6 +11,8 @@ from gtrackcore.track_operations.RawOperationContent import RawOperationContent
 from gtrackcore.track_operations.utils.TrackHandling import \
     createTrackContentFromFile
 from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createRawResultTrackView
 
 class Intersect(Operator):
     _NUM_TRACKS = 2
@@ -23,36 +25,26 @@ class Intersect(Operator):
 
     def _call(self, region, tv1, tv2):
 
-        #t1Starts = tv1.startsAsNumpyArray()
-        #t1Ends = tv1.endsAsNumpyArray()
-        #t2Starts = tv2.startsAsNumpyArray()
-        #t2Ends = tv2.endsAsNumpyArray()
-
-        #t1Vals = tv1.valsAsNumpyArray()
-        #t2Vals = tv2.valsAsNumpyArray()
-
         rawTrack1 = RawOperationContent(self._resultGenome, region, tv=tv1)
         rawTrack2 = RawOperationContent(self._resultGenome, region, tv=tv2)
 
-        print("Starts: {0}".format(rawTrack1.starts))
-        print("Starts tv: {0}".format(tv1.startsAsNumpyArray()))
+        ret = intersect(rawTrack1, rawTrack2)
 
-        print("Ends: {0}".format(rawTrack1.ends))
-        print("Ends tv: {0}".format(tv1.endsAsNumpyArray()))
-
-        rawRes = intersect(rawTrack1, rawTrack2)
-
-        print("In Intersect call!!")
-
-        #returnTv = self._createTrackView(region, starts, ends)
-        #return returnTv
-
-        return rawRes
+        if ret != None:
+            assert len(ret) == 3
+            return createRawResultTrackView(ret[1], ret[1], ret[2],
+                                            rawTrack1,
+                                            self._RESULT_ALLOW_OVERLAPS)
+        else:
+            return None
 
     @classmethod
     def createSubParser(cls, subparsers):
-        import argparse
-
+        """
+        Creates a subparser. Used by GTool
+        :param subparsers:
+        :return: None
+        """
         parser = subparsers.add_parser('intersect', help='Find the intersect of two tracks')
         parser.add_argument('trackA', help='File path of track A')
         parser.add_argument('trackB', help='File path of track B')
@@ -66,8 +58,8 @@ class Intersect(Operator):
         """
         Generator classmethod used by GTool
 
-        :param args:
-        :return:
+        :param args: args from GTool
+        :return: Intersect object
         """
         genome = Genome.createFromJson(args.genome)
 
@@ -80,6 +72,3 @@ class Intersect(Operator):
         # TODO: use overlap...
 
         return Intersect(trackA, trackB)
-
-    def test(self):
-        print("loff")
