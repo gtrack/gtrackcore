@@ -56,6 +56,8 @@ class RawOperationContent(object):
         # Extras need key. Fixing this later
         # self.extras = tv.extrasAsNumpyArray()
 
+        assert len(self.__starts) == len(self.__ends)
+
     # **** Properties ****
     @property
     def genome(self):
