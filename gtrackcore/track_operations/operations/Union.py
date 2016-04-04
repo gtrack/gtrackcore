@@ -36,7 +36,7 @@ class Union(Operator):
         rawTrack1 = RawOperationContent(self._resultGenome, region, tv=tv1)
         rawTrack2 = RawOperationContent(self._resultGenome, region, tv=tv2)
 
-        ret = union(rawTrack1, rawTrack2)
+        ret = union(rawTrack1, rawTrack2, self._RESULT_ALLOW_OVERLAPS)
 
         if ret is not None:
             assert len(ret) == 3
