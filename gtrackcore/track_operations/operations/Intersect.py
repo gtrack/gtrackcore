@@ -30,7 +30,7 @@ class Intersect(Operator):
 
         ret = intersect(rawTrack1, rawTrack2)
 
-        if ret != None:
+        if ret is not None:
             assert len(ret) == 3
             return createRawResultTrackView(ret[1], ret[1], ret[2],
                                             rawTrack1,
