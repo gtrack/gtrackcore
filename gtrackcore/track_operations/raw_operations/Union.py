@@ -1,11 +1,8 @@
 
 import numpy as np
 from gtrackcore.track_operations.RawOperationContent import RawOperationContent
-from gtrackcore.track.format.TrackFormat import TrackFormatReq
 
-from gtrackcore.track_operations.RawOperationsTools import generateTrackFromResult
-
-def union(track1, track2, resultReq):
+def union(track1, track2, allowOverlap):
     """
     Any input -> any output..
     calculate the union and return index.
@@ -13,13 +10,9 @@ def union(track1, track2, resultReq):
     Only points and segments overlap..
     """
 
-    # Variables used by the class operation
-    _ALLOW_OVERLAP = False
-    _RES_ALLOW_OVERLAP = False
-
     assert isinstance(track1, RawOperationContent)
+    assert track1.starts is not None
     assert isinstance(track2, RawOperationContent)
-    assert isinstance(resultReq, TrackFormatReq)
 
     t1Index = np.arange(0, len(track1), 1)
     t2Index = np.arange(0, len(track2), 1)
@@ -39,7 +32,7 @@ def union(track1, track2, resultReq):
     # If we have more information then the starts/ends it makes more sense to
     #  keep both segments with all of the extra data.
 
-    if not _RES_ALLOW_OVERLAP:
+    if not allowOverlap:
         # Check first is a segment is completely inside another segment
         # If it is we remove it.
         # if end[n] > end[n+1] => remover n
@@ -82,12 +75,9 @@ def union(track1, track2, resultReq):
             res[:, -1] = encoding
 
     # Replace index, encoding with -> value, link, strand, extra ect.
-
     # Extract the starts, values and links
     starts = res[:, 0]
     ends = res[:, 1]
     index = res[:, -2]
 
-#    generateTrackFromResult(res, [track1, track2], resultReq)
-
-    return res
+    return starts, ends, index
