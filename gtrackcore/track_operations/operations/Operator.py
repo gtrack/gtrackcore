@@ -7,8 +7,6 @@ from os.path import dirname, basename, isfile
 
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track.core.TrackView import TrackView
-from gtrackcore.track.format.TrackFormat import TrackFormatReq
-import inspect
 
 class InvalidArgumentError(Exception):
     pass
@@ -16,23 +14,32 @@ class InvalidArgumentError(Exception):
 class Operator(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
+
+        self._allowOverlap = False
+        self._numTracks = 0
+        self._resultIsTrack = False
+        self._trackRequirements = None
+        self._resultAllowOverlaps = False
+        self._resultTrackRequirements = None
+        self._setConfig()
+
         self._args = args
         self._nestedOperator = False
         self._checkArgs()
 
     def _checkArgs(self):
 
-        if len(self._args) != self._NUM_TRACKS:
+        if len(self._args) != self.numTracks:
             raise InvalidArgumentError("Operation requires %s tracks, but %s tracks were given"
-                                       % (self._NUM_TRACKS, len(self._args)))
+                                       % (self.numTracks, len(self._args)))
 
         for i, arg in enumerate(self._args):
             if isinstance(arg, Operator):
                 # Track is another operator
                 self._nestedOperator = True
-                trackReq = self._TRACK_REQUIREMENTS[i]
-                trackFormat = arg._RESULT_TRACK_REQUIREMENTS
+                trackReq = self.trackRequirements[i]
+                trackFormat = arg.resultTrackRequirements
 
                 if not trackReq.isCompatibleWith(trackFormat):
                     raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
@@ -42,8 +49,9 @@ class Operator(object):
                 if not isinstance(arg, TrackContents):
                     raise InvalidArgumentError("Operation requires TrackContent objects as arguments")
 
-                trackReq = self._TRACK_REQUIREMENTS[i]
+                trackReq = self.trackRequirements[i]
                 trackFormat = arg.firstTrackView().trackFormat
+
                 if not trackReq.isCompatibleWith(trackFormat):
                     raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
                                                "the following requirements: %s. " % trackReq +
@@ -90,16 +98,65 @@ class Operator(object):
             tv = self._call(region, *trackViewPerArg)
             out[region] = tv
 
-        if self._RESULT_IS_TRACK:
+        if self.resultIsTrack:
             return TrackContents(self._resultGenome, out)
         else:
             # The result is not a track. Int, float, etc.
             return out
 
+    # **** Abstract methods ****
     @abc.abstractmethod
     def _call(self, *args):
+        """
+        Main run method. This will be called one time per region.
+        :param args: Arguments of operation (track views, region, ect..)
+        :return: Result of operation
+        """
         pass
 
+    @abc.abstractmethod
+    def _parseKwargs(self, **kwargs):
+        """
+        Parse the kwargs if any. Used to give options to operations. We are
+        using kwargs so we can separate the tracks (witch are checked in the
+        the superclass method _checkArgs) and options specific to the
+        operation at hand
+        optional agruments.
+        :param kwargs: Kwargs form init
+        :return: None
+        """
+        pass
+
+    @abc.abstractmethod
+    def _updateTrackFormat(self):
+        """
+        Called when we have updated some of the properties that the track
+        requirement depend on.
+
+        The implemented method should create a new track requirement using
+        the properties.
+        :return: None
+        """
+        pass
+
+    @abc.abstractmethod
+    def _updateResultTrackFormat(self):
+        """
+        Equal to _updateTrackFormat but now updating the result track
+        requirments (if any)
+        :return: None
+        """
+        pass
+
+    @abc.abstractmethod
+    def _setConfig(self):
+        """
+        This method should sett all of the required properties of a operation.
+        :return: None
+        """
+        pass
+
+    # **** Abstract class methods ****
     @classmethod
     @abc.abstractmethod
     def createSubParser(cls, subparsers):
@@ -111,12 +168,79 @@ class Operator(object):
         """
         Used by GTools.
         Create a operation object from the arguments given from GTools.
-
         :param args: Arguments from the parser in GTools
         :return: A operation object.
         """
         pass
 
+    # **** Common properties ***
+    # Properties common to all operation
+    # Setters are only defined for properties that can be changed without
+    # braking the operation.
+
+    @property
+    def allowOverlaps(self):
+        """
+        Define if we allow overlapping segments in the input tracks.
+        :return: None
+        """
+        return self._allowOverlap
+
+    @allowOverlaps.setter
+    def allowOverlaps(self, allowOverlap):
+        assert isinstance(allowOverlap, bool)
+        self._allowOverlap = allowOverlap
+        self._updateTrackFormat()
+
+    @property
+    def numTracks(self):
+        """
+        The number of tracks a operation uses as input.
+        :return: None
+        """
+        return self._numTracks
+
+    @property
+    def trackRequirements(self):
+        """
+        The TrackFormatReq of the input tracks
+        :return: None
+        """
+        return self._trackRequirements
+
+    # Properties about the result of the operation
+    @property
+    def resultAllowOverlaps(self):
+        """
+        Define if we allow overlapping segments in the result track (if any).
+        :return: None
+        """
+        return self._resultAllowOverlaps
+
+    @resultAllowOverlaps.setter
+    def resultAllowOverlaps(self, allowOverlap):
+        assert isinstance(allowOverlap, bool)
+        # TODO, if result allow overlap and not input
+        self._resultAllowOverlaps = allowOverlap
+        self._updateResultTrackFormat()
+
+    @property
+    def resultIsTrack(self):
+        """
+        Define if result is a track or not.
+        :return: None
+        """
+        return self._resultIsTrack
+
+    @property
+    def resultTrackRequirements(self):
+        """
+        The TrackFormatReq of the result track (if any).
+        :return: None
+        """
+        return self._resultTrackRequirements
+
+    # **** Misc methods ****
     def isNestable(self):
         """
         Check if the operation can be "nested" into another operations.
@@ -127,23 +251,19 @@ class Operator(object):
         changing the call code.
         :return: True if nestable, false else
         """
-        return self._RESULT_IS_TRACK
-
+        return self.resultIsTrack
 
     def getResultRegion(self):
         """
         Returns the regions
         :return:
         """
-        if self.isNestable():
-            # TODO: Se paa denne!
-            # Use extended genome
-            if isinstance(self._args[0], Operator):
-                return self._args[0].getResultRegion()
-            else:
-                return self._args[0].regions
+        # TODO: Se paa denne!
+        # Use extended genome
+        if isinstance(self._args[0], Operator):
+            return self._args[0].getResultRegion()
         else:
-            return None
+            return self._args[0].regions
 
     def getResultGenome(self):
         """
@@ -158,9 +278,12 @@ class Operator(object):
         else:
             return None
 
-    def _createTrackView(self, region, startList=None, endList=None, valList=None, strandList=None, idList=None,
-                        edgesList=None, weightsList=None, extraLists=OrderedDict()):
+    def _createTrackView(self, region, startList=None, endList=None,
+                         valList=None, strandList=None, idList=None,
+                         edgesList=None, weightsList=None,
+                         extraLists=OrderedDict()):
         """
+        TODO move this to a util file?
         Help function used to create a track view.
         :param region:
         :param startList:
@@ -173,8 +296,11 @@ class Operator(object):
         :param extraLists:
         :return:
         """
-        return TrackView(region, startList, endList, valList, strandList, idList, edgesList, weightsList,
-                         borderHandling='crop', allowOverlaps=self._RESULT_ALLOW_OVERLAPS, extraLists=extraLists)
+        return TrackView(region, startList, endList, valList, strandList,
+                         idList, edgesList, weightsList,
+                         borderHandling='crop',
+                         allowOverlaps=self.resultAllowOverlaps,
+                         extraLists=extraLists)
 
 
 def getOperation():
@@ -182,7 +308,7 @@ def getOperation():
     Returns all defined operations. This method is used to create a dynamic
     cli.
 
-    Works in a normal python way. Will ignore any files starting with a
+    Works in the normal pythonic way. Will ignore any files starting with a
     underscore.
 
     TODO: Check that we only add valid operations.
