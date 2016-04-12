@@ -73,7 +73,7 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     if idList:
         idList = np.array(idList)
     if edgeList:
-        edgesList = np.array(edgeList)
+        edgeList = np.array(edgeList)
     if weightsList:
         weightsList = np.array(weightsList)
 
