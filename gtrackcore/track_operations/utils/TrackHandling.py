@@ -1,6 +1,7 @@
 
 import sys
 import os
+import numpy as np
 
 from collections import OrderedDict
 from cStringIO import StringIO
@@ -87,7 +88,8 @@ def printTrackView(tv):
         output['weights'] = weights
 
 
-def createRawResultTrackView(starts, ends, index, track, allowOverlap):
+def createRawResultTrackView(starts, ends, index, encoding, tracks,
+                             allowOverlap):
     """
     Used by operations of create a TrackView out of the result of the raw
     operation.
@@ -106,9 +108,14 @@ def createRawResultTrackView(starts, ends, index, track, allowOverlap):
     :param ends: Numpy array. Ends of the new track.
     :param index: Numpy array. Index in track A corresponding track segment
     in the result
-    :param track: Track used as basis
+    :param encoding: Designates which of the base tracks the intersect is from
+    :param tracks: Tracks used as basis
     :return: TrackView.
     """
+
+    assert len(starts) == len(ends)
+    assert len(ends) == len(index)
+    assert len(index) == len(encoding)
 
     vals = None
     strands = None
@@ -116,29 +123,48 @@ def createRawResultTrackView(starts, ends, index, track, allowOverlap):
     edges = None
     weights = None
 
-    values = vars(track)
+    # iterate all or combine?
 
-    if values['_RawOperationContent__vals'] is not None:
-        v = values['_RawOperationContent__vals']
-        vals = v[index]
+    print("encoding: {0}".format(encoding))
+    print("index: {0}".format(index))
 
-    if values['_RawOperationContent__strands'] is not None:
-        s = values['_RawOperationContent__strands']
-        strands = s[index]
+    for i, track in enumerate(tracks):
+        resTrackIndex = np.where(encoding == (i+1))[0]
+        trackIndex = index[resTrackIndex]
+        values = vars(track)
 
-    if values['_RawOperationContent__ids'] is not None:
-        i = values['_RawOperationContent__ids']
-        ids = i[index]
+        if values['_RawOperationContent__vals'] is not None:
+            if vals is None:
+                vals = np.zeros(len(starts))
+            v = values['_RawOperationContent__vals']
+            vals[resTrackIndex] = v[trackIndex]
 
-    if values['_RawOperationContent__edges'] is not None:
-        e = values['_RawOperationContent__edges']
-        edges = e[index]
+        if values['_RawOperationContent__strands'] is not None:
+            if strands is None:
+                strands = np.zeros(len(starts))
+            s = values['_RawOperationContent__strands']
+            strands[resTrackIndex] = s[trackIndex]
 
-    if values['_RawOperationContent__weights'] is not None:
-        w = values['_RawOperationContent__weights']
-        weights = w[index]
+        if values['_RawOperationContent__ids'] is not None:
+            if ids is None:
+                ids = np.zeros(len(starts))
+            i = values['_RawOperationContent__ids']
+            ids[resTrackIndex] = i[trackIndex]
 
-    # TODO fix extras
+        if values['_RawOperationContent__edges'] is not None:
+            if edges is None:
+                edges = np.zeros(len(starts))
+            e = values['_RawOperationContent__edges']
+            edges[resTrackIndex] = e[trackIndex]
+
+        if values['_RawOperationContent__weights'] is not None:
+            if vals is None:
+                vals = np.zeros(len(starts))
+            w = values['_RawOperationContent__weights']
+            weights[resTrackIndex] = w[trackIndex]
+
+        # TODO fix extras
+
     tv = TrackView(track.region, starts, ends, vals, strands, ids,
                    edges, weights, borderHandling='crop',
                    allowOverlaps=allowOverlap)
