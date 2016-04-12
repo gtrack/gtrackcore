@@ -96,4 +96,3 @@ class Genome(object):
             return self.__regions[region]
         else:
             return None
-
