@@ -126,8 +126,15 @@ def createRawResultTrackView(starts, ends, index, encoding, tracks,
     # iterate all or combine?
 
     for i, track in enumerate(tracks):
-        resTrackIndex = np.where(encoding == (i+1))[0]
-        trackIndex = index[resTrackIndex]
+        if encoding is not None:
+            resTrackIndex = np.where(encoding == (i+1))[0]
+            trackIndex = index[resTrackIndex]
+
+        else:
+            assert len(tracks) == 1
+            resTrackIndex = slice(0,-1)
+            trackIndex = index
+
         values = vars(track)
 
         if values['_RawOperationContent__vals'] is not None:
