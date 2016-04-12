@@ -125,9 +125,6 @@ def createRawResultTrackView(starts, ends, index, encoding, tracks,
 
     # iterate all or combine?
 
-    print("encoding: {0}".format(encoding))
-    print("index: {0}".format(index))
-
     for i, track in enumerate(tracks):
         resTrackIndex = np.where(encoding == (i+1))[0]
         trackIndex = index[resTrackIndex]
