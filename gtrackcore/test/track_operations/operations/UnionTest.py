@@ -8,7 +8,9 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Union import Union
 from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.test.track_operations.OperationTest import createTrackView
+from gtrackcore.test.track_operations.TestUtils import createTrackView
+from gtrackcore.test.track_operations.TestUtils import \
+    createSimpleTestTrackContent
 
 
 class UnionTest(unittest.TestCase):
@@ -21,7 +23,8 @@ class UnionTest(unittest.TestCase):
                             GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
     def _runUnionPointsTest(self, startsA, endsA, startsB, endsB, expStarts,
-                            expEnds):
+                            expEnds, allowOverlap=False,
+                            resultAllowOverlap=False):
         """
         Run a union test over two points tracks.
         The test expects there to only to be segments in chr1,
@@ -34,10 +37,11 @@ class UnionTest(unittest.TestCase):
         :param expEnds: Expected ends after union
         :return:
         """
-        track1 = self._createTrackContent(startsA, endsA)
-        track2 = self._createTrackContent(startsB, endsB)
+        track1 = createSimpleTestTrackContent(startList=startsA, endList=endsA)
+        track2 = createSimpleTestTrackContent(startList=startsB, endList=endsB)
 
-        u = Union(track1, track2)
+        u = Union(track1, track2, allowOverlap=allowOverlap,
+                  resultAllowOverlap=resultAllowOverlap)
 
         tc = u()
 
@@ -57,7 +61,9 @@ class UnionTest(unittest.TestCase):
                                                v.endsAsNumpyArray()))
 
     def _runUnionValuedPointsTest(self, startsA, endsA, valsA, startsB, endsB,
-                                valsB, expStarts, expEnds, expVals):
+                                valsB, expStarts, expEnds, expVals,
+                                  allowOverlap=False,
+                                  resultAllowOverlap=False):
         """
         Run a union test over two Valued points tracks.
         The test expects there to only to be segments in chr1,
@@ -73,14 +79,13 @@ class UnionTest(unittest.TestCase):
         :param expVals: Array of expected values after union
         :return:
         """
-        track1 = self._createTrackContent(startsA, endsA, vals=valsA)
-        track2 = self._createTrackContent(startsB, endsB, vals=valsB)
+        track1 = createSimpleTestTrackContent(startList=startsA,
+                                              endList=endsA, valList=valsA)
+        track2 = createSimpleTestTrackContent(startList=startsB,
+                                              endList=endsB, valList=valsB)
 
-        u = Union(track1, track2)
-
-        # Set result track type to Valued Points
-        resReq = TrackFormat([], None, [], None, None, None, None, None)
-        u.setResultTrackRequirements(resReq)
+        u = Union(track1, track2, allowOverlap=allowOverlap,
+                  resultAllowOverlap=resultAllowOverlap)
 
         tc = u()
 
@@ -118,15 +123,12 @@ class UnionTest(unittest.TestCase):
         :param expEdges: Array of expected edges after union
         :return:
         """
-        track1 = self._createTrackContent(startsA, endsA, edges=edgesA)
-        track2 = self._createTrackContent(startsB, endsB, edges=edgesB)
+        track1 = createSimpleTestTrackContent(startList=startsA,
+                                              endList=endsA, edgeList=edgesA)
+        track2 = createSimpleTestTrackContent(startList=startsB,
+                                              endList=endsB, edgeList=edgesB)
 
         u = Union(track1, track2)
-
-        # Set result track type to Linked Points
-        # TODO: weights?
-        resReq = TrackFormat([], None, None, None, None, [], None, None)
-        u.setResultTrackRequirements(resReq)
 
         tc = u()
 
@@ -169,10 +171,12 @@ class UnionTest(unittest.TestCase):
         :param expEdges: Array of expected edges after union
         :return:
         """
-        track1 = self._createTrackContent(startsA, endsA, vals=valsA,
-                                          edges=edgesA)
-        track2 = self._createTrackContent(startsB, endsB, vals=valsB,
-                                          edges=edgesB)
+        track1 = createSimpleTestTrackContent(startList=startsA,
+                                              endList=endsA, valList=valsA,
+                                              edgeList=edgesA)
+        track2 = createSimpleTestTrackContent(startList=startsB,
+                                              endList=endsB, valList=valsB,
+                                              edgeList=edgesB)
 
         u = Union(track1, track2)
 
@@ -204,7 +208,8 @@ class UnionTest(unittest.TestCase):
                                                v.endsAsNumpyArray()))
 
     def _runUnionSegmentsTest(self, startsA, endsA, startsB, endsB,
-                              expStarts, expEnds):
+                              expStarts, expEnds, allowOverlap=False,
+                              resultAllowOverlap=False):
         """
         Run a union test over two segmented tracks.
         The test expects there to only to be segments in chr1,
@@ -217,14 +222,11 @@ class UnionTest(unittest.TestCase):
         :param expEnds: Array of expected ends after union
         :return: None
         """
-        track1 = self._createTrackContent(startsA, endsA)
-        track2 = self._createTrackContent(startsB, endsB)
+        track1 = createSimpleTestTrackContent(startList=startsA, endList=endsA)
+        track2 = createSimpleTestTrackContent(startList=startsB, endList=endsB)
 
-        u = Union(track1, track2)
-
-        # Set result track type to Segments
-        resReq = TrackFormat([], [], None, None, None, None, None, None)
-        u.setResultTrackRequirements(resReq)
+        u = Union(track1, track2, allowOverlap=allowOverlap,
+                  resultAllowOverlap=resultAllowOverlap)
 
         tc = u()
 
@@ -240,52 +242,56 @@ class UnionTest(unittest.TestCase):
                 self.assertEqual(v.startsAsNumpyArray().size, 0)
                 self.assertEqual(v.endsAsNumpyArray().size, 0)
 
-    def _createTrackContent(self, starts, ends, vals=None, edges=None):
-        """
-        Create a track view a start, end list pair.
-        Help method used in testing. This method will create a hg19 tracks with
-        data in chromosome 1 only.
-        :param starts: Array of track start positions
-        :param ends: Array of track end positions
-        :param vals: Array of track values
-        :param edges: Array of track edges
-        :return: A TrackContent object
-        """
-        starts = np.array(starts)
-        ends = np.array(ends)
-        if vals is not None:
-            vals = np.array(vals)
-
-        if edges is not None:
-            edges = np.array(vals)
-
-        tv = createTrackView(region=self.chr1, startList=starts, endList=ends,
-                             allow_overlap=False, valList=vals,
-                             edgesList=edges)
-
-        d = OrderedDict()
-        d[self.chr1] = tv
-        return TrackContents('hg19', d)
-
     # **** Points tests ****
 
     def testUnionPointsNoOverlap(self):
+        """
+        Points union, no overlap, sorted
+        :return: None
+        """
         self._runUnionPointsTest(startsA=[1,2,3], endsA=[1,2,3],
-                                   startsB=[4,5,6], endsB=[4,5,6],
-                                   expStarts=[1,2,3,4,5,6],
-                                   expEnds=[1,2,3,4,5,6])
+                                 startsB=[4,5,6], endsB=[4,5,6],
+                                 expStarts=[1,2,3,4,5,6],
+                                 expEnds=[1,2,3,4,5,6], allowOverlap=False)
+
+    def testUnionPointsSimpleOverlap(self):
+        """
+        Points union, A and B overlap. No overlap in result.
+        :return: None
+        """
+        self._runUnionPointsTest(startsA=[14,20], endsA=[14,20],
+                                 startsB=[14], endsB=[14],
+                                 expStarts=[14,20],
+                                 expEnds=[14,20],
+                                 resultAllowOverlap=False)
 
     def testUnionPointsOverlap(self):
+        """
+        Points union, A and B overlap, No overlap in result.
+        :return: None
+        """
         self._runUnionPointsTest(startsA=[14,463], endsA=[14,463],
-                                   startsB=[45,463], endsB=[45,463],
-                                   expStarts=[14,45,463],
-                                   expEnds=[14,45,463])
+                                 startsB=[45,463], endsB=[45,463],
+                                 expStarts=[14,45,463],
+                                 expEnds=[14,45,463],
+                                 resultAllowOverlap=False)
+
+    def testUnionPointsOverlapAllowed(self):
+        """
+        Points union, A and B overlap, result overlap
+        :return: None
+        """
+        self._runUnionPointsTest(startsA=[14,463], endsA=[14,463],
+                                 startsB=[45,463], endsB=[45,463],
+                                 expStarts=[14,45,463, 463],
+                                 expEnds=[14,45,463, 463],
+                                 resultAllowOverlap=True)
 
     # **** Valued Points tests ****
 
-    def ttestUnionValuedPointsSorted(self):
+    def testUnionValuedPointsSorted(self):
         """
-        Simple test. No overlap. Pre sorted. Values not sorted.
+        Valued points union, no overlap
         :return: None
         """
         self._runUnionValuedPointsTest(startsA=[1,2,3], endsA=[1,2,3],
@@ -293,11 +299,12 @@ class UnionTest(unittest.TestCase):
                                        endsB=[4,5,6], valsB=[1,2,3],
                                        expStarts=[1,2,3,4,5,6],
                                        expEnds=[1,2,3,4,5,6],
-                                       expVals=[4,5,6,1,2,3])
+                                       expVals=[4,5,6,1,2,3],
+                                       allowOverlap=False)
 
     def testUnionValuedPointsNotSorted(self):
         """
-        Simple test. No overlap. Not sorted. Values not sorted.
+        Valued points union, no overlap
         :return: None
         """
         self._runUnionValuedPointsTest(startsA=[1,3],
@@ -306,9 +313,10 @@ class UnionTest(unittest.TestCase):
                                        endsB=[2], valsB=[8],
                                        expStarts=[1,2,3],
                                        expEnds=[1,2,3],
-                                       expVals=[6,8,7])
+                                       expVals=[6,8,7],
+                                       allowOverlap=False)
 
-    def testUnionValuedPointsOverlapEnd(self):
+    def ptestUnionValuedPointsOverlapEnd(self):
         """
         Simple test. Overlap. Not sorted.
         Overlap at the end of the track.
@@ -321,9 +329,10 @@ class UnionTest(unittest.TestCase):
                                        endsB=[2,10], valsB=[8,100],
                                        expStarts=[1,2,3,10],
                                        expEnds=[1,2,3,10],
-                                       expVals=[6,8,7,45])
+                                       expVals=[6,8,7,45],
+                                       allowOverlap=False)
 
-    def testUnionValuedPointsOverlapStart(self):
+    def ptestUnionValuedPointsOverlapStart(self):
         """
         Simple test. Overlap. Not sorted.
         Overlap at the start of the track.
@@ -338,7 +347,7 @@ class UnionTest(unittest.TestCase):
                                        expEnds=[2,3,10,15],
                                        expVals=[6,7,45,100])
 
-    def testUnionValuedPointsOverlapMultiple(self):
+    def ptestUnionValuedPointsOverlapMultiple(self):
         """
         Simple test. Overlap. Not sorted.
         Multiple overlapping points
@@ -359,11 +368,13 @@ class UnionTest(unittest.TestCase):
 
     def testUnionSegmentsNoOverlap(self):
         """
+        Segments union, no overlap.
         Two non overlapping segments
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[4], startsB=[5],
-                                   endsB=[8], expStarts=[2,5], expEnds=[4,8])
+                                   endsB=[8], expStarts=[2,5], expEnds=[4,8],
+                                   allowOverlap=False)
 
     def testUnionSegmentsOverlapABeforeB(self):
         """
@@ -371,7 +382,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[4], startsB=[3],
-                                   endsB=[5], expStarts=[2], expEnds=[5])
+                                   endsB=[5], expStarts=[2], expEnds=[5],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsOverlapBBeforeA(self):
         """
@@ -379,7 +392,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[3], endsA=[5], startsB=[2],
-                                   endsB=[4], expStarts=[2], expEnds=[5])
+                                   endsB=[4], expStarts=[2], expEnds=[5],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsOverlapBInsideA(self):
         """
@@ -387,7 +402,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[6], startsB=[3],
-                                   endsB=[5], expStarts=[2], expEnds=[6])
+                                   endsB=[5], expStarts=[2], expEnds=[6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsOverlapAInsideB(self):
         """
@@ -395,7 +412,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[3], endsA=[5], startsB=[2],
-                                   endsB=[6], expStarts=[2], expEnds=[6])
+                                   endsB=[6], expStarts=[2], expEnds=[6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsTotalOverlap(self):
         """
@@ -403,7 +422,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[4], startsB=[2],
-                                   endsB=[4], expStarts=[2], expEnds=[4])
+                                   endsB=[4], expStarts=[2], expEnds=[4],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsOverlapBAtStartOfA(self):
         """
@@ -413,7 +434,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[6], startsB=[2],
-                                   endsB=[4], expStarts=[2], expEnds=[6])
+                                   endsB=[4], expStarts=[2], expEnds=[6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsOverlapAAtStartOfB(self):
         """
@@ -423,7 +446,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[4], startsB=[2],
-                                   endsB=[6], expStarts=[2], expEnds=[6])
+                                   endsB=[6], expStarts=[2], expEnds=[6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsOverlapBAtEndOfA(self):
         """
@@ -433,7 +458,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[6], startsB=[4],
-                                   endsB=[6], expStarts=[2], expEnds=[6])
+                                   endsB=[6], expStarts=[2], expEnds=[6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsOverlapAAtEndOfB(self):
         """
@@ -443,25 +470,35 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[4], endsA=[6], startsB=[2],
-                                   endsB=[6], expStarts=[2],expEnds=[6])
+                                   endsB=[6], expStarts=[2],expEnds=[6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsTouchingABeforeB(self):
         """
         Two none overlapping "touching" segments
         A.end == B.start
+
+        We do not combine these at the moment.
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2], endsA=[4], startsB=[4],
-                                   endsB=[6], expStarts=[2],expEnds=[6])
+                                   endsB=[6], expStarts=[2,4],expEnds=[4,6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsTouchingBBeforeA(self):
         """
         Two none overlapping "touching" segments
         A.end == B.start
+
+        We do not combine these at the moment.
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[4], endsA=[6], startsB=[2],
-                                   endsB=[4], expStarts=[2], expEnds=[6])
+                                   endsB=[4], expStarts=[2,4], expEnds=[4,6],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsBJoinsTwoAs(self):
         """
@@ -469,7 +506,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[2, 6], endsA=[4, 8], startsB=[3],
-                                   endsB=[7], expStarts=[2], expEnds=[8])
+                                   endsB=[7], expStarts=[2], expEnds=[8],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
     def testUnionSegmentsAJoinsTwoBs(self):
         """
@@ -477,7 +516,9 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         self._runUnionSegmentsTest(startsA=[3], endsA=[7], startsB=[2, 6],
-                                   endsB=[4, 8], expStarts=[2], expEnds=[8])
+                                   endsB=[4, 8], expStarts=[2], expEnds=[8],
+                                   allowOverlap=False,
+                                   resultAllowOverlap=False)
 
 if __name__ == "__main__":
     unittest.main()
