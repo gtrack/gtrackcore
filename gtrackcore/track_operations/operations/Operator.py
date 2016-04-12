@@ -15,7 +15,6 @@ class Operator(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, *args, **kwargs):
-
         self._allowOverlap = False
         self._numTracks = 0
         self._resultIsTrack = False
@@ -23,6 +22,7 @@ class Operator(object):
         self._resultAllowOverlaps = False
         self._resultTrackRequirements = None
         self._setConfig()
+        self._parseKwargs(**kwargs)
 
         self._args = args
         self._nestedOperator = False
@@ -160,6 +160,13 @@ class Operator(object):
     @classmethod
     @abc.abstractmethod
     def createSubParser(cls, subparsers):
+        """
+        Used by GTools.
+        This method should create a appropriate subparser for the GTool
+        program. Define inputs tracks ect.
+        :param subparsers:
+        :return: None
+        """
         pass
 
     @classmethod
