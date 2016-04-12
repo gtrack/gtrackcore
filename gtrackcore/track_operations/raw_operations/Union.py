@@ -14,11 +14,11 @@ def union(track1, track2, allowOverlap):
     assert track1.starts is not None
     assert isinstance(track2, RawOperationContent)
 
-    t1Index = np.arange(0, len(track1), 1)
-    t2Index = np.arange(0, len(track2), 1)
+    t1Index = np.arange(0, len(track1), 1, dtype='int32')
+    t2Index = np.arange(0, len(track2), 1, dtype='int32')
 
-    t1Encode = np.zeros(len(track1)) + 1
-    t2Encode = np.zeros(len(track2)) + 2
+    t1Encode = np.zeros(len(track1), dtype='int32') + 1
+    t2Encode = np.zeros(len(track2), dtype='int32') + 2
 
     t1 = np.column_stack((track1.starts, track1.ends, t1Index, t1Encode))
     t2 = np.column_stack((track2.starts, track2.ends, t2Index, t2Encode))
@@ -36,11 +36,11 @@ def union(track1, track2, allowOverlap):
         # Check first is a segment is completely inside another segment
         # If it is we remove it.
         # if end[n] > end[n+1] => remover n
-        totalOverlapIndex = np.where(res[:-1,1] > res[1:,1])
+        totalOverlapIndex = np.where(res[:-1,1] >= res[1:,1])
 
         if len(totalOverlapIndex[0]) > 0:
             # As there can be more then one segment inside another segment
-            # we need to iterate over til we have no more total overlap.
+            # we need to iterate over it until we have no more total overlap.
             while len(totalOverlapIndex[0]) != 0:
                 removeIndex = totalOverlapIndex[0]
                 res[:, -1][removeIndex] = -1
@@ -79,5 +79,6 @@ def union(track1, track2, allowOverlap):
     starts = res[:, 0]
     ends = res[:, 1]
     index = res[:, -2]
+    enc = res[:,-1]
 
-    return starts, ends, index
+    return starts, ends, index, enc
