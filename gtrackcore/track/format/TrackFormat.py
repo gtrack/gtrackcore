@@ -130,16 +130,17 @@ class TrackFormat(object):
         return TrackFormat( *lists )
     
     def __init__(self, startList=None, endList=None, valList=None, strandList=None, idList=None, edgesList=None, weightsList=None, extraLists=None):
-        self._dense = (startList == None) #not trackData.has_key('start')
+        self._dense = (startList is None) #not trackData.has_key('start')
         self._val = inferValType(valList) #trackData.has_key('val')
-        self._interval = (endList != None) #trackData.has_key('end')
-        self._linked = (edgesList != None) #trackData.has_key('edges')
-        self._reprDense = ((valList != None or edgesList != None) and startList == None and endList == None)
+        self._interval = (endList is not None) #trackData.has_key('end')
+        self._linked = (edgesList is not None) #trackData.has_key('edges')
+        self._reprDense = ((valList is not None or edgesList is not None) and
+        startList is None and endList is None)
         #( trackData.has_key('val') or trackData.has_key('edges') ) and not trackData.has_key('start') and not trackData.has_key('end')
-        self._hasStrand = (strandList != None) #trackData.has_key('strand')
-        self._hasId = (idList != None) #trackData.has_key('strand')
+        self._hasStrand = (strandList is not None) #trackData.has_key('strand')
+        self._hasId = (idList is not None) #trackData.has_key('strand')
         self._weights = inferWeightType(weightsList) #trackData.has_key('strand')
-        self._extra = extraLists.keys() if extraLists != None else False
+        self._extra = extraLists.keys() if extraLists is not None else False
     
     def isDense(self):
         return self._dense
