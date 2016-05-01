@@ -149,7 +149,8 @@ class TrackView(object):
 
     def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
                  weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict()):
-        assert startList!=None or endList!=None or valList!=None or edgesList!=None
+        assert (startList is not None or endList is not None or
+                valList is not None or edgesList is not None)
         assert borderHandling in ['crop']
 
         self.genomeAnchor = genomeAnchor.getCopy()
