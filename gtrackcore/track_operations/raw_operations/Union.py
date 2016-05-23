@@ -1,8 +1,9 @@
 
 import numpy as np
+import logging
 from gtrackcore.track_operations.RawOperationContent import RawOperationContent
 
-def union(track1, track2, allowOverlap):
+def union(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlap):
     """
     Any input -> any output..
     calculate the union and return index.
@@ -10,18 +11,17 @@ def union(track1, track2, allowOverlap):
     Only points and segments overlap..
     """
 
-    assert isinstance(track1, RawOperationContent)
-    assert track1.starts is not None
-    assert isinstance(track2, RawOperationContent)
+    assert len(t1Starts) == len(t1Ends)
+    assert len(t2Starts) == len(t2Ends)
 
-    t1Index = np.arange(0, len(track1), 1, dtype='int32')
-    t2Index = np.arange(0, len(track2), 1, dtype='int32')
+    t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
+    t2Index = np.arange(0, len(t2Starts), 1, dtype='int32')
 
-    t1Encode = np.zeros(len(track1), dtype='int32') + 1
-    t2Encode = np.zeros(len(track2), dtype='int32') + 2
+    t1Encode = np.zeros(len(t1Starts), dtype='int32') + 1
+    t2Encode = np.zeros(len(t2Starts), dtype='int32') + 2
 
-    t1 = np.column_stack((track1.starts, track1.ends, t1Index, t1Encode))
-    t2 = np.column_stack((track2.starts, track2.ends, t2Index, t2Encode))
+    t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
+    t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
 
     combined = np.concatenate((t1, t2))
 
