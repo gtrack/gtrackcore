@@ -2,6 +2,7 @@
 import sys
 import os
 import numpy as np
+import logging
 
 from collections import OrderedDict
 from cStringIO import StringIO
@@ -88,9 +89,12 @@ def printTrackView(tv):
         output['weights'] = weights
 
 
-def createRawResultTrackView(starts, ends, index, encoding, tracks,
+def createRawResultTrackView(starts, ends, index, region, baseTrack,
                              allowOverlap):
     """
+
+    TODO: Expand to support more track types.
+
     Used by operations of create a TrackView out of the result of the raw
     operation.
 
@@ -108,14 +112,15 @@ def createRawResultTrackView(starts, ends, index, encoding, tracks,
     :param ends: Numpy array. Ends of the new track.
     :param index: Numpy array. Index in track A corresponding track segment
     in the result
-    :param encoding: Designates which of the base tracks the intersect is from
-    :param tracks: Tracks used as basis
+    :param region: Genomic region of the trackView
+    :param baseTrack: trackViews. Track used as basis
     :return: TrackView.
     """
 
+    logging.debug("Creating new raw result track view")
+
     assert len(starts) == len(ends)
     assert len(ends) == len(index)
-    assert len(index) == len(encoding)
 
     vals = None
     strands = None
@@ -123,57 +128,40 @@ def createRawResultTrackView(starts, ends, index, encoding, tracks,
     edges = None
     weights = None
 
-    # iterate all or combine?
+    resTrackIndex = slice(0,-1)
+    trackIndex = index
 
-    for i, track in enumerate(tracks):
-        if encoding is not None:
-            resTrackIndex = np.where(encoding == (i+1))[0]
-            trackIndex = index[resTrackIndex]
+    v = baseTrack.valsAsNumpyArray()
+    if v is not None:
+        vals = np.zeros(len(starts))
+        vals[resTrackIndex] = v[trackIndex]
 
-        else:
-            assert len(tracks) == 1
-            resTrackIndex = slice(0,-1)
-            trackIndex = index
+    s = baseTrack.strandsAsNumpyArray()
+    if s is not None:
+        strands = np.zeros(len(starts))
+        strands[resTrackIndex] = s[trackIndex]
 
-        values = vars(track)
+    i = baseTrack.idsAsNumpyArray()
+    if i is not None:
+        ids = np.zeros(len(starts))
+        ids[resTrackIndex] = i[trackIndex]
 
-        if values['_RawOperationContent__vals'] is not None:
-            if vals is None:
-                vals = np.zeros(len(starts))
-            v = values['_RawOperationContent__vals']
-            vals[resTrackIndex] = v[trackIndex]
+    e = baseTrack.edgesAsNumpyArray()
+    if e is not None:
+        edges = np.zeros(len(starts))
+        edges[resTrackIndex] = e[trackIndex]
 
-        if values['_RawOperationContent__strands'] is not None:
-            if strands is None:
-                strands = np.zeros(len(starts))
-            s = values['_RawOperationContent__strands']
-            strands[resTrackIndex] = s[trackIndex]
+    w = baseTrack.weightsAsNumpyArray()
+    if w is not None:
+        vals = np.zeros(len(starts))
+        weights[resTrackIndex] = w[trackIndex]
 
-        if values['_RawOperationContent__ids'] is not None:
-            if ids is None:
-                ids = np.zeros(len(starts))
-            i = values['_RawOperationContent__ids']
-            ids[resTrackIndex] = i[trackIndex]
-
-        if values['_RawOperationContent__edges'] is not None:
-            if edges is None:
-                edges = np.zeros(len(starts))
-            e = values['_RawOperationContent__edges']
-            edges[resTrackIndex] = e[trackIndex]
-
-        if values['_RawOperationContent__weights'] is not None:
-            if vals is None:
-                vals = np.zeros(len(starts))
-            w = values['_RawOperationContent__weights']
-            weights[resTrackIndex] = w[trackIndex]
-
-        # TODO fix extras
-
-    tv = TrackView(track.region, starts, ends, vals, strands, ids,
+    # TODO fix extras
+    # TODO: Fix for other border handling then  cop
+    tv = TrackView(region, starts, ends, vals, strands, ids,
                    edges, weights, borderHandling='crop',
                    allowOverlaps=allowOverlap)
     return tv
-
 
 def createTrackContentFromFile(genome, path, allowOverlaps):
 
