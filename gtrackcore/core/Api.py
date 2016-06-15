@@ -46,7 +46,6 @@ def getAvailableGenomes():
     dirPath = _getDirPath()
     return os.listdir(dirPath)
 
-
 def getAvailableTracks(genome):
     """
     Retuns a list of available tracks for a given genome
@@ -81,7 +80,7 @@ def importFile(fileName, genome, trackName):
 def _convertTrackName(trackName):
     from gtrackcore.util.CommonFunctions import convertTNstrToTNListFormat
     return convertTNstrToTNListFormat(trackName, doUnquoting=True)
-    
+
 def _trackNameExists(genome, trackName):
     from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
     if not ProcTrackOptions.isValidTrack(genome, trackName):
@@ -102,7 +101,7 @@ def listAvailableGenomes():
     for dir in os.listdir(dirPath):
         if dir[0] != '.':
             print '    ' + dir
-    
+
 def listAvailableTracks(genome):
     "genome"
     print 'List of available tracks for genome "%s":' % genome
@@ -110,8 +109,9 @@ def listAvailableTracks(genome):
     
     from gtrackcore.track.hierarchy.ProcTrackNameSource import ProcTrackNameSource
     for trackName in ProcTrackNameSource(genome):
+        print(type(trackName))
         print '    ' + ':'.join(trackName)
-    
+
 def getExtractionOptions(genome, trackName):
     """genome trackName"""
     
@@ -158,7 +158,6 @@ def exportFileInRegion(outFileName, genome, trackName, fileFormatName, allowOver
     
     _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps, bins)
 
-    
 def _usage():
     print 'syntax: '
     print 'to use: [name] [args]'
