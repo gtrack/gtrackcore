@@ -17,11 +17,6 @@ from gtrackcore.track_operations.RawOperationContent import RawOperationContent
 from gtrackcore.track_operations.utils.TrackHandling import \
     createTrackContentFromTrack
 from gtrackcore.track_operations.Genome import Genome
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createRawResultTrackView
-
-
-from gtrackcore.track_operations.raw_operations.Slop import slop
 
 class PrintTrack(Operator):
     """

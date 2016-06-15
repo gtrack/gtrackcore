@@ -123,10 +123,8 @@ class Slop(Operator):
             self._debug = False
 
         if self._debug:
-            print("IN DEBUG!!")
             level = logging.DEBUG
         else:
-            print("IN INFO")
             level = logging.INFO
         logging.basicConfig(stream=sys.stderr, level=level)
 

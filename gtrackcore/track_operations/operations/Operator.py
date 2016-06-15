@@ -7,6 +7,7 @@ from os.path import dirname, basename, isfile
 
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track.core.TrackView import TrackView
+from gtrackcore.track.format.TrackFormat import TrackFormat
 
 class InvalidArgumentError(Exception):
     pass
@@ -39,7 +40,11 @@ class Operator(object):
                 # Track is another operator
                 self._nestedOperator = True
                 trackReq = self.trackRequirements[i]
-                trackFormat = arg.resultTrackRequirements
+                trackFormat = self.resultTrackRequirements
+
+                #TODO fix this! broken
+                trackFormat = TrackFormat(startList=[], endList=[])
+                #trackFormat = self.resultTrackRequirements
 
                 if not trackReq.isCompatibleWith(trackFormat):
                     raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +

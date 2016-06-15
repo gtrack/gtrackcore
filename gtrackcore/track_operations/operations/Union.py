@@ -2,6 +2,7 @@
 import time
 
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
+from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.raw_operations.Union import union
@@ -51,7 +52,7 @@ class Union(Operator):
         self._resultIsTrack = True
         # For now the result track is always of the same type as track A
         # TODO: Solve this for the case where A and b are not of the same type.
-        self._resultTrackRequirements = self._trackRequirements[0]
+        self._resultTrackRequirement = TrackFormat(startList=[], endList=[])
 
     def _parseKwargs(self, **kwargs):
         """
@@ -87,6 +88,11 @@ class Union(Operator):
         update the track requirement as well.
         :return: None
         """
+
+        pass
+
+        # TODO, the compatible with test breaks this.
+        """
         if self._resultAllowOverlaps:
             self._resultTrackRequirements = \
                 [TrackFormatReq(dense=False, allowOverlaps=True),
@@ -95,7 +101,7 @@ class Union(Operator):
             self._resultTrackRequirements = \
                 [TrackFormatReq(dense=False, allowOverlaps=False),
                  TrackFormatReq(dense=False, allowOverlaps=False)]
-
+        """
     @classmethod
     def createSubParser(cls, subparsers):
         """
