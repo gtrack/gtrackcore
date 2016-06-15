@@ -8,7 +8,8 @@ from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.test.track_operations.TestUtils import createTrackView
-
+from gtrackcore.test.track_operations.TestUtils import \
+    createSimpleTestTrackContent
 
 class IntersectTest(unittest.TestCase):
     """
@@ -20,20 +21,12 @@ class IntersectTest(unittest.TestCase):
         self.chromosomes = (GenomeRegion('hg19', c, 0, l)
                             for c, l in GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
-    def _runIntersectTest(self, trackA, trackB, expTrack, allowOverlap=False,
+    def _runIntersectTest(self, startsA, endsA, startsB, endsB, expStarts,
+                          expEnds, allowOverlap=False,
                           resultAllowOverlap=False):
-        """
-        Runs a test over one or more tracks. The number of tracks need to correspond
-        to the operation being tested.
 
-        The expected result need to reflect the operation as well.
-
-        TODO add support for values etc.
-
-        The test expects there to only to be segments in chr1,
-        All other chromosomes need to be of size zero.
-        :return:
-        """
+        trackA = createSimpleTestTrackContent(startList=startsA, endList=endsA)
+        trackB = createSimpleTestTrackContent(startList=startsB, endList=endsB)
 
         u = Intersect(trackA, trackB, allowOverlap=allowOverlap)
         tc = u()
@@ -66,7 +59,7 @@ class IntersectTest(unittest.TestCase):
         d[self.chr1] = tv
         return TrackContents('hg19', d)
 
-    def ptestNoIntersect(self):
+    def testNoIntersect(self):
         """
         No intersect between A and B
         Test for case 1
@@ -75,7 +68,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[2], endsA=[4], startsB=[5], endsB=[8], expStarts=[],
                            expEnds=[])
 
-    def ptestTotalIntersect(self):
+    def testTotalIntersect(self):
         """
         A == b
         :return: None
@@ -83,7 +76,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[2, 6], endsA=[4, 8], startsB=[2, 6], endsB=[4, 8], expStarts=[2, 6],
                               expEnds=[4, 8])
 
-    def ptestABeforeBIntersect(self):
+    def testABeforeBIntersect(self):
         """
         A intersects B at the end of A
         :return: None
@@ -91,7 +84,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[2], endsA=[6], startsB=[4], endsB=[8], expStarts=[4],
                               expEnds=[6])
 
-    def ptestBBeforeAIntersect(self):
+    def testBBeforeAIntersect(self):
         """
         B intersects A at the end of B
         :return: None
@@ -99,7 +92,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[4], endsA=[8], startsB=[2], endsB=[6], expStarts=[4],
                               expEnds=[6])
 
-    def ptestAInsideBIntersect(self):
+    def testAInsideBIntersect(self):
         """
         A is totally inside B
         :return: None
@@ -107,7 +100,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[4], endsA=[6], startsB=[2], endsB=[8], expStarts=[4],
                               expEnds=[6])
 
-    def ptestBInsideAIntersect(self):
+    def testBInsideAIntersect(self):
         """
         B is totally inside A
         :return: None
@@ -115,7 +108,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[2], endsA=[8], startsB=[4], endsB=[6], expStarts=[4],
                               expEnds=[6])
 
-    def ptestAInsideBStartIntersect(self):
+    def testAInsideBStartIntersect(self):
         """
         A is totally inside B, Start of A equals start of B
         :return: None
@@ -123,7 +116,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[2], endsA=[4], startsB=[2], endsB=[8], expStarts=[2],
                               expEnds=[4])
 
-    def ptestBInsideAStartIntersect(self):
+    def testBInsideAStartIntersect(self):
         """
         B is totally inside A, Start of A equals start of B
         :return: None
@@ -131,7 +124,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[2], endsA=[8], startsB=[2], endsB=[4], expStarts=[2],
                               expEnds=[4])
 
-    def ptestAInsideBEndIntersect(self):
+    def testAInsideBEndIntersect(self):
         """
         A is totally inside B, End of A equals start of B
         :return: None
@@ -139,7 +132,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[6], endsA=[8], startsB=[2], endsB=[8], expStarts=[6],
                               expEnds=[8])
 
-    def ptestBInsideAEndIntersect(self):
+    def testBInsideAEndIntersect(self):
         """
         B is totally inside A, End of A equals start of B
         :return: None
@@ -147,7 +140,7 @@ class IntersectTest(unittest.TestCase):
         self._runIntersectTest(startsA=[2], endsA=[8], startsB=[6], endsB=[8], expStarts=[6],
                               expEnds=[8])
 
-    def ptestMultipleIntersect(self):
+    def testMultipleIntersect(self):
         """
         B overlaps multiple segments in A
         :return: None

@@ -19,18 +19,27 @@ class Intersect(Operator):
     def _call(self, region, tv1, tv2):
 
         # Remove RawOperationsContent
-        rawTrack1 = RawOperationContent(self._resultGenome, region, tv=tv1)
-        rawTrack2 = RawOperationContent(self._resultGenome, region, tv=tv2)
+        #rawTrack1 = RawOperationContent(self._resultGenome, region, tv=tv1)
+        #rawTrack2 = RawOperationContent(self._resultGenome, region, tv=tv2)
 
-        ret = intersect(rawTrack1, rawTrack2)
+        t1Starts = tv1.startsAsNumpyArray()
+        t1Ends = tv1.endsAsNumpyArray()
 
-        if ret is not None:
+        t2Starts = tv2.startsAsNumpyArray()
+        t2Ends = tv2.endsAsNumpyArray()
+        ret = intersect(t1Starts, t1Ends, t2Starts, t2Ends,
+                        self._resultAllowOverlaps)
+
+        if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
-            return createRawResultTrackView(ret[0], ret[1], ret[2], None,
-                                            [rawTrack1],
-                                            self._resultAllowOverlaps)
+            return createRawResultTrackView(ret[0], ret[1], ret[2],
+                                            region, tv1,
+                                            self.resultAllowOverlaps)
         else:
             return None
+
+
+
 
     def _setConfig(self):
         # None changeable properties

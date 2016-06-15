@@ -1,24 +1,19 @@
 import numpy as np
 
-def intersect(track1, track2):
+def intersect(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlap):
 
-    # A intersect only works on dense tracks.
-    # If track1 do not have any starts the track is empty.
-    assert track1.starts is not None
+    assert len(t1Starts) == len(t1Ends)
+    assert len(t2Starts) == len(t2Ends)
 
-    # For debugging. Remove later..
-    if len(track1.starts) == 0:
-        return None
+    t1Index = np.arange(0, len(t1Starts), 1)
+    t2Index = np.arange(0, len(t2Starts), 1)
+    t1Encode = np.zeros(len(t1Starts), dtype=np.int) + 1
+    t2Encode = np.zeros(len(t2Starts), dtype=np.int) + 2
 
-    t1Index = np.arange(0, len(track1), 1)
-    t2Index = np.arange(0, len(track2), 1)
-    t1Encode = np.zeros(len(track1), dtype=np.int) + 1
-    t2Encode = np.zeros(len(track2), dtype=np.int) + 2
-
-    t1CodedStarts = track1.starts * 8 + 5
-    t1CodedEnds = track1.ends * 8 + 3
-    t2CodedStarts = track2.starts * 8 + 6
-    t2CodedEnds = track2.ends * 8 + 2
+    t1CodedStarts = t1Starts * 8 + 5
+    t1CodedEnds = t1Ends * 8 + 3
+    t2CodedStarts = t2Starts * 8 + 6
+    t2CodedEnds = t2Ends * 8 + 2
 
     allCodedEvents = np.concatenate((t1CodedStarts, t1CodedEnds,
                                      t2CodedStarts, t2CodedEnds))
@@ -72,6 +67,7 @@ def intersect(track1, track2):
     starts = tmpStarts[:,0]/8
     ends = starts + allEventLengths[allStartIndexes]
 
-    trackIndex = tmpStarts[:-1]
+    trackIndex = tmpStarts[:,-1]
+    #trackEncoding = tmpStarts[:-2]
 
     return (starts, ends, trackIndex)
