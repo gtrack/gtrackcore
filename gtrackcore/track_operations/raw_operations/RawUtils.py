@@ -1,7 +1,7 @@
 
 import numpy as np
 
-def removeOverlap(starts, ends, index)
+def removeOverlap(starts, ends, index):
     # Check first is a segment is completely inside another segment
     # If it is we remove it.
     # if start[n+1] > end[n] => remover n
