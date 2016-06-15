@@ -57,12 +57,15 @@ class GTools(object):
             # check args?
             a = oper.createOperation(self._args)
             res = a()
-            assert isinstance(res, TrackContents)
 
-            # TODO add support for custom name..
-            name = a.createTrackName()
-            logging.debug("Importing track. Name: {0}".format(name))
-            importTrackFromTrackContents(trackContents=res, trackName=name)
+            if res is not None and isinstance(res, TrackContents):
+                # Save result if any
+                # TODO add support for custom name..
+                name = a.createTrackName()
+                logging.debug("Importing track. Name: {0}".format(name))
+                print(res)
+                print(name)
+                importTrackFromTrackContents(trackContents=res, trackName=name)
 
     def _importOperations(self):
         """
