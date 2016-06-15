@@ -2,6 +2,7 @@ __author__ = 'skh'
 
 import logging
 import sys
+import time
 
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
@@ -170,11 +171,12 @@ class Slop(Operator):
                                                     'track a nr of BP.')
         parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('-b', type=int, dest='b')
-        parser.add_argument('-s', type=int, dest='s')
+        parser.add_argument('-b', type=int, dest='both')
+        parser.add_argument('-s', type=int, dest='start')
+        parser.add_argument('-e', type=int, dest='end')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
-        parser.set_defaults(which='Intersect')
+        parser.set_defaults(which='Slop')
 
     @classmethod
     def createOperation(cls, args):
@@ -186,10 +188,33 @@ class Slop(Operator):
         """
         genome = Genome.createFromJson(args.genome)
 
-        track = createTrackContentFromFile(genome, args.trackA,
-                                            args.allowOverlap)
+        track = createTrackContentFromFile(genome, args.track,
+                                           args.allowOverlap)
 
         allowOverlap = args.allowOverlap
         # TODO: use overlap...
 
-        return Slop(track)
+        if 'both' in args:
+            both = args.both
+        else:
+            both = None
+
+        if 'start' in args:
+            start = args.start
+        else:
+            start = None
+
+        if 'end' in args:
+            end = args.end
+        else:
+            end = None
+
+        return Slop(track, both=both, start=start, end=end)
+
+    @classmethod
+    def createTrackName(cls):
+        """
+        Track name used by GTools when saving the track i GTrackCore
+        :return: Generated track name as a string
+        """
+        return "slop-{0}".format(int(time.time()))
