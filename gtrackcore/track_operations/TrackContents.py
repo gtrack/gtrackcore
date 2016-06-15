@@ -8,19 +8,32 @@ from gtrackcore.track_operations.Genome import Genome
 
 class TrackContents(object):
 
-    def __init__(self, genome, trackViewList):
+    def __init__(self, genome, trackViews):
         assert isinstance(genome, Genome)
         self._genome = genome
-        self._trackViews = OrderedDict([(r, tv) for r, tv in trackViewList.items()])
+
+        #self._trackViews = OrderedDict([(r, tv) for r, tv in
+        # trackViewList.items()])
+        self._trackViews = trackViews
 
     def getTrackViews(self):
+        # TODO remove. Check if used and change to the property
+        return self._trackViews
+
+    @property
+    def trackViews(self):
         """
         Get the TrackContents trackViews as a OrderedDict.
         Possible improvement: Make the trackContents iterable instead..
 
         :return: OrderedDict of trackViews.
         """
-        return self._trackViews
+        return self._trackViews.values()
+
+    @property
+    def allowOverlaps(self):
+        # TODO: Do this in a better way..
+        return self._trackViews.items()[0][1].allowOverlaps
 
     @property
     def regions(self):

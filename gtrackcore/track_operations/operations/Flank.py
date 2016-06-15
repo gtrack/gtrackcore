@@ -10,8 +10,12 @@ import gtrackcore.track_operations.raw_operations.flank.Segments as Segments
 from gtrackcore.track_operations.exeptions.Operations import \
     OutputTrackTypeNotSupportedError
 
+from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createTrackContentFromFile
 
-
+# Add strand!
+# Config as properties
 class Flank(Operator):
     _NUM_TRACKS = 1
     _TRACK_REQUIREMENTS = [TrackFormatReq(dense=False, allowOverlaps=False)]
@@ -22,42 +26,48 @@ class Flank(Operator):
     _RESULT_TRACK_REQUIREMENTS = TrackFormat([], [], None, None, None, None,
                                              None, None)
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         super(Flank, self).__init__(*args)
-        self._after = True
-        self._before = True
-        self._flankSize = 100
 
-    # Who do we give other arguments at create time?..
-    def setAfter(self, bool):
-        """
-        Set the after Boolean. If set, the operation will create a flank at
-        the end of each segment.
-        :param bool: Boolean. Create flank from ends if True.
-        :return: None.
-        """
-        # This is probably not the ideal way (UX or otherwise) to do this...
-        # TODO: Find out how to move this to the __init__ method without
-        # TODO: messing up the checkArgs method i Operator...
+        assert 'flankSize' in kwargs.keys()
 
-        self._after = bool
+        if 'flankSize' in kwargs['flankSize']:
+            self._flankSize = kwargs['flankSize']
 
-    def setBefore(self, bool):
-        """
-        Set the before boolean. If set the operation will create a flank at
-        the before each segment.
-        :param bool: Boolean: Create flank from start if True.
-        :return: None.
-        """
-        self._before = bool
+        if 'atStart' in kwargs.keys():
+            assert 'startSize' in kwargs.keys()
+            self._atStart = kwargs['atStart']
+            self._startSize = kwargs['startSize']
 
-    def setFlankSize(self, size):
-        """
-        Set the size of the flank
-        :param size:
-        :return:
-        """
-        self._flankSize = size
+        if 'atEnd' in kwargs.keys():
+            assert 'endSize' in kwargs.keys()
+            self._atEnd = kwargs['atEnd']
+            self._endSize = kwargs['endSize']
+
+    @property
+    def flankSize(self):
+        return self._flankSize
+
+    @flankSize.setter
+    def flankSize(self, flankSize):
+        self._flankSize = flankSize
+
+    @property
+    def atStart(self):
+        return self._atStart
+
+    @atStart.setter
+    def atStart(self, atStart):
+        assert isinstance(atStart, bool)
+        self._atStart = atStart
+
+    @property
+    def atEnd(self):
+        return self._atEnd
+
+    @atEnd.setter
+    def atEnd(self, atEnd):
+        assert isinstance(atEnd, bool)
 
     def _call(self, region, tv):
         # TODO, test if input track are compatible with output requirements.
@@ -157,3 +167,35 @@ class Flank(Operator):
                                                        allowOverlaps=False),
                                         TrackFormatReq(dense=False,
                                                        allowOverlaps=False)]
+
+    @classmethod
+    def createSubParser(self, subparsers):
+        import argparse
+
+        # TODO add more args
+        parser = subparsers.add_parser('flank', help='Create a flank track')
+        parser.add_argument('track', help='File path of base track')
+        parser.add_argument('genome', help='File path of Genome definition')
+        parser.add_argument('flankSize', help="Size of flanks")
+        parser.add_argument('--allow_overlap', action='store_true',
+                            help="Allow overlap in the resulting track")
+        parser.add_argument('-s', '--strands', action='store_true',
+                            help="Ignore strand")
+
+    @classmethod
+    def createOperation(cls, args):
+        """
+        Generator classmethod used by GTool
+
+        :param args: args from GTool
+        :return: Intersect object
+        """
+        genome = Genome.createFromJson(args.genome)
+
+        track = createTrackContentFromFile(genome, args.trackA,
+                                           args.allowOverlap)
+
+        allowOverlap = args.allowOverlap
+        # TODO: use overlap...
+
+        return Flank(track)

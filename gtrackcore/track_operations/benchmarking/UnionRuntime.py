@@ -10,7 +10,7 @@ from collections import OrderedDict
 from cStringIO import StringIO
 
 
-from gtrackcore.track_operations.operations.Union import Union
+from gtrackcore.track_operations.operations._Union import Union
 from gtrackcore.track_operations.TrackContents import TrackContents
 
 from gtrackcore.metadata import GenomeInfo
@@ -155,7 +155,13 @@ class UnionBenchmark(object):
 
         trackViewList = OrderedDict()
 
+        print self.hg18
+        print(type(self.hg18))
+
+
         for region in self.hg18:
+            print(region)
+            print(type(region))
             trackViewList[region] = track.getTrackView(region)
 
         return TrackContents('hg18', trackViewList)

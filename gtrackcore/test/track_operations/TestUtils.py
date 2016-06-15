@@ -58,6 +58,7 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     # Create Genome
 
     # Create trackViewList
+    # TODO, not working..
 
     genome = Genome('hg19', {"chr1": 249250621})
     chr1 = genome.regions[0]
@@ -73,7 +74,7 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     if idList:
         idList = np.array(idList)
     if edgeList:
-        edgeList = np.array(edgeList)
+        edgesList = np.array(edgeList)
     if weightsList:
         weightsList = np.array(weightsList)
 

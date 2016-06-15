@@ -6,7 +6,7 @@ from gtrackcore.track_operations.operations.Union import Union
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.test.track_operations.OperationTest import createTrackView
+from gtrackcore.test.track_operations.TestUtils import createTrackView
 
 
 class NestedOperatorTest(unittest.TestCase):

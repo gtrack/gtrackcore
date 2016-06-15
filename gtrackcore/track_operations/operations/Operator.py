@@ -96,7 +96,9 @@ class Operator(object):
         for region in self.getResultRegion():
             trackViewPerArg = [arg.getTrackView(region) for arg in computedArg]
             tv = self._call(region, *trackViewPerArg)
-            out[region] = tv
+
+            if tv is not None:
+                out[region] = tv
 
         if self.resultIsTrack:
             return TrackContents(self._resultGenome, out)
@@ -177,6 +179,22 @@ class Operator(object):
         Create a operation object from the arguments given from GTools.
         :param args: Arguments from the parser in GTools
         :return: A operation object.
+        """
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def createTrackName(cls):
+        """
+        Used by GTools.
+        Creates a track name that GTools uses when saving the track in
+        GTrackCore.
+
+        >>> operation.createTrackName()
+        union-<date-stamp>
+
+        :return: String. Generated track name for the result of a track
+        operation.
         """
         pass
 

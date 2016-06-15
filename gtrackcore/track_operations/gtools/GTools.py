@@ -2,6 +2,7 @@ __author__ = 'skh'
 
 import os
 import sys
+import logging
 
 import argparse
 import importlib
@@ -12,8 +13,8 @@ from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 
-from gtrackcore.core.Api import listAvailableTracks
-
+from gtrackcore.core.Api import getAvailableTracks
+from gtrackcore.core.Api import importTrackFromTrackContents
 
 class GTools(object):
 
@@ -21,34 +22,47 @@ class GTools(object):
 
         self._importOperations()
         self._createParser()
+        if self._args.debug:
+            level = logging.DEBUG
+        else:
+            level = logging.INFO
+
+        logging.basicConfig(level=level,
+                            format='[%(asctime)s - %(filename)s:%(lineno)s '
+                                   '%(funcName)20s()] %(levelname)7s - '
+                                   '%(message)s')
         self.runOperation()
 
     def runOperation(self):
+        """
+        Run the selected operation.
+        :return: None
+        """
+        logging.debug(self._args)
 
-        print self._args
+        logging.debug("Loaded operations: {0}".format(
+            self._importedOperations.keys()))
 
         operation = self._args.which
 
         if operation == 'list':
-            listAvailableTracks(self._args.genome)
+            self._listTracksInGTrackCore(self._args.genome)
 
-        else :
+        else:
             assert operation in self._importedOperations.keys()
+
+            logging.debug("Running operation: {0}".format(operation))
+
             oper = self._importedOperations[operation]
             # check args?
             a = oper.createOperation(self._args)
             res = a()
-            print(res.genome.name)
+            assert isinstance(res, TrackContents)
 
-            for region in res.regions:
-                starts =  res.getTrackView(region).startsAsNumpyArray()
-                ends =  res.getTrackView(region).endsAsNumpyArray()
-
-                if len(starts) != 0:
-                    print(starts)
-                    print(ends)
-
-
+            # TODO add support for custom name..
+            name = a.createTrackName()
+            logging.debug("Importing track. Name: {0}".format(name))
+            importTrackFromTrackContents(trackContents=res, trackName=name)
 
     def _importOperations(self):
         """
@@ -69,6 +83,26 @@ class GTools(object):
 
             self._importedOperations[operation] = cls
 
+    def _trackInStdin(self):
+        """
+        Testing something..
+
+        Problem: How do we "move" a track over the pipe?
+
+        - Saving it in GTrackCore. Piping the name. Removing the track
+        afterwards.
+
+        - Will the track be track A or B in the second operation?
+            - A as default, switch for B?
+
+        :return: None
+        """
+        if not sys.stdin.isatty():
+            # Running in pipe, trying to parse as track.
+            return None
+        else:
+            return None
+
     def _createParser(self):
         """
         Create the main argparser. Subparsers for each operation
@@ -77,7 +111,8 @@ class GTools(object):
         """
 
         parser = argparse.ArgumentParser(prog='GTools')
-        parser.add_argument('-d', action='store_true', help='Run in debug mode')
+        parser.add_argument('-d', '--debug', action='store_true',
+                            help='Run in debug mode')
         subparsers = parser.add_subparsers(help='Supported commands')
 
         subparser = subparsers.add_parser('list', help='List tracks in '
@@ -89,6 +124,28 @@ class GTools(object):
             operation.createSubParser(subparsers)
 
         self._args = parser.parse_args()
+
+    # **** GTools operations ****
+    def _listTracksInGTrackCore(self, genome):
+        """
+        Print the available tracks for a given genome.
+        :param genome: String. Selected genome
+        :return: None
+        """
+
+        tracks = getAvailableTracks(genome)
+
+        print("Available tracks for genome {0}:".format(genome))
+        for trackName in tracks:
+            print('\t' + ':'.join(trackName))
+
+    def _importTrackFromFile(self, path):
+        """
+        Import track from file into GTrackCore
+        :param path:
+        :return:
+        """
+        raise NotImplementedError
 
 if __name__ == '__main__':
     GTools()

@@ -120,7 +120,15 @@ def createRawResultTrackView(starts, ends, index, region, baseTrack,
     logging.debug("Creating new raw result track view")
 
     assert len(starts) == len(ends)
-    assert len(ends) == len(index)
+
+    if index is None:
+        # TODO: fix for strands
+        tv = TrackView(region, starts, ends, None, None, None,
+                   None, None, borderHandling='crop',
+                   allowOverlaps=allowOverlap)
+        return tv
+    else:
+        assert len(ends) == len(index)
 
     vals = None
     strands = None
@@ -157,7 +165,7 @@ def createRawResultTrackView(starts, ends, index, region, baseTrack,
         weights[resTrackIndex] = w[trackIndex]
 
     # TODO fix extras
-    # TODO: Fix for other border handling then  cop
+    # TODO: Fix for other border handling then crop
     tv = TrackView(region, starts, ends, vals, strands, ids,
                    edges, weights, borderHandling='crop',
                    allowOverlaps=allowOverlap)

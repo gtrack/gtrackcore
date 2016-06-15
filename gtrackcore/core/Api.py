@@ -1,4 +1,66 @@
 import shutil, os, sys
+import logging
+
+from gtrackcore.input.adapters.TrackGenomeElementSource import TrackViewListGenomeElementSource
+from gtrackcore.preprocess.PreProcessTracksJob import PreProcessTrackGESourceJob
+from gtrackcore.track.hierarchy.ProcTrackNameSource import ProcTrackNameSource
+from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
+
+def trackNameExists(genome, trackName):
+    """
+    Check if there exists a track <trackName> in genome <genome>.
+    :param genome: String, name of genome
+    :param trackName: String, name of track
+    :return: True if track exists, false else.
+    """
+    return ProcTrackOptions.isValidTrack(genome, trackName)
+
+def importTrackFromTrackContents(trackContents, trackName):
+    """
+
+    :param trackContents:
+    :param trackName:
+    :return:
+    """
+    genome = trackContents.genome.name
+    trackName = _convertTrackName(trackName)
+
+    logging.debug("Importing trackContent: Name: {0}, genome: {1}".format(
+                  trackName, genome))
+
+    if trackNameExists(genome, trackName):
+        return
+
+    geSource = TrackViewListGenomeElementSource(genome,
+                                                trackContents.trackViews,
+                                                trackName,
+                                                allowOverlaps=trackContents.allowOverlaps)
+    job = PreProcessTrackGESourceJob(genome, trackName, geSource)
+    job.process()
+
+def getAvailableGenomes():
+    """
+    Returns a list of available genomes
+    :return: List of genome names
+    """
+    dirPath = _getDirPath()
+    return os.listdir(dirPath)
+
+
+def getAvailableTracks(genome):
+    """
+    Retuns a list of available tracks for a given genome
+    :param genome: Genome given
+    :return: List of track names
+    """
+    _getDirPath(genome)
+    return ProcTrackNameSource(genome)
+
+def deleteTrack(genome, trackname):
+    # TODO. Remove a track from GTrackCore
+    raise NotImplementedError
+
+# *** Old API ****
 
 def importFile(fileName, genome, trackName):
     """fileName genome trackName"""

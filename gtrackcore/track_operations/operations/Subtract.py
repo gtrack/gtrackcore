@@ -26,16 +26,13 @@ class Subtract(Operator):
         ret = subtract(t1Starts, t1Ends, t2Starts, t2Ends,
                     self._resultAllowOverlaps)
 
-        print(ret)
+        if ret is not None and len(ret[0]) != 0:
+            assert len(ret) == 3
 
-        #if ret is not None and len(ret[0]) != 0:
-        #    assert len(ret) == 4
-
-        #    return createRawResultTrackView(ret[0], ret[1], ret[2], ret[3],
-        #                                    region, [tv1, tv2],
-        #                                    self.resultAllowOverlaps)
-        #else:
-        #    return None
+            return createRawResultTrackView(ret[0], ret[1], ret[2], region,
+                                            tv1, self.resultAllowOverlaps)
+        else:
+            return None
 
     def _setConfig(self):
         # None changeable properties
