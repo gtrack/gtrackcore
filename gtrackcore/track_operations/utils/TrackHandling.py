@@ -196,6 +196,18 @@ def createTrackContentFromFile(genome, path, allowOverlaps):
 
     return TrackContents(genome, trackViewList)
 
+def createTrackContentFromTrack(track, genome):
+    trackViewList = OrderedDict()
+
+    for region in genome.regions:
+        try:
+            trackViewList[region] = track.getTrackView(region)
+        except OSError:
+            # There can be regions that the track does not cover..
+            # This is a temp fix.. should be bare of the api
+            pass
+    return TrackContents(genome, trackViewList)
+
 
 class Capturing(list):
     """
