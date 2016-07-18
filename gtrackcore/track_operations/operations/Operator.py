@@ -79,6 +79,16 @@ class Operator(object):
                 if arg.genome != genomeFirstArg:
                     raise InvalidArgumentError("All tracks must have the same genome")
 
+    def __call__(self, *args, **kwargs):
+        """
+        Legacy, remove at a later point.
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        print("Remove use of __call__!")
+        return self.calculate()
+
     def calculate(self):
         """
         Run operation. Iterates through all regions in a track.
