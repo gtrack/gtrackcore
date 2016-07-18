@@ -18,6 +18,8 @@ class Operator(object):
     def __init__(self, *args, **kwargs):
         self._allowOverlap = False
         self._numTracks = 0
+
+        # subclasse nottrack
         self._resultIsTrack = False
         self._trackRequirements = None
         self._resultAllowOverlaps = False
@@ -77,9 +79,9 @@ class Operator(object):
                 if arg.genome != genomeFirstArg:
                     raise InvalidArgumentError("All tracks must have the same genome")
 
-    def __call__(self):
+    def calculate(self):
         """
-        Call method. Iterates through all regions in a track.
+        Run operation. Iterates through all regions in a track.
 
         TODO: Implement buffering of the results
         :return: The result of the operation as a track or as a ordered dict of the result per region.
@@ -100,7 +102,7 @@ class Operator(object):
 
         for region in self.getResultRegion():
             trackViewPerArg = [arg.getTrackView(region) for arg in computedArg]
-            tv = self._call(region, *trackViewPerArg)
+            tv = self._calculate(region, *trackViewPerArg)
 
             if tv is not None:
                 out[region] = tv
@@ -113,7 +115,7 @@ class Operator(object):
 
     # **** Abstract methods ****
     @abc.abstractmethod
-    def _call(self, *args):
+    def _calculate(self, *args):
         """
         Main run method. This will be called one time per region.
         :param args: Arguments of operation (track views, region, ect..)
