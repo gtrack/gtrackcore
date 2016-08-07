@@ -19,6 +19,10 @@ class Operator(object):
         self._allowOverlap = False
         self._numTracks = 0
 
+        # The result
+        self._out = None
+        self._resultFound = False
+
         # subclasse nottrack
         self._resultIsTrack = False
         self._trackRequirements = None
@@ -93,11 +97,15 @@ class Operator(object):
         """
         Run operation. Iterates through all regions in a track.
 
-        TODO: Implement buffering of the results
-        :return: The result of the operation as a track or as a ordered dict of the result per region.
+        :return: The result of the operation as a track or as a ordered dict
+        of the result per region.
         """
 
-        out = OrderedDict()
+        if self._resultFound:
+            # Result already calculated
+            return self._out
+
+        self._out = OrderedDict()
 
         if self._nestedOperator:
             # There are nested operators in that needs to be computed.
@@ -115,13 +123,13 @@ class Operator(object):
             tv = self._calculate(region, *trackViewPerArg)
 
             if tv is not None:
-                out[region] = tv
+                self._out[region] = tv
 
         if self.resultIsTrack:
-            return TrackContents(self._resultGenome, out)
+            return TrackContents(self._resultGenome, self._out)
         else:
             # The result is not a track. Int, float, etc.
-            return out
+            return self._out
 
     # **** Abstract methods ****
     @abc.abstractmethod
@@ -172,6 +180,16 @@ class Operator(object):
         """
         This method should sett all of the required properties of a operation.
         :return: None
+        """
+        pass
+
+    @abc.abstractmethod
+    def printResult(self):
+        """
+        Used by GTools.
+        Used if the operation returns something other the a new track.
+        GTools uses this method to print the result.
+        :return:
         """
         pass
 
