@@ -54,9 +54,14 @@ class Flank(Operator):
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
-            return createRawResultTrackView(ret[0], ret[1], ret[2],
-                                            region, tv,
-                                            self.resultAllowOverlaps)
+            # We do not care about info from the base track..
+            # the new track will only contain starts, ends and (strands if
+            # present.
+
+            tv = TrackView(region, ret[0], ret[1], None, ret[2], None,
+                           None, None, borderHandling='crop',
+                           allowOverlaps=self._allowOverlap)
+            return tv
         else:
             return None
 
