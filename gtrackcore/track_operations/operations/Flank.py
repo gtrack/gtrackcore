@@ -1,4 +1,8 @@
+__author__ = 'skh'
 
+import logging
+import sys
+import time
 
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
@@ -6,181 +10,181 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.TrackContents import TrackContents
-import gtrackcore.track_operations.raw_operations.flank.Segments as Segments
-from gtrackcore.track_operations.exeptions.Operations import \
-    OutputTrackTypeNotSupportedError
-
-from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.RawOperationContent import RawOperationContent
 from gtrackcore.track_operations.utils.TrackHandling import \
     createTrackContentFromFile
+from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createRawResultTrackView
 
-# Add strand!
-# Config as properties
+
+from gtrackcore.track_operations.raw_operations.Flank import flank
+
 class Flank(Operator):
-    _NUM_TRACKS = 1
-    _TRACK_REQUIREMENTS = [TrackFormatReq(dense=False, allowOverlaps=False)]
-    _RESULT_ALLOW_OVERLAPS = False
-    _RESULT_IS_TRACK = True
+    """
+    Creates a new track of flanking segments.
+    """
+    # s = Slop(track, size)
+    # res = Subtract(s, track)
 
-    # Minimum output track (Segments)
-    _RESULT_TRACK_REQUIREMENTS = TrackFormat([], [], None, None, None, None,
-                                             None, None)
+    def _calculate(self, region, tv):
+        # Remove RawOperationsContent
+        logging.debug("Start call! region:{0}".format(region))
+        starts = tv.startsAsNumpyArray()
+        ends = tv.endsAsNumpyArray()
+        strands = None
 
-    def __init__(self, *args, **kwargs):
-        super(Flank, self).__init__(*args)
+        if not self._ignoreStrand:
+            strands = tv.strandsAsNumpyArray()
+            if strands is None or strands.size == 0:
+                # Track has no strand information, ignoring strands.
+                strands = None
+                self._ignoreStrand = True
 
-        assert 'flankSize' in kwargs.keys()
+        # Get genome size.
+        genomeSize = len(region)
 
-        if 'flankSize' in kwargs['flankSize']:
-            self._flankSize = kwargs['flankSize']
+        ret = flank(starts, ends, genomeSize, strands=strands,
+                    start=self._start, end=self._end, both=self._both,
+                    ignoreStrands=self._ignoreStrand,
+                    useFraction=self._useFraction,
+                    useMissingStrands=self._useMissingStrands,
+                    treatMissingAsPositive=self._treatMissingAsPositive,
+                    allowOverlap=self._allowOverlap, debug=self._debug)
 
-        if 'atStart' in kwargs.keys():
-            assert 'startSize' in kwargs.keys()
-            self._atStart = kwargs['atStart']
-            self._startSize = kwargs['startSize']
-
-        if 'atEnd' in kwargs.keys():
-            assert 'endSize' in kwargs.keys()
-            self._atEnd = kwargs['atEnd']
-            self._endSize = kwargs['endSize']
-
-    @property
-    def flankSize(self):
-        return self._flankSize
-
-    @flankSize.setter
-    def flankSize(self, flankSize):
-        self._flankSize = flankSize
-
-    @property
-    def atStart(self):
-        return self._atStart
-
-    @atStart.setter
-    def atStart(self, atStart):
-        assert isinstance(atStart, bool)
-        self._atStart = atStart
-
-    @property
-    def atEnd(self):
-        return self._atEnd
-
-    @atEnd.setter
-    def atEnd(self, atEnd):
-        assert isinstance(atEnd, bool)
-
-    def _call(self, region, tv):
-        # TODO, test if input track are compatible with output requirements.
-        # TODO. support overlapping tracks.
-        # TODO, check for "stupid" usage. If input is Segments, and out is
-        # Points.
-
-        req = self._RESULT_TRACK_REQUIREMENTS
-        if req.isDense():
-            # GP, SP, F, LGP, LSF, LF, LBS
-            # A dense output track type is not supported.
-            # For now this operation will only work on the segment type
-            # tracks. If does not really make sense to create a flank on a
-            # Function ect.
-
-            raise OutputTrackTypeNotSupportedError("Dense", "Union")
+        if ret is not None and len(ret[0]) != 0:
+            assert len(ret) == 3
+            return createRawResultTrackView(ret[0], ret[1], ret[2],
+                                            region, tv,
+                                            self.resultAllowOverlaps)
         else:
-            # P, VP, S, VS, LP, LVP, LS, LVS
-            if req.isValued():
-                # VP, VS LVP LVS
-                if req.isInterval():
-                    # VS, LVS
-                    if req.isLinked():
-                        # LVS
-                        raise OutputTrackTypeNotSupportedError(
-                            "Linked Valued Segments", "Union")
-                    else:
-                        # VS
-                        raise OutputTrackTypeNotSupportedError(
-                            "Valued Segments", "Union")
-                else:
-                    # VP, LVP
-                    # Point types not supported.
-                    raise OutputTrackTypeNotSupportedError(
-                        "Points", "Union")
-            else:
-                # P, S, LP, LS
-                if req.isInterval():
-                    # S, LS
-                    if req.isLinked():
-                        # LS
-                        raise OutputTrackTypeNotSupportedError(
-                            "Linked Segments", "Union")
-                    else:
-                        # Segments
-                        starts = tv.startsAsNumpyArray()
-                        ends = tv.endsAsNumpyArray()
-                        (starts, ends) = Segments.flank(starts,ends,
-                                                        self._flankSize,
-                                                        len(region),
-                                                        before=self._before,
-                                                        after=self._after)
+            return None
 
-                        return self._createTrackView(region, starts, ends)
+    def _setConfig(self):
+        # None changeable properties
+        self._numTracks = 1
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultIsTrack = True
 
-                else:
-                    # P, LP
-                    # Not supported. A flank can not be a point
-                    raise OutputTrackTypeNotSupportedError(
-                        "Points", "Union")
+        # Set defaults for changeable properties
+        self._allowOverlap = False
+        self._resultAllowOverlaps = False
 
-    def setResultTrackRequirements(self, trackFormat):
+        self._useFraction = False
+        self._useMissingStrands = False
+        self._treatMissingAsPositive = True
+        # For now the result track is always of the same type as track A
+        # TODO: Solve this for the case where A and b are not of the same type.
+        self._resultTrackRequirements = self._trackRequirements[0]
+
+
+    def _parseKwargs(self, **kwargs):
         """
-        Change the track requirements of the output track.
-        This is done using a TrackFormat object.
-
-        The operations needs to support the given TrackFormat object.
-
-        :param trackFormat: A TrackFormat object that defines the output track.
+        :param kwargs:
         :return: None
         """
+        if 'allowOverlap' in kwargs:
+            self._allowOverlap = kwargs['allowOverlap']
+            self._updateTrackFormat()
 
-        self._RESULT_TRACK_REQUIREMENTS = trackFormat
-
-    def setResultAllowOverlap(self, overlap):
-        """
-        Change if the operations allows overlaps in the result track
-        :param overlap: Boolean. Allow overlaps in restult track i true.
-        :return: None
-        """
-        self._RESULT_ALLOW_OVERLAPS = overlap
-
-    def setAllowOverlap(self, overlap):
-        """
-        Change if the operation allows overlapping inputs.
-        :param overlap: Boolean. Allow overlapping inputs if true
-        :return: None
-        """
-
-        if overlap:
-            self._TRACK_REQUIREMENTS = [TrackFormatReq(dense=False,
-                                                       allowOverlaps=True),
-                                        TrackFormatReq(dense=False,
-                                                       allowOverlaps=True)]
+        if 'ignoreStrand' in kwargs:
+            self._ignoreStrand = kwargs['ignoreStrand']
         else:
-            self._TRACK_REQUIREMENTS = [TrackFormatReq(dense=False,
-                                                       allowOverlaps=False),
-                                        TrackFormatReq(dense=False,
-                                                       allowOverlaps=False)]
+            self._ignoreStrand = False
+
+        if 'both' in kwargs:
+            self._both = kwargs['both']
+            if self._both is not None:
+                assert self._both > 0
+        else:
+            self._both = None
+
+        if 'start' in kwargs:
+            self._start = kwargs['start']
+            if self._start is not None:
+                assert self._start > 0
+
+        else:
+            self._start = None
+
+        if 'end' in kwargs:
+            self._end = kwargs['end']
+            if self._end is not None:
+                assert self._end > 0
+        else:
+            self._end = None
+
+        if 'useFraction' in kwargs:
+            # Define inputs as a fraction of the size of the segment.
+            # To be implemented.
+            self._useFraction = kwargs['useFraction']
+
+        if 'useMissingStrands' in kwargs:
+            self._useMissingStrands = kwargs['useMissingStrands']
+
+        if 'treatMissingAsPositive' in kwargs:
+            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
+
+        if 'debug' in kwargs:
+            self._debug = kwargs['debug']
+        else:
+            self._debug = False
+
+        if self._debug:
+            level = logging.DEBUG
+        else:
+            level = logging.INFO
+        logging.basicConfig(stream=sys.stderr, level=level)
+
+    def _updateTrackFormat(self):
+        """
+        If we enable or disable overlapping tracks as input, we need to
+        update the track requirement as well.
+        :return: None
+        """
+        if self._allowOverlap:
+            self._trackRequirements = \
+                [TrackFormatReq(dense=False, allowOverlaps=True),
+                 TrackFormatReq(dense=False, allowOverlaps=True)]
+        else:
+            self._trackRequirements = \
+                [TrackFormatReq(dense=False, allowOverlaps=False),
+                 TrackFormatReq(dense=False, allowOverlaps=False)]
+
+    def _updateResultTrackFormat(self):
+        """
+        If we enable or disable overlapping tracks in the result, we need to
+        update the track requirement as well.
+        :return: None
+        """
+        if self._resultAllowOverlaps:
+            self._resultTrackRequirements = \
+                [TrackFormatReq(dense=False, allowOverlaps=True),
+                 TrackFormatReq(dense=False, allowOverlaps=True)]
+        else:
+            self._resultTrackRequirements = \
+                [TrackFormatReq(dense=False, allowOverlaps=False),
+                 TrackFormatReq(dense=False, allowOverlaps=False)]
 
     @classmethod
-    def createSubParser(self, subparsers):
-        import argparse
-
-        # TODO add more args
-        parser = subparsers.add_parser('flank', help='Create a flank track')
-        parser.add_argument('track', help='File path of base track')
+    def createSubParser(cls, subparsers):
+        """
+        Creates a subparser. Used by GTool
+        :param subparsers:
+        :return: None
+        """
+        parser = subparsers.add_parser('Flank', help='Creates flanking '
+                                                     'segments of a given '
+                                                     'size')
+        parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('flankSize', help="Size of flanks")
-        parser.add_argument('--allow_overlap', action='store_true',
+        parser.add_argument('-b', type=int, dest='both')
+        parser.add_argument('-s', type=int, dest='start')
+        parser.add_argument('-e', type=int, dest='end')
+        parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
-        parser.add_argument('-s', '--strands', action='store_true',
-                            help="Ignore strand")
+        parser.set_defaults(which='Flank')
 
     @classmethod
     def createOperation(cls, args):
@@ -192,10 +196,41 @@ class Flank(Operator):
         """
         genome = Genome.createFromJson(args.genome)
 
-        track = createTrackContentFromFile(genome, args.trackA,
+        track = createTrackContentFromFile(genome, args.track,
                                            args.allowOverlap)
 
         allowOverlap = args.allowOverlap
         # TODO: use overlap...
 
-        return Flank(track)
+        if 'both' in args:
+            both = args.both
+        else:
+            both = None
+
+        if 'start' in args:
+            start = args.start
+        else:
+            start = None
+
+        if 'end' in args:
+            end = args.end
+        else:
+            end = None
+
+        return Flank(track, both=both, start=start, end=end,
+                     allowOverlap=allowOverlap)
+
+    @classmethod
+    def createTrackName(cls):
+        """
+        Track name used by GTools when saving the track i GTrackCore
+        :return: Generated track name as a string
+        """
+        return "slop-{0}".format(int(time.time()))
+
+    def printResult(self):
+        """
+        Operation returns track, not in use
+        :return:
+        """
+        pass
