@@ -56,7 +56,10 @@ class GTools(object):
             oper = self._importedOperations[operation]
             # check args?
             a = oper.createOperation(self._args)
-            res = a()
+            res = a.calculate()
+
+            if a.resultIsTrack():
+                pass
 
             if res is not None and isinstance(res, TrackContents):
                 # Save result if any
