@@ -130,10 +130,18 @@ class FlankTest(unittest.TestCase):
                                             len(self.chr1)],
                                    both=10, debug=True)
 
-    # *** No strand, both, no overlap ***
-
     # *** No strand, both, overlap, fractions ***
+    def testFlankNoStrandBothSimpleFractions(self):
+        """
+        :return: None
+        """
 
+        self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[5,20],
+                                   expEnds=[10,25], both=.5,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** No strand, both, no overlap ***
 
     # *** No strand, start, overlap ***
     def testFlankNoStrandStartSimple(self):
@@ -144,6 +152,17 @@ class FlankTest(unittest.TestCase):
 
         self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[5],
                                    expEnds=[10], start=5, debug=True)
+
+    # *** No strand, start, overlap, fractions ***
+    def testFlankNoStrandStartSimpleFractions(self):
+        """
+        :return: None
+        """
+
+        self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[5],
+                                   expEnds=[10], start=.5,
+                                   useFraction=True,
+                                   debug=True)
 
     # *** No strand, start, no overlap ***
 
@@ -156,6 +175,17 @@ class FlankTest(unittest.TestCase):
 
         self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[20],
                                    expEnds=[25], end=5, debug=True)
+
+    # *** No strand, end, overlap, fraction  ***
+    def testFlankNoStrandEndSimpleFraction(self):
+        """
+        Simple test of end, no strand, overlap allowed.
+        :return: None
+        """
+
+        self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[20],
+                                   expEnds=[25], end=.5,
+                                   useFraction=True, debug=True)
 
     # *** No strand, end, no overlap  ***
     # *** No strand, start and end, overlap ***
