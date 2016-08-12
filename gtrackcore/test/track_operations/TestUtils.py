@@ -63,19 +63,19 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     genome = Genome('hg19', {"chr1": 249250621})
     chr1 = genome.regions[0]
 
-    if startList:
+    if startList is not None:
         startList = np.array(startList)
-    if endList:
+    if endList is not None:
         endList = np.array(endList)
-    if valList:
+    if valList is not None:
         valList = np.array(valList)
-    if strandList:
+    if strandList is not None:
         strandList = np.array(strandList)
-    if idList:
+    if idList is not None:
         idList = np.array(idList)
-    if edgeList:
+    if edgeList is not None:
         edgesList = np.array(edgeList)
-    if weightsList:
+    if weightsList is not None:
         weightsList = np.array(weightsList)
 
     tv = createTrackView(chr1, startList=startList, endList=endList,
