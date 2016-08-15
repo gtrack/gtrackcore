@@ -21,6 +21,7 @@ class Operator(object):
 
         # The result
         self._out = None
+        self._resultTrack = None
         self._resultFound = False
 
         # subclasse nottrack
@@ -103,7 +104,10 @@ class Operator(object):
 
         if self._resultFound:
             # Result already calculated
-            return self._out
+            if self._resultIsTrack:
+                return self._resultTrack
+            else:
+                return self._out
 
         self._out = OrderedDict()
 
@@ -126,9 +130,12 @@ class Operator(object):
                 self._out[region] = tv
 
         if self.resultIsTrack:
-            return TrackContents(self._resultGenome, self._out)
+            self._resultFound = True
+            self._resultTrack = TrackContents(self._resultGenome, self._out)
+            return self._resultTrack
         else:
             # The result is not a track. Int, float, etc.
+            self._resultFound = True
             return self._out
 
     # **** Abstract methods ****

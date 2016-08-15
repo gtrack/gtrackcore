@@ -2,6 +2,19 @@
 import numpy as np
 
 def complement(starts, ends, regionSize, allowOverlap=False):
+    """
+    Creates a complemented track. Create a segment for all area not covered
+    by the input track
+
+    Input :    -----       --- -------         ---
+    Result:----     -------   -       ---------
+
+    :param starts:
+    :param ends:
+    :param regionSize:
+    :param allowOverlap:
+    :return:
+    """
 
     assert starts is not None
     assert ends is not None

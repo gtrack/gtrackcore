@@ -1,4 +1,3 @@
-__author__ = 'skh'
 
 import logging
 import sys
@@ -18,42 +17,58 @@ from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
 
 
-from gtrackcore.track_operations.raw_operations.Slop import slop
+from gtrackcore.track_operations.raw_operations.Merge import merge
 
-class Slop(Operator):
+class Merge(Operator):
     """
-    Extends all of the segments in a track a given number of BP.
+    Merge overlapping segments in a track.
+
+    None dense tracks only
     """
 
     def _calculate(self, region, tv):
-
         # Remove RawOperationsContent
         logging.debug("Start call! region:{0}".format(region))
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
         strands = None
+        values = None
 
-        if not self._ignoreStrand:
+        if self._useStrands:
             strands = tv.strandsAsNumpyArray()
             if strands is None or strands.size == 0:
                 # Track has no strand information, ignoring strands.
                 strands = None
-                self._ignoreStrand = True
+                self._useStrands = True
+        if self._useValues:
+            values = tv.valsAsNumpyArray()
+            if values is None or values.size == 0:
+                # Track has no values, ignoring..
+                values = None
+                self._useValues = False
 
-        # Get genome size.
-        genomeSize = len(region)
-
-        ret = slop(starts, ends, genomeSize, strands=strands,
-                   start=self._start, end=self._end, both=self._both,
-                   ignoreStrands=self._ignoreStrand,
-                   resultAllowOverlap=self._resultAllowOverlaps,
-                   allowOverlap=self._allowOverlap, debug=self._debug)
+        ret = merge(starts, ends, strands=strands, values=values,
+                    useStrands=self._useStrands,
+                    useMissingStrands=self._useMissingStrands,
+                    treatMissingAsPositive=self._treatMissingAsPositive,
+                    useValues=self._useValues,
+                    valueFunction=self._valueFunction)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
-            return createRawResultTrackView(ret[0], ret[1], ret[2],
-                                            region, tv,
-                                            self.resultAllowOverlaps)
+            # We do not care about info from the base track..
+            # the new track will only contain starts, ends and (strands if
+            # present.
+
+            print("In return:")
+            print("starts: {}".format(ret[0]))
+            print("ends: {}".format(ret[1]))
+            print("values: {}".format(ret[2]))
+
+            tv = TrackView(region, ret[0], ret[1], ret[2], None, None,
+                           None, None, borderHandling='crop',
+                           allowOverlaps=self._allowOverlap)
+            return tv
         else:
             return None
 
@@ -62,11 +77,16 @@ class Slop(Operator):
         self._numTracks = 1
         self._trackRequirements = \
             [TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultIsTrack = True
 
         # Set defaults for changeable properties
-        self._allowOverlap = False
-        self._resultAllowOverlaps = False
-        self._resultIsTrack = True
+
+        self._useValues = False
+        self._valueFunction = None
+
+        self._useStrands = False
+        self._useMissingStrands = False
+        self._treatMissingAsPositive = True
         # For now the result track is always of the same type as track A
         # TODO: Solve this for the case where A and b are not of the same type.
         self._resultTrackRequirements = self._trackRequirements[0]
@@ -77,45 +97,23 @@ class Slop(Operator):
         :param kwargs:
         :return: None
         """
-        if 'allowOverlap' in kwargs:
-            self._allowOverlap = kwargs['allowOverlap']
-            self._updateTrackFormat()
 
-        if 'resultAllowOverlap' in kwargs:
-            self._resultAllowOverlaps = kwargs['resultAllowOverlap']
-            self._updateResultTrackFormat()
+        if 'useValues' in kwargs:
+            self._useValues = kwargs['useValues']
 
-        if 'ignoreStrand' in kwargs:
-            self._ignoreStrand = kwargs['ignoreStrand']
+        if 'valueFunction' in kwargs:
+            self._valueFunction = kwargs['valueFunction']
+
+        if 'useStrands' in kwargs:
+            self._useStrands = kwargs['useStrands']
+
+        if 'useMissingStrands' in kwargs:
+            self._useMissingStrands = kwargs['useMissingStrands']
         else:
-            self._ignoreStrand = False
+            self._useMissingStrands = False
 
-        if 'both' in kwargs:
-            self._both = kwargs['both']
-            if self._both is not None:
-                assert self._both > 0
-        else:
-            self._both = None
-
-        if 'start' in kwargs:
-            self._start = kwargs['start']
-            if self._start is not None:
-                assert self._start > 0
-
-        else:
-            self._start = None
-
-        if 'end' in kwargs:
-            self._end = kwargs['end']
-            if self._end is not None:
-                assert self._end > 0
-        else:
-            self._end = None
-
-        if 'useFraction' in kwargs:
-            # Define inputs as a fraction of the size of the segment.
-            # To be implemented.
-            raise NotImplementedError
+        if 'treatMissingAsPositive' in kwargs:
+            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
 
         if 'debug' in kwargs:
             self._debug = kwargs['debug']
@@ -165,8 +163,9 @@ class Slop(Operator):
         :param subparsers:
         :return: None
         """
-        parser = subparsers.add_parser('slop', help='Extends segments in a '
-                                                    'track a nr of BP.')
+        parser = subparsers.add_parser('Merge',
+                                       help='Merge overlapping segments in a '
+                                            'non dense track.' )
         parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
         parser.add_argument('-b', type=int, dest='both')
@@ -174,7 +173,7 @@ class Slop(Operator):
         parser.add_argument('-e', type=int, dest='end')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
-        parser.set_defaults(which='Slop')
+        parser.set_defaults(which='Merge')
 
     @classmethod
     def createOperation(cls, args):
@@ -207,7 +206,8 @@ class Slop(Operator):
         else:
             end = None
 
-        return Slop(track, both=both, start=start, end=end)
+        return Merge(track, both=both, start=start, end=end,
+                     allowOverlap=allowOverlap)
 
     @classmethod
     def createTrackName(cls):
@@ -215,4 +215,11 @@ class Slop(Operator):
         Track name used by GTools when saving the track i GTrackCore
         :return: Generated track name as a string
         """
-        return "slop-{0}".format(int(time.time()))
+        return "merge-{0}".format(int(time.time()))
+
+    def printResult(self):
+        """
+        Operation returns track, not in use
+        :return:
+        """
+        pass

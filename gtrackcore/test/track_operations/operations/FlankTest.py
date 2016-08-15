@@ -77,7 +77,7 @@ class FlankTest(unittest.TestCase):
         self.assertTrue(resFound)
 
     # **** Segments tests ****
-    # *** No strand, both, overlap ***
+    # *** No strand, both ***
     def testFlankNoStrandBothSimple(self):
         """
         :return: None
@@ -130,7 +130,7 @@ class FlankTest(unittest.TestCase):
                                             len(self.chr1)],
                                    both=10, debug=True)
 
-    # *** No strand, both, overlap, fractions ***
+    # *** No strand, both, fractions ***
     def testFlankNoStrandBothSimpleFractions(self):
         """
         :return: None
@@ -141,9 +141,9 @@ class FlankTest(unittest.TestCase):
                                    useFraction=True,
                                    debug=True)
 
-    # *** No strand, both, no overlap ***
+    # *** No strand, both, remove overlap ***
 
-    # *** No strand, start, overlap ***
+    # *** No strand, start ***
     def testFlankNoStrandStartSimple(self):
         """
         Simple test of start, no strand, overlap allowed.
@@ -153,7 +153,7 @@ class FlankTest(unittest.TestCase):
         self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[5],
                                    expEnds=[10], start=5, debug=True)
 
-    # *** No strand, start, overlap, fractions ***
+    # *** No strand, start, fractions ***
     def testFlankNoStrandStartSimpleFractions(self):
         """
         :return: None
@@ -164,9 +164,9 @@ class FlankTest(unittest.TestCase):
                                    useFraction=True,
                                    debug=True)
 
-    # *** No strand, start, no overlap ***
+    # *** No strand, start, remove overlap ***
 
-    # *** No strand, end, overlap  ***
+    # *** No strand, end ***
     def testFlankNoStrandEndSimple(self):
         """
         Simple test of end, no strand, overlap allowed.
@@ -176,7 +176,7 @@ class FlankTest(unittest.TestCase):
         self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[20],
                                    expEnds=[25], end=5, debug=True)
 
-    # *** No strand, end, overlap, fraction  ***
+    # *** No strand, end, fraction  ***
     def testFlankNoStrandEndSimpleFraction(self):
         """
         Simple test of end, no strand, overlap allowed.
@@ -187,8 +187,8 @@ class FlankTest(unittest.TestCase):
                                    expEnds=[25], end=.5,
                                    useFraction=True, debug=True)
 
-    # *** No strand, end, no overlap  ***
-    # *** No strand, start and end, overlap ***
+    # *** No strand, end, remove overlap  ***
+    # *** No strand, start and end ***
     def testFlankNoStrandStartAndEndSimple(self):
         """
         Simple test of start and end, no strand, overlap allowed.
@@ -199,8 +199,20 @@ class FlankTest(unittest.TestCase):
                                    expEnds=[10,25], start=5, end=5,
                                    debug=True)
 
-    # *** No strand, start and end, no overlap ***
-    # *** Strand, both, overlap ***
+    # *** No strand, start and end, fraction ***
+    def testFlankNoStrandStartAndEndSimpleFraction(self):
+        """
+        Simple test of start and end, no strand, overlap allowed. Fraction
+        :return: None
+        """
+
+        self._runFlankSegmentsTest(starts=[10], ends=[20], expStarts=[5,20],
+                                   expEnds=[10,25], start=.5, end=.5,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** No strand, start and end, remove overlap ***
+    # *** Strand, both ***
     def testFlankStrandBothSimple(self):
         """
         :return: None
@@ -219,8 +231,30 @@ class FlankTest(unittest.TestCase):
                                    expStrands=['-','-'], both=5,
                                    debug=True)
 
-    # *** Strand, both, no overlap ***
-    # *** Strand, start, overlap ***
+    # *** Strand, both, fractions ***
+    def testFlankStrandBothSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['+'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['+','+'], both=.5,
+                                   useFraction=True,
+                                   debug=True)
+
+    def testFlankStrandNegativeBothSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['-'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['-','-'], both=.5,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, both, remove overlap ***
+
+    # *** Strand, start ***
     def testFlankStrandStartSimple(self):
         """
         :return: None
@@ -239,8 +273,8 @@ class FlankTest(unittest.TestCase):
                                    expStrands=['-'], start=5,
                                    debug=True)
 
-    # *** Strand, start, no overlap ***
-    # *** Strand, end, overlap ***
+    # *** Strand, start, remove overlap ***
+    # *** Strand, end ***
     def testFlankStrandEndSimple(self):
         """
         :return: None
@@ -259,9 +293,29 @@ class FlankTest(unittest.TestCase):
                                    expStrands=['-'], end=5,
                                    debug=True)
 
+    # *** Strand, end, fraction ***
+    def testFlankStrandEndSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['+'],
+                                   expStarts=[20], expEnds=[25],
+                                   expStrands=['+'], end=.5,
+                                   useFraction=True,
+                                   debug=True)
 
-    # *** Strand, end, no overlap ***
-    # *** Strand, start and end, overlap ***
+    def testFlankStrandNegativeEndSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['-'],
+                                   expStarts=[5], expEnds=[10],
+                                   expStrands=['-'], end=.5,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, end, remove overlap ***
+    # *** Strand, start and end ***
     def testFlankStrandStartAndEndSimple(self):
         """
         :return: None
@@ -280,8 +334,29 @@ class FlankTest(unittest.TestCase):
                                    expStrands=['-','-'], start=5, end=5,
                                    debug=True)
 
-    # *** Strand, start and end, no overlap ***
-    # *** Strand, both, missing positive, overlap ***
+    # *** Strand, start and end, fraction ***
+    def testFlankStrandStartAndEndSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['+'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['+','+'], start=.5, end=.5,
+                                   useFraction=True,
+                                   debug=True)
+
+    def testFlankStrandNegativeStartAndEndSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['-'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['-','-'], start=.5, end=.5,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, start and end, remove overlap ***
+    # *** Strand, both, missing positive ***
     def testFlankStrandBothMissingPositiveSimple(self):
         """
         :return: None
@@ -292,8 +367,21 @@ class FlankTest(unittest.TestCase):
                                    useMissingStrands=True,
                                    debug=True)
 
-    # *** Strand, both, missing positive, no overlap ***
-    # *** Strand, both, missing negative, overlap ***
+    # *** Strand, both, missing positive, fraction ***
+    def testFlankStrandBothMissingPositiveSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['+','+'], both=.5,
+                                   useMissingStrands=True,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, both, missing positive, remove overlap ***
+
+    # *** Strand, both, missing negative ***
     def testFlankStrandBothMissingNegativeSimple(self):
         """
         :return: None
@@ -305,8 +393,21 @@ class FlankTest(unittest.TestCase):
                                    treatMissingAsPositive=False,
                                    debug=True)
 
-    # *** Strand, both, missing negative, no overlap ***
-    # *** Strand, start, missing positive, overlap ***
+    # *** Strand, both, missing negative, fraction ***
+    def testFlankStrandBothMissingNegativeSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['-','-'], both=.5,
+                                   useMissingStrands=True,
+                                   treatMissingAsPositive=False,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, both, missing negative, remove overlap ***
+    # *** Strand, start, missing positive ***
     def testFlankStrandStartMissingPositiveSimple(self):
         """
         :return: None
@@ -317,8 +418,20 @@ class FlankTest(unittest.TestCase):
                                    useMissingStrands=True,
                                    debug=True)
 
-    # *** Strand, start, missing positive, no overlap ***
-    # *** Strand, start, missing negative, overlap ***
+    # *** Strand, start, missing positive, fraction ***
+    def testFlankStrandStartMissingPositiveSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[5], expEnds=[10],
+                                   expStrands=['+'], start=.5,
+                                   useMissingStrands=True,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, start, missing positive, remove overlap ***
+    # *** Strand, start, missing negative ***
     def testFlankStrandStartMissingNegativeSimple(self):
         """
         :return: None
@@ -330,8 +443,21 @@ class FlankTest(unittest.TestCase):
                                    treatMissingAsPositive=False,
                                    debug=True)
 
-    # *** Strand, start, missing negative, no overlap ***
-    # *** Strand, end, missing positive, overlap ***
+    # *** Strand, start, missing negative, fraction ***
+    def testFlankStrandStartMissingNegativeSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[20], expEnds=[25],
+                                   expStrands=['-'], start=.5,
+                                   useMissingStrands=True,
+                                   treatMissingAsPositive=False,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, start, missing negative, remove overlap ***
+    # *** Strand, end, missing positive ***
     def testFlankStrandEndMissingPositiveSimple(self):
         """
         :return: None
@@ -342,8 +468,20 @@ class FlankTest(unittest.TestCase):
                                    useMissingStrands=True,
                                    debug=True)
 
-    # *** Strand, end, missing positive, no overlap ***
-    # *** Strand, end, missing negative, overlap ***
+    # *** Strand, end, missing positive, fraction ***
+    def testFlankStrandEndMissingPositiveSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[20], expEnds=[25],
+                                   expStrands=['+'], end=.5,
+                                   useMissingStrands=True,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, end, missing positive, remove overlap ***
+    # *** Strand, end, missing negative ***
     def testFlankStrandEndMissingNegativeSimple(self):
         """
         :return: None
@@ -355,8 +493,21 @@ class FlankTest(unittest.TestCase):
                                    treatMissingAsPositive=False,
                                    debug=True)
 
-    # *** Strand, end, missing negative, no overlap ***
-    # *** Strand, start and end, missing positive, overlap ***
+    # *** Strand, end, missing negative, fraction ***
+    def testFlankStrandEndMissingNegativeSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[5], expEnds=[10],
+                                   expStrands=['-'], end=.5,
+                                   useMissingStrands=True,
+                                   treatMissingAsPositive=False,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, end, missing negative, remove overlap ***
+    # *** Strand, start and end, missing positive ***
     def testFlankStrandStartAndEndMissingPositiveSimple(self):
         """
         :return: None
@@ -367,8 +518,20 @@ class FlankTest(unittest.TestCase):
                                    useMissingStrands=True,
                                    debug=True)
 
-    # *** Strand, start and end, missing positive, no overlap ***
-    # *** Strand, start and end, missing negative, overlap ***
+    # *** Strand, start and end, missing positive, fraction ***
+    def testFlankStrandStartAndEndMissingPositiveSimpleFraction(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['+','+'], start=.5, end=.5,
+                                   useMissingStrands=True,
+                                   useFraction=True,
+                                   debug=True)
+
+    # *** Strand, start and end, missing positive, remove overlap ***
+    # *** Strand, start and end, missing negative ***
     def testFlankStrandStartAndEndMissingNegativeSimple(self):
         """
         :return: None
@@ -378,6 +541,19 @@ class FlankTest(unittest.TestCase):
                                    expStrands=['-','-'], start=5, end=5,
                                    useMissingStrands=True,
                                    treatMissingAsPositive=False,
+                                   debug=True)
+
+    # *** Strand, start and end, missing negative, fractions ***
+    def testFlankStrandStartAndEndMissingNegativeSimpleFractions(self):
+        """
+        :return: None
+        """
+        self._runFlankSegmentsTest(starts=[10], ends=[20], strands=['.'],
+                                   expStarts=[5,20], expEnds=[10,25],
+                                   expStrands=['-','-'], start=.5, end=.5,
+                                   useMissingStrands=True,
+                                   treatMissingAsPositive=False,
+                                   useFraction=True,
                                    debug=True)
 
 if __name__ == "__main__":

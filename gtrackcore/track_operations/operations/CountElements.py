@@ -12,7 +12,7 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 
 class CountElements(Operator):
 
-    def _call(self, region, tv):
+    def _calculate(self, region, tv):
 
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()

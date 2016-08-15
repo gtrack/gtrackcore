@@ -391,7 +391,6 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
                 res = None
                 if startFlank is not None and endFlank is not None:
                     res = np.concatenate((startFlank, endFlank))
-
                 elif startFlank is not None:
                     res = startFlank
                 elif endFlank is not None:

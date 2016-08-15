@@ -231,7 +231,7 @@ class Flank(Operator):
         Track name used by GTools when saving the track i GTrackCore
         :return: Generated track name as a string
         """
-        return "slop-{0}".format(int(time.time()))
+        return "flank-{0}".format(int(time.time()))
 
     def printResult(self):
         """

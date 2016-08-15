@@ -42,7 +42,7 @@ class SlopTest(unittest.TestCase):
 
         self.assertTrue((u is not None))
 
-        tc = u()
+        tc = u.calculate()
 
         resFound = False
 

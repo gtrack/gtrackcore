@@ -2,15 +2,12 @@
 import time
 
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-
 from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.raw_operations.Shift import shift
-
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
 from gtrackcore.track_operations.utils.TrackHandling import \
     createTrackContentFromFile
-
 from gtrackcore.track_operations.Genome import Genome
 
 class Shift(Operator):
@@ -86,7 +83,6 @@ class Shift(Operator):
         if 'treatMissingAsPositive' in kwargs:
             self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
 
-
     def _updateTrackFormat(self):
         """
         If we enable or disable overlapping tracks as input, we need to
@@ -152,3 +148,6 @@ class Shift(Operator):
         :return: Generated track name as a string
         """
         return "shifted-{0}".format(int(time.time()))
+
+    def printResult(self):
+        pass
