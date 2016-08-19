@@ -131,18 +131,18 @@ class TrackView(object):
         if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
             self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
-            if self._valList != None:
+            if self._valList is not None:
                 self._valList = self._valList[1:]
-            if self._strandList != None:
+            if self._strandList is not None:
                 self._strandList = self._strandList[1:]
-            if self._idList != None:
+            if self._idList is not None:
                 self._idList = self._idList[1:]
-            if self._edgesList != None:
+            if self._edgesList is not None:
                 self._edgesList = self._edgesList[1:]
-            if self._weightsList != None:
+            if self._weightsList is not None:
                 self._weightsList = self._weightsList[1:]
             for key, extraList in self._extraLists.items():
-                if extraList != None:
+                if extraList is not None:
                     self._extraLists[key] = extraList[1:]
         if not self.trackFormat.isDense() and not self.trackFormat.isInterval():
             self._endList = VirtualPointEnd(self._startList)
@@ -272,30 +272,30 @@ class TrackView(object):
         self._startList = self._startList[leftIndex:rightIndex]
         self._endList = self._endList[leftIndex:rightIndex]
 
-        if self._valList != None:
+        if self._valList is not None:
             self._valList = self._valList[leftIndex:rightIndex]
-        if self._strandList != None:
+        if self._strandList is not None:
             self._strandList = self._strandList[leftIndex:rightIndex]
-        if self._idList != None:
+        if self._idList is not None:
             self._idList = self._idList[leftIndex:rightIndex]
-        if self._edgesList != None:
+        if self._edgesList is not None:
             self._edgesList = self._edgesList[leftIndex:rightIndex]
-        if self._weightsList != None:
+        if self._weightsList is not None:
             self._weightsList = self._weightsList[leftIndex:rightIndex]
         for key, extraList in self._extraLists.items():
             self._extraLists[key] = extraList[leftIndex:rightIndex]
         self._updateNumListElements()
 
     def _doDenseSlicing(self, i, j):
-        if self._valList != None:
+        if self._valList is not None:
             self._valList = self._valList[i:j]
-        if self._strandList != None:
+        if self._strandList is not None:
             self._strandList = self._strandList[i:j]
-        if self._idList != None:
+        if self._idList is not None:
             self._idList = self._idList[i:j]
-        if self._edgesList != None:
+        if self._edgesList is not None:
             self._edgesList = self._edgesList[i:j]
-        if self._weightsList != None:
+        if self._weightsList is not None:
             self._weightsList = self._weightsList[i:j]
         for key, extraList in self._extraLists.items():
             self._extraLists[key] = extraList[i:j]
@@ -473,18 +473,18 @@ class TrackViewSlider(object):
             self._slideTV._startList = self._slideTV._startList[1:]
             self._slideTV._endList = self._slideTV._endList[1:]
 
-            if self._slideTV._valList != None:
+            if self._slideTV._valList is not None:
                 self._slideTV._valList = self._slideTV._valList[1:]
-            if self._slideTV._strandList != None:
+            if self._slideTV._strandList is not None:
                 self._slideTV._strandList = self._slideTV._strandList[1:]
-            if self._slideTV._idList != None:
+            if self._slideTV._idList is not None:
                 self._slideTV._idList = self._slideTV._idList[1:]
-            if self._slideTV._edgesList != None:
+            if self._slideTV._edgesList is not None:
                 self._slideTV._edgesList = self._slideTV._edgesList[1:]
-            if self._slideTV._weightsList != None:
+            if self._slideTV._weightsList is not None:
                 self._slideTV._weightsList = self._slideTV._weightsList[1:]
             for key, extraList in self._slideTV._extraLists.items():
-                if extraList != None:
+                if extraList is not None:
                     self._slideTV._extraLists[key] = extraList[1:]
             self._slideTV._updateNumListElements()
             self._prevLeftIndex += 1
@@ -503,18 +503,18 @@ class TrackViewSlider(object):
             self._slideTV._startList = self._fullTV._startList[self._prevLeftIndex:endIndex+1]
             self._slideTV._endList = self._fullTV._endList[self._prevLeftIndex:endIndex+1]
 
-            if self._slideTV._valList != None:
+            if self._slideTV._valList is not None:
                 self._slideTV._valList = self._fullTV._valList[self._prevLeftIndex:endIndex+1]
-            if self._slideTV._strandList != None:
+            if self._slideTV._strandList is not None:
                 self._slideTV._strandList = self._fullTV._strandList[self._prevLeftIndex:endIndex+1]
-            if self._slideTV._idList != None:
+            if self._slideTV._idList is not None:
                 self._slideTV._idList = self._fullTV._idList[self._prevLeftIndex:endIndex+1]
-            if self._slideTV._edgesList != None:
+            if self._slideTV._edgesList is not None:
                 self._slideTV._edgesList = self._fullTV._edgesList[self._prevLeftIndex:endIndex+1]
-            if self._slideTV._weightsList != None:
+            if self._slideTV._weightsList is not None:
                 self._slideTV._weightsList = self._fullTV._weightsList[self._prevLeftIndex:endIndex+1]
             for key, extraList in self._slideTV._extraLists.items():
-                if extraList != None:
+                if extraList is not None:
                     self._slideTV._extraLists[key] = self._fullTV._extraLists[key][self._prevLeftIndex:endIndex+1]
             self._slideTV._updateNumListElements()
             self._prevRightIndex = endIndex + 1
