@@ -23,10 +23,14 @@ class PrintTrack(Operator):
     Print a track in GTrackCore to terminal
     """
 
-    def _call(self, region, tv):
+    def _calculate(self, region, tv):
 
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
+        vals = tv.valsAsNumpyArray()
+        ids = tv.idsAsNumpyArray()
+        edges = tv.edgesAsNumpyArray()
+        weights = tv.weightsAsNumpyArray()
 
         if starts is not None and len(starts) > 0:
             print("Region: {0}".format(region))
@@ -34,8 +38,19 @@ class PrintTrack(Operator):
             for x, y in zip(starts,ends):
                 print("{0:8d} {1:8d}".format(x, y))
 
+            print("*******")
+            print("ids: {}".format(ids))
+            print("type(ids): {}".format(type(ids)))
+            print("edges: {}".format(edges))
+            print("type(edges): {}".format(type(edges)))
+            print("weights: {}".format(weights))
+            print("starts: {}".format(starts))
+            print("type(starts): {}".format(type(starts)))
+            print("ends: {}".format(ends))
+            print("type(ends): {}".format(type(ends)))
+            print("*******")
 
-    def _setConfig(self):
+    def _setConfig(self, args):
         # None changeable properties
         self._numTracks = 1
         self._trackRequirements = \
@@ -44,7 +59,6 @@ class PrintTrack(Operator):
         self._resultAllowOverlaps = False
         self._resultIsTrack = False
         self._resultTrackRequirements = None
-
 
     def _parseKwargs(self, **kwargs):
         """
@@ -63,6 +77,12 @@ class PrintTrack(Operator):
             level = logging.INFO
         logging.basicConfig(stream=sys.stderr, level=level)
 
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self):
+        pass
+
     def _updateTrackFormat(self):
         """
         If we enable or disable overlapping tracks as input, we need to
@@ -79,6 +99,8 @@ class PrintTrack(Operator):
         """
         pass
 
+    def printResult(self):
+        pass
 
     @classmethod
     def createSubParser(cls, subparsers):
