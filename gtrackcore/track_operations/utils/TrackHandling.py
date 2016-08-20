@@ -90,7 +90,7 @@ def printTrackView(tv):
 
 
 def createRawResultTrackView(starts, ends, index, region, baseTrack,
-                             allowOverlap, newStrands=None):
+                             allowOverlap, newStrands=None, newValues=None):
     """
 
     TODO: Expand to support more track types.
@@ -119,16 +119,14 @@ def createRawResultTrackView(starts, ends, index, region, baseTrack,
 
     logging.debug("Creating new raw result track view")
 
-    assert len(starts) == len(ends)
+    if starts is not None and ends is not None:
+        assert len(starts) == len(ends)
 
     if index is None:
-        # TODO: fix for strands
         tv = TrackView(region, starts, ends, None, None, None,
                    None, None, borderHandling='crop',
                    allowOverlaps=allowOverlap)
         return tv
-    else:
-        assert len(ends) == len(index)
 
     vals = None
     strands = None
@@ -136,60 +134,44 @@ def createRawResultTrackView(starts, ends, index, region, baseTrack,
     edges = None
     weights = None
 
-    resTrackIndex = slice(0,-1)
-    trackIndex = index
-
-    v = baseTrack.valsAsNumpyArray()
-    if v is not None:
-        vals = np.zeros(len(starts))
-        vals[resTrackIndex] = v[trackIndex]
+    if newValues is not None:
+        # If the operation has created new values we use them instead.
+        assert len(newValues) == len(starts)
+        vals = newValues
+    else:
+        v = baseTrack.valsAsNumpyArray()
+        if v is not None:
+            vals = v[index]
+            print("Vals found!: {} ".format(vals))
 
     if newStrands is not None:
         # Use the new/updated strands if we have them.
-        # This is used when we a operation that merges two segments with
-        # different strands.
-        # TODO: Does this make sense? Can one merge to overlapping segments
         # with different strand?
         assert len(newStrands) == len(starts)
         strands = newStrands
     else:
         s = baseTrack.strandsAsNumpyArray()
         if s is not None:
-            strands = np.zeros(len(starts))
-            strands[resTrackIndex] = s[trackIndex]
+            strands = s[index]
 
     i = baseTrack.idsAsNumpyArray()
     if i is not None:
-        ids = np.zeros(len(starts))
-        ids[resTrackIndex] = i[trackIndex]
+        ids = i[index]
 
     e = baseTrack.edgesAsNumpyArray()
     if e is not None:
-        edges = np.zeros(len(starts))
-        edges[resTrackIndex] = e[trackIndex]
+        edges = e[index]
 
     w = baseTrack.weightsAsNumpyArray()
     if w is not None:
-        vals = np.zeros(len(starts))
-        weights[resTrackIndex] = w[trackIndex]
-
-    #print("***DEBUG START***")
-
-    #print("starts: {}".format(starts))
-    #print("ends: {}".format(ends))
+        weights = w[index]
 
     # TODO fix extras
-    # TODO: Fix for other border handling then crop
     tv = TrackView(region, starts, ends, vals, strands, ids,
                    edges, weights, borderHandling='crop',
                    allowOverlaps=allowOverlap)
 
-    testS = tv.startsAsNumpyArray()
-    testE = tv.endsAsNumpyArray()
-    #print("testS: {}".format(testS))
-    #print("testE: {}".format(testE))
-
-    #print("***DEBUG END***")
+    print("test: {}".format(tv.valsAsNumpyArray()))
     return tv
 
 def createTrackContentFromFile(genome, path, allowOverlaps):
