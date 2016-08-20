@@ -29,7 +29,7 @@ class Operator(object):
         self._trackRequirements = None
         self._resultAllowOverlaps = False
         self._resultTrackRequirements = None
-        self._setConfig()
+        self._setConfig(args)
         self._parseKwargs(**kwargs)
 
         self._args = args
@@ -122,12 +122,14 @@ class Operator(object):
         else:
             computedArg = self._args
 
+        self.preCalculation()
         for region in self.getResultRegion():
             trackViewPerArg = [arg.getTrackView(region) for arg in computedArg]
             tv = self._calculate(region, *trackViewPerArg)
 
             if tv is not None:
                 self._out[region] = tv
+        self.postCalculation()
 
         if self.resultIsTrack:
             self._resultFound = True
@@ -183,7 +185,7 @@ class Operator(object):
         pass
 
     @abc.abstractmethod
-    def _setConfig(self):
+    def _setConfig(self, trackViews):
         """
         This method should sett all of the required properties of a operation.
         :return: None
@@ -198,6 +200,14 @@ class Operator(object):
         GTools uses this method to print the result.
         :return:
         """
+        pass
+
+    @abc.abstractmethod
+    def preCalculation(self):
+        pass
+
+    @abc.abstractmethod
+    def postCalculation(self):
         pass
 
     # **** Abstract class methods ****
@@ -239,6 +249,7 @@ class Operator(object):
         operation.
         """
         pass
+
 
     # **** Common properties ***
     # Properties common to all operation
