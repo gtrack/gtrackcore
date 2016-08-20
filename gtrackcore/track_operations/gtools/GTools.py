@@ -9,6 +9,10 @@ import importlib
 
 from gtrackcore.track_operations.operations.Operator import getOperation
 from gtrackcore.track_operations.TrackContents import TrackContents
+from gtrackcore.track_operations.utils.TrackHandling import importTrackIntoGTrack
+from gtrackcore.track_operations.Genome import Genome
+
+from gtrackcore.core.Api import importFile
 
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
@@ -48,6 +52,10 @@ class GTools(object):
         if operation == 'list':
             self._listTracksInGTrackCore(self._args.genome)
 
+        elif operation == 'import':
+            genome = Genome.createFromJson(self._args.genome)
+            importTrackIntoGTrack(self._args.name, genome, self._args.path)
+
         else:
             assert operation in self._importedOperations.keys()
 
@@ -58,7 +66,7 @@ class GTools(object):
             a = oper.createOperation(self._args)
             res = a.calculate()
 
-            if a.resultIsTrack():
+            if a.resultIsTrack:
                 pass
 
             if res is not None and isinstance(res, TrackContents):
@@ -126,6 +134,12 @@ class GTools(object):
         subparser.add_argument('genome', help="Name of genome")
         subparser.set_defaults(which='list')
 
+        imp = subparsers.add_parser('import', help='Import track')
+        imp.add_argument('genome', help="Name of genome")
+        imp.add_argument('path', help="File path of track")
+        imp.add_argument('name', help="Name of the track")
+        imp.set_defaults(which='import')
+
         for operation in self._importedOperations.values():
             operation.createSubParser(subparsers)
 
@@ -145,13 +159,14 @@ class GTools(object):
         for trackName in tracks:
             print('\t' + ':'.join(trackName))
 
-    def _importTrackFromFile(self, path):
+    def _importTrackFromFile(self, genome, path, name):
         """
         Import track from file into GTrackCore
         :param path:
         :return:
         """
-        raise NotImplementedError
+        importFile(path, 'hg19', name)
+        #importFile(path, genome, name)
 
 if __name__ == '__main__':
     GTools()
