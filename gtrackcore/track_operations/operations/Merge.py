@@ -126,6 +126,12 @@ class Merge(Operator):
             level = logging.INFO
         logging.basicConfig(stream=sys.stderr, level=level)
 
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self):
+        pass
+
     def _updateTrackFormat(self):
         """
         If we enable or disable overlapping tracks as input, we need to
