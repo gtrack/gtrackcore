@@ -5,6 +5,7 @@ from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
+from gtrackcore.track_operations.operations.Merge import Merge
 from gtrackcore.track_operations.raw_operations.Union import union
 
 from gtrackcore.track_operations.utils.TrackHandling import \
@@ -15,11 +16,8 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 from gtrackcore.track_operations.Genome import Genome
 
 class Union(Operator):
-    #_TEST = TrackFormatReq(name="points")
 
-    def _call(self, region, tv1, tv2):
-        #rawTrack1 = RawOperationContent(self._resultGenome, region, tv=tv1)
-        #rawTrack2 = RawOperationContent(self._resultGenome, region, tv=tv2)
+    def _calculate(self, region, tv1, tv2):
 
         t1Starts = tv1.startsAsNumpyArray()
         t1Ends = tv1.endsAsNumpyArray()
@@ -33,13 +31,17 @@ class Union(Operator):
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 4
 
-            return createRawResultTrackView(ret[0], ret[1], ret[2],
-                                            region, tv1,
-                                            self.resultAllowOverlaps)
+            tv = createRawResultTrackView(ret[2], region, [tv1,tv2],
+                                            self.allowOverlaps,
+                                            newStarts=ret[0], newEnds=ret[1],
+                                            encoding=ret[3])
+
+            print("In Union: ids: {}".format(tv.idsAsNumpyArray()))
+            return tv
         else:
             return None
 
-    def _setConfig(self):
+    def _setConfig(self, args):
         # None changeable properties
         self._numTracks = 2
         self._trackRequirements = \
@@ -54,6 +56,8 @@ class Union(Operator):
         # TODO: Solve this for the case where A and b are not of the same type.
         self._resultTrackRequirement = TrackFormat(startList=[], endList=[])
 
+        # Merge with parseKwargs
+
     def _parseKwargs(self, **kwargs):
         """
         :param kwargs:
@@ -66,6 +70,21 @@ class Union(Operator):
         if 'resultAllowOverlap' in kwargs:
             self._resultAllowOverlaps = kwargs['resultAllowOverlap']
             self._updateResultTrackFormat()
+
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, track):
+
+        if not self._resultAllowOverlaps:
+            print("No overlap in result!!")
+            # Overlap not allowed in the result. Using merge to remove it
+            m = Merge(track, both=True, useValues=True, useStrands=True,
+                      useLinks=True, allowOverlap=False)
+            res = m.calculate()
+            return res
+        else:
+            return track
 
     def _updateTrackFormat(self):
         """
@@ -145,3 +164,6 @@ class Union(Operator):
         :return: Generated track name as a string
         """
         return "union-{0}".format(int(time.time()))
+
+    def printResult(self):
+        pass

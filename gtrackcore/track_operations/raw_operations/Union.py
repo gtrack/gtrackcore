@@ -11,74 +11,131 @@ def union(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlap):
     Only points and segments overlap..
     """
 
-    assert len(t1Starts) == len(t1Ends)
-    assert len(t2Starts) == len(t2Ends)
+    resIsPoints=False
+    resIsPartition=False
+    resIsSegment=False
+    # Create common index and encoding
+    if t1Starts is not None:
+        t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
+        t1Encode = np.zeros(len(t1Starts), dtype='int32') + 1
+    else:
+        t1Index = np.arange(0, len(t1Ends), 1, dtype='int32')
+        t1Encode = np.zeros(len(t1Ends), dtype='int32') + 1
 
-    t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
-    t2Index = np.arange(0, len(t2Starts), 1, dtype='int32')
+    if t2Starts is not None:
+        t2Index = np.arange(0, len(t2Starts), 1, dtype='int32')
+        t2Encode = np.zeros(len(t2Starts), dtype='int32') + 2
+    else:
+        t2Index = np.arange(0, len(t2Ends), 1, dtype='int32')
+        t2Encode = np.zeros(len(t2Ends), dtype='int32') + 2
 
-    t1Encode = np.zeros(len(t1Starts), dtype='int32') + 1
-    t2Encode = np.zeros(len(t2Starts), dtype='int32') + 2
+    if t1Starts is None:
+        # t1 is partition
+        if t2Starts is None:
+            # t2 is partition
+            t1 = np.column_stack((t1Ends, t1Index, t1Encode))
+            t2 = np.column_stack((t2Ends, t2Index, t2Encode))
+            resIsPartition = True
+        elif t2Ends is None:
+            # t2 is points
+            # Converting t1 and t2 to segments
 
-    t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
-    t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
+            t1Starts = np.insert(t1Ends, 0, 0)
+            t1Starts = t1Starts[:-1]
+            t2Ends = np.copy(t2Starts)
+
+            t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
+            t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
+            resIsSegment = True
+        else:
+            # t2 is segment
+            # We convert t1 into segments
+            # Creating the starts array by inserting a 0 and deleting the
+            # last element
+            t1Starts = np.insert(t1Ends, 0, 0)
+            t1Starts = t1Starts[:-1]
+            t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
+            t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
+            resIsSegment = True
+
+    elif t1Ends is None:
+        # t1 is points
+        if t2Starts is None:
+            # t2 is partition
+            # Converting t1 and t2 to segments
+            # A possible extension is to enable more options her.
+            # A union of points and partitions can be a new partition where
+            # the points is new partitions.
+
+            t1Ends = np.copy(t1Starts)
+            t2Starts = np.insert(t2Ends, 0, 0)
+            t2Starts = t2Starts[:-1]
+
+            t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
+            t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
+            resIsSegment = True
+
+        elif t2Ends is None:
+            # t2 is points
+            t1 = np.column_stack((t1Starts, t1Index, t1Encode))
+            t2 = np.column_stack((t2Starts, t2Index, t2Encode))
+            resIsPoints = True
+        else:
+            # t2 is segment
+            # We convert t1 to segments with length 0
+            t1Ends = np.copy(t1Starts)
+            t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
+            t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
+            resIsSegment = True
+    else:
+        # t1 is segment
+        # If t2 is something other then a segment. We need to convert the
+        # tracks to segments
+        if t2Starts is None:
+            # t2 is partition
+            # We convert the partition into segments
+            # Creating the starts array by inserting a 0 and deleting the
+            # last element
+            t2Starts = np.insert(t2Ends, 0, 0)
+            t2Starts = t2Starts[:-1]
+
+        elif t2Ends is None:
+            # t2 is points
+            # We convert the points to segments of length 0
+            t2Ends = np.copy(t1Starts)
+
+        # t2 is segment
+        t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
+        t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
+        resIsSegment = True
 
     combined = np.concatenate((t1, t2))
-
     # Sort the new array on position and then on encoding.
     res = combined[np.lexsort((combined[:, -1], combined[:, 0]))]
 
     # Ignoring adjacent segments for now..
-    # If we have more information then the starts/ends it makes more sense to
-    #  keep both segments with all of the extra data.
+    # If we have more information then the starts/ends it makes more
+    # sense to keep both segments with all of the extra data.
 
-    if not allowOverlap:
-        # Check first is a segment is completely inside another segment
-        # If it is we remove it.
-        # if end[n] > end[n+1] => remover n
-        totalOverlapIndex = np.where(res[:-1,1] >= res[1:,1])
+    if resIsPoints:
+        starts = res[:,0]
+        ends = None
+    elif resIsPartition:
+        ends = res[:,0]
+        starts = None
+    elif resIsSegment:
+        starts = res[:, 0]
+        ends = res[:, 1]
+    else:
+        print("Error in union!")
+        import sys
+        sys.exit(1)
 
-        if len(totalOverlapIndex[0]) > 0:
-            # As there can be more then one segment inside another segment
-            # we need to iterate over it until we have no more total overlap.
-            while len(totalOverlapIndex[0]) != 0:
-                removeIndex = totalOverlapIndex[0]
-                res[:, -1][removeIndex] = -1
-
-                removeIndex += 1
-                res = np.delete(res, totalOverlapIndex, 0)
-
-                totalOverlapIndex = np.where(res[:-1,1] > res[1:,1])
-
-        # Find partially overlapping segments
-        # end[n] > start[n+1]
-        partialOverlapIndex = np.where(res[:-1, 1] > res[1:, 0])
-
-        if len(partialOverlapIndex[0]) > 0:
-            # Creating masks to merge the overlapping segments
-            overlapStartMask = np.ones(len(res), dtype=bool)
-            overlapStartMask[[partialOverlapIndex[0]+1]] = False
-
-            overlapEndMask = np.ones(len(res), dtype=bool)
-            overlapEndMask[partialOverlapIndex[0]] = False
-
-            # Saving the updated ends
-            ends = res[:, 1]
-            ends = ends[overlapEndMask]
-
-            encodingMask = np.invert(overlapEndMask)
-            encoding = res[:, -1]
-            encoding[encodingMask] = -1
-            encoding = encoding[overlapStartMask]
-            res = res[overlapStartMask]
-            res[:, 1] = ends
-            res[:, -1] = encoding
-
-    # Replace index, encoding with -> value, link, strand, extra ect.
-    # Extract the starts, values and links
-    starts = res[:, 0]
-    ends = res[:, 1]
     index = res[:, -2]
     enc = res[:,-1]
 
+    print("**D**")
+    print(starts)
+    print(ends)
+    print("**D**")
     return starts, ends, index, enc
