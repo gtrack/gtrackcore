@@ -171,7 +171,7 @@ class TrackView(object):
         self._weightsList = weightsList
         self._extraLists = copy(extraLists)
 
-        self._handlePointsAndPartitions()
+        #self._handlePointsAndPartitions()
 
         if self._startList is None:
             self._trackElement.start = noneFunc
@@ -368,12 +368,23 @@ class TrackView(object):
         return bpLevelArray
 
     def _removeBlindPassengersFromNumpyArray(self, numpyArray):
-        '''
+        """
         To remove any blind passengers - segments entirely in front of genomeanchor,
         but sorted after a larger segment crossing the border.
-        '''
+
+        Disabling handlePointsAsPartitions brakes this for points.
+        self._endList is then None. Fix this by then checking the startList
+        instead
+        """
         if self.allowOverlaps and len(numpyArray) > 0:
-            numpyArray = numpyArray[numpy.where(self._endList > self.genomeAnchor.start)]
+            if self._endList is None:
+                # Points
+                numpyArray = numpyArray[numpy.where(self._startList >
+                                                    self.genomeAnchor.start)]
+            else:
+                numpyArray = numpyArray[numpy.where(self._endList >
+                                                    self.genomeAnchor.start)]
+
         return numpyArray
 
     def _commonAsNumpyArray(self, numpyArray, numpyArrayModMethod, name):
