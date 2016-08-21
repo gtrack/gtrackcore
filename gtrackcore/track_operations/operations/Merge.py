@@ -33,29 +33,42 @@ class Merge(Operator):
         ends = tv.endsAsNumpyArray()
         strands = None
         values = None
+        ids = None
+        edges = None
+        weights = None
 
         if self._useStrands:
             strands = tv.strandsAsNumpyArray()
             if strands is None or strands.size == 0:
                 # Track has no strand information, ignoring strands.
                 strands = None
-                self._useStrands = True
+                self._useStrands = False
+
         if self._useValues:
             values = tv.valsAsNumpyArray()
             if values is None or values.size == 0:
                 # Track has no values, ignoring..
                 values = None
                 self._useValues = False
+        if self._useLinks:
+            ids = tv.idsAsNumpyArray()
+            edges = tv.edgesAsNumpyArray()
+            if ids is None or edges is None:
+                # Track has no links. ignoring..
+                ids = None
+                edges = None
+                self._useLinks = False
 
-        ret = merge(starts, ends, strands=strands, values=values,
-                    useStrands=self._useStrands,
+        ret = merge(starts, ends, strands=strands, values=values, ids=ids,
+                    edges=edges, weights=weights, useStrands=self._useStrands,
                     useMissingStrands=self._useMissingStrands,
                     treatMissingAsPositive=self._treatMissingAsPositive,
                     useValues=self._useValues,
-                    valueFunction=self._valueFunction)
+                    valueFunction=self._valueFunction,
+                    useLinks=self._useLinks)
 
         if ret is not None and len(ret[0]) != 0:
-            assert len(ret) == 3
+            assert len(ret) == 7
             # We do not care about info from the base track..
             # the new track will only contain starts, ends and (strands if
             # present.
@@ -65,14 +78,14 @@ class Merge(Operator):
             print("ends: {}".format(ret[1]))
             print("values: {}".format(ret[2]))
 
-            tv = TrackView(region, ret[0], ret[1], ret[2], None, None,
-                           None, None, borderHandling='crop',
+            tv = TrackView(region, ret[0], ret[1], ret[2], ret[3], ret[4],
+                           ret[5], ret[6], borderHandling='crop',
                            allowOverlaps=self._allowOverlap)
             return tv
         else:
             return None
 
-    def _setConfig(self):
+    def _setConfig(self, tracks):
         # None changeable properties
         self._numTracks = 1
         self._trackRequirements = \
@@ -84,13 +97,14 @@ class Merge(Operator):
         self._useValues = False
         self._valueFunction = None
 
+        self._useLinks = False
+
         self._useStrands = False
         self._useMissingStrands = False
         self._treatMissingAsPositive = True
         # For now the result track is always of the same type as track A
         # TODO: Solve this for the case where A and b are not of the same type.
         self._resultTrackRequirements = self._trackRequirements[0]
-
 
     def _parseKwargs(self, **kwargs):
         """
@@ -103,6 +117,9 @@ class Merge(Operator):
 
         if 'valueFunction' in kwargs:
             self._valueFunction = kwargs['valueFunction']
+
+        if 'useLinks' in kwargs:
+            self._useLinks = kwargs['useLinks']
 
         if 'useStrands' in kwargs:
             self._useStrands = kwargs['useStrands']
@@ -129,8 +146,8 @@ class Merge(Operator):
     def preCalculation(self):
         pass
 
-    def postCalculation(self):
-        pass
+    def postCalculation(self, track):
+        return track
 
     def _updateTrackFormat(self):
         """
