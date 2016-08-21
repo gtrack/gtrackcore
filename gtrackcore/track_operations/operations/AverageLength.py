@@ -44,7 +44,13 @@ class AverageLength(Operator):
         """
         pass
 
-    def _setConfig(self):
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, result):
+        return result
+
+    def _setConfig(self, track):
         # None changeable properties
         self._numTracks = 1
         self._trackRequirements = \

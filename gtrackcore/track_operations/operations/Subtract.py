@@ -15,7 +15,7 @@ from gtrackcore.track_operations.Genome import Genome
 
 class Subtract(Operator):
 
-    def _call(self, region, tv1, tv2):
+    def _calculate(self, region, tv1, tv2):
 
         t1Starts = tv1.startsAsNumpyArray()
         t1Ends = tv1.endsAsNumpyArray()
@@ -28,13 +28,13 @@ class Subtract(Operator):
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
-
+            # Check if elements from track 2 have a correct index.
             return createRawResultTrackView(ret[0], ret[1], ret[2], region,
                                             tv1, self.resultAllowOverlaps)
         else:
             return None
 
-    def _setConfig(self):
+    def _setConfig(self, tracks):
         # None changeable properties
         self._numTracks = 2
         self._trackRequirements = \
@@ -92,6 +92,12 @@ class Subtract(Operator):
                 [TrackFormatReq(dense=False, allowOverlaps=False),
                  TrackFormatReq(dense=False, allowOverlaps=False)]
 
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, result):
+        return result
+
     @classmethod
     def createSubParser(cls, subparsers):
         """
@@ -135,3 +141,10 @@ class Subtract(Operator):
         :return: Generated track name as a string
         """
         return "subtracted-{0}".format(int(time.time()))
+
+    def printResult(self):
+        """
+        Result is a track. Do nothing
+        :return:
+        """
+        pass

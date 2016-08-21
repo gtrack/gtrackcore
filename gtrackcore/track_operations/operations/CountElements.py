@@ -45,7 +45,7 @@ class CountElements(Operator):
         """
         pass
 
-    def _setConfig(self):
+    def _setConfig(self, track):
         # None changeable properties
         self._numTracks = 1
         self._trackRequirements = \
@@ -57,6 +57,12 @@ class CountElements(Operator):
 
         # For now the result track is always of the same type as track A
         self._resultTrackRequirements = None
+
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, result):
+        return result
 
     @classmethod
     def createSubParser(cls, subparsers):

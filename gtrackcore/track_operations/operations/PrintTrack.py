@@ -80,8 +80,8 @@ class PrintTrack(Operator):
     def preCalculation(self):
         pass
 
-    def postCalculation(self):
-        pass
+    def postCalculation(self, result):
+        return result
 
     def _updateTrackFormat(self):
         """

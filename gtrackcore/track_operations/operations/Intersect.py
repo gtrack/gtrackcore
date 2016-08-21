@@ -16,11 +16,7 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 
 class Intersect(Operator):
 
-    def _call(self, region, tv1, tv2):
-
-        # Remove RawOperationsContent
-        #rawTrack1 = RawOperationContent(self._resultGenome, region, tv=tv1)
-        #rawTrack2 = RawOperationContent(self._resultGenome, region, tv=tv2)
+    def _calculate(self, region, tv1, tv2):
 
         t1Starts = tv1.startsAsNumpyArray()
         t1Ends = tv1.endsAsNumpyArray()
@@ -38,10 +34,7 @@ class Intersect(Operator):
         else:
             return None
 
-
-
-
-    def _setConfig(self):
+    def _setConfig(self, tracks):
         # None changeable properties
         self._numTracks = 2
         self._trackRequirements = \
@@ -98,6 +91,12 @@ class Intersect(Operator):
             self._resultTrackRequirements = \
                 [TrackFormatReq(dense=False, allowOverlaps=False),
                  TrackFormatReq(dense=False, allowOverlaps=False)]
+
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, result):
+        return result
 
     @classmethod
     def createSubParser(cls, subparsers):

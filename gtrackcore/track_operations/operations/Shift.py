@@ -37,7 +37,7 @@ class Shift(Operator):
         else:
             return None
 
-    def _setConfig(self):
+    def _setConfig(self, track):
         # None changeable properties
         self._numTracks = 1
         self._trackRequirements = \
@@ -108,6 +108,12 @@ class Shift(Operator):
         else:
             self._resultTrackRequirements = \
                 [TrackFormatReq(dense=False, allowOverlaps=False)]
+
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, result):
+        return result
 
     @classmethod
     def createSubParser(cls, subparsers):

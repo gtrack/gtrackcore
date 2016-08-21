@@ -57,7 +57,7 @@ class Slop(Operator):
         else:
             return None
 
-    def _setConfig(self):
+    def _setConfig(self, track):
         # None changeable properties
         self._numTracks = 1
         self._trackRequirements = \
@@ -70,7 +70,6 @@ class Slop(Operator):
         # For now the result track is always of the same type as track A
         # TODO: Solve this for the case where A and b are not of the same type.
         self._resultTrackRequirements = self._trackRequirements[0]
-
 
     def _parseKwargs(self, **kwargs):
         """
@@ -157,6 +156,12 @@ class Slop(Operator):
             self._resultTrackRequirements = \
                 [TrackFormatReq(dense=False, allowOverlaps=False),
                  TrackFormatReq(dense=False, allowOverlaps=False)]
+
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, result):
+        return result
 
     @classmethod
     def createSubParser(cls, subparsers):

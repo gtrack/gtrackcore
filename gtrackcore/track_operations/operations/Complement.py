@@ -22,8 +22,6 @@ class Complement(Operator):
     """
     Creates a complementing track.
     """
-    # s = Slop(track, size)
-    # res = Subtract(s, track)
 
     def _calculate(self, region, tv):
         logging.debug("Start call! region:{0}".format(region))
@@ -48,7 +46,7 @@ class Complement(Operator):
         else:
             return None
 
-    def _setConfig(self):
+    def _setConfig(self, track):
         # None changeable properties
         self._numTracks = 1
         self._trackRequirements = \
@@ -108,6 +106,12 @@ class Complement(Operator):
         """
         self._resultTrackRequirements = \
             [TrackFormatReq(dense=False, allowOverlaps=False)]
+
+    def preCalculation(self):
+        pass
+
+    def postCalculation(self, result):
+        return result
 
     @classmethod
     def createSubParser(cls, subparsers):
