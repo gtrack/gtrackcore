@@ -129,16 +129,17 @@ class Operator(object):
 
             if tv is not None:
                 self._out[region] = tv
-        self.postCalculation()
 
         if self.resultIsTrack:
             self._resultFound = True
             self._resultTrack = TrackContents(self._resultGenome, self._out)
+            self._resultTrack = self.postCalculation(self._resultTrack)
             return self._resultTrack
         else:
             # The result is not a track. Int, float, etc.
             self._resultFound = True
-            return self._out
+            res = self.postCalculation(self._out)
+            return res
 
     # **** Abstract methods ****
     @abc.abstractmethod
@@ -207,7 +208,7 @@ class Operator(object):
         pass
 
     @abc.abstractmethod
-    def postCalculation(self):
+    def postCalculation(self, result):
         pass
 
     # **** Abstract class methods ****
