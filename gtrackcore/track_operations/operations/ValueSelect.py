@@ -35,21 +35,23 @@ class ValueSelect(Operator):
                           compareFunction=self._compareFunction,
                           allowOverlap=self._allowOverlap, debug=self._debug)
 
-        if ret is not None and len(ret[0]) != 0:
+        if ret is not None and len(ret) != 0:
             assert len(ret) == 3
             # We do not care about info from the base track..
             # the new track will only contain starts, ends and (strands if
             # present
 
-            # TODO, Do more work here! Use index to get the rest of the
-            # possible values.
+            print("****DEBUG*****")
+            print(ret)
+            print(type(ret))
+            print("****DEBUG*****")
 
-            t = createRawResultTrackView(ret[0], ret[1], ret[2], region,
-                                          tv, self._allowOverlap)
-
+            t = createRawResultTrackView(ret[2], region, tv,
+                                         self._allowOverlap, newStarts=ret[0],
+                                         newEnds=ret[1])
             print("**********123***********")
-            print(tv.valsAsNumpyArray())
-            print(t.valsAsNumpyArray())
+            print(tv.startsAsNumpyArray())
+            print(t.startsAsNumpyArray())
             print("**********123***********")
 
             #tv = TrackView(region, ret[0], ret[1], ret[2], None, None,
@@ -146,8 +148,8 @@ class ValueSelect(Operator):
     def preCalculation(self):
         pass
 
-    def postCalculation(self):
-        pass
+    def postCalculation(self, track):
+        return track
 
     @classmethod
     def createSubParser(cls, subparsers):

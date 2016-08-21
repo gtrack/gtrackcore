@@ -58,12 +58,12 @@ class ValueSelectTest(unittest.TestCase):
                 newEdges = v.edgesAsNumpyArray()
 
                 if debug:
-                    print(newStarts)
-                    print(newEnds)
-                    print(newVals)
-                    print(expStarts)
-                    print(expEnds)
-                    print(expValues)
+                    print("newStarts: {}".format(newStarts))
+                    print("newEnds: {}".format(newEnds))
+                    print("newVals: {}".format(newVals))
+                    print("expStarts: {}".format(expStarts))
+                    print("expEnds: {}".format(expEnds))
+                    print("expValues: {}".format(expValues))
                 if newStarts is not None and starts is not None:
                     self.assertTrue(np.array_equal(newStarts, expStarts))
                 if newEnds is not None and ends is not None:
@@ -102,12 +102,12 @@ class ValueSelectTest(unittest.TestCase):
         :return: None
         """
 
-        self._runTest(starts=[10], ends=[10], values=[10], expStarts=[10],
-                      expEnds=[10], expValues=[10], limit=5, debug=True)
-        self._runTest(starts=[10], ends=[10], values=[10], expStarts=[10],
-                      expEnds=[10], expValues=[10], limit=10, debug=True)
-        self._runTest(starts=[10], ends=[10], values=[10], expStarts=[],
-                      expEnds=[], expValues=[], limit=11, debug=True)
+        self._runTest(starts=[10,20], values=[10,20], expStarts=[10,20],
+                      expValues=[10,20], limit=5, debug=True)
+        self._runTest(starts=[10], values=[10], expStarts=[10],
+                      expValues=[10], limit=10, debug=True)
+        self._runTest(starts=[10], values=[10], expStarts=[],
+                      expValues=[], limit=11, debug=True)
 
     def testValuedPointsComplex(self):
         """
@@ -115,7 +115,7 @@ class ValueSelectTest(unittest.TestCase):
         :return: None
         """
 
-        self._runTest(starts=[10,20,30], ends=[10,20,30], values=[10,0,50],
+        self._runTest(starts=[10,20,30], values=[10,0,50],
                       expStarts=[10,30], expEnds=[10,30], expValues=[10,50],
                       limit=5, debug=True)
         self._runTest(starts=[10,20,30], ends=[10,20,30], values=[10,0,50],

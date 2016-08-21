@@ -43,14 +43,11 @@ def valueSelect(starts, ends, values, limit, compareFunction=None,
         select = compareFunction(values, limit)
 
     if starts is None:
-        print("Found dense track")
-
         if ends is None:
             # F, LF, LBP
             # We have no starts or ends.
             # The resulting track will be a point type.
             # We create the assumed starts and ends.
-            print("Function type track")
             starts = np.arange(1, len(values)+1)
             ends = np.arange(1, len(values)+1)
         else:
@@ -62,9 +59,14 @@ def valueSelect(starts, ends, values, limit, compareFunction=None,
 
     print(select)
 
-    assert len(starts) == len(ends)
-    newEnds = ends[select]
-    newStarts = starts[select]
-    newValues = values[select]
+    if ends is not None:
+        newEnds = ends[select]
+    else:
+        newEnds = None
+    if starts is not None:
+        newStarts = starts[select]
+    else:
+        newStarts = None
 
+    #newValues = values[select]
     return newStarts, newEnds, select
