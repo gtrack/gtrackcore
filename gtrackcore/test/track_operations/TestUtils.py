@@ -36,7 +36,7 @@ def createTrackView(region, startList=None, endList=None, valList=None,
 def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
                            strandList=None, idList=None, edgeList=None,
                            weightsList=None, extraLists=OrderedDict(),
-                           allow_overlap=False):
+                           allow_overlap=False, customChrLength=None):
     """
     This method creates a simple TrackContent object used in testing of
     operations. It is simple in the we only create one track view.
@@ -60,7 +60,11 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     # Create trackViewList
     # TODO, not working..
 
-    genome = Genome('hg19', {"chr1": 249250621})
+    if customChrLength is not None:
+        # We use a custom length when testing F, LF and LBP.
+        genome = Genome('hg19', {"chr1": customChrLength})
+    else:
+        genome = Genome('hg19', {"chr1": 249250621})
     chr1 = genome.regions[0]
 
     if startList is not None:
@@ -74,15 +78,26 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     if idList is not None:
         idList = np.array(idList)
     if edgeList is not None:
-        edgesList = np.array(edgeList)
+
+        edgeList = [np.array(x, dtype=object) for x in edgeList]
+
+        edgeList = np.array(edgeList, dtype=object)
+        print("inTestUtils")
+        print(edgeList)
+        print(edgeList.shape)
+        print(type(edgeList[0]))
     if weightsList is not None:
         weightsList = np.array(weightsList)
+    if extraLists is None:
+        extraLists = OrderedDict()
 
     tv = createTrackView(chr1, startList=startList, endList=endList,
                          valList=valList, strandList=strandList,
                          idList=idList, edgesList=edgeList,
                          weightsList=weightsList, extraLists=extraLists,
                          allow_overlap=allow_overlap)
+
+    print(tv.endsAsNumpyArray())
 
     d = OrderedDict()
     d[chr1] = tv
