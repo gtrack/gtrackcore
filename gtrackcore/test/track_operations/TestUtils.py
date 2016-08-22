@@ -80,7 +80,7 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     if edgeList is not None:
         #edgeList = [np.array(x, dtype=object) for x in edgeList]
         # remove object and add padding.
-        edgeList = np.array(edgeList, dtype=object)
+        edgeList = np.array(edgeList)
     if weightsList is not None:
         weightsList = np.array(weightsList)
     if extraLists is None:

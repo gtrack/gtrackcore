@@ -105,9 +105,6 @@ class UnionTest(unittest.TestCase):
                     self.assertTrue(newEnds is None)
 
                 if expVals is not None:
-                    print("newVals: {}".format(newVals))
-                    print("expVals: {}".format(expVals))
-
                     self.assertTrue(newVals is not None)
                     self.assertTrue(np.array_equal(newVals, expVals))
                 else:
@@ -120,17 +117,16 @@ class UnionTest(unittest.TestCase):
                     self.assertTrue(newStrands is None)
 
                 if expIds is not None:
-                    print(newIds)
-                    print(expIds)
-                    print(v.idsAsNumpyArray())
+                    print("newIds: {}".format(newIds))
+                    print("expIds: {}".format(expIds))
                     self.assertTrue(newIds is not None)
                     self.assertTrue(np.array_equal(newIds, expIds))
                 else:
                     self.assertTrue(newIds is None)
 
                 if expEdges is not None:
-                    print("****")
-                    print(newEdges)
+                    print("newEdges: {}".format(newEdges))
+                    print("expEdges: {}".format(expEdges))
                     self.assertTrue(newEdges is not None)
                     self.assertTrue(np.array_equal(newEdges, expEdges))
                 else:
@@ -236,26 +232,35 @@ class UnionTest(unittest.TestCase):
                       expVals=[6,8,100,45,42,5,3,2])
 
     # **** Linked points tests ****
-    def atestLinkedPoints(self):
+    def testLinkedPoints(self):
         """
         Linked points tests
         ids=["1","2"], edges=[["2"], [np.nan]],
         :return: None
         """
-        # Points union, no overlap, sorted
+        # Linked points union, no overlap, sorted
         self._runTest(startsA=[1,2,3], startsB=[4,5,6], idsA=["1","2","3"],
-                      idsB=["4","5","6"], edgesA=[["3","2"],["1"],[np.nan]],
-                      edgesB=[["5"],["6"],["4"]], expStarts=[1,2,3,4,5,6],
+                      idsB=["4","5","6"], edgesA=[2,3,1],
+                      edgesB=[5,6,4], expStarts=[1,2,3,4,5,6],
                       expIds=["1","2","3","4","5","6"],
-                      expEdges=[["3"],["1"],[np.nan],["5"],["6"],["4"]],
-                      allowOverlap=False)
+                      expEdges=[2,3,1,5,6,4], allowOverlap=False)
+
+        # Linked points union, A and B overlap. No overlap in result.
+        self._runTest(startsA=[14,20], startsB=[14], idsA=["1","2"],
+                      idsB=["4"], edgesA=[2,1],
+                      edgesB=[4], expStarts=[14,20],
+                      expIds=["1","2"],
+                      expEdges=[2,1], allowOverlap=False)
+
+        # Linked points union, A and B overlap, No overlap in result.
+        self._runTest(startsA=[14,463], startsB=[45,463], idsA=["1","2"],
+                      idsB=["3","4"], edgesA=[2,1],
+                      edgesB=[4,3], expStarts=[14,45,463],
+                      expIds=["1","3","2"],
+                      expEdges=[2,4,1], allowOverlap=False)
 
     def daf(self):
-        # Points union, A and B overlap. No overlap in result.
-        self._runTest(startsA=[14,20], startsB=[14], expStarts=[14,20],
-                      resultAllowOverlap=False)
 
-        # Points union, A and B overlap, No overlap in result.
         self._runTest(startsA=[14,463], startsB=[45,463],
                       expStarts=[14,45,463], resultAllowOverlap=False)
 
