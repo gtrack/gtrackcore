@@ -29,15 +29,7 @@ class AverageLinkWeight(Operator):
 
         ret = averageLinkWeight(weights, self._customAverageFunction)
 
-        if ret is not None and len(ret) != 0:
-            assert len(ret) == 1
-            # We do not care about info from the base track..
-            # the new track will only contain starts, ends and (strands if
-            # present
-
-            return ret
-        else:
-            return None
+        return ret
 
     def _setConfig(self, trackViews):
         # Access to the operations tracks.

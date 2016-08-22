@@ -78,14 +78,9 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     if idList is not None:
         idList = np.array(idList)
     if edgeList is not None:
-
-        edgeList = [np.array(x, dtype=object) for x in edgeList]
-
+        #edgeList = [np.array(x, dtype=object) for x in edgeList]
+        # remove object and add padding.
         edgeList = np.array(edgeList, dtype=object)
-        print("inTestUtils")
-        print(edgeList)
-        print(edgeList.shape)
-        print(type(edgeList[0]))
     if weightsList is not None:
         weightsList = np.array(weightsList)
     if extraLists is None:
@@ -96,8 +91,6 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
                          idList=idList, edgesList=edgeList,
                          weightsList=weightsList, extraLists=extraLists,
                          allow_overlap=allow_overlap)
-
-    print(tv.endsAsNumpyArray())
 
     d = OrderedDict()
     d[chr1] = tv

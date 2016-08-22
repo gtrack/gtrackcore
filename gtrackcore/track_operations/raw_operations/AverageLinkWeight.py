@@ -57,8 +57,9 @@ def averageLinkWeight(weights, customAverageFunction=None):
             return all(avgPerWeight)
         elif isinstance(first[0], (int, long, float)):
             # Number
-            avgPerWeight = np.array([np.average(x) for x in weights])
-            return np.average(avgPerWeight)
+            avgPerWeight = np.array([np.nanmean(x) for x in weights])
+            print(avgPerWeight)
+            return np.nanmean(avgPerWeight)
         else:
             # character or category
             raise NotImplementedError
@@ -75,7 +76,7 @@ def averageLinkWeight(weights, customAverageFunction=None):
             return all(weights)
         elif isinstance(first, (int, long, float)):
             # Numbers
-            return np.average(weights)
+            return np.nanmean(weights)
         else:
             # char or string
             raise NotImplementedError

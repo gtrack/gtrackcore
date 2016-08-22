@@ -27,28 +27,31 @@ class PrintTrack(Operator):
 
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
-        vals = tv.valsAsNumpyArray()
+        values = tv.valsAsNumpyArray()
+        strands = tv.strandsAsNumpyArray()
         ids = tv.idsAsNumpyArray()
         edges = tv.edgesAsNumpyArray()
         weights = tv.weightsAsNumpyArray()
 
         if starts is not None and len(starts) > 0:
             print("Region: {0}".format(region))
-            print("{0: >8} {1: >8}".format("start", "end"))
-            for x, y in zip(starts,ends):
-                print("{0:8d} {1:8d}".format(x, y))
-
             print("*******")
+            print("starts: {}".format(starts))
+            print("type(starts): {}".format(type(starts)))
+            print("ends: {}".format(ends))
+            print("type(ends): {}".format(type(ends)))
+            print("values: {}".format(values))
+            print("type(values): {}".format(type(values)))
+            print("strands: {}".format(strands))
+            print("type(strands): {}".format(type(strands)))
             print("ids: {}".format(ids))
             print("type(ids): {}".format(type(ids)))
             print("edges: {}".format(edges))
             print("type(edges): {}".format(type(edges)))
             print("weights: {}".format(weights))
-            print("starts: {}".format(starts))
-            print("type(starts): {}".format(type(starts)))
-            print("ends: {}".format(ends))
-            print("type(ends): {}".format(type(ends)))
+            print("type(weights): {}".format(type(weights)))
             print("*******")
+
 
     def _setConfig(self, args):
         # None changeable properties
