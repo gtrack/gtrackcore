@@ -91,7 +91,8 @@ def printTrackView(tv):
 
 def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                              newStarts=None, newEnds=None, newStrands=None,
-                             newValues=None, encoding=None):
+                             newValues=None, newIds=None, newEdges=None,
+                             encoding=None):
     """
 
     TODO: Expand to support more track types.
@@ -224,7 +225,6 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             # If the operation has created new values we use them instead.
             vals = newValues
         else:
-            print("In set vals!")
             if valsBase is None:
                 vals = None
             else:
@@ -232,13 +232,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                 for i in range(0, nrBaseTracks):
                     vals[enc[i]] = valsBase[i][ind[i]]
 
-            print("After val set")
-            print(vals)
-
         if newStrands is not None:
-            # Use the new/updated strands if we have them.
-            # with different strand?
-            assert len(newStrands) == len(starts)
             strands = newStrands
         else:
             if strandsBase is None:
@@ -248,25 +242,26 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                 for i in range(0, nrBaseTracks):
                     strands[enc[i]] = strandsBase[i][ind[i]]
 
-        if idsBase is None:
-            ids = None
+        if newIds is not None:
+            ids = newIds
         else:
-            ids = np.chararray(len(index))
-            for i in range(0, nrBaseTracks):
-                ids[enc[i]] = idsBase[i][ind[i]]
+            if idsBase is None:
+                ids = None
+            else:
+                ids = np.chararray(len(index))
+                for i in range(0, nrBaseTracks):
+                    ids[enc[i]] = idsBase[i][ind[i]]
 
-        if edgesBase is None:
-            edges = None
+        if newEdges is not None:
+            assert len(edges) == len(ids)
+            edges = newEdges
         else:
-            edges = np.zeros(len(index), dtype=object)
-            for i in range(0, nrBaseTracks):
-                print(edgesBase[i].dtype)
-                print(edgesBase[i].shape)
-                edges[enc[i]] = edgesBase[i][ind[i]]
-
-            print("***FDSF***")
-            print(edges)
-            print("***FDSF***")
+            if edgesBase is None:
+                edges = None
+            else:
+                edges = np.zeros(len(index), dtype=object)
+                for i in range(0, nrBaseTracks):
+                    edges[enc[i]] = edgesBase[i][ind[i]]
 
         if weightsBase is None:
             weights = None
@@ -275,9 +270,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             for i in range(0, nrBaseTracks):
                 weights[enc[i]] = weightsBase[i][ind[i]]
     else:
-        print("One base track!")
         if newStarts is not None:
-            print("New starts given!")
             starts = newStarts
         else:
             s = baseTrack.startsAsNumpyArray()
@@ -300,22 +293,30 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                 vals = v[index]
 
         if newStrands is not None:
-            # Use the new/updated strands if we have them.
-            # with different strand?
-            assert len(newStrands) == len(starts)
             strands = newStrands
         else:
             s = baseTrack.strandsAsNumpyArray()
             if s is not None:
                 strands = s[index]
 
-        i = baseTrack.idsAsNumpyArray()
-        if i is not None:
-            ids = i[index]
+        if newIds is not None:
+            ids = newIds
+        else:
+            i = baseTrack.idsAsNumpyArray()
+            if i is not None:
+                ids = i[index]
 
-        e = baseTrack.edgesAsNumpyArray()
-        if e is not None:
-            edges = e[index]
+        if newEdges is not None:
+            print("ids {}".format(ids))
+            print("newEdges {}".format(newEdges))
+            assert len(newEdges) == len(ids)
+            edges = newEdges
+            print("edges {}".format(edges))
+
+        else:
+            e = baseTrack.edgesAsNumpyArray()
+            if e is not None:
+                edges = e[index]
 
         w = baseTrack.weightsAsNumpyArray()
         if w is not None:
@@ -323,18 +324,8 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
 
     # TODO fix extra
 
-    print("$$$$$$$BEFORE$$$$$$$$")
-    print("starts: {}".format(starts))
-    print("ends: {}".format(ends))
-    print("vals: {}".format(vals))
-    print("ids: {}".format(ids))
     tv = TrackView(region, starts, ends, vals, strands, ids, edges, weights,
                    borderHandling='crop', allowOverlaps=allowOverlap)
-    print("$$$$$$$AFTER$$$$$$$$")
-    print("vals: {}".format(tv.valsAsNumpyArray()))
-    print("ids: {}".format(tv.idsAsNumpyArray()))
-    print("$$$$$$$END$$$$$$$$")
-
     return tv
 
 def createTrackContentFromFile(genome, path, allowOverlaps):
