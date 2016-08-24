@@ -41,28 +41,15 @@ class ValueSelect(Operator):
             # the new track will only contain starts, ends and (strands if
             # present
 
-            print("****DEBUG*****")
-            print(ret)
-            print(type(ret))
-            print("****DEBUG*****")
-
             t = createRawResultTrackView(ret[2], region, tv,
                                          self._allowOverlap, newStarts=ret[0],
                                          newEnds=ret[1])
-            print("**********123***********")
-            print(tv.startsAsNumpyArray())
-            print(t.startsAsNumpyArray())
-            print("**********123***********")
-
-            #tv = TrackView(region, ret[0], ret[1], ret[2], None, None,
-            #               None, None, borderHandling='crop',
-            #               allowOverlaps=self._allowOverlap)
             return t
         else:
             return None
 
     def _setConfig(self, trackViews):
-        # Access to the operaions tracks.
+        # Access to the operations tracks.
         self._tracks = trackViews
 
         # None changeable properties
@@ -145,8 +132,8 @@ class ValueSelect(Operator):
             self._resultTrackRequirements = \
                 [TrackFormatReq(dense=False, allowOverlaps=False)]
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, track):
+        return track
 
     def postCalculation(self, track):
         return track

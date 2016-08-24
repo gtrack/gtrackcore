@@ -116,8 +116,8 @@ class RemoveDeadLinks(Operator):
             self._resultTrackRequirements = \
                 [TrackFormatReq(dense=False, allowOverlaps=False)]
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, track):
+        return track
 
     def postCalculation(self, track):
         return track

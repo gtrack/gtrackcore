@@ -6,6 +6,8 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.operations.Merge import Merge
+from gtrackcore.track_operations.operations.UniquifyLinks import UniquifyLinks
+
 from gtrackcore.track_operations.raw_operations.Union import union
 
 from gtrackcore.track_operations.utils.TrackHandling import \
@@ -35,8 +37,6 @@ class Union(Operator):
                                             self.allowOverlaps,
                                             newStarts=ret[0], newEnds=ret[1],
                                             encoding=ret[3])
-
-            print("In Union: ids: {}".format(tv.idsAsNumpyArray()))
             return tv
         else:
             return None
@@ -71,8 +71,49 @@ class Union(Operator):
             self._resultAllowOverlaps = kwargs['resultAllowOverlap']
             self._updateResultTrackFormat()
 
-    def preCalculation(self):
-        pass
+        if 'makeLinksUnique' in kwargs:
+            self._makeLinksUnique = kwargs['makeLinksUnique']
+        else:
+            self._makeLinksUnique = False
+
+        if 'trackALinkTag' in kwargs:
+            self._trackALinkTag = kwargs['trackALinkTag']
+        else:
+            self._trackALinkTag = None
+
+        if 'trackBLinkTag' in kwargs:
+            self._trackBLinkTag = kwargs['trackBLinkTag']
+        else:
+            self._trackBLinkTag = None
+
+    def preCalculation(self, tracks):
+
+        if self._makeLinksUnique:
+            t1 = tracks[0]
+            t2 = tracks[1]
+
+            tvs = t2.trackViews
+
+            if self._trackALinkTag is not None:
+                u = UniquifyLinks(t1, trackIdentifier=self._trackALinkTag)
+                t1 = u.calculate()
+            else:
+                u = UniquifyLinks(t1, trackIdentifier="track-1")
+                t1 = u.calculate()
+
+            if self._trackBLinkTag is not None:
+                u = UniquifyLinks(t2, trackIdentifier=self._trackALinkTag)
+                t2 = u.calculate()
+            else:
+                u = UniquifyLinks(t2, trackIdentifier="track-2")
+                t2 = u.calculate()
+
+            tvs = t2.trackViews
+
+            return t1, t2
+
+        else:
+            return tracks
 
     def postCalculation(self, track):
 

@@ -92,8 +92,8 @@ class Intersect(Operator):
                 [TrackFormatReq(dense=False, allowOverlaps=False),
                  TrackFormatReq(dense=False, allowOverlaps=False)]
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, tracks):
+        return tracks
 
     def postCalculation(self, result):
         return result

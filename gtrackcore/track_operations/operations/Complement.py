@@ -107,8 +107,8 @@ class Complement(Operator):
         self._resultTrackRequirements = \
             [TrackFormatReq(dense=False, allowOverlaps=False)]
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, track):
+        return track
 
     def postCalculation(self, result):
         return result

@@ -80,8 +80,8 @@ class PrintTrack(Operator):
             level = logging.INFO
         logging.basicConfig(stream=sys.stderr, level=level)
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, track):
+        return track
 
     def postCalculation(self, result):
         return result

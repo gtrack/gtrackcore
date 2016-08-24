@@ -141,6 +141,12 @@ class Flank(Operator):
             level = logging.INFO
         logging.basicConfig(stream=sys.stderr, level=level)
 
+    def preCalculation(self, track):
+        return track
+
+    def postCalculation(self, result):
+        return result
+
     def _updateTrackFormat(self):
         """
         If we enable or disable overlapping tracks as input, we need to

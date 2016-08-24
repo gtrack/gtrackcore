@@ -28,7 +28,9 @@ class UnionTest(unittest.TestCase):
                  weightsA=None, weightsB=None, extrasA=None, extrasB=None,
                  expStarts=None, expEnds=None, expStrands=None, expVals=None,
                  expIds=None, expEdges=None, expWeights=None, expExtras=None,
-                 allowOverlap=False, resultAllowOverlap=False):
+                 allowOverlap=False, resultAllowOverlap=False,
+                 makeLinksUnique=False, trackALinkTag=None,
+                 trackBLinkTag=None):
         """
         Run a union test
         :param startsA:
@@ -73,7 +75,9 @@ class UnionTest(unittest.TestCase):
                                               weightsList=weightsB,
                                               extraLists=extrasB)
 
-        u = Union(track1, track2, allowOverlap=allowOverlap,
+        u = Union(track1, track2, makeLinksUnique=makeLinksUnique,
+                  trackALinkTag=trackALinkTag, trackBLinkTag=trackBLinkTag,
+                  allowOverlap=allowOverlap,
                   resultAllowOverlap=resultAllowOverlap)
 
         tc = u.calculate()
@@ -239,41 +243,37 @@ class UnionTest(unittest.TestCase):
         :return: None
         """
         # Linked points union, no overlap, sorted
-        self._runTest(startsA=[1,2,3], startsB=[4,5,6], idsA=["1","2","3"],
-                      idsB=["4","5","6"], edgesA=[2,3,1],
-                      edgesB=[5,6,4], expStarts=[1,2,3,4,5,6],
-                      expIds=["1","2","3","4","5","6"],
-                      expEdges=[2,3,1,5,6,4], allowOverlap=False)
+        self._runTest(startsA=[1,2,3], startsB=[4,5,6], idsA=['1','2','3'],
+                      idsB=['4','5','6'], edgesA=['2','3','1'],
+                      edgesB=['5','6','4'], expStarts=[1,2,3,4,5,6],
+                      expIds=['1','2','3','4','5','6'],
+                      expEdges=['2','3','1','5','6','4'],
+                      resultAllowOverlap=False)
 
         # Linked points union, A and B overlap. No overlap in result.
-        self._runTest(startsA=[14,20], startsB=[14], idsA=["1","2"],
-                      idsB=["4"], edgesA=[2,1],
-                      edgesB=[4], expStarts=[14,20],
-                      expIds=["1","2"],
-                      expEdges=[2,1], allowOverlap=False)
+        self._runTest(startsA=[14,20], startsB=[14], idsA=['1','2'],
+                      idsB=['4'], edgesA=['2','1'],
+                      edgesB=['4'], expStarts=[14,20],
+                      expIds=['1','2'], expEdges=['2','1'],
+                      resultAllowOverlap=False)
 
-        # Linked points union, A and B overlap, No overlap in result.
+        # Linked points union, A and B overlap. Overlap removed
+        self._runTest(startsA=[14,463], startsB=[45,463], idsA=['1','2'],
+                      idsB=['3','4'], edgesA=['2','1'],
+                      edgesB=['4','3'], expStarts=[14,45,463],
+                      expIds=['1','3','2'], expEdges=['2','4','1'],
+                      resultAllowOverlap=False)
+
+        # Points union, A and B overlap. Overlap in results
         self._runTest(startsA=[14,463], startsB=[45,463], idsA=["1","2"],
                       idsB=["3","4"], edgesA=[2,1],
-                      edgesB=[4,3], expStarts=[14,45,463],
-                      expIds=["1","3","2"],
-                      expEdges=[2,4,1], allowOverlap=False)
+                      edgesB=[4,3], expStarts=[14,45,463,463],
+                      expIds=["1","3","2","4"],
+                      expEdges=[2,4,1,3], resultAllowOverlap=True)
 
-    def daf(self):
-
-        self._runTest(startsA=[14,463], startsB=[45,463],
-                      expStarts=[14,45,463], resultAllowOverlap=False)
-
-        # Points union, A and B overlap, result overlap
-        self._runTest(startsA=[14,463], startsB=[45,463],
-                      expStarts=[14,45,463,463], resultAllowOverlap=True)
-
-        # Points union, A and B overlap, result overlap merged
-        self._runTest(startsA=[14,463], startsB=[45,463],
-                      expStarts=[14,45,463], resultAllowOverlap=False)
 
     # **** Linked Valued Points ****
-    def atestLinkedValuedPoints(self):
+    def testLinkedValuedPoints(self):
         """
         TODO
         Linked valued points union
@@ -281,23 +281,29 @@ class UnionTest(unittest.TestCase):
         """
         # Union, no overlap
         self._runTest(startsA=[1,2,3], valsA=[4,5,6],
+                      idsA=['1','2','3'], idsB=['4','5','6'],
+                      edgesA=['2','1','3'], edgesB=['5','6','7'],
                       startsB=[4,5,6], valsB=[1,2,3],
                       expStarts=[1,2,3,4,5,6], expVals=[4,5,6,1,2,3],
-                      resultAllowOverlap=False)
-
-        # Union, no overlap
-        self._runTest(startsA=[1,3], valsA=[6,7], startsB=[2], valsB=[8],
-                      expStarts=[1,2,3], expVals=[6,8,7],
+                      expIds=['1','2','3','4','5','6'],
+                      expEdges=['2','1','3','5','6','7'],
                       resultAllowOverlap=False)
 
         # Simple test. Overlap. Not sorted.
         # Overlap at the end of the track.
-        # When overlapping it should return the default from merge witch is
-        # the maximum
+        # When overlapping it should return the default value from merge
+        # witch is the maximum
+        # We do nothing with the links here. Returning the links from track A
         self._runTest(startsA=[1,3,10], valsA=[6,7,45],
+                      idsA=['1','2','3'], idsB=['4','5'],
+                      edgesA=['2','1','3'], edgesB=['5','4'],
                       startsB=[2,10], valsB=[8,100],
                       expStarts=[1,2,3,10], expVals=[6,8,7,100],
+                      expIds=['1','4','2','3'],
+                      expEdges=['2','5','1','3'],
                       resultAllowOverlap=False)
+
+    def daf(self):
 
         # Simple test. Overlap. Not sorted.
         # Overlap at the start of the track.
@@ -403,6 +409,30 @@ class UnionTest(unittest.TestCase):
         self._runTest(startsA=[3], endsA=[7], startsB=[2, 6], endsB=[4, 8],
                       expStarts=[2], expEnds=[8], allowOverlap=False,
                       resultAllowOverlap=False)
+
+    # *** Link handling ***
+    # Test of how we handle links in the new track
+    def testUniqueLinks(self):
+        # Test of the makeLinksUnique feature
+
+        # Linked points, no overlap. equal ids. Creating unique ids
+        self._runTest(startsA=[14], startsB=[25], idsA=['1'],
+                      idsB=['1'], edgesA=['1'],
+                      edgesB=['1'], expStarts=[14,25],
+                      expIds=['1-track-1','1-track-2'],
+                      expEdges=['1-track-1','1-track-2'],
+                      makeLinksUnique=True,
+                      resultAllowOverlap=False)
+
+        # Linked points, no overlap. equal ids. Creating unique ids
+        self._runTest(startsA=[14,40], startsB=[25], idsA=['1','2'],
+                      idsB=['1'], edgesA=['2','1'],
+                      edgesB=['1'], expStarts=[14,25,40],
+                      expIds=['1-track-1','1-track-2','2-track-1'],
+                      expEdges=['2-track-1','1-track-2','1-track-1'],
+                      makeLinksUnique=True,
+                      resultAllowOverlap=False)
+
 
 if __name__ == "__main__":
     unittest.main()

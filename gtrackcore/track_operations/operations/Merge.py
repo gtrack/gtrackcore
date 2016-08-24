@@ -143,8 +143,8 @@ class Merge(Operator):
             level = logging.INFO
         logging.basicConfig(stream=sys.stderr, level=level)
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, tracks):
+        return tracks
 
     def postCalculation(self, track):
         return track

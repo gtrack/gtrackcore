@@ -32,8 +32,9 @@ class Operator(object):
         self._setConfig(args)
         self._parseKwargs(**kwargs)
 
-        self._args = args
         self._nestedOperator = False
+        self._args = self.preCalculation(args)
+
         self._checkArgs()
 
     def _checkArgs(self):
@@ -122,7 +123,7 @@ class Operator(object):
         else:
             computedArg = self._args
 
-        self.preCalculation()
+        #self._args = self.preCalculation(self._args)
         for region in self.getResultRegion():
             trackViewPerArg = [arg.getTrackView(region) for arg in computedArg]
             tv = self._calculate(region, *trackViewPerArg)
@@ -204,7 +205,7 @@ class Operator(object):
         pass
 
     @abc.abstractmethod
-    def preCalculation(self):
+    def preCalculation(self, tracks):
         pass
 
     @abc.abstractmethod

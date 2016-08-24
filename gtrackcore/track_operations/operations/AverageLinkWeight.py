@@ -91,8 +91,8 @@ class AverageLinkWeight(Operator):
         """
         pass
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, track):
+        return track
 
     def postCalculation(self, track):
         return track

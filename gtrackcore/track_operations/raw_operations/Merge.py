@@ -116,9 +116,15 @@ def merge(starts, ends, strands=None, values=None, ids=None,
                     edges1 = edges[overlapIndex]
                     edges2 = edges[removeIndex]
 
+                    print("in union")
+                    print(edges1)
+                    print(edges1.shape)
+                    print(edges2.shape)
+
+                    newEdges = np.concatenate((edges1, edges2))
                     # Combining the edges. Numpy objects in all its glory..
-                    newEdges = np.array([[np.concatenate((edges1[i], edges2[
-                        i]))] for i in range(len(edges1))])
+                    #newEdges = np.array([[np.concatenate((edges1[i], edges2[
+                    #    i]))] for i in range(len(edges1))])
 
                     print("newEdges: {}".format(newEdges))
 
@@ -129,7 +135,7 @@ def merge(starts, ends, strands=None, values=None, ids=None,
 
                     # Remove the old edges.
                     edges[overlapIndex] = newEdges
-                    edges = np.deg2rad(edges, removeIndex[0])
+                    edges = np.delete(edges, removeIndex[0])
 
                 starts = np.delete(starts, removeIndex[0])
 

@@ -50,6 +50,24 @@ def importTrackIntoGTrack(trackName, genome, path):
     else:
         print("in gtrack")
 
+# *** Misc ***
+
+def _getDtype(base):
+    """
+
+    Given a list of numpy string arrays. Find the larges dtype.
+
+    :param base: list of numpy string array
+    :return: The largest string dtype
+    """
+
+    if len(base) > 1:
+        dt = [b.dtype for b in base]
+        return max(dt)
+    else:
+        return base[0].dtype
+
+
 # *** Track handling ***
 
 def printTrackView(tv):
@@ -122,11 +140,6 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
     logging.debug("Creating new raw result track view")
 
     if newStarts is not None and newEnds is not None:
-        print("***F****")
-        print(newStarts)
-        print(newEnds)
-        print("***F****")
-
         assert len(newStarts) == len(newEnds)
 
     if index is None:
@@ -248,7 +261,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             if idsBase is None:
                 ids = None
             else:
-                ids = np.chararray(len(index))
+                ids = np.empty(len(index), dtype=_getDtype(idsBase))
                 for i in range(0, nrBaseTracks):
                     ids[enc[i]] = idsBase[i][ind[i]]
 
@@ -259,9 +272,9 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             if edgesBase is None:
                 edges = None
             else:
-                edges = np.zeros(len(index), dtype=object)
+                edges = np.empty(len(index), dtype=_getDtype(edgesBase))
                 for i in range(0, nrBaseTracks):
-                    edges[enc[i]] = edgesBase[i][ind[i]]
+                    edges[enc[i][0]] = edgesBase[i][ind[i]]
 
         if weightsBase is None:
             weights = None
@@ -307,12 +320,8 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                 ids = i[index]
 
         if newEdges is not None:
-            print("ids {}".format(ids))
-            print("newEdges {}".format(newEdges))
             assert len(newEdges) == len(ids)
             edges = newEdges
-            print("edges {}".format(edges))
-
         else:
             e = baseTrack.edgesAsNumpyArray()
             if e is not None:
@@ -326,6 +335,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
 
     tv = TrackView(region, starts, ends, vals, strands, ids, edges, weights,
                    borderHandling='crop', allowOverlaps=allowOverlap)
+
     return tv
 
 def createTrackContentFromFile(genome, path, allowOverlaps):

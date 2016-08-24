@@ -22,13 +22,14 @@ def uniquifyLinks(ids, edges, trackIdentifier=None,
         first = edges[0]
         if isinstance(first, np.ndarray) or isinstance(first, list):
             # More then one list.
-            newEdges = [['' if e == '' else "{}-{}".format(e, trackIdentifier)
-                        for e in edge] for edge in edges]
+            newEdges = np.array([['' if e == '' else
+                                  "{}-{}".format(e,trackIdentifier)
+                                  for e in edge] for edge in edges])
         else:
             # Update the edges
-            newEdges = ['' if edge == '' else
-                        "{}-{}".format(edge, trackIdentifier) for edge in
-                        edges]
+            newEdges = np.array(['' if edge == '' else
+                                "{}-{}".format(edge, trackIdentifier)
+                                for edge in edges])
     else:
         newEdges = None
 

@@ -41,10 +41,6 @@ class UniquifyLinks(Operator):
         ids = tv.idsAsNumpyArray()
         edges = tv.edgesAsNumpyArray()
 
-        print("*******")
-        print(edges)
-        print("*******")
-
         ret = uniquifyLinks(ids, edges, self._trackIdentifier,
                             self._allowOverlap, self._debug)
 
@@ -120,8 +116,8 @@ class UniquifyLinks(Operator):
         """
         self._resultTrackRequirements = self._trackRequirements
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, track):
+        return track
 
     def postCalculation(self, track):
         return track

@@ -58,8 +58,8 @@ class CountElements(Operator):
         # For now the result track is always of the same type as track A
         self._resultTrackRequirements = None
 
-    def preCalculation(self):
-        pass
+    def preCalculation(self, track):
+        return track
 
     def postCalculation(self, result):
         return result
