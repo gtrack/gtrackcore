@@ -3,13 +3,19 @@ import numpy as np
 import logging
 from gtrackcore.track_operations.RawOperationContent import RawOperationContent
 
-def union(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlap):
+def union(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlap=False):
     """
     Any input -> any output..
     calculate the union and return index.
     What do we do with overlap...
     Only points and segments overlap..
     """
+
+    print("************TEST UNINON***************")
+    print("t1Starts: {}".format(t1Starts))
+    print("t1Ends: {}".format(t1Ends))
+    print("t2Starts: {}".format(t2Starts))
+    print("t2Ends {}".format(t2Ends))
 
     resIsPoints=False
     resIsPartition=False
@@ -100,13 +106,15 @@ def union(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlap):
             t2Starts = t2Starts[:-1]
 
         elif t2Ends is None:
+            print("T2 is POINT!")
             # t2 is points
             # We convert the points to segments of length 0
-            t2Ends = np.copy(t1Starts)
+            t2Ends = np.copy(t2Starts)
 
         # t2 is segment
         t1 = np.column_stack((t1Starts, t1Ends, t1Index, t1Encode))
         t2 = np.column_stack((t2Starts, t2Ends, t2Index, t2Encode))
+        print(t2)
         resIsSegment = True
 
     combined = np.concatenate((t1, t2))
@@ -127,15 +135,10 @@ def union(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlap):
         starts = res[:, 0]
         ends = res[:, 1]
     else:
-        print("Error in union!")
         import sys
         sys.exit(1)
 
     index = res[:, -2]
     enc = res[:,-1]
 
-    print("**D**")
-    print(starts)
-    print(ends)
-    print("**D**")
     return starts, ends, index, enc

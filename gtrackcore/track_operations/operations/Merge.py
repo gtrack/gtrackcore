@@ -44,39 +44,35 @@ class Merge(Operator):
                 strands = None
                 self._useStrands = False
 
-        if self._useValues:
+        if self._mergeValues:
             values = tv.valsAsNumpyArray()
             if values is None or values.size == 0:
                 # Track has no values, ignoring..
                 values = None
-                self._useValues = False
-        if self._useLinks:
+                self._mergeValues = False
+
+        if self._mergeLinks:
             ids = tv.idsAsNumpyArray()
             edges = tv.edgesAsNumpyArray()
             if ids is None or edges is None:
                 # Track has no links. ignoring..
                 ids = None
                 edges = None
-                self._useLinks = False
+                self._mergeLinks = False
 
         ret = merge(starts, ends, strands=strands, values=values, ids=ids,
                     edges=edges, weights=weights, useStrands=self._useStrands,
                     useMissingStrands=self._useMissingStrands,
                     treatMissingAsPositive=self._treatMissingAsPositive,
-                    useValues=self._useValues,
-                    valueFunction=self._valueFunction,
-                    useLinks=self._useLinks)
+                    mergeValues=self._mergeValues,
+                    mergeValuesFunction=self._mergeValuesFunction,
+                    mergeLinks=self._mergeLinks)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 7
             # We do not care about info from the base track..
             # the new track will only contain starts, ends and (strands if
             # present.
-
-            print("In return:")
-            print("starts: {}".format(ret[0]))
-            print("ends: {}".format(ret[1]))
-            print("values: {}".format(ret[2]))
 
             tv = TrackView(region, ret[0], ret[1], ret[2], ret[3], ret[4],
                            ret[5], ret[6], borderHandling='crop',
@@ -94,10 +90,10 @@ class Merge(Operator):
 
         # Set defaults for changeable properties
 
-        self._useValues = False
-        self._valueFunction = None
+        self._mergeValues = False
+        self._mergeValuesFunction = None
 
-        self._useLinks = False
+        self._mergeLinks = False
 
         self._useStrands = False
         self._useMissingStrands = False
@@ -112,26 +108,28 @@ class Merge(Operator):
         :return: None
         """
 
-        if 'useValues' in kwargs:
-            self._useValues = kwargs['useValues']
+        # Merge values
+        if 'mergeValues' in kwargs:
+            self._mergeValues = kwargs['mergeValues']
 
-        if 'valueFunction' in kwargs:
-            self._valueFunction = kwargs['valueFunction']
+        if 'mergeValuesFunction' in kwargs:
+            self._mergeValuesFunction = kwargs['mergeValuesFunction']
 
-        if 'useLinks' in kwargs:
-            self._useLinks = kwargs['useLinks']
+        # Merge links
+        if 'mergeLinks' in kwargs:
+            self._mergeLinks = kwargs['mergeLinks']
 
+        # Strands
         if 'useStrands' in kwargs:
             self._useStrands = kwargs['useStrands']
 
         if 'useMissingStrands' in kwargs:
             self._useMissingStrands = kwargs['useMissingStrands']
-        else:
-            self._useMissingStrands = False
 
         if 'treatMissingAsPositive' in kwargs:
             self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
 
+        # Misc
         if 'debug' in kwargs:
             self._debug = kwargs['debug']
         else:

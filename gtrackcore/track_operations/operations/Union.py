@@ -47,11 +47,21 @@ class Union(Operator):
         self._trackRequirements = \
             [TrackFormatReq(dense=False, allowOverlaps=False),
              TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultIsTrack = True
 
         # Set defaults for changeable properties
         self._allowOverlap = False
         self._resultAllowOverlaps = False
-        self._resultIsTrack = True
+        self._useStands = True
+        self._useMissingStrands = True
+        self._treatMissingAsPositive = True
+        self._mergeValues = True
+        self._mergeValuesFunction = None
+        self._mergeLinks = True
+        self._makeLinksUnique = False
+        self._trackALinkTag = None
+        self._trackBLinkTag = None
+
         # For now the result track is always of the same type as track A
         # TODO: Solve this for the case where A and b are not of the same type.
         self._resultTrackRequirement = TrackFormat(startList=[], endList=[])
@@ -63,6 +73,7 @@ class Union(Operator):
         :param kwargs:
         :return: None
         """
+        # Overlap
         if 'allowOverlap' in kwargs:
             self._allowOverlap = kwargs['allowOverlap']
             self._updateTrackFormat()
@@ -71,28 +82,41 @@ class Union(Operator):
             self._resultAllowOverlaps = kwargs['resultAllowOverlap']
             self._updateResultTrackFormat()
 
+        # Strand handling
+        if 'useStrands' in kwargs:
+            self._useStands = kwargs['useStrands']
+
+        if 'useMissingStrands' in kwargs:
+            self._useMissingStrands = kwargs['useMissingStrands']
+
+        if 'treatMissingAsPositive' in kwargs:
+            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
+
+        # Value handling
+        if 'mergeValues' in kwargs:
+            self._mergeValues = kwargs['mergeValues']
+
+        if 'mergeValuesFunction' in kwargs:
+            self._mergeValuesFunction = kwargs['mergeValuesFunction']
+
+        # Link handling
+        if 'mergeLinks' in kwargs:
+            self._mergeLinks = kwargs['mergeLinks']
+
         if 'makeLinksUnique' in kwargs:
             self._makeLinksUnique = kwargs['makeLinksUnique']
-        else:
-            self._makeLinksUnique = False
 
         if 'trackALinkTag' in kwargs:
             self._trackALinkTag = kwargs['trackALinkTag']
-        else:
-            self._trackALinkTag = None
 
         if 'trackBLinkTag' in kwargs:
             self._trackBLinkTag = kwargs['trackBLinkTag']
-        else:
-            self._trackBLinkTag = None
 
     def preCalculation(self, tracks):
 
         if self._makeLinksUnique:
             t1 = tracks[0]
             t2 = tracks[1]
-
-            tvs = t2.trackViews
 
             if self._trackALinkTag is not None:
                 u = UniquifyLinks(t1, trackIdentifier=self._trackALinkTag)
@@ -108,8 +132,6 @@ class Union(Operator):
                 u = UniquifyLinks(t2, trackIdentifier="track-2")
                 t2 = u.calculate()
 
-            tvs = t2.trackViews
-
             return t1, t2
 
         else:
@@ -118,10 +140,11 @@ class Union(Operator):
     def postCalculation(self, track):
 
         if not self._resultAllowOverlaps:
-            print("No overlap in result!!")
+            print("Removing overlap in result!!")
             # Overlap not allowed in the result. Using merge to remove it
-            m = Merge(track, both=True, useValues=True, useStrands=True,
-                      useLinks=True, allowOverlap=False)
+            m = Merge(track, both=True, mergeValues=self._mergeValues,
+                      useStrands=True,
+                      mergeLinks=True, allowOverlap=False)
             res = m.calculate()
             return res
         else:
