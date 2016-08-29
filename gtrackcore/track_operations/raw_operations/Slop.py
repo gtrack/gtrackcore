@@ -1,97 +1,139 @@
 import numpy as np
 
-def slop(starts, ends, genomeSize, strands=None, ignoreStrands=False,
-         start=None, end=None, both=None, useFraction=False,
-         allowOverlap=False,
-         resultAllowOverlap=False, debug=False):
+def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
+         end=None, both=None, useFraction=False, useStrands=False,
+         useMissingStrands=False, treatMissingAsPositive=True,
+         ignorePositive=False, ignoreNegative=False, updateMissingStrand=False,
+         debug=False):
+    """
 
-    assert starts is not None
-    assert ends is not None
-    assert isinstance(starts, np.ndarray)
-    assert isinstance(ends, np.ndarray)
-    assert len(starts) == len(ends)
+    :param genomeSize:
+    :param starts:
+    :param ends:
+    :param strands:
+    :param start:
+    :param end:
+    :param both:
+    :param useFraction:
+    :param useStrands:
+    :param useMissingStrands:
+    :param treatMissingAsPositive:
+    :param debug:
+    :return:
+    """
+
     assert (end is not None or start is not None) or both is not None
 
-    if not ignoreStrands:
+    if useStrands:
         assert strands is not None
 
     index = np.arange(0, len(starts), 1, dtype='int32')
 
     if useFraction:
+        # Using a fraction of the segments length as a basis for the flank.
+        # To do this we need to calculate the flank length for each segment.
+        # The new arrays are converted to ints.
 
-        raise NotImplementedError
-    else:
+        lengths = ends - starts
 
-        if ignoreStrands is True or both is not None:
-            # When we are adding to both sides we can ignore strands.
-            # Strands not defined.
-            if both is not None:
-                starts = starts - both
-                ends = ends + both
-            else:
-                if start is not None:
-                    starts = starts - start
-                if end is not None:
-                    ends = ends + end
+        if both is not None:
+            assert start is None
+            assert end is None
 
+            # We can ignore strand when calculating length
+
+            both = lengths * both
+            both.astype(int)
         else:
-             # TODO
-
-            # When strand information is missing or irrelevant, we treat is as
-            # positiv.
-
-            # The strand of the track element. "+" for positive, "-" for negative
-            # strand, and "." when strand information is missing or irrelevant.
-
-            # Strand will be a array if "+", "-" or "."
-
-            # create two indexes, one for "+" and ".", and one for "-"
-
-            # flip start and and for the "-"
-
-            # profit.
-
-            # TODO: Support that user can select that '.' can be '-'
-            positiveIndex = np.where((strands == '+' or strands == '.'))
-            negativeIndex = np.where(strands == '-')
-
             if start is not None:
-                if len(positiveIndex[0]) > 0:
-                    if debug:
-                        print("***")
-                        print(starts)
-                        print(starts[positiveIndex])
-                        print(starts[positiveIndex]-starts)
-                        print("***")
-                    starts[positiveIndex] = starts[positiveIndex] - start
-                    if debug:
-                        print(starts)
-                if len(negativeIndex[0]) > 0:
-                    ends[negativeIndex] = ends[negativeIndex] + start
+                start = lengths * start
+                start.astype(int)
 
             if end is not None:
-                if debug:
-                    print("***")
-                    print("in end!")
-                    print(starts)
-                    print(ends)
-                    print("***")
+                end = lengths * end
+                end.astype(int)
+
+    if useStrands:
+        print("Using strands!")
+        positiveIndex = np.where(strands == '+')
+        negativeIndex = np.where(strands == '-')
+        missingIndex = np.where(strands == '.')
+
+        if len(missingIndex[0]) == 0:
+            useMissingStrands = False
+
+        if both is not None:
+            # When using both, there is no difference in extending negative
+            # and positive features.
+            if not ignorePositive:
+                # Updating positive
                 if len(positiveIndex[0]) > 0:
-                    if debug:
-                        print("in positive")
-                    ends[positiveIndex] = ends[positiveIndex] + end
+                    starts[positiveIndex] = starts[positiveIndex] - both
+                    ends[positiveIndex] = ends[positiveIndex] + both
+            if not ignoreNegative:
+                # Updating negative
                 if len(negativeIndex[0]) > 0:
-                    if debug:
-                        print("in negative")
-                    starts[negativeIndex] = starts[negativeIndex] - end
+                    starts[negativeIndex] = starts[negativeIndex] - both
+                    ends[negativeIndex] = ends[negativeIndex] + both
 
-                if debug:
-                    print("****")
-                    print("after end")
-                    print(starts)
-                    print(ends)
-                    print("***")
+            if useMissingStrands:
+                if treatMissingAsPositive and not ignorePositive:
+                    starts[missingIndex] = starts[missingIndex] - both
+                    ends[missingIndex] = end[missingIndex] + both
 
+                    if updateMissingStrand:
+                        strands[missingIndex] = '+'
+
+                elif not treatMissingAsPositive and not ignoreNegative:
+                    starts[missingIndex] = starts[missingIndex] - both
+                    ends[missingIndex] = end[missingIndex] + both
+
+                    if updateMissingStrand:
+                        strands[missingIndex] = '-'
+
+        else:
+            if start is not None:
+
+                print("Strand! start!")
+                if not ignorePositive:
+                    if len(positiveIndex[0]) > 0:
+                        print("IN start!")
+                        starts[positiveIndex] = starts[positiveIndex] - start
+                if not ignoreNegative:
+                    if len(negativeIndex[0]) > 0:
+                        ends[negativeIndex] = ends[negativeIndex] + start
+
+                if useMissingStrands:
+                    if treatMissingAsPositive and not ignorePositive:
+                        starts[missingIndex] = starts[missingIndex] - start
+                        if updateMissingStrand:
+                            strands[missingIndex] = '+'
+
+                    elif not treatMissingAsPositive and not ignoreNegative:
+                        ends[missingIndex] = end[missingIndex] + start
+                        if updateMissingStrand:
+                            strands[missingIndex] = '-'
+
+            if end is not None:
+                if not ignorePositive:
+                    if len(positiveIndex[0]) > 0:
+                        ends[positiveIndex] = ends[positiveIndex] + end
+                if not ignoreNegative:
+                    if len(negativeIndex[0]) > 0:
+                        starts[negativeIndex] = starts[negativeIndex] - end
+
+
+    else:
+        # No strand info or ignoring it.
+
+        if both is not None:
+            starts = starts - both
+            ends = ends + both
+        else:
+            if start is not None:
+                starts = starts - start
+            if end is not None:
+                ends = ends + end
 
     # Check if the slop over/under flows the genome size.
     underFlowIndex = np.where(starts < 0)
@@ -102,38 +144,19 @@ def slop(starts, ends, genomeSize, strands=None, ignoreStrands=False,
     if len(overFlowIndex[0]) > 0:
         ends[overFlowIndex] = genomeSize
 
-    if not resultAllowOverlap:
-        # Check, equal starts?
-        # Check first is a segment is completely inside another segment
-        # If it is we remove it.
-        # if end[n] > end[n+1] => remover n
-        totalOverlapIndex = np.where(ends[:-1] >= ends[1:])
+    print(strands)
 
-        if len(totalOverlapIndex[0]) > 0:
-            # As there can be more then one segment inside another segment
-            # we need to iterate over it until we have no more total overlap.
-            while len(totalOverlapIndex[0]) != 0:
-                ends = np.delete(ends, totalOverlapIndex, 0)
-                starts = np.delete(starts, totalOverlapIndex, 0)
-                index = np.delete(index, totalOverlapIndex, 0)
-                totalOverlapIndex = np.where(ends[:-1] >= ends[:1])
+    # TODO sort! We can in some cases lose the ordering of the track.
+    # Sort them before returning.
 
-        # Find partially overlapping segments
-        # end[n] > start[n+1]
-        partialOverlapIndex = np.where(ends[:-1] > starts[1:])
+    # Slop at start of positive segments.
+    #
+    #       ----
+    #            ++++
+    # Res
+    #       ----
+    #     +++++++++++
+    #
+    # The second segment is now before the first
 
-        if len(partialOverlapIndex[0]) > 0:
-            # Creating masks to merge the overlapping segments
-            overlapStartMask = np.ones(len(starts), dtype=bool)
-            overlapStartMask[[partialOverlapIndex[0]+1]] = False
-
-            overlapEndMask = np.ones(len(ends), dtype=bool)
-            overlapEndMask[partialOverlapIndex[0]] = False
-
-            starts = starts[overlapStartMask]
-            ends = ends[overlapEndMask]
-
-        # Do we need to save strands?
-        index = None
-
-    return starts, ends, index
+    return starts, ends, strands, index

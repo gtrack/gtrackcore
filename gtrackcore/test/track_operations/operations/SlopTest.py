@@ -22,230 +22,224 @@ class SlopTest(unittest.TestCase):
                             for c, l in
                             GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
-    def _runSlopSegmentsTest(self, starts, ends, expStarts, expEnds,
-                             strands=None, expStrands=None, start=None,
-                             end=None, both=None, ignoreStrand=False,
-                             allowOverlap=False, resultAllowOverlap=False,
-                             debug=False):
+    def _runTest(self, starts=None, ends=None, values=None, strands=None,
+                 ids=None, edges=None, weights=None, expStarts=None,
+                 expEnds=None, expValues=None, expStrands=None, expIds=None,
+                 expEdges=None, expWeights=None, customChrLength=None,
+                 allowOverlap=True, resultAllowOverlap=False, start=None,
+                 end=None, both=None, useStrands=False,
+                 useMissingStrands=True, treatMissingAsPositive=True,
+                 debug=False):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
-                                             strandList=strands)
+                                             valList=values,
+                                             strandList=strands,
+                                             idList=ids, edgeList=edges,
+                                             weightsList=weights,
+                                             customChrLength=customChrLength)
 
-        if both is not None:
-            self.assertTrue((start is None and end is None))
-        else:
-            self.assertTrue((starts is not None or end is not None))
-
-        u = Slop(track, start=start, end=end, both=both,
-                 ignoreStrand=ignoreStrand, allowOverlap=allowOverlap,
+        s = Slop(track, both=both, start=start, end=end,
+                 useStrands=useStrands, useMissingStrands=useMissingStrands,
+                 treatMissingAsPositive=treatMissingAsPositive,
                  resultAllowOverlap=resultAllowOverlap, debug=debug)
 
-        self.assertTrue((u is not None))
-
-        tc = u.calculate()
+        result = s.calculate()
+        self.assertTrue(result is not None)
 
         resFound = False
 
-        for (k, v) in tc.getTrackViews().items():
-            if cmp(k, self.chr1) == 0:
+        for (k, v) in result.getTrackViews().iteritems():
+            if cmp(k, self.chr1) == 0 or cmp(k, self.chr1Small) == 0:
                 # All test tracks are in chr1
-                if debug:
-                    print(v.startsAsNumpyArray())
-                    print(v.endsAsNumpyArray())
-                    print(expStarts)
-                    print(expEnds)
-
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
                 resFound = True
-                if strands is not None:
-                    pass
+
+                newStarts = v.startsAsNumpyArray()
+                newEnds = v.endsAsNumpyArray()
+                newValues = v.valsAsNumpyArray()
+                newStrands = v.strandsAsNumpyArray()
+                newIds = v.idsAsNumpyArray()
+                newEdges = v.edgesAsNumpyArray()
+                newWeights = v.weightsAsNumpyArray()
+                #newExtras = v.extrasAsNumpyArray()
+
+                if expStarts is not None:
+                    print("newStarts: {}".format(newStarts))
+                    print("expStarts: {}".format(expStarts))
+                    self.assertTrue(newStarts is not None)
+                    self.assertTrue(np.array_equal(newStarts, expStarts))
+                else:
+                    self.assertTrue(newStarts is None)
+
+                if expEnds is not None:
+                    print("newEnds: {}".format(newEnds))
+                    print("expEnds: {}".format(expEnds))
+                    self.assertTrue(newEnds is not None)
+                    self.assertTrue(np.array_equal(newEnds, expEnds))
+                else:
+                    self.assertTrue(newEnds is None)
+
+                if expValues is not None:
+                    self.assertTrue(newValues is not None)
+                    self.assertTrue(np.array_equal(newValues, expValues))
+                else:
+                    self.assertTrue(newValues is None)
+
+                if expStrands is not None:
+                    self.assertTrue(newStrands is not None)
+                    self.assertTrue(np.array_equal(newStrands, expStrands))
+                else:
+                    self.assertTrue(newStrands is None)
+
+                if expIds is not None:
+                    print("newIds: {}".format(newIds))
+                    print("expIds: {}".format(expIds))
+                    self.assertTrue(newIds is not None)
+                    self.assertTrue(np.array_equal(newIds, expIds))
+                else:
+                    self.assertTrue(newIds is None)
+
+                if expEdges is not None:
+                    print("newEdges: {}".format(newEdges))
+                    print("expEdges: {}".format(expEdges))
+                    self.assertTrue(newEdges is not None)
+                    self.assertTrue(np.array_equal(newEdges, expEdges))
+                else:
+                    self.assertTrue(newEdges is None)
+
+                if expWeights is not None:
+                    self.assertTrue(newWeights is not None)
+                    self.assertTrue(np.array_equal(newWeights, expWeights))
+                else:
+                    self.assertTrue(newWeights is None)
+
+                #if expExtras is not None:
+                #    self.assertTrue(newExtras is not None)
+                #    self.assertTrue(np.array_equal(newExtras, expExtras))
+                #else:
+                #    self.assertTrue(newExtras is None)
+
             else:
                 # Tests if all tracks no in chr1 have a size of 0.
-                self.assertEqual(v.startsAsNumpyArray().size, 0)
-                self.assertEqual(v.endsAsNumpyArray().size, 0)
+                self.assertEqual(v.size, 0)
 
         self.assertTrue(resFound)
 
+
+
     # **** Segments tests ****
 
-    def testSlopSegmentsStartSimple(self):
+    def testSegmentSimple(self):
         """
         :return: None
         """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], expStarts=[5],
-                                  expEnds=[20], start=5, allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Test of start
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[20],
+                      start=5, resultAllowOverlap=True)
 
-    def testSlopSegmentsEndSimple(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], expStarts=[10],
-                                  expEnds=[25], end=5, allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Test of end
+        self._runTest(starts=[10], ends=[20], expStarts=[10], expEnds=[25],
+                      end=5, resultAllowOverlap=True)
 
-    def testSlopSegmentsBothSimple(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], expStarts=[5],
-                                  expEnds=[25], both=5, allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Test of bofh
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
+                      both=5, resultAllowOverlap=True)
 
-    def testSlopSegmentsStartAndEndSameValue(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], expStarts=[5],
-                                  expEnds=[25], start=5, end=5,
-                                  allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # test of star and end
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
+                      start=5, end=5, resultAllowOverlap=True,)
 
-    def testSlopSegmentsStartAndEndDifferentValue(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], expStarts=[6],
-                                  expEnds=[35], start=4, end=15,
-                                  allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # test of star and end. Different values
+        self._runTest(starts=[10], ends=[20], expStarts=[6], expEnds=[35],
+                      start=4, end=15, resultAllowOverlap=True)
 
-    def testSlopSegmentsNewStartAtZero(self):
+    def testSegmentsOverAndUnderflow(self):
         """
         :return: None
         """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], expStarts=[0],
-                                  expEnds=[20], start=10, allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Underflow.
+        # New start at 0
+        self._runTest(starts=[10], ends=[20], expStarts=[0], expEnds=[20],
+                      start=10, resultAllowOverlap=True)
 
-    def testSlopSegmentsUnderflow(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], expStarts=[0],
-                                  expEnds=[20], start=100, allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Cutting underflow
+        self._runTest(starts=[10], ends=[20], expStarts=[0], expEnds=[20],
+                      start=100, resultAllowOverlap=True)
 
-    def testSlopSegmentsEndAtRegionSize(self):
-        """
-        Test if creating a slop with an end equal to the size of the region
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[4000000], ends=[len(self.chr1)-20],
-                                  expStarts=[4000000],
-                                  expEnds=[len(self.chr1)], end=20,
-                                  allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Start at 0
+        self._runTest(starts=[0], ends=[20], expStarts=[0], expEnds=[20],
+                      start=10, resultAllowOverlap=True)
 
-    def testSlopSegmentsOverflow(self):
-        """
-        Test if the slop i cut to prevent the segment from overflowing the
-        regions size.
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[4000000], ends=[len(self.chr1)-20],
-                                  expStarts=[4000000],
-                                  expEnds=[len(self.chr1)], end=300,
-                                  allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Overflow
+        # New end at len(region)
+        self._runTest(starts=[400000], ends=[len(self.chr1)-20],
+                      expStarts=[400000], expEnds=[len(self.chr1)], end=20,
+                      resultAllowOverlap=True)
 
-    def testSlopSegmentsMultipleNoOverlapStart(self):
-        """
-        Test if the slop i cut to prevent the segment from overflowing the
-        regions size.
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10,40], ends=[20, 70],
-                                  expStarts=[5,35],
-                                  expEnds=[20,70], start=5,
-                                  allowOverlap=False,
-                                  resultAllowOverlap=True, ignoreStrand=True)
+        # Cuting overflow to region size
+        self._runTest(starts=[400000], ends=[len(self.chr1)-20],
+                      expStarts=[400000], expEnds=[len(self.chr1)], end=300,
+                      resultAllowOverlap=True)
 
-    def testSlopSegmentsMultipleNoOverlapEnd(self):
+    def testSegmentsMultiple(self):
         """
-        Test if the slop i cut to prevent the segment from overflowing the
-        regions size.
+        Tests slop on multiple tracks. Some overlap. Test merge of the overlap
         :return: None
         """
-        self._runSlopSegmentsTest(starts=[10,40], ends=[20, 70],
-                                  expStarts=[10,40], expEnds=[25,75], end=5,
-                                  allowOverlap=False, resultAllowOverlap=True,
-                                  ignoreStrand=True)
+        # Start, multiple, no overlap.
+        self._runTest(starts=[10,40], ends=[20, 70], expStarts=[5,35],
+                      expEnds=[20,70], start=5, resultAllowOverlap=True)
 
-    def testSlopSegmentsMultipleOverlappingResAllowOverlap(self):
-        """
-        Test if the slop i cut to prevent the segment from overflowing the
-        regions size.
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10,20], ends=[15, 40],
-                                  expStarts=[4,14], expEnds=[15,40], start=6,
-                                  allowOverlap=False, resultAllowOverlap=True,
-                                  ignoreStrand=True)
+        # End, multiple, no overlap.
+        self._runTest(starts=[10,40], ends=[20, 70], expStarts=[10,40],
+                      expEnds=[25,75], end=5, resultAllowOverlap=True)
 
-    def testSlopSegmentsMultipleOverlappingMergeOverlap(self):
-        """
-        Test if the slop i cut to prevent the segment from overflowing the
-        regions size.
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10,20], ends=[15, 40],
-                                  expStarts=[4], expEnds=[40], start=6,
-                                  allowOverlap=False, resultAllowOverlap=False,
-                                  ignoreStrand=True)
+        # Start, multiple, overlap, allow overlap in result.
+        self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4,14],
+                      expEnds=[15,40], start=6, resultAllowOverlap=True)
 
-    def testSlopSegmentsStartStrandSimple(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], strands=['+'],
-                                  expStarts=[5], expEnds=[20], start=5,
-                                  allowOverlap=False, debug=False,
-                                  resultAllowOverlap=False, ignoreStrand=False)
+        # Start, multiple, overlap, merge overlap in result.
+        self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4],
+                      expEnds=[40], start=6, resultAllowOverlap=False)
 
-    def testSlopSegmentsEndStrandSimple(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], strands=['+'],
-                                  expStarts=[10], expEnds=[25], end=5,
-                                  allowOverlap=False, debug=False,
-                                  resultAllowOverlap=False, ignoreStrand=False)
+    # test overlap in input
 
-    def testSlopSegmentsStartNegStrandSimple(self):
+    def atestSegmentsWithStrands(self):
         """
         :return: None
         """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], strands=['-'],
-                                  expStarts=[10], expEnds=[25], start=5,
-                                  allowOverlap=False, debug=False,
-                                  resultAllowOverlap=False, ignoreStrand=False)
 
-    def testSlopSegmentsEndNegStrandSimple(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], strands=["-"],
-                                  expStarts=[5], expEnds=[20], end=5,
-                                  allowOverlap=False, debug=False,
-                                  resultAllowOverlap=False, ignoreStrand=False)
+        # Positive, start
+        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
+                      expEnds=[20], expStrands=['+'], start=5, useStrands=True,
+                      resultAllowOverlap=True)
 
-    def testSlopSegmentsStarStrandNotDefinedSimple(self):
-        """
-        :return: None
-        """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], strands=['.'],
-                                  expStarts=[5], expEnds=[20], start=5,
-                                  allowOverlap=False, debug=False,
-                                  resultAllowOverlap=False, ignoreStrand=False)
+        # Positive, end
+        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[10],
+                      expEnds=[25], expStrands=['+'], end=5, useStrands=True,
+                      resultAllowOverlap=True)
 
-    def testSlopSegmentsEndStrandNotDefinedSimple(self):
+    def testSegmentsWithStrands(self):
+        # Negative, start
+        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[10],
+                      expEnds=[25], expStrands=['-'], start=5, useStrands=True,
+                      resultAllowOverlap=True)
+
+        # Negative, end
+        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
+                      expEnds=[20], expStrands=['-'], end=5, useStrands=True,
+                      resultAllowOverlap=False)
+
+        # Strand missing, Using
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[20], expStrands=['.'], start=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=True,
+                      resultAllowOverlap=True)
+
+    def atestSlopSegmentsEndStrandNotDefinedSimple(self):
         """
         :return: None
         """
-        self._runSlopSegmentsTest(starts=[10], ends=[20], strands=["."],
+        self._runTest(starts=[10], ends=[20], strands=["."],
                                   expStarts=[10], expEnds=[25], end=5,
                                   allowOverlap=False, debug=False,
                                   resultAllowOverlap=False, ignoreStrand=False)

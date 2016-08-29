@@ -153,14 +153,11 @@ class Merge(Operator):
         update the track requirement as well.
         :return: None
         """
-        if self._allowOverlap:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
+
+        # TODO update dense from the input track
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap),
+             TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap)]
 
     def _updateResultTrackFormat(self):
         """
@@ -168,14 +165,11 @@ class Merge(Operator):
         update the track requirement as well.
         :return: None
         """
-        if self._resultAllowOverlaps:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
+
+        # TODO update dense from the input track
+        self._resultTrackRequirements =\
+            [TrackFormatReq(dense=False, allowOverlaps=self.resultAllowOverlaps),
+             TrackFormatReq(dense=False, allowOverlaps=self.resultAllowOverlaps)]
 
     @classmethod
     def createSubParser(cls, subparsers):
@@ -189,9 +183,6 @@ class Merge(Operator):
                                             'non dense track.' )
         parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('-b', type=int, dest='both')
-        parser.add_argument('-s', type=int, dest='start')
-        parser.add_argument('-e', type=int, dest='end')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
         parser.set_defaults(which='Merge')
@@ -209,25 +200,11 @@ class Merge(Operator):
         track = createTrackContentFromFile(genome, args.track,
                                            args.allowOverlap)
 
+        # TODO, add support for mergeValues, mergeLinks..
+
         allowOverlap = args.allowOverlap
-        # TODO: use overlap...
 
-        if 'both' in args:
-            both = args.both
-        else:
-            both = None
-
-        if 'start' in args:
-            start = args.start
-        else:
-            start = None
-
-        if 'end' in args:
-            end = args.end
-        else:
-            end = None
-
-        return Merge(track, both=both, start=start, end=end,
+        return Merge(track, mergeValues=True, mergeLinks=True, useStrands=True,
                      allowOverlap=allowOverlap)
 
     @classmethod

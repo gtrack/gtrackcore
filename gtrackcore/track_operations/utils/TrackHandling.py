@@ -52,7 +52,7 @@ def importTrackIntoGTrack(trackName, genome, path):
 
 # *** Misc ***
 
-def _getDtype(base):
+def getDtype(base):
     """
 
     Given a list of numpy string arrays. Find the larges dtype.
@@ -146,7 +146,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
         # Expand this co use what we have..
         if newStarts is None or newEnds is None:
             raise NotImplementedError
-        tv = TrackView(region, newStarts, newEnds, None, None, None,
+        tv = TrackView(region, newStarts, newEnds, None, newStrands, None,
                    None, None, borderHandling='crop',
                    allowOverlaps=allowOverlap)
         return tv
@@ -261,7 +261,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             if idsBase is None:
                 ids = None
             else:
-                ids = np.empty(len(index), dtype=_getDtype(idsBase))
+                ids = np.empty(len(index), dtype=getDtype(idsBase))
                 for i in range(0, nrBaseTracks):
                     ids[enc[i]] = idsBase[i][ind[i]]
 
@@ -272,7 +272,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             if edgesBase is None:
                 edges = None
             else:
-                edges = np.empty(len(index), dtype=_getDtype(edgesBase))
+                edges = np.empty(len(index), dtype=getDtype(edgesBase))
                 for i in range(0, nrBaseTracks):
                     edges[enc[i][0]] = edgesBase[i][ind[i]]
 
