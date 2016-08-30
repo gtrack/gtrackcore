@@ -27,9 +27,9 @@ class SlopTest(unittest.TestCase):
                  expEnds=None, expValues=None, expStrands=None, expIds=None,
                  expEdges=None, expWeights=None, customChrLength=None,
                  allowOverlap=True, resultAllowOverlap=False, start=None,
-                 end=None, both=None, useStrands=False,
+                 end=None, both=None, useFraction=False, useStrands=False,
                  useMissingStrands=True, treatMissingAsPositive=True,
-                 debug=False):
+                 updateMissingStrand=False, debug=False):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
                                              valList=values,
@@ -39,8 +39,10 @@ class SlopTest(unittest.TestCase):
                                              customChrLength=customChrLength)
 
         s = Slop(track, both=both, start=start, end=end,
-                 useStrands=useStrands, useMissingStrands=useMissingStrands,
+                 useFraction=useFraction, useStrands=useStrands,
+                 useMissingStrands=useMissingStrands,
                  treatMissingAsPositive=treatMissingAsPositive,
+                 updateMissingStrand=updateMissingStrand,
                  resultAllowOverlap=resultAllowOverlap, debug=debug)
 
         result = s.calculate()
@@ -124,10 +126,31 @@ class SlopTest(unittest.TestCase):
 
         self.assertTrue(resFound)
 
+    # **** Test Points ****
+    # Just doing some simple test. When giving Slop a point track we return
+    # a segment track. For each point we get a new segment.
+    def testPoints(self):
+        # Test of start
+        self._runTest(starts=[10], expStarts=[5], expEnds=[10],
+                      start=5, resultAllowOverlap=True)
 
+        # Test of end
+        self._runTest(starts=[10], expStarts=[10], expEnds=[15],
+                      end=5, resultAllowOverlap=True)
 
-    # **** Segments tests ****
+        # Test of both
+        self._runTest(starts=[10], expStarts=[5], expEnds=[15],
+                      both=5, resultAllowOverlap=True)
 
+        # test of star and end
+        self._runTest(starts=[10], expStarts=[5], expEnds=[15],
+                      start=5, end=5, resultAllowOverlap=True)
+
+        # test of star and end. Different values
+        self._runTest(starts=[10], expStarts=[6], expEnds=[20],
+                      start=4, end=10, resultAllowOverlap=True)
+
+    # **** Test Segments ****
     def testSegmentSimple(self):
         """
         :return: None
@@ -218,7 +241,16 @@ class SlopTest(unittest.TestCase):
                       expEnds=[25], expStrands=['+'], end=5, useStrands=True,
                       resultAllowOverlap=True)
 
-    def testSegmentsWithStrands(self):
+        # Positive, both
+        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
+                      expEnds=[25], expStrands=['+'], both=5, useStrands=True,
+                      resultAllowOverlap=True)
+
+        # Positive, start and end
+        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
+                      expEnds=[30], expStrands=['+'], start=5, end=10,
+                      useStrands=True, resultAllowOverlap=True)
+
         # Negative, start
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[10],
                       expEnds=[25], expStrands=['-'], start=5, useStrands=True,
@@ -227,22 +259,150 @@ class SlopTest(unittest.TestCase):
         # Negative, end
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
                       expEnds=[20], expStrands=['-'], end=5, useStrands=True,
-                      resultAllowOverlap=False)
+                      resultAllowOverlap=True)
 
-        # Strand missing, Using
+        # Negative, both
+        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
+                      expEnds=[25], expStrands=['-'], both=5, useStrands=True,
+                      resultAllowOverlap=True)
+
+        # Negative, start and end
+        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
+                      expEnds=[30], expStrands=['-'], start=10, end=5,
+                      useStrands=True, resultAllowOverlap=True)
+
+        # Strand missing. As positive, start
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
                       expEnds=[20], expStrands=['.'], start=5, useStrands=True,
                       useMissingStrands=True, treatMissingAsPositive=True,
                       resultAllowOverlap=True)
 
-    def atestSlopSegmentsEndStrandNotDefinedSimple(self):
-        """
-        :return: None
-        """
-        self._runTest(starts=[10], ends=[20], strands=["."],
-                                  expStarts=[10], expEnds=[25], end=5,
-                                  allowOverlap=False, debug=False,
-                                  resultAllowOverlap=False, ignoreStrand=False)
+        # Strand missing. As positive, end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
+                      expEnds=[25], expStrands=['.'], end=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=True,
+                      resultAllowOverlap=True)
+
+        # Strand missing. As positive, both
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[25], expStrands=['.'], both=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=True,
+                      resultAllowOverlap=True)
+
+        # Strand missing. As positive, start and end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[30], expStrands=['.'], start=5, end=10,
+                      useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=True,
+                      resultAllowOverlap=True)
+
+        # Strand missing. As negative, start
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
+                      expEnds=[25], expStrands=['.'], start=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=False,
+                      resultAllowOverlap=True)
+
+        # Strand missing. As negative, end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[20], expStrands=['.'], end=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=False,
+                      resultAllowOverlap=True)
+
+        # Strand missing. As negative, both
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[25], expStrands=['.'], both=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=False,
+                      resultAllowOverlap=True)
+
+        # Strand missing. As negative, start and end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[0],
+                      expEnds=[25], expStrands=['.'], start=5, end=10,
+                      useStrands=True, useMissingStrands=True,
+                      treatMissingAsPositive=False, resultAllowOverlap=True)
+
+    def testSegmentsWithStrands(self):
+
+        # Strand missing. As positive, start, keeping strand
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[20], expStrands=['+'], start=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=True,
+                      updateMissingStrand=True, resultAllowOverlap=True)
+
+        # Strand missing. As positive, end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
+                      expEnds=[25], expStrands=['+'], end=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=True,
+                      updateMissingStrand=True, resultAllowOverlap=True)
+
+        # Strand missing. As positive, both
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[25], expStrands=['+'], both=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=True,
+                      updateMissingStrand=True, resultAllowOverlap=True)
+
+        # Strand missing. As positive, start and end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[30], expStrands=['+'], start=5, end=10,
+                      useStrands=True, useMissingStrands=True,
+                      treatMissingAsPositive=True, updateMissingStrand=True,
+                      resultAllowOverlap=True)
+
+        # Strand missing. As negative, start
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
+                      expEnds=[25], expStrands=['-'], start=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=False,
+                      updateMissingStrand=True, resultAllowOverlap=True)
+
+        # Strand missing. As negative, end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[20], expStrands=['-'], end=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=False,
+                      updateMissingStrand=True, resultAllowOverlap=True)
+
+        # Strand missing. As negative, both
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
+                      expEnds=[25], expStrands=['-'], both=5, useStrands=True,
+                      useMissingStrands=True, treatMissingAsPositive=False,
+                      updateMissingStrand=True, resultAllowOverlap=True)
+
+        # Strand missing. As negative, start and end
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[0],
+                      expEnds=[25], expStrands=['-'], start=5, end=10,
+                      useStrands=True, useMissingStrands=True,
+                      treatMissingAsPositive=False,
+                      updateMissingStrand=True, resultAllowOverlap=True)
+
+        # Strand missing. Ignoring
+        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
+                      expEnds=[20], expStrands=['.'], start=5, useStrands=True,
+                      useMissingStrands=False, treatMissingAsPositive=True,
+                      resultAllowOverlap=True)
+
+    def testSegmentsMerge(self):
+        pass
+
+    def testSegmentsFractions(self):
+        # Test of start
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[20],
+                      start=0.5, useFraction=True, resultAllowOverlap=True)
+
+        # Test of end
+        self._runTest(starts=[10], ends=[20], expStarts=[10], expEnds=[25],
+                      end=0.5, useFraction=True, resultAllowOverlap=True)
+
+        # Test of both
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
+                      both=0.5, useFraction=True, resultAllowOverlap=True)
+
+        # test of star and end
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
+                      start=0.5, end=0.5, useFraction=True,
+                      resultAllowOverlap=True,)
+
+        # test of star and end. Different values
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[30],
+                      start=0.5, end=1, useFraction=True,
+                      resultAllowOverlap=True)
 
 
 if __name__ == "__main__":

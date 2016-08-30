@@ -47,9 +47,10 @@ class Slop(Operator):
 
         ret = slop(genomeSize, starts=starts, ends=ends, strands=strands,
                    start=self._start, end=self._end, both=self._both,
-                   useStrands=self._useStrands,
+                   useFraction=self._useFraction, useStrands=self._useStrands,
                    useMissingStrands=self._useMissingStrands,
                    treatMissingAsPositive=self._treatMissingAsPositive,
+                   updateMissingStrand=self._updateMissingStrand,
                    debug=self._debug)
 
         # slop returns start, ends, strands, index
@@ -123,7 +124,7 @@ class Slop(Operator):
             self._end = kwargs['end']
 
         if 'useFraction' in kwargs:
-            self._useFraction = kwargs['useFractions']
+            self._useFraction = kwargs['useFraction']
 
         if 'keepValuesAndLinks' in kwargs:
             self._keepValuesAndLInks = kwargs['keepValuesAndLinks']
