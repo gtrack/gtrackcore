@@ -2,7 +2,7 @@ import numpy as np
 
 def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
          end=None, both=None, useFraction=False, useStrands=False,
-         useMissingStrands=False, treatMissingAsPositive=True,
+         useMissingStrands=False, treatMissingAsNegative=False,
          ignorePositive=False, ignoreNegative=False, updateMissingStrand=False,
          debug=False):
     """
@@ -17,7 +17,7 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
     :param useFraction:
     :param useStrands:
     :param useMissingStrands:
-    :param treatMissingAsPositive:
+    :param treatMissingAsNegative:
     :param debug:
     :return:
     """
@@ -35,19 +35,15 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
     index = np.arange(0, len(starts), 1, dtype='int32')
 
     if useFraction:
-        print("In useFractions!")
         # Using a fraction of the segments length as a basis for the flank.
         # To do this we need to calculate the flank length for each segment.
         # The new arrays are converted to ints.
 
         lengths = ends - starts
-        print("lengths: {}".format(lengths))
 
         if both is not None:
             assert start is None
             assert end is None
-
-            # We can ignore strand when calculating length
 
             both = lengths * both
             both.astype(int)
@@ -61,7 +57,9 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
                 end.astype(int)
 
     if useStrands:
+        print(ignorePositive)
         if ignorePositive:
+            print("Ignoring positive!")
             positiveIndex = None
         else:
             positiveIndex = np.where(strands == '+')
@@ -94,15 +92,13 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
                 ends[negativeIndex] = ends[negativeIndex] + both
 
             if useMissingStrands:
-                if treatMissingAsPositive and not ignorePositive:
-                    print("in add missing as positive!")
+                if not treatMissingAsNegative and not ignorePositive:
                     starts[missingIndex] = starts[missingIndex] - both
                     ends[missingIndex] = ends[missingIndex] + both
                     if updateMissingStrand:
-                        print("setting strand to pos")
                         strands[missingIndex] = '+'
 
-                elif not treatMissingAsPositive and not ignoreNegative:
+                elif treatMissingAsNegative and not ignoreNegative:
                     starts[missingIndex] = starts[missingIndex] - both
                     ends[missingIndex] = ends[missingIndex] + both
 
@@ -111,26 +107,19 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
 
         else:
             if start is not None:
-                print("Strand! start!")
                 if positiveIndex is not None:
-                    print("updating positive starts!")
                     starts[positiveIndex] = starts[positiveIndex] - start
 
                 if negativeIndex is not None:
-                    print("updating negative starts ")
                     ends[negativeIndex] = ends[negativeIndex] + start
 
                 if useMissingStrands:
-                    print("updating missing starts")
-                    if treatMissingAsPositive and not ignorePositive:
-                        print("in update!")
+                    if not treatMissingAsNegative and not ignorePositive:
                         starts[missingIndex] = starts[missingIndex] - start
-                        print("test: {}".format(updateMissingStrand))
                         if updateMissingStrand:
-                            print("Updating start!")
                             strands[missingIndex] = '+'
 
-                    elif not treatMissingAsPositive and not ignoreNegative:
+                    elif treatMissingAsNegative and not ignoreNegative:
                         ends[missingIndex] = ends[missingIndex] + start
                         if updateMissingStrand:
                             strands[missingIndex] = '-'
@@ -142,12 +131,12 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
                     starts[negativeIndex] = starts[negativeIndex] - end
 
                 if useMissingStrands:
-                    if treatMissingAsPositive and not ignorePositive:
+                    if not treatMissingAsNegative and not ignorePositive:
                         ends[missingIndex] = ends[missingIndex] + end
                         if updateMissingStrand:
                             strands[missingIndex] = '+'
 
-                    elif not treatMissingAsPositive and not ignoreNegative:
+                    elif treatMissingAsNegative and not ignoreNegative:
                         starts[missingIndex] = starts[missingIndex] - end
                         if updateMissingStrand:
                             strands[missingIndex] = '-'
@@ -174,8 +163,6 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
     if len(overFlowIndex[0]) > 0:
         ends[overFlowIndex] = genomeSize
 
-    print(strands)
-
     # TODO sort! We can in some cases lose the ordering of the track.
     # Sort them before returning.
 
@@ -188,5 +175,17 @@ def slop(genomeSize, starts=None, ends=None, strands=None, start=None,
     #     +++++++++++
     #
     # The second segment is now before the first
+
+    unSorted = np.where(starts[1:] <= starts[:-1])
+
+    if len(unSorted[0]) > 0:
+        # Starts is no longer sorted.
+        # Sorting it and all of the other arrays.
+        sortIndex = np.argsort(starts)
+
+        starts = starts[sortIndex]
+        ends = ends[sortIndex]
+        strands = strands[sortIndex]
+        index = index[sortIndex]
 
     return starts, ends, strands, index

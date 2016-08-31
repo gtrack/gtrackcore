@@ -29,13 +29,11 @@ class Slop(Operator):
     def _calculate(self, region, tv):
 
         # Remove RawOperationsContent
-        logging.debug("Start call! region:{0}".format(region))
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
         strands = None
 
         if self._useStrands:
-            print("Using strands!")
             strands = tv.strandsAsNumpyArray()
             if strands is None or strands.size == 0:
                 # Track has no strand information, ignoring strands.
@@ -49,9 +47,10 @@ class Slop(Operator):
                    start=self._start, end=self._end, both=self._both,
                    useFraction=self._useFraction, useStrands=self._useStrands,
                    useMissingStrands=self._useMissingStrands,
-                   treatMissingAsPositive=self._treatMissingAsPositive,
+                   treatMissingAsNegative=self._treatMissingAsNegative,
                    updateMissingStrand=self._updateMissingStrand,
-                   debug=self._debug)
+                   ignorePositive=self._ignorePositive,
+                   ignoreNegative=self._ignoreNegative, debug=self._debug)
 
         # slop returns start, ends, strands, index
         if ret is not None and len(ret[0]) != 0:
@@ -85,12 +84,12 @@ class Slop(Operator):
         self._useFraction = False
 
         # Keep the values and links from the base track.
-        self._keepValuesAndLinks = False
+        self._keepValuesAndLinks = True
 
         # Strand handling
         self._useStrands = False
         self._useMissingStrands = True
-        self._treatMissingAsPositive = True
+        self._treatMissingAsNegative = False
         self._ignorePositive = False
         self._ignoreNegative = False
         self._updateMissingStrand = False
@@ -134,16 +133,16 @@ class Slop(Operator):
             self._useStrands = kwargs['useStrands']
 
         if 'ignorePositive' in kwargs:
-            self._ = kwargs['ignorePositive']
+            self._ignorePositive = kwargs['ignorePositive']
 
         if 'ignoreNegative' in kwargs:
-            self._ = kwargs['ignoreNegative']
+            self._ignoreNegative = kwargs['ignoreNegative']
 
         if 'useMissingStrands' in kwargs:
             self._useMissingStrands = kwargs['useMissingStrands']
 
-        if 'treatMissingAsPositive' in kwargs:
-            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
+        if 'treatMissingAsNegative' in kwargs:
+            self._treatMissingAsNegative = kwargs['treatMissingAsNegative']
 
         if 'updateMissingStrand' in kwargs:
             # Update the strands array from missing to the strand value used
