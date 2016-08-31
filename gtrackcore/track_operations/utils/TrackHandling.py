@@ -110,7 +110,7 @@ def printTrackView(tv):
 def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                              newStarts=None, newEnds=None, newStrands=None,
                              newValues=None, newIds=None, newEdges=None,
-                             encoding=None):
+                             newWeights=None, encoding=None):
     """
 
     TODO: Expand to support more track types.
@@ -266,7 +266,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                     ids[enc[i]] = idsBase[i][ind[i]]
 
         if newEdges is not None:
-            assert len(edges) == len(ids)
+            assert len(newEdges) == len(ids)
             edges = newEdges
         else:
             if edgesBase is None:
@@ -276,12 +276,16 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                 for i in range(0, nrBaseTracks):
                     edges[enc[i][0]] = edgesBase[i][ind[i]]
 
-        if weightsBase is None:
-            weights = None
+        if newWeights is not None:
+            assert len(newWeights) == len(ids)
+
         else:
-            weights = np.zeros(len(index))
-            for i in range(0, nrBaseTracks):
-                weights[enc[i]] = weightsBase[i][ind[i]]
+            if weightsBase is None:
+                weights = None
+            else:
+                weights = np.zeros(len(index))
+                for i in range(0, nrBaseTracks):
+                    weights[enc[i]] = weightsBase[i][ind[i]]
     else:
         if newStarts is not None:
             starts = newStarts
