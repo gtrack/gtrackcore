@@ -17,12 +17,15 @@ from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
 
 
-from gtrackcore.track_operations.raw_operations.ValueSelect import valueSelect
+from gtrackcore.track_operations.raw_operations.RemoveDeadLinks import \
+    removeDeadLinks
 
 class RemoveDeadLinks(Operator):
     """
     After operations on linked tracks we can get dead links.
     Links that points to elements that are removed.
+
+    Links in other regions? Find all ids in preCalc and save them..
 
     Options:
         - Move link to closest feature
@@ -30,23 +33,30 @@ class RemoveDeadLinks(Operator):
             - Max length
                 - Default value
                 - User value
+        - gobalIds
+        - lookalIds
     """
 
     def _calculate(self, region, tv):
-        raise NotImplementedError
         logging.debug("Start call! region:{0}".format(region))
-        starts = tv.startsAsNumpyArray()
-        ends = tv.endsAsNumpyArray()
-        values = tv.valsAsNumpyArray()
+        ids = tv.idsAsNumpyArray()
+        edges = tv.edgesAsNumpyArray()
+        weights = tv.weightsAsNumpyArray()
 
         # Remove dead links
 
-        if ret is not None and len(ret) != 0:
-            assert len(ret) == 3
+        ret = removeDeadLinks(ids=ids, edges=edges, weights=weights)
 
-            tv = createRawResultTrackView(ret[2], region, tv,
-                                         self._allowOverlap, newStarts=ret[0],
-                                         newEnds=ret[1])
+        if ret is not None and len(ret) != 0:
+            assert len(ret) == 4
+            ids = ret[0]
+            edges = ret[1]
+            weights = ret[2]
+            index = ret[3]
+
+            tv = createRawResultTrackView(index, region, tv,
+                                          self._allowOverlap, newIds=ids,
+                                          newEdges=edges, newWeights=weights)
             return tv
         else:
             return None
@@ -136,7 +146,7 @@ class RemoveDeadLinks(Operator):
         parser.add_argument('genome', help='File path of Genome definition')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
-        parser.set_defaults(which='Flank')
+        parser.set_defaults(which='RemoveDeadLinks')
 
     @classmethod
     def createOperation(cls, args):
