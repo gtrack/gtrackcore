@@ -33,8 +33,8 @@ class RemoveDeadLinks(Operator):
             - Max length
                 - Default value
                 - User value
-        - gobalIds
-        - lookalIds
+        - globalIds
+        - localIds
     """
 
     def _calculate(self, region, tv):
@@ -45,7 +45,8 @@ class RemoveDeadLinks(Operator):
 
         # Remove dead links
 
-        ret = removeDeadLinks(ids=ids, edges=edges, weights=weights)
+        ret = removeDeadLinks(ids=ids, edges=edges, weights=weights,
+                              newId=self._newId)
 
         if ret is not None and len(ret) != 0:
             assert len(ret) == 4
@@ -74,6 +75,9 @@ class RemoveDeadLinks(Operator):
         self._allowOverlap = False
         self._resultAllowOverlaps = False
 
+        self._newId = None
+        self._useGlobalIds = False
+
         # For now the result track is always of the same type as track A
         self._resultTrackRequirements = self._trackRequirements[0]
 
@@ -85,6 +89,16 @@ class RemoveDeadLinks(Operator):
         if 'allowOverlap' in kwargs:
             self._allowOverlap = kwargs['allowOverlap']
             self._updateTrackFormat()
+
+        if 'resultAllowOverlaps' in kwargs:
+            self._resultAllowOverlaps = kwargs['resultAllowOverlaps']
+            self._updateResultTrackFormat()
+
+        if 'newId' in kwargs:
+            self._newId = kwargs['newId']
+
+        if 'useGlobalIds' in kwargs:
+            self._useGlobalIds = kwargs['useGlobalIds']
 
         if 'debug' in kwargs:
             self._debug = kwargs['debug']
@@ -127,6 +141,10 @@ class RemoveDeadLinks(Operator):
                 [TrackFormatReq(dense=False, allowOverlaps=False)]
 
     def preCalculation(self, track):
+
+        if self._useGlobalIds:
+            print("Using global ids!")
+
         return track
 
     def postCalculation(self, track):
@@ -146,6 +164,10 @@ class RemoveDeadLinks(Operator):
         parser.add_argument('genome', help='File path of Genome definition')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
+        parser.add_argument('-g' '--useGlobal', action='store_true',
+                            help="Check the ids globally.")
+        parser.add_argument('--newId', dest='newId', help="Update the ids to "
+                                                          "the given id")
         parser.set_defaults(which='RemoveDeadLinks')
 
     @classmethod

@@ -277,9 +277,11 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                     edges[enc[i][0]] = edgesBase[i][ind[i]]
 
         if newWeights is not None:
+            print("Found newWeights!")
             assert len(newWeights) == len(ids)
-
+            weights = newWeights
         else:
+            print("Weights from old track!")
             if weightsBase is None:
                 weights = None
             else:
@@ -331,9 +333,16 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             if e is not None:
                 edges = e[index]
 
-        w = baseTrack.weightsAsNumpyArray()
-        if w is not None:
-            weights = w[index]
+        if newWeights is not None:
+            assert ids is not None
+            assert edges is not None
+            assert len(newWeights) == len(ids)
+            weights = newWeights
+
+        else:
+            w = baseTrack.weightsAsNumpyArray()
+            if w is not None:
+                weights = w[index]
 
     # TODO fix extra
 

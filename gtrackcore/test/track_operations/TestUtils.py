@@ -29,6 +29,7 @@ def createTrackView(region, startList=None, endList=None, valList=None,
     :param allow_overlap: Boolean. Segments overlapping or not
     :return: A TrackView object
     """
+
     return TrackView(region, startList, endList, valList, strandList, idList, edgesList, weightsList,
                      borderHandling='crop', allowOverlaps=allow_overlap, extraLists=extraLists)
 
@@ -58,7 +59,6 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     # Create Genome
 
     # Create trackViewList
-    # TODO, not working..
 
     if customChrLength is not None:
         # We use a custom length when testing F, LF and LBP.
