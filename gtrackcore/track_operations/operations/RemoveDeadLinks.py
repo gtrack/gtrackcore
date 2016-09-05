@@ -2,6 +2,7 @@
 import logging
 import sys
 import time
+import numpy as np
 
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
@@ -43,10 +44,8 @@ class RemoveDeadLinks(Operator):
         edges = tv.edgesAsNumpyArray()
         weights = tv.weightsAsNumpyArray()
 
-        # Remove dead links
-
         ret = removeDeadLinks(ids=ids, edges=edges, weights=weights,
-                              newId=self._newId)
+                              globalIds=self._globalIds, newId=self._newId)
 
         if ret is not None and len(ret) != 0:
             assert len(ret) == 4
@@ -77,6 +76,7 @@ class RemoveDeadLinks(Operator):
 
         self._newId = None
         self._useGlobalIds = False
+        self._globalIds = None
 
         # For now the result track is always of the same type as track A
         self._resultTrackRequirements = self._trackRequirements[0]
@@ -143,7 +143,15 @@ class RemoveDeadLinks(Operator):
     def preCalculation(self, track):
 
         if self._useGlobalIds:
-            print("Using global ids!")
+            # Creating a global ids array.
+            trackViews = track[0].trackViews
+            self._globalIds  = \
+                np.concatenate(([x.idsAsNumpyArray() for x in
+                                 trackViews.values()]))
+
+            # Improvements: test for uniqueness?
+            # Takes time.. Better to assume that the user knows this and have
+            # used ids that are unique.
 
         return track
 
@@ -184,12 +192,6 @@ class RemoveDeadLinks(Operator):
                                            args.allowOverlap)
 
         allowOverlap = args.allowOverlap
-
-        if 'limit' in args:
-            limit = args.limit
-        else:
-            print("No limit given!")
-            sys.exit(1)
 
         return RemoveDeadLinks(track, allowOverlap=allowOverlap)
 

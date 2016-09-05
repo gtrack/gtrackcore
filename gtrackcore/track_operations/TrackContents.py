@@ -28,7 +28,7 @@ class TrackContents(object):
 
         :return: OrderedDict of trackViews.
         """
-        return self._trackViews.values()
+        return self._trackViews
 
     @property
     def allowOverlaps(self):

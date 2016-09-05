@@ -1,6 +1,6 @@
 import numpy as np
 
-def removeDeadLinks(ids, edges, weights, newId=None, debug=False):
+def removeDeadLinks(ids, edges, weights, newId=None, globalIds=None, debug=False):
     """
     Checks and remove any dead links.
     A dead links is one that has one that points to a non existing id.
@@ -38,13 +38,20 @@ def removeDeadLinks(ids, edges, weights, newId=None, debug=False):
 
         if weights is not None:
             for edge, weight in zip(edges, weights):
-                matches = np.in1d(edge, ids)
+
+                if globalIds is None:
+                    matches = np.in1d(edge, ids)
+                else:
+                    matches = np.in1d(edge, globalIds)
                 edge[~matches] = updateId
                 if newId is None:
                     weight[~matches] = np.nan
         else:
             for edge in edges:
-                matches = np.in1d(edge, ids)
+                if globalIds is None:
+                    matches = np.in1d(edge, ids)
+                else:
+                    matches = np.in1d(edge, globalIds)
                 edge[~matches] = updateId
 
         if newId is None:
@@ -83,7 +90,10 @@ def removeDeadLinks(ids, edges, weights, newId=None, debug=False):
     else:
         # Max one edge per id. Edge is scalar.
         # Find all edges that points to nodes in ids
-        matches = np.in1d(edges, ids)
+        if globalIds is None:
+            matches = np.in1d(edges, ids)
+        else:
+            matches = np.in1d(edges, globalIds)
         # Set the rest to no edge
 
         if newId is not None and newDtype > edges.dtype:

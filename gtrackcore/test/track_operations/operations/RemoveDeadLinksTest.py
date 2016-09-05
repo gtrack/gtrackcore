@@ -5,12 +5,12 @@ from collections import OrderedDict
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
-from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track_operations.Genome import Genome
+
 
 from gtrackcore.track_operations.operations.RemoveDeadLinks import \
     RemoveDeadLinks
 from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.test.track_operations.TestUtils import createTrackView
 from gtrackcore.test.track_operations.TestUtils import \
     createSimpleTestTrackContent
 
@@ -138,6 +138,93 @@ class RemoveDeadLinksTest(unittest.TestCase):
 
         self.assertTrue(resFound)
 
+    def _runMultipleTest(self, t1Starts, t1Ends, t1Ids, t1Edges, t2Starts,
+                         t2Ends, t2Ids, t2Edges, t1ExpStarts, t1ExpEnds,
+                         t1ExpIds, t1ExpEdges, t2ExpStarts, t2ExpEnds,
+                         t2ExpIds, t2ExpEdges, debug=False):
+        """
+        Run test on multiple chromosomes.
+        :return:
+        """
+
+        chr2 = (GenomeRegion('hg19', 'chr2', 0,
+                             GenomeInfo.GENOMES['hg19']['size']['chr2']))
+
+        hg19 = Genome('hg19', GenomeInfo.GENOMES['hg19'])
+
+        t1Starts = np.array(t1Starts)
+        t1Ends = np.array(t1Ends)
+        t1Ids = np.array(t1Ids)
+        t1Edges = np.array(t1Edges)
+        t2Starts = np.array(t2Starts)
+        t2Ends = np.array(t2Ends)
+        t2Ids = np.array(t2Ids)
+        t2Edges = np.array(t2Edges)
+
+        tv1 = TrackView(self.chr1, t1Starts, t1Ends, None, None, t1Ids,
+                        t1Edges, None, borderHandling='crop',
+                        allowOverlaps=False, extraLists=OrderedDict())
+
+        tv2 = TrackView(chr2, t2Starts, t2Ends, None, None, t2Ids, t2Edges,
+                        None, borderHandling='crop', allowOverlaps=False,
+                        extraLists=OrderedDict())
+        tvs = OrderedDict()
+        tvs[self.chr1] = tv1
+        tvs[chr2] = tv2
+        track = TrackContents(hg19, tvs)
+
+        r = RemoveDeadLinks(track, useGlobalIds=True)
+
+        result = r.calculate()
+        self.assertTrue(result is not None)
+
+        chr1Found = False
+        chr2Found = False
+        for (k, v) in result.trackViews.iteritems():
+            starts = v.startsAsNumpyArray()
+            ends = v.endsAsNumpyArray()
+            ids = v.idsAsNumpyArray()
+            edges = v.edgesAsNumpyArray()
+
+            if cmp(k, self.chr1) == 0:
+                if debug:
+                    print("newStarts: {}".format(starts))
+                    print("t1ExpStarts: {}".format(t1ExpStarts))
+                    print("newEnds: {}".format(ends))
+                    print("t1ExpEnds: {}".format(t1ExpEnds))
+                    print("newIds: {}".format(ids))
+                    print("t1ExpIds: {}".format(t1ExpIds))
+                    print("newEdges: {}".format(edges))
+                    print("t1ExpEdges: {}".format(t1ExpEdges))
+
+                self.assertTrue(np.array_equal(starts, t1ExpStarts))
+                self.assertTrue(np.array_equal(ends, t1ExpEnds))
+                self.assertTrue(np.array_equal(ids, t1ExpIds))
+                self.assertTrue(np.array_equal(edges, t1ExpEdges))
+                chr1Found = True
+            elif cmp(k, chr2) == 0:
+                if debug:
+                    print("newStarts: {}".format(starts))
+                    print("t2ExpStarts: {}".format(t2ExpStarts))
+                    print("newEnds: {}".format(ends))
+                    print("t2ExpEnds: {}".format(t2ExpEnds))
+                    print("newIds: {}".format(ids))
+                    print("t2ExpIds: {}".format(t2ExpIds))
+                    print("newEdges: {}".format(edges))
+                    print("t2ExpEdges: {}".format(t2ExpEdges))
+
+                self.assertTrue(np.array_equal(starts, t2ExpStarts))
+                self.assertTrue(np.array_equal(ends, t2ExpEnds))
+                self.assertTrue(np.array_equal(ids, t2ExpIds))
+                self.assertTrue(np.array_equal(edges, t2ExpEdges))
+                chr2Found = True
+            else:
+                # Tests if all tracks no in chr1 have a size of 0.
+                self.assertEqual(v.size, 0)
+
+        self.assertTrue(chr1Found)
+        self.assertTrue(chr2Found)
+
     def testSimple(self):
         """
         Simple test
@@ -156,26 +243,26 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       edges=[['3','9'],['3','10']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         # Removed edge, not at the end
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['9','3'],['3','10']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=['9','424'],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=['',''],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['9','43'],['43','424']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=['',''],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
     def testChangingEdgesLength(self):
         """
@@ -187,13 +274,13 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       edges=[['3','9'],['3','4']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['3']],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['34','4']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['']],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
     def testWithWeights(self):
         """
@@ -206,7 +293,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       weights=[[0.33], [3.31]], expStarts=[10,20],
                       expIds=['3','10'], expEdges=['','3'],
                       expWeights=[[np.nan], [3.31]], resultAllowOverlap=True,
-                      debug=True)
+                      debug=False)
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['3','10']],
@@ -214,7 +301,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
                       expWeights=[[1.,np.nan],[3.,4.]],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         # Removed edge, not at the end
         self._runTest(starts=[10,20], ids=['3','10'],
@@ -223,7 +310,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
                       expWeights=[[3., np.nan],[4.,10.]],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         # Change the length
         self._runTest(starts=[10,20], ids=['3','10'],
@@ -232,7 +319,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['3']],
                       expWeights=[[4.],[98.]],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['34','4']],
@@ -240,7 +327,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['']],
                       expWeights=[[32.],[np.nan]],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
     def testNewIds(self):
         """
@@ -250,64 +337,84 @@ class RemoveDeadLinksTest(unittest.TestCase):
         self._runTest(starts=[10,20], ids=['3','10'], edges=['8','3'],
                       newId="dead",
                       expStarts=[10,20], expIds=['3','10'],
-                      expEdges=['dead','3'], debug=True,
+                      expEdges=['dead','3'], debug=False,
                       resultAllowOverlap=True)
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['3','4']], newId='dead',
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3','dead'],['3','dead']],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['34','4']], newId='dead',
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3','dead'],['dead','dead']],
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, debug=False)
 
-    def atestGlobalId(self):
+    def testGlobalIds(self):
         """
         Test using global ids.
         :return: None
         """
-        chr2 = (GenomeRegion('hg19', 'chr2', 0,
-                             GenomeInfo.GENOMES['hg19']['size']['chr2']))
 
-        t1Starts = np.array([5,15])
-        t1Ends = np.array([10,20])
-        t1Ids = np.array(['1','2'])
-        t1Edges = np.array([])
+        t1Starts = [5,15]
+        t1Ends = [10,20]
+        t1Ids = ['1','2']
+        t1Edges = ['2','1']
 
-        t2Starts = np.array([50,230])
-        t2Ends = np.array([100,500])
-        t2Ids = np.array(['3','4'])
-        t2Edges = np.array([])
+        t2Starts = [50,230]
+        t2Ends = [100,500]
+        t2Ids = ['3','4']
+        t2Edges = ['4','1']
 
-        tv1 = TrackView(self.chr1, t1Starts, t1Ends, None, None, t1Ids,
-                        t1Edges, None, borderHandling='crop',
-                        allowOverlaps=False, extraLists=OrderedDict())
+        t1ExpStarts = [5,15]
+        t1ExpEnds = [10,20]
+        t1ExpIds = ['1','2']
+        t1ExpEdges = ['2','1']
 
-        tv2 = TrackView(chr2, t2Starts, t2Ends, None, None, t2Ids, t2Edges,
-                        None, borderHandling='crop', allowOverlaps=False,
-                        extraLists=OrderedDict())
+        t2ExpStarts = [50,230]
+        t2ExpEnds = [100,500]
+        t2ExpIds = ['3','4']
+        t2ExpEdges = ['4', '1']
 
-        d = OrderedDict()
-        d[self.chr1] = tv1
-        d[chr2] = tv2
-        track = TrackContents(self.chromosomes, d)
+        self._runMultipleTest(t1Starts=t1Starts, t1Ends=t1Ends, t1Ids=t1Ids,
+                              t1Edges=t1Edges, t2Starts=t2Starts,
+                              t2Ends=t2Ends, t2Ids=t2Ids, t2Edges=t2Edges,
+                              t1ExpStarts=t1ExpStarts, t1ExpEnds=t1ExpEnds,
+                              t1ExpIds=t1ExpIds, t1ExpEdges=t1ExpEdges,
+                              t2ExpStarts=t2ExpStarts, t2ExpEnds=t2ExpEnds,
+                              t2ExpIds=t2ExpIds, t2ExpEdges=t2ExpEdges,
+                              debug=False)
 
-        r = RemoveDeadLinks(track)
+        t1Starts = [5,15]
+        t1Ends = [10,20]
+        t1Ids = ['1','2']
+        t1Edges = ['2','9']
 
-        result = r.calculate()
-        self.assertTrue(result is not None)
+        t2Starts = [50,230]
+        t2Ends = [100,500]
+        t2Ids = ['3','4']
+        t2Edges = ['4','1']
 
-        """
-        self._runTest(starts=[10,20], ids=['3','10'], edges=['8','3'],
-                      newId="dead",
-                      expStarts=[10,20], expIds=['3','10'],
-                      expEdges=['dead','3'], debug=True,
-                      resultAllowOverlap=True)
-        """
+        t1ExpStarts = [5,15]
+        t1ExpEnds = [10,20]
+        t1ExpIds = ['1','2']
+        t1ExpEdges = ['2','']
+
+        t2ExpStarts = [50,230]
+        t2ExpEnds = [100,500]
+        t2ExpIds = ['3','4']
+        t2ExpEdges = ['4', '1']
+
+        self._runMultipleTest(t1Starts=t1Starts, t1Ends=t1Ends, t1Ids=t1Ids,
+                              t1Edges=t1Edges, t2Starts=t2Starts,
+                              t2Ends=t2Ends, t2Ids=t2Ids, t2Edges=t2Edges,
+                              t1ExpStarts=t1ExpStarts, t1ExpEnds=t1ExpEnds,
+                              t1ExpIds=t1ExpIds, t1ExpEdges=t1ExpEdges,
+                              t2ExpStarts=t2ExpStarts, t2ExpEnds=t2ExpEnds,
+                              t2ExpIds=t2ExpIds, t2ExpEdges=t2ExpEdges,
+                              debug=False)
 
 if __name__ == "__main__":
     unittest.main()
