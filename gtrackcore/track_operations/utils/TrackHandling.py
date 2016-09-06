@@ -160,10 +160,15 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
     weights = None
 
     if encoding is not None:
+        print("Using encoding!")
+
         nrBaseTracks = len(baseTrack)
 
+        print("number of base tracks: {}".format(nrBaseTracks))
+        print("encoding: {}".format(encoding))
         assert nrBaseTracks > 1
         assert isinstance(baseTrack, list)
+        assert len(encoding) == len(index)
 
         # index in the base track
         ind = [None] * nrBaseTracks
@@ -172,6 +177,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
         enc = [None] * nrBaseTracks
         for i in range(1, nrBaseTracks+1):
             t = np.where(encoding == i)
+            print(t)
 
             enc[i-1] = t
             ind[i-1] = index[t]
@@ -216,6 +222,8 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
 
         if newStarts is not None:
             starts = newStarts
+
+            print("In newStarts!: starts: {}".format(newStarts))
         else:
             if startsBase is None:
                 starts = None
@@ -346,8 +354,12 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
 
     # TODO fix extra
 
+    print("before tv creation: starts: {}".format(starts))
+
     tv = TrackView(region, starts, ends, vals, strands, ids, edges, weights,
                    borderHandling='crop', allowOverlaps=allowOverlap)
+
+    print("after: {}".format(tv.startsAsNumpyArray()))
 
     return tv
 

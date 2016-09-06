@@ -18,19 +18,33 @@ class Intersect(Operator):
 
     def _calculate(self, region, tv1, tv2):
 
+        # TODO
+        # Select with links
+        #   - Follow all links in the intersect and add these segments as well.
+
+        print("in intersect!")
         t1Starts = tv1.startsAsNumpyArray()
         t1Ends = tv1.endsAsNumpyArray()
 
         t2Starts = tv2.startsAsNumpyArray()
         t2Ends = tv2.endsAsNumpyArray()
-        ret = intersect(t1Starts, t1Ends, t2Starts, t2Ends,
-                        self._resultAllowOverlaps)
+        ret = intersect(t1Starts, t1Ends, t2Starts, t2Ends)
+
+        print(ret)
 
         if ret is not None and len(ret[0]) != 0:
-            assert len(ret) == 3
-            return createRawResultTrackView(ret[0], ret[1], ret[2],
-                                            region, tv1,
-                                            self.resultAllowOverlaps)
+            assert len(ret) == 4
+
+            starts = ret[0]
+            ends = ret[1]
+            index = ret[2]
+            encoding = ret[3]
+
+            print("in createTV: starts: {}".format(starts))
+            return createRawResultTrackView(index, region, [tv1,tv2],
+                                            self.resultAllowOverlaps,
+                                            newStarts=starts, newEnds=ends,
+                                            encoding=encoding)
         else:
             return None
 
@@ -62,20 +76,17 @@ class Intersect(Operator):
             self._resultAllowOverlaps = kwargs['resultAllowOverlap']
             self._updateResultTrackFormat()
 
+
+
     def _updateTrackFormat(self):
         """
         If we enable or disable overlapping tracks as input, we need to
         update the track requirement as well.
         :return: None
         """
-        if self._allowOverlap:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap),
+             TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap)]
 
     def _updateResultTrackFormat(self):
         """
@@ -83,14 +94,9 @@ class Intersect(Operator):
         update the track requirement as well.
         :return: None
         """
-        if self._resultAllowOverlaps:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultTrackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=self._resultAllowOverlaps),
+             TrackFormatReq(dense=False, allowOverlaps=self._resultAllowOverlaps)]
 
     def preCalculation(self, tracks):
         return tracks
@@ -132,3 +138,6 @@ class Intersect(Operator):
         # TODO: use overlap...
 
         return Intersect(trackA, trackB)
+
+    def printResult(self):
+        pass
