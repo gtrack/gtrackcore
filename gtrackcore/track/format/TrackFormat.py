@@ -20,31 +20,31 @@ def inferValType(valList, shapeOffset=0):
         if len(valList.shape) == 2 + shapeOffset and valList.shape[1 + shapeOffset] == 2 and valList.dtype == numpy.dtype('float128'):
             return 'mean_sd'
         elif any(valList.dtype == numpy.dtype(x) for x in ['float32', 'float64', 'float128']):
-            if len( valList.shape ) == 1 + shapeOffset:
+            if len(valList.shape) == 1 + shapeOffset:
                 return 'number'
             elif valList.shape[1 + shapeOffset] >= 2:
                 return 'population'
         if any(valList.dtype == numpy.dtype(x) for x in ['int32', 'int64']):
-            if len( valList.shape ) == 1 + shapeOffset:
+            if len(valList.shape) == 1 + shapeOffset:
                 return 'number (integer)'
             elif valList.shape[1 + shapeOffset] >= 2:
                 return 'population'
         elif any(valList.dtype == numpy.dtype(x) for x in ['int8', 'bool8']):
-            if len( valList.shape ) == 1 + shapeOffset:
+            if len(valList.shape) == 1 + shapeOffset:
                 return 'tc'
             elif valList.shape[1 + shapeOffset] >= 2:
                 return 'tc_vector'
         elif valList.dtype == numpy.dtype('S1'):
-            if len( valList.shape ) == 1 + shapeOffset:
+            if len(valList.shape) == 1 + shapeOffset:
                 return 'char'
             elif valList.shape[1 + shapeOffset] >= 2:
                 return 'char_vector'
         elif _dtypeIsStringLongerThanOne(valList.dtype):
-            if len( valList.shape ) == 1 + shapeOffset:
+            if len(valList.shape) == 1 + shapeOffset:
                 return 'category'
             elif valList.shape[1 + shapeOffset] >= 2:
                 return 'category_vector'
-        
+
         if valList.shape[1 + shapeOffset] == 0:
             return 'unsupported list'
                 

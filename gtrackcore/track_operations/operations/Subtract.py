@@ -28,9 +28,14 @@ class Subtract(Operator):
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
+
+            starts = ret[0]
+            ends = ret[1]
+            index = ret[2]
             # Check if elements from track 2 have a correct index.
-            return createRawResultTrackView(ret[0], ret[1], ret[2], region,
-                                            tv1, self.resultAllowOverlaps)
+            return createRawResultTrackView(index, region, tv1,
+                                            self.resultAllowOverlaps,
+                                            newStarts=starts, newEnds=ends)
         else:
             return None
 

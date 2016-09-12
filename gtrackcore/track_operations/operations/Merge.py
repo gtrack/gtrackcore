@@ -31,14 +31,17 @@ class Merge(Operator):
         logging.debug("Start call! region:{0}".format(region))
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
-        strands = None
+        strands = tv.strandsAsNumpyArray()
         values = None
         ids = None
         edges = None
         weights = None
 
+        print("**********")
+        print(strands)
+        print("**********")
+
         if self._useStrands:
-            strands = tv.strandsAsNumpyArray()
             if strands is None or strands.size == 0:
                 # Track has no strand information, ignoring strands.
                 strands = None
@@ -73,6 +76,8 @@ class Merge(Operator):
             # We do not care about info from the base track..
             # the new track will only contain starts, ends and (strands if
             # present.
+
+            print(ret)
 
             tv = TrackView(region, ret[0], ret[1], ret[2], ret[3], ret[4],
                            ret[5], ret[6], borderHandling='crop',

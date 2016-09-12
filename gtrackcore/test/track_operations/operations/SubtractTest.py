@@ -22,410 +22,222 @@ class SubtractTest(unittest.TestCase):
                             for c, l in
                             GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
-    def _runSubtractPointsTest(self, startsA, endsA, startsB, endsB, expStarts,
-                            expEnds, allowOverlap=False,
-                            resultAllowOverlap=False):
+    def _runTest(self, startsA=None, startsB=None, endsA=None, endsB=None,
+                 strandsA=None, strandsB=None, valsA=None, valsB=None,
+                 idsA=None, idsB=None, edgesA=None, edgesB=None,
+                 weightsA=None, weightsB=None, extrasA=None, extrasB=None,
+                 expStarts=None, expEnds=None, expStrands=None, expVals=None,
+                 expIds=None, expEdges=None, expWeights=None, expExtras=None,
+                 allowOverlap=False, resultAllowOverlap=False, debug=False):
         """
-        Run a union test over two points tracks.
-        The test expects there to only to be segments in chr1,
-        All other chromosomes need to be of size zero.
-        :param startsA: Arrays of starts in track A
-        :param endsA: Array of ends in track A
-        :param startsB: Array of starts in track B
-        :param endsB: Array of ends in track B
-        :param expStarts: Expected startss after union
-        :param expEnds: Expected ends after union
+        Run a union test
+        :param startsA:
+        :param startsB:
+        :param endsA:
+        :param endsB:
+        :param strandsA:
+        :param strandsB:
+        :param valsA:
+        :param valsB:
+        :param idsA:
+        :param idsB:
+        :param edgesA:
+        :param edgesB:
+        :param weightsA:
+        :param weightsB:
+        :param extrasA:
+        :param extrasB:
+        :param expStarts:
+        :param expEnds:
+        :param expStrands:
+        :param expVals:
+        :param expIds:
+        :param expEdges:
+        :param expWeights:
+        :param expExtras:
+        :param allowOverlap:
+        :param resultAllowOverlap:
         :return:
         """
-        track1 = createSimpleTestTrackContent(startList=startsA, endList=endsA)
-        track2 = createSimpleTestTrackContent(startList=startsB, endList=endsB)
 
-        u = Subtract(track1, track2, allowOverlap=allowOverlap,
-                  resultAllowOverlap=resultAllowOverlap)
+        track1 = createSimpleTestTrackContent(startList=startsA,
+                                              endList=endsA, valList=valsA,
+                                              strandList=strandsA,
+                                              idList=idsA, edgeList=edgesA,
+                                              weightsList=weightsA,
+                                              extraLists=extrasA)
+        track2 = createSimpleTestTrackContent(startList=startsB,
+                                              endList=endsB, valList=valsB,
+                                              strandList=strandsB,
+                                              idList=idsB, edgeList=edgesB,
+                                              weightsList=weightsB,
+                                              extraLists=extrasB)
 
-        tc = u()
+        o = Subtract(track1, track2, allowOverlap=allowOverlap,
+                     resultAllowOverlap=resultAllowOverlap)
 
-        if len(expStarts) != 0:
-            resFound = False
-        else:
-            # No result is expected
-            resFound = True
+        tc = o.calculate()
+
+        resFound = False
 
         for (k, v) in tc.getTrackViews().items():
             if cmp(k, self.chr1) == 0:
                 # All test tracks are in chr1
+                newStarts = v.startsAsNumpyArray()
+                newEnds = v.endsAsNumpyArray()
+                newVals = v.valsAsNumpyArray()
+                newStrands = v.strandsAsNumpyArray()
+                newIds = v.idsAsNumpyArray()
+                newEdges = v.edgesAsNumpyArray()
+                newWeights = v.weightsAsNumpyArray()
+                #newExtras = v.extrasAsNumpyArray()
+
                 resFound = True
-                print("in red check!")
-                print(v.startsAsNumpyArray())
-                print(v.endsAsNumpyArray())
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
+
+                if debug:
+                    print("**********************")
+                    print("DEBUG: Subtract result")
+                    print("newStarts: {}".format(newStarts))
+                    print("newEnds: {}".format(newEnds))
+                    print("newStrands: {}".format(newStrands))
+                    print("newVals:: {}".format(newVals))
+                    print("newIds: {}".format(newIds))
+                    print("newEdges: {}".format(newEdges))
+                    print("newWeights: {}".format(newWeights))
+                    print("**********************")
+
+                if expStarts is not None:
+                    self.assertTrue(newStarts is not None)
+                    self.assertTrue(np.array_equal(newStarts, expStarts))
+                else:
+                    self.assertTrue(newStarts is None)
+
+                if expEnds is not None:
+                    self.assertTrue(newEnds is not None)
+                    self.assertTrue(np.array_equal(newEnds, expEnds))
+                else:
+                    self.assertTrue(newEnds is None)
+
+                if expVals is not None:
+                    self.assertTrue(newVals is not None)
+                    self.assertTrue(np.array_equal(newVals, expVals))
+                else:
+                    self.assertTrue(newVals is None)
+
+                if expStrands is not None:
+                    self.assertTrue(newStrands is not None)
+                    self.assertTrue(np.array_equal(newStrands, expStrands))
+                else:
+                    self.assertTrue(newStrands is None)
+
+                if expIds is not None:
+                    print("newIds: {}".format(newIds))
+                    print("expIds: {}".format(expIds))
+                    self.assertTrue(newIds is not None)
+                    self.assertTrue(np.array_equal(newIds, expIds))
+                else:
+                    self.assertTrue(newIds is None)
+
+                if expEdges is not None:
+                    print("newEdges: {}".format(newEdges))
+                    print("expEdges: {}".format(expEdges))
+                    self.assertTrue(newEdges is not None)
+                    self.assertTrue(np.array_equal(newEdges, expEdges))
+                else:
+                    self.assertTrue(newEdges is None)
+
+                if expWeights is not None:
+                    self.assertTrue(newWeights is not None)
+                    self.assertTrue(np.array_equal(newWeights, expWeights))
+                else:
+                    self.assertTrue(newWeights is None)
+
+                    #if expExtras is not None:
+                    #    self.assertTrue(newExtras is not None)
+                    #    self.assertTrue(np.array_equal(newExtras, expExtras))
+                    #else:
+                    #    self.assertTrue(newExtras is None)
+
             else:
                 # Tests if all tracks no in chr1 have a size of 0.
                 self.assertEqual(v.startsAsNumpyArray().size, 0)
                 self.assertEqual(v.endsAsNumpyArray().size, 0)
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
 
         self.assertTrue(resFound)
 
-    def _runSubtractValuedPointsTest(self, startsA, endsA, valsA, startsB,
-                                    endsB,
-                                valsB, expStarts, expEnds, expVals,
-                                  allowOverlap=False,
-                                  resultAllowOverlap=False):
-        """
-        Run a union test over two Valued points tracks.
-        The test expects there to only to be segments in chr1,
-        All other chromosomes need to be of size zero.
-        :param startsA: Arrays of starts in track A
-        :param endsA: Array of ends in track A
-        :param valsA: Array of values in track A
-        :param startsB: Array of starts in track B
-        :param endsB: Array of ends in track B
-        :param valsB: Array of values in track B
-        :param expStarts: Array of expected starts after union
-        :param expEnds: Array of expected ends after union
-        :param expVals: Array of expected values after union
-        :return:
-        """
-        track1 = createSimpleTestTrackContent(startList=startsA,
-                                              endList=endsA, valList=valsA)
-        track2 = createSimpleTestTrackContent(startList=startsB,
-                                              endList=endsB, valList=valsB)
-
-        u = Subtract(track1, track2, allowOverlap=allowOverlap,
-                  resultAllowOverlap=resultAllowOverlap)
-
-        tc = u()
-
-        for (k, v) in tc.getTrackViews().items():
-            if cmp(k, self.chr1) == 0:
-                # All test tracks are in chr1
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-                self.assertTrue(np.array_equal(v.valsAsNumpyArray(), expVals))
-            else:
-                # Tests if all tracks no in chr1 have a size of 0.
-                self.assertEqual(v.startsAsNumpyArray().size, 0)
-                self.assertEqual(v.endsAsNumpyArray().size, 0)
-                self.assertEqual(v.valsAsNumpyArray().size, 0)
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-
-    def _runSubtractLinkedPointsTest(self, startsA, endsA, edgesA, startsB,
-                                   endsB,
-                                  edgesB, expStarts, expEnds, expEdges):
-        """
-        Run a union test over two Linked points tracks.
-        The test expects there to only to be segments in chr1,
-        All other chromosomes need to be of size zero.
-        :param startsA: Arrays of starts in track A
-        :param endsA: Array of ends in track A
-        :param edgesA: Array of edges in track A
-        :param startsB: Array of starts in track B
-        :param endsB: Array of ends in track B
-        :param edgesB: Array of edges in track B
-        :param expStarts: Array of expected starts after union
-        :param expEnds: Array of expected ends after union
-        :param expEdges: Array of expected edges after union
-        :return:
-        """
-        track1 = createSimpleTestTrackContent(startList=startsA,
-                                              endList=endsA, edgeList=edgesA)
-        track2 = createSimpleTestTrackContent(startList=startsB,
-                                              endList=endsB, edgeList=edgesB)
-
-        u = Subtract(track1, track2)
-
-        tc = u()
-
-        for (k, v) in tc.getTrackViews().items():
-            if cmp(k, self.chr1) == 0:
-                # All test tracks are in chr1
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-                self.assertTrue(np.array_equal(v.edgesAsNumpyArray(),
-                                               expEdges))
-            else:
-                # Tests if all tracks no in chr1 have a size of 0.
-                self.assertEqual(v.startsAsNumpyArray().size, 0)
-                self.assertEqual(v.endsAsNumpyArray().size, 0)
-                self.assertEqual(v.edgesAsNumpyArray().size, 0)
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-
-    def _runSubtractLinkedValuedPointsTest(self, startsA, endsA, valsA, edgesA,
-                                        startsB, endsB, valsB, edgesB,
-                                        expStarts, expEnds, expVals, expEdges):
-        """
-        Run a union test over two Linke Valued points tracks.
-        The test expects there to only to be segments in chr1,
-        All other chromosomes need to be of size zero.
-        :param startsA: Arrays of starts in track A
-        :param endsA: Array of ends in track A
-        :param valsA: Array of values in track A
-        :param edgesA: Array of edges in track A
-        :param startsB: Array of starts in track B
-        :param endsB: Array of ends in track B
-        :param valsB: Array of values in track B
-        :param edgesB: Array of edges in track A
-        :param expStarts: Array of expected starts after union
-        :param expEnds: Array of expected ends after union
-        :param expVals: Array of expected values after union
-        :param expEdges: Array of expected edges after union
-        :return:
-        """
-        track1 = createSimpleTestTrackContent(startList=startsA,
-                                              endList=endsA, valList=valsA,
-                                              edgeList=edgesA)
-        track2 = createSimpleTestTrackContent(startList=startsB,
-                                              endList=endsB, valList=valsB,
-                                              edgeList=edgesB)
-
-        u = Subtract(track1, track2)
-
-        # Set result track type to Linked Valued Points
-        # TODO weights?
-        resReq = TrackFormat([], None, [], None, None, [], None, None)
-        u.setResultTrackRequirements(resReq)
-
-        tc = u()
-
-        for (k, v) in tc.getTrackViews().items():
-            if cmp(k, self.chr1) == 0:
-                # All test tracks are in chr1
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-                self.assertTrue(np.array_equal(v.valsAsNumpyArray(), expVals))
-                self.assertTrue(np.array_equal(v.edgesAsNumpyArray(),
-                                               expEdges))
-            else:
-                # Tests if all tracks no in chr1 have a size of 0.
-                self.assertEqual(v.startsAsNumpyArray().size, 0)
-                self.assertEqual(v.endsAsNumpyArray().size, 0)
-                self.assertEqual(v.valsAsNumpyArray().size, 0)
-                self.assertEqual(v.edgesAsNumpyArray().size, 0)
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               v.endsAsNumpyArray()))
-
-    def _runSubtractSegmentsTest(self, startsA, endsA, startsB, endsB,
-                              expStarts, expEnds, allowOverlap=False,
-                              resultAllowOverlap=False):
-        """
-        Run a union test over two segmented tracks.
-        The test expects there to only to be segments in chr1,
-        All other chromosomes need to be of size zero.
-        :param startsA: Arrays of starts in track A
-        :param endsA: Array of ends in track B
-        :param startsB: Array of starts in track B
-        :param endsB: Array of ends in track B
-        :param expStarts: Array of expected starts after union
-        :param expEnds: Array of expected ends after union
-        :return: None
-        """
-        track1 = createSimpleTestTrackContent(startList=startsA, endList=endsA)
-        track2 = createSimpleTestTrackContent(startList=startsB, endList=endsB)
-
-        u = Subtract(track1, track2, allowOverlap=allowOverlap,
-                  resultAllowOverlap=resultAllowOverlap)
-
-        tc = u.calculate()
-
-        foundRes = False
-
-        for (k, v) in tc.getTrackViews().items():
-            if cmp(k, self.chr1) == 0:
-                foundRes = True
-                # All test tracks are in chr1
-                print("---RUN-TEST---")
-                print("starts: {}".format(v.startsAsNumpyArray()))
-                print("expStarts: {}".format(expStarts))
-                print("ends: {}".format(v.endsAsNumpyArray()))
-                print("expEnds: {}".format(expEnds))
-                print("---RUN-TEST---")
-
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(),
-                                               expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
-            else:
-                # Tests if all tracks no in chr1 have a size of 0.
-                self.assertEqual(v.startsAsNumpyArray().size, 0)
-                self.assertEqual(v.endsAsNumpyArray().size, 0)
-
-        if len(expStarts) == 0:
-            self.assertFalse(foundRes)
-        else:
-            self.assertTrue(foundRes)
-
     # **** Points tests ****
 
-    def atestSubtractSimple(self):
+    def testPointsSimple(self):
         """
         Simple points subtract
         :return: None
         """
-        self._runSubtractPointsTest(startsA=[1,2,3], endsA=[1,2,3],
-                                    startsB=[3], endsB=[3], expStarts=[1,2],
-                                    expEnds=[1,2])
+        self._runTest(startsA=[1,2,3], startsB=[3], expStarts=[1,2])
 
-    def atestSubtractPointsNoOverlap(self):
-        """
-        Points subtract, no overlapping points
-        :return: None
-        """
-        self._runSubtractPointsTest(startsA=[1,4], endsA=[2,6], startsB=[14],
-                                    endsB=[16], expStarts=[1,4], expEnds=[1,4])
+        self._runTest(startsA=[1,4], startsB=[14], expStarts=[1,4])
 
-    def ftestUnionPointsOverlap(self):
-        """
-        Points union, A and B overlap, No overlap in result.
-        :return: None
-        """
-        self._runUnionPointsTest(startsA=[14,463], endsA=[14,463],
-                                 startsB=[45,463], endsB=[45,463],
-                                 expStarts=[14,45,463],
-                                 expEnds=[14,45,463],
-                                 resultAllowOverlap=False)
+        self._runTest(startsA=[14,463], startsB=[45,463],
+                      expStarts=[14])
 
-    def ftestUnionPointsOverlapAllowed(self):
-        """
-        Points union, A and B overlap, result overlap
-        :return: None
-        """
-        self._runUnionPointsTest(startsA=[14,463], endsA=[14,463],
-                                 startsB=[45,463], endsB=[45,463],
-                                 expStarts=[14,45,463, 463],
-                                 expEnds=[14,45,463, 463],
-                                 resultAllowOverlap=True)
+        # "Overlap" in the middle.
+        self._runTest(startsA=[14,36,65], startsB=[24,36,463],
+                      expStarts=[14,65])
 
     # **** Valued Points tests ****
-
-    def ftestUnionValuedPointsSorted(self):
+    def testValuedPoints(self):
         """
-        Valued points union, no overlap
+        Valued points subtract
         :return: None
         """
-        self._runUnionValuedPointsTest(startsA=[1,2,3], endsA=[1,2,3],
-                                       valsA=[4,5,6], startsB=[4,5,6],
-                                       endsB=[4,5,6], valsB=[1,2,3],
-                                       expStarts=[1,2,3,4,5,6],
-                                       expEnds=[1,2,3,4,5,6],
-                                       expVals=[4,5,6,1,2,3],
-                                       allowOverlap=False)
+        self._runTest(startsA=[1,2,3], valsA=[3,4,5], startsB=[3,5],
+                      valsB=[1,2], expStarts=[1,2], expVals=[3,4])
 
-    def ftestUnionValuedPointsNotSorted(self):
-        """
-        Valued points union, no overlap
-        :return: None
-        """
-        self._runUnionValuedPointsTest(startsA=[1,3],
-                                       endsA=[1,3], valsA=[6,7],
-                                       startsB=[2],
-                                       endsB=[2], valsB=[8],
-                                       expStarts=[1,2,3],
-                                       expEnds=[1,2,3],
-                                       expVals=[6,8,7],
-                                       allowOverlap=False)
+        # No subtract
+        self._runTest(startsA=[1,3], valsA=[6,7], startsB=[2], valsB=[8],
+                      expStarts=[1,3], expVals=[6,7])
 
-    def fptestUnionValuedPointsOverlapEnd(self):
-        """
-        Simple test. Overlap. Not sorted.
-        Overlap at the end of the track.
-        When overlapping it should return the value from track A not B
-        :return: None
-        """
-        self._runUnionValuedPointsTest(startsA=[1,3,10],
-                                       endsA=[1,3,10], valsA=[6,7,45],
-                                       startsB=[2,10],
-                                       endsB=[2,10], valsB=[8,100],
-                                       expStarts=[1,2,3,10],
-                                       expEnds=[1,2,3,10],
-                                       expVals=[6,8,7,45],
-                                       allowOverlap=False)
+        # In the middle
+        self._runTest(startsA=[1,10,78], valsA=[6,34,45], startsB=[2,10],
+                      valsB=[8,100], expStarts=[1,78], expVals=[6,45])
 
-    def ptestUnionValuedPointsOverlapStart(self):
-        """
-        Simple test. Overlap. Not sorted.
-        Overlap at the start of the track.
-        When overlapping it should return the value from track A not B
-        :return: None
-        """
-        self._runUnionValuedPointsTest(startsA=[2,3,10],
-                                       endsA=[2,3,10], valsA=[6,7,45],
-                                       startsB=[2,15],
-                                       endsB=[2,15], valsB=[8,100],
-                                       expStarts=[2,3,10,15],
-                                       expEnds=[2,3,10,15],
-                                       expVals=[6,7,45,100])
-
-    def ptestUnionValuedPointsOverlapMultiple(self):
-        """
-        Simple test. Overlap. Not sorted.
-        Multiple overlapping points
-        When overlapping it should return the value from track A not B
-        :return: None
-        """
-        self._runUnionValuedPointsTest(startsA=[1,3,6,10,20],
-                                       endsA=[1,3,6,10,20],
-                                       valsA=[6,7,45,5,3],
-                                       startsB=[2,3,8,10,24],
-                                       endsB=[2,3,8,10,24],
-                                       valsB=[8,100,42,3,2],
-                                       expStarts=[1,2,3,6,8,10,20,24],
-                                       expEnds=[1,2,3,6,8,10,20,24],
-                                       expVals=[6,8,7,45,42,5,3,2])
+        # Multiple
+        self._runTest(startsA=[1,3,6,10,20], valsA=[6,7,45,5,3],
+                      startsB=[2,3,8,10,24], valsB=[8,100,42,3,2],
+                      expStarts=[1,6,20], expVals=[6,45,3])
 
     # **** Segments tests ****
-
-    def atestSubtractSegmentsSimple(self):
+    def testSegmentsSimple(self):
         """
         Segments intersect, simple.
         Two non overlapping segments
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[6], startsB=[4],
-                                   endsB=[8], expStarts=[2], expEnds=[4],
-                                   allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[6], startsB=[4], endsB=[8],
+                      expStarts=[2], expEnds=[4], debug=True)
 
-    def atestSubtractSegmentsNoOverlap(self):
+    def testSegmentsNoOverlap(self):
         """
         Segment intersect, no overlap
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[4], startsB=[6],
-                                      endsB=[8], expStarts=[2], expEnds=[4],
-                                      allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[4], startsB=[6], endsB=[8],
+                      expStarts=[2], expEnds=[4])
 
-    def atestSubtractSegmentsOverlapABeforeB(self):
+    def testSegmentsOverlapABeforeB(self):
         """
         Two partially overlapping segments, A before B
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[4], startsB=[3],
-                                      endsB=[5], expStarts=[2], expEnds=[3],
-                                      allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[4], startsB=[3], endsB=[5],
+                      expStarts=[2], expEnds=[3])
 
-    def atestSubtractSegmentsOverlapBBeforeA(self):
+    def testSegmentsOverlapBBeforeA(self):
         """
         Two partially overlapping segments, B before A
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[3], endsA=[5], startsB=[2],
-                                   endsB=[4], expStarts=[4], expEnds=[5],
-                                   allowOverlap=False)
+        self._runTest(startsA=[3], endsA=[5], startsB=[2], endsB=[4],
+                      expStarts=[4], expEnds=[5])
 
     def atestSubtractSegmentsOverlapBInsideA(self):
         """
@@ -454,7 +266,7 @@ class SubtractTest(unittest.TestCase):
                                       endsB=[4], expStarts=[], expEnds=[],
                                       allowOverlap=False)
 
-    def testSubtractSegmentsOverlapBAtStartOfA(self):
+    def atestSubtractSegmentsOverlapBAtStartOfA(self):
         """
         Two overlapping segments, B totally inside A
         B.start == A.start

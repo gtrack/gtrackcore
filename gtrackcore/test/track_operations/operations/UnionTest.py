@@ -159,13 +159,6 @@ class UnionTest(unittest.TestCase):
                 self.assertEqual(v.startsAsNumpyArray().size, 0)
                 self.assertEqual(v.endsAsNumpyArray().size, 0)
 
-                #newVals = v.valsAsNumpyArray()
-                #newStrands = v.strandsAsNumpyArray()
-                #newIds = v.idsAsNumpyArray()
-                #newEdges = v.edgesAsNumpyArray()
-                #newWeights = v.weightsAsNumpyArray()
-                #newExtras = v.extrasAsNumpyArray()
-
     # **** Points tests ****
     def testPoints(self):
         """

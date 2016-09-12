@@ -161,6 +161,24 @@ class MergeTest(unittest.TestCase):
         self._runTest(starts=[1,5,5,10,32,32,43,len(self.chr1),len(self.chr1)],
                       expStarts=[1,5,10,32,43,len(self.chr1)])
 
+    def testPointsWithStrands(self):
+        """
+        Testing merging of strand info. Here we just combine strand
+        information.
+        :return:
+        """
+        self._runTest(starts=[10,10], strands=['+','+'], expStarts=[10],
+                      expStrands=['+'])
+
+        self._runTest(starts=[1,5,5,10], strands=['+','+','+','+'],
+                      expStarts=[1,5,10], expStrands=['+','+','+'])
+
+        self._runTest(starts=[1,5,5,10], strands=['+','-','-','+'],
+                      expStarts=[1,5,10], expStrands=['+','-','+'])
+
+        self._runTest(starts=[1,5,5,10], strands=['+','-','+','+'],
+                      expStarts=[1,5,10], expStrands=['+','.','+'])
+
     # **** Valued Points ****
     def testValuedPoints(self):
         self._runTest(starts=[10,10], values=[2,4], expStarts=[10],

@@ -5,6 +5,8 @@ import numpy as np
 def _mergeMultipleValues(values, start, end, mergeFunction=None):
     """
     Used when we need to merge the values of more then two features.
+
+
     :param values:
     :param start:
     :param end:
@@ -49,7 +51,16 @@ def _mergeIds(ids, overlapIndex, mergeNr, multipleOverlap=None, i=None):
 
     return ids, newIdsDict, mergeNr
 
-def _mergeEdges(edges, overlapIndex):
+def _mergeEdges(edges, overlapIndex, weight=None):
+    """
+
+    TODO: When we change order of the edges, we need to do the same on the
+    weights
+
+    :param edges:
+    :param overlapIndex:
+    :return:
+    """
 
     removeIndex = overlapIndex + 1
     # Find all the edges n and n+1
@@ -84,7 +95,8 @@ def _mergeEdges(edges, overlapIndex):
 def merge(starts, ends, strands=None, values=None, ids=None,
           edges=None, weights=None, useStrands=False,
           useMissingStrands=False, treatMissingAsPositive=True,
-          mergeValues=False, mergeValuesFunction=None, mergeLinks=False):
+          mergeValues=False, mergeValuesFunction=None,
+          mergeStrands=True, mergeLinks=False):
 
     # Two types
     #
@@ -125,6 +137,9 @@ def merge(starts, ends, strands=None, values=None, ids=None,
         # Set the default mergeValue function
         assert values is not None
         mergeValuesFunction= np.maximum
+
+    if mergeStrands and strands is None:
+        mergeStrands = False
 
     if useStrands:
         # TODO: fix for points
@@ -256,6 +271,16 @@ def merge(starts, ends, strands=None, values=None, ids=None,
                     values[overlapIndex] = mergeValuesFunction(v1, v2)
                     values = np.delete(values, removeIndex)
 
+                # Merging Strands
+                if mergeStrands:
+                    print(strands)
+                    s1 = strands[overlapIndex]
+                    s2 = strands[removeIndex]
+
+                    strands[overlapIndex] = [x if x == y else '.'
+                                             for x,y in zip(s1,s2)]
+                    strands = np.delete(strands, removeIndex)
+
                 if mergeLinks:
                     # We combine all links.
                     assert ids is not None
@@ -325,8 +350,6 @@ def merge(starts, ends, strands=None, values=None, ids=None,
                 multipleOverlap = np.where(partialOverlapIndex[1:] ==
                                 partialOverlapIndex[:-1])
 
-
-
                 if len(multipleOverlap[0]) > 0:
                     print("MULTIPLE!!")
                     print(multipleOverlap)
@@ -373,9 +396,6 @@ def merge(starts, ends, strands=None, values=None, ids=None,
     if mergeLinks:
 
         # Remove excessive padding
-
-        print(ids)
-
         newEdges = np.array([None] * len(edges))
 
         for i, edge in enumerate(edges):

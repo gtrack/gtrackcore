@@ -140,6 +140,8 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
     logging.debug("Creating new raw result track view")
 
     if newStarts is not None and newEnds is not None:
+        print(newStarts)
+        print(newEnds)
         assert len(newStarts) == len(newEnds)
 
     if index is None:
@@ -182,14 +184,14 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             enc[i-1] = t
             ind[i-1] = index[t]
 
-        startsBase = [None] * nrBaseTracks
-        endsBase = [None] * nrBaseTracks
-        valsBase = [None] * nrBaseTracks
-        strandsBase = [None] * nrBaseTracks
-        idsBase = [None] * nrBaseTracks
-        edgesBase = [None] * nrBaseTracks
-        weightsBase = [None] * nrBaseTracks
-        #extrasBase = [None] * nrBaseTracks
+        startsBase = np.array([None] * nrBaseTracks)
+        endsBase = np.array([None] * nrBaseTracks)
+        valsBase = np.array([None] * nrBaseTracks)
+        strandsBase = np.array([None] * nrBaseTracks)
+        idsBase = np.array([None] * nrBaseTracks)
+        edgesBase = np.array([None] * nrBaseTracks)
+        weightsBase = np.array([None] * nrBaseTracks)
+        #extrasBase = np.array([None] * nrBaseTracks)
         # Add the extra..
 
         # Get all of the numpy arrays from the tracks
@@ -259,7 +261,7 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             if strandsBase is None:
                 strands = None
             else:
-                strands = np.zeros(len(index))
+                strands = np.zeros(len(index), dtype=strandsBase.dtype)
                 for i in range(0, nrBaseTracks):
                     strands[enc[i]] = strandsBase[i][ind[i]]
 

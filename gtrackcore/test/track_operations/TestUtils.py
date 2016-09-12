@@ -86,6 +86,11 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     if extraLists is None:
         extraLists = OrderedDict()
 
+    print("**********")
+    print(startList)
+    print(strandList)
+    print("**********")
+
     tv = createTrackView(chr1, startList=startList, endList=endList,
                          valList=valList, strandList=strandList,
                          idList=idList, edgesList=edgeList,

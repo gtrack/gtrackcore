@@ -3,10 +3,19 @@ import numpy as np
 from collections import OrderedDict
 
 from gtrackcore.track_operations.operations.Union import Union
+from gtrackcore.track_operations.operations.Flank import Flank
+from gtrackcore.track_operations.operations.Slop import Slop
+from gtrackcore.track_operations.operations.ValueSelect import ValueSelect
+
+
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.test.track_operations.TestUtils import createTrackView
+
+from gtrackcore.test.track_operations.TestUtils import \
+    createSimpleTestTrackContent
+
 
 
 class NestedOperatorTest(unittest.TestCase):
@@ -19,7 +28,9 @@ class NestedOperatorTest(unittest.TestCase):
         self.chromosomes = (GenomeRegion('hg19', c, 0, l)
                             for c, l in GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
-    def _runNestedTest(self, operationObject, expStarts, expEnds):
+    def _runNestedTest(self, operationObject, expStarts=None, expEnds=None,
+                       expStrands=None, expValues=None, expIds=None,
+                       expEdges=None, expWeights=None):
         """
         Runs a test one a operator object.
 
@@ -28,65 +39,129 @@ class NestedOperatorTest(unittest.TestCase):
         :return:
         """
 
-        tc = operationObject()
+        result = operationObject.calculate()
 
-        for (k, v) in tc.getTrackViews().items():
-
-            if cmp(k, self.chr1) == 0:
+        for (k, v) in result.getTrackViews().items():
+            if cmp(k, self.chr1) == 0 or cmp(k, self.chr1Small) == 0:
                 # All test tracks are in chr1
-                self.assertTrue(np.array_equal(v.startsAsNumpyArray(), expStarts))
-                self.assertTrue(np.array_equal(v.endsAsNumpyArray(), expEnds))
+                resFound = True
+
+                newStarts = v.startsAsNumpyArray()
+                newEnds = v.endsAsNumpyArray()
+                newValues = v.valsAsNumpyArray()
+                newStrands = v.strandsAsNumpyArray()
+                newIds = v.idsAsNumpyArray()
+                newEdges = v.edgesAsNumpyArray()
+                newWeights = v.weightsAsNumpyArray()
+                #newExtras = v.extrasAsNumpyArray()
+
+                if expStarts is not None:
+                    print("newStarts: {}".format(newStarts))
+                    print("expStarts: {}".format(expStarts))
+                    self.assertTrue(newStarts is not None)
+                    self.assertTrue(np.array_equal(newStarts, expStarts))
+                else:
+                    self.assertTrue(newStarts is None)
+
+                if expEnds is not None:
+                    self.assertTrue(newEnds is not None)
+                    self.assertTrue(np.array_equal(newEnds, expEnds))
+                else:
+                    self.assertTrue(newEnds is None)
+
+                if expValues is not None:
+                    self.assertTrue(newValues is not None)
+                    self.assertTrue(np.array_equal(newValues, expValues))
+                else:
+                    self.assertTrue(newValues is None)
+
+                if expStrands is not None:
+                    self.assertTrue(newStrands is not None)
+                    self.assertTrue(np.array_equal(newStrands, expStrands))
+                else:
+                    self.assertTrue(newStrands is None)
+
+                if expIds is not None:
+                    print("newIds: {}".format(newIds))
+                    print("expIds: {}".format(expIds))
+                    self.assertTrue(newIds is not None)
+                    self.assertTrue(np.array_equal(newIds, expIds))
+                else:
+                    self.assertTrue(newIds is None)
+
+                if expEdges is not None:
+                    print("newEdges: {}".format(newEdges))
+                    print("expEdges: {}".format(expEdges))
+                    self.assertTrue(newEdges is not None)
+                    self.assertTrue(np.array_equal(newEdges, expEdges))
+                else:
+                    self.assertTrue(newEdges is None)
+
+                if expWeights is not None:
+                    self.assertTrue(newWeights is not None)
+                    self.assertTrue(np.array_equal(newWeights, expWeights))
+                else:
+                    self.assertTrue(newWeights is None)
+
+                #if expExtras is not None:
+                #    self.assertTrue(newExtras is not None)
+                #    self.assertTrue(np.array_equal(newExtras, expExtras))
+                #else:
+                #    self.assertTrue(newExtras is None)
+
             else:
                 # Tests if all tracks no in chr1 have a size of 0.
-                self.assertEqual(v.startsAsNumpyArray().size, 0)
-                self.assertEqual(v.endsAsNumpyArray().size, 0)
+                self.assertEqual(v.size, 0)
 
-    def _createTrackContent(self, starts, ends):
-        """
-        Create a track view a start, end list pair.
-        Help method used in testing. This method will create a hg19 tracks with
-        data in chromosome 1 only.
-        :param starts: List of track start positions
-        :param ends: List of track end positions
-        :return: A TrackContent object
-        """
-        starts = np.array(starts)
-        ends = np.array(ends)
-        tv = createTrackView(region=self.chr1, startList=starts, endList=ends,
-                             allow_overlap=False)
-        d = OrderedDict()
-        d[self.chr1] = tv
-        return TrackContents('hg19', d)
+        self.assertTrue(resFound)
 
-    def testUnionAndTrack(self):
+    def atestUnionAndTrack(self):
         """
         Test if a union between another union and a track works.
         :return: None
         """
-        track1 = self._createTrackContent([2], [4])
-        track2 = self._createTrackContent([6], [8])
-        track3 = self._createTrackContent([10], [12])
+        track1 = createSimpleTestTrackContent(startList=[2], endList=[4])
+        track2 = createSimpleTestTrackContent(startList=[6], endList=[8])
+        track3 = createSimpleTestTrackContent(startList=[10], endList=[12])
 
         u1 = Union(track1, track2)
         u2 = Union(u1, track3)
 
-        self._runNestedTest(u2, [2, 6, 10], [4, 8, 12])
+        self._runNestedTest(u2, expStarts=[2, 6, 10], expEnds=[4, 8, 12])
 
-    def testUnionAndUnion(self):
+    def atestUnionAndUnion(self):
         """
         Test if a union between another union and a track works.
         :return: None
         """
-        track1 = self._createTrackContent([2], [4])
-        track2 = self._createTrackContent([6], [8])
-        track3 = self._createTrackContent([10], [12])
-        track4 = self._createTrackContent([14], [16])
+        track1 = createSimpleTestTrackContent(startList=[2], endList=[4])
+        track2 = createSimpleTestTrackContent(startList=[6], endList=[8])
+        track3 = createSimpleTestTrackContent(startList=[10], endList=[12])
+        track4 = createSimpleTestTrackContent(startList=[14], endList=[16])
 
         u1 = Union(track1, track2)
         u2 = Union(track3, track4)
         u3 = Union(u1, u2)
 
-        self._runNestedTest(u3, [2, 6, 10, 14], [4, 8, 12, 16])
+        self._runNestedTest(u3, expStarts=[2, 6, 10, 14],
+                            expEnds=[4, 8, 12, 16])
+
+    def testSlopAndUnion(self):
+
+        track1 = createSimpleTestTrackContent(startList=[10], endList=[15],
+                                              strandList=['-'])
+
+        track2 = createSimpleTestTrackContent(startList=[18], endList=[30],
+                                              strandList=['-'])
+
+        s = Slop(track1, start=10, useStrands=True)
+
+        u = Union(s, track2)
+
+        self._runNestedTest(u, expStarts=[10,18], expEnds=[25,30],
+                            expStrands=['-', '-'])
+
+
 
 if __name__ == "__main__":
     unittest.main()
