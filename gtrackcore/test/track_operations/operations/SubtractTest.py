@@ -335,13 +335,23 @@ class SubtractTest(unittest.TestCase):
         self._runTest(startsA=[2, 6], endsA=[4, 8], startsB=[3], endsB=[7],
                       expStarts=[2,7], expEnds=[3, 8])
 
-    def ftestUnionSegmentsAJoinsTwoBs(self):
+    def testUnionSegmentsAJoinsTwoBs(self):
         """
         A covers multiple segments in B
         :return: None
         """
         self._runTest(startsA=[2], endsA=[15], startsB=[3,7], endsB=[5,10],
                       expStarts=[2,5,10], expEnds=[3,7,15])
+
+    # **** Points - Segments ****
+    def testPointsAndSegments(self):
+        self._runTest(startsA=[1,2,3,4], startsB=[3], endsB=[10],
+                      expStarts=[1,2], debug=True)
+
+    def testPointsAndSegmentsTotal(self):
+        self._runTest(startsA=[3,4,8], startsB=[3], endsB=[10],
+                      expNoResult=True, debug=True)
+
 
 if __name__ == "__main__":
     unittest.main()

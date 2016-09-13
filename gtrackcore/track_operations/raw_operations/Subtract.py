@@ -34,10 +34,23 @@ def subtract(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlapingInputs):
 
     elif t1Ends is None:
         # Points - segments
-        raise NotImplementedError
+        # We remove points covered by the segments.
+        t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
+
+        select = np.in1d(t1Starts, t2Starts)
+
+        t2Starts = np.concatenate([np.arange(x,y) for x,y in zip(t2Starts,
+                                                                     t2Ends)])
+        select = np.in1d(t1Starts, t2Starts)
+
+        starts = t1Starts[~select]
+        index = t1Index[~select]
+
+        return starts, None, index
 
     elif t2Ends is None:
         # Segments - points
+        # We split segments covered by a point
         raise NotImplementedError
     else:
         # segments - segments
