@@ -28,7 +28,8 @@ class SubtractTest(unittest.TestCase):
                  weightsA=None, weightsB=None, extrasA=None, extrasB=None,
                  expStarts=None, expEnds=None, expStrands=None, expVals=None,
                  expIds=None, expEdges=None, expWeights=None, expExtras=None,
-                 allowOverlap=False, resultAllowOverlap=False, debug=False):
+                 expNoResult=False, allowOverlap=False,
+                 resultAllowOverlap=False, debug=False):
         """
         Run a union test
         :param startsA:
@@ -163,7 +164,10 @@ class SubtractTest(unittest.TestCase):
                 self.assertEqual(v.startsAsNumpyArray().size, 0)
                 self.assertEqual(v.endsAsNumpyArray().size, 0)
 
-        self.assertTrue(resFound)
+        if expNoResult:
+            self.assertFalse(resFound)
+        else:
+            self.assertTrue(resFound)
 
     # **** Points tests ****
 
@@ -239,123 +243,105 @@ class SubtractTest(unittest.TestCase):
         self._runTest(startsA=[3], endsA=[5], startsB=[2], endsB=[4],
                       expStarts=[4], expEnds=[5])
 
-    def atestSubtractSegmentsOverlapBInsideA(self):
+    def testSegmentsOverlapBInsideA(self):
         """
         Two overlapping segments, B totally inside A
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[6], startsB=[3],
-                                      endsB=[5], expStarts=[2,5],
-                                      expEnds=[3,6], allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[6], startsB=[3], endsB=[5],
+                      expStarts=[2,5], expEnds=[3,6])
 
-    def atestSubtractSegmentsOverlapAInsideB(self):
+    def testSegmentsOverlapAInsideB(self):
         """
         Two overlapping segments, A totally inside B
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[3], endsA=[5], startsB=[2],
-                                      endsB=[6], expStarts=[], expEnds=[],
-                                      allowOverlap=False,)
+        self._runTest(startsA=[3], endsA=[5], startsB=[2], endsB=[6],
+                      expNoResult=True)
 
-    def atestSubtractSegmentsTotalOverlap(self):
+    def testSegmentsTotalOverlap(self):
         """
         Two totally overlapping segments, A == B
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[4], startsB=[2],
-                                      endsB=[4], expStarts=[], expEnds=[],
-                                      allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[4], startsB=[2], endsB=[4],
+                      expNoResult=True, debug=True)
 
-    def atestSubtractSegmentsOverlapBAtStartOfA(self):
+    def testSegmentsOverlapBAtStartOfA(self):
         """
         Two overlapping segments, B totally inside A
         B.start == A.start
         len(A) > len(B)
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[6], startsB=[2],
-                                      endsB=[4], expStarts=[4], expEnds=[6],
-                                      allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[6], startsB=[2], endsB=[4],
+                      expStarts=[4], expEnds=[6], debug=True)
 
-    def atestSubtractSegmentsOverlapAAtStartOfB(self):
+    def testSegmentsOverlapAAtStartOfB(self):
         """
         Two overlaping segments, A totally inside B
         A.start == B.start
         len(B) > len (A)
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[4], startsB=[2],
-                                      endsB=[6], expStarts=[], expEnds=[],
-                                      allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[4], startsB=[2], endsB=[6],
+                      expNoResult=True)
 
-    def atestSubtractSegmentsOverlapBAtEndOfA(self):
+    def testSegmentsOverlapBAtEndOfA(self):
         """
         Two overlapping segments, B totally inside A
         A.end == B.end
         len(A) > len (B)
         :return: None
         """
-        self._runSubtractSegmentsTest(startsA=[2], endsA=[6], startsB=[4],
-                                      endsB=[6], expStarts=[2], expEnds=[4],
-                                      allowOverlap=False)
+        self._runTest(startsA=[2], endsA=[6], startsB=[4], endsB=[6],
+                      expStarts=[2], expEnds=[4])
 
-    def ftestUnionSegmentsOverlapAAtEndOfB(self):
+    def testSegmentsOverlapAAtEndOfB(self):
         """
         Two overlapping segments, A totally inside B
         B.end == A.end
         len(B) > len (A)
         :return: None
         """
-        self._runUnionSegmentsTest(startsA=[4], endsA=[6], startsB=[2],
-                                   endsB=[6], expStarts=[2],expEnds=[6],
-                                   allowOverlap=False,
-                                   resultAllowOverlap=False)
+        self._runTest(startsA=[4], endsA=[6], startsB=[2], endsB=[6],
+                      expNoResult=True)
 
-    def ftestUnionSegmentsTouchingABeforeB(self):
+    def testSegmentsTouchingABeforeB(self):
         """
         Two none overlapping "touching" segments
         A.end == B.start
 
-        We do not combine these at the moment.
         :return: None
         """
-        self._runUnionSegmentsTest(startsA=[2], endsA=[4], startsB=[4],
-                                   endsB=[6], expStarts=[2,4],expEnds=[4,6],
-                                   allowOverlap=False,
-                                   resultAllowOverlap=False)
+        self._runTest(startsA=[2], endsA=[4], startsB=[4], endsB=[6],
+                      expStarts=[2],expEnds=[4])
 
-    def ftestUnionSegmentsTouchingBBeforeA(self):
+    def testSegmentsTouchingBBeforeA(self):
         """
         Two none overlapping "touching" segments
         A.end == B.start
 
-        We do not combine these at the moment.
         :return: None
         """
-        self._runUnionSegmentsTest(startsA=[4], endsA=[6], startsB=[2],
-                                   endsB=[4], expStarts=[2,4], expEnds=[4,6],
-                                   allowOverlap=False,
-                                   resultAllowOverlap=False)
+        self._runTest(startsA=[4], endsA=[6], startsB=[2], endsB=[4],
+                      expStarts=[4], expEnds=[6])
 
-    def ftestUnionSegmentsBJoinsTwoAs(self):
+    def testSegmentsBCoversMultipleSegments(self):
         """
-        B "joins" two segments in A
+        B covers multiple segments in A
         :return: None
         """
-        self._runUnionSegmentsTest(startsA=[2, 6], endsA=[4, 8], startsB=[3],
-                                   endsB=[7], expStarts=[2], expEnds=[8],
-                                   allowOverlap=False,
-                                   resultAllowOverlap=False)
+        self._runTest(startsA=[2, 6], endsA=[4, 8], startsB=[3], endsB=[7],
+                      expStarts=[2,7], expEnds=[3, 8])
 
     def ftestUnionSegmentsAJoinsTwoBs(self):
         """
-        A "joins" two segments i B
+        A covers multiple segments in B
         :return: None
         """
-        self._runUnionSegmentsTest(startsA=[3], endsA=[7], startsB=[2, 6],
-                                   endsB=[4, 8], expStarts=[2], expEnds=[8],
-                                   allowOverlap=False,
-                                   resultAllowOverlap=False)
+        self._runTest(startsA=[2], endsA=[15], startsB=[3,7], endsB=[5,10],
+                      expStarts=[2,5,10], expEnds=[3,7,15])
 
 if __name__ == "__main__":
     unittest.main()
