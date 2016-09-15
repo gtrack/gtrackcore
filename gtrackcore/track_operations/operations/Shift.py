@@ -12,6 +12,31 @@ from gtrackcore.track_operations.Genome import Genome
 
 class Shift(Operator):
 
+    def __init__(self, *args, **kwargs):
+        self._kwargs = kwargs
+        self._options = {'debug': False,
+                         'allowOverlap': False,
+                         'resultAllowOverlap': False,
+                         'shift': None,
+                         'positive': None,
+                         'negative': None,
+                         'fraction': False,
+                         'useStrand': True,
+                         'useMissingStrand': True,
+                         'treatMissingAsNegative': False
+                         }
+        # Save the tracks
+        self._tracks = args
+
+        # Core properties
+        self._numTracks = 1
+        self._resultIsTrack = True
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultTrackRequirements = self._trackRequirements[0]
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def _calculate(self, region, tv):
 
         starts = tv.startsAsNumpyArray()
@@ -36,78 +61,6 @@ class Shift(Operator):
                                             newStrands=ret[3])
         else:
             return None
-
-    def _setConfig(self, track):
-        # None changeable properties
-        self._numTracks = 1
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=True)]
-        self._resultIsTrack = True
-
-        # Set defaults for changeable properties
-        self._allowOverlap = True
-        self._shift = None
-        self._positive = None
-        self._negative = None
-        self._fraction = False
-        self._useMissingStrand = True
-        self._treatMissingAsPositive = True
-
-        # For now the result track is always of the same type as track A
-        self._resultTrackRequirements = self._trackRequirements[0]
-
-    def _parseKwargs(self, **kwargs):
-        """
-        :param kwargs:
-        :return: None
-        """
-        if 'allowOverlap' in kwargs:
-            self._allowOverlap = kwargs['allowOverlap']
-            self._updateTrackFormat()
-
-        if 'shift' in kwargs:
-            self._shift = kwargs['shift']
-
-        if 'positive' in kwargs:
-            self._positive = kwargs['positive']
-
-        if 'negative' in kwargs:
-            self._negative = kwargs['negative']
-
-        if 'fraction' in kwargs:
-            self._fraction = kwargs['fraction']
-
-        if 'useMissingStrand' in kwargs:
-            self._useMissingStrand = kwargs['useMissingStrand']
-
-        if 'treatMissingAsPositive' in kwargs:
-            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
-
-    def _updateTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks as input, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        if self._allowOverlap:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False)]
-
-    def _updateResultTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks in the result, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        if self._resultAllowOverlaps:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False)]
 
     def preCalculation(self, track):
         return track
@@ -146,14 +99,6 @@ class Shift(Operator):
         # TODO: use overlap...
 
         return Shift(track)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Track name used by GTools when saving the track i GTrackCore
-        :return: Generated track name as a string
-        """
-        return "shifted-{0}".format(int(time.time()))
 
     def printResult(self):
         pass

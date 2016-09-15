@@ -11,6 +11,26 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 
 class AverageLength(Operator):
 
+    def __init__(self, *args, **kwargs):
+        self._kwargs = kwargs
+        self._options = {'debug': False,
+                         'allowOverlap': False,
+                         'resultAllowOverlap': False
+                         }
+        # Save the tracks
+        self._tracks = args
+
+        # Operations core requirements
+        self._numTracks = 1
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=True)]
+        self._resultIsTrack = False
+        self._resultTrackRequirements = None
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+
+
     def _calculate(self, region, tv):
 
         starts = tv.startsAsNumpyArray()
@@ -19,14 +39,6 @@ class AverageLength(Operator):
         nr = averageLength(starts, ends)
 
         return nr
-
-    def _parseKwargs(self, **kwargs):
-        """
-        No kwargs to parse
-        :param kwargs:
-        :return:
-        """
-        pass
 
     def _updateResultTrackFormat(self):
         """
@@ -49,19 +61,6 @@ class AverageLength(Operator):
 
     def postCalculation(self, result):
         return result
-
-    def _setConfig(self, track):
-        # None changeable properties
-        self._numTracks = 1
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=True)]
-        self._resultIsTrack = False
-
-        # Set defaults for changeable properties
-        self._allowOverlap = False
-
-        # For now the result track is always of the same type as track A
-        self._resultTrackRequirements = None
 
     @classmethod
     def createSubParser(cls, subparsers):

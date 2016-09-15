@@ -23,17 +23,13 @@ class AverageLinkWeight(Operator):
     Find the average weight of the links in a track.
     """
 
-    def _calculate(self, region, tv):
-        logging.debug("Start call! region:{0}".format(region))
-        weights = tv.weightsAsNumpyArray()
+    def __init__(self, *args, **kwargs):
+        self._kwargs = kwargs
+        self._options = {'debug': False,
+                         'customAverageFunction': None}
 
-        ret = averageLinkWeight(weights, self._customAverageFunction)
-
-        return ret
-
-    def _setConfig(self, trackViews):
-        # Access to the operations tracks.
-        self._tracks = trackViews
+        # Save the tracks
+        self._tracks = args
 
         # None changeable properties
         self._numTracks = 1
@@ -48,27 +44,18 @@ class AverageLinkWeight(Operator):
         # TODO: Solve this for the case where A and b are not of the same type.
         self._resultTrackRequirements = None
 
-    def _parseKwargs(self, **kwargs):
-        """
-        :param kwargs:
-        :return: None
-        """
+        super(self.__class__, self).__init__(*args, **kwargs)
 
-        if 'customAverageFunction' in kwargs:
-            self._customAverageFunction = kwargs['customAverageFunction']
-        else:
-            self._customAverageFunction = None
+    def _calculate(self, region, tv):
+        logging.debug("Start call! region:{0}".format(region))
+        weights = tv.weightsAsNumpyArray()
 
-        if 'debug' in kwargs:
-            self._debug = kwargs['debug']
-        else:
-            self._debug = False
+        ret = averageLinkWeight(weights, self._customAverageFunction)
 
-        if self._debug:
-            level = logging.DEBUG
-        else:
-            level = logging.INFO
-        logging.basicConfig(stream=sys.stderr, level=level)
+        return ret
+
+    def _setConfig(self, trackViews):
+        pass
 
     def _updateTrackFormat(self):
         """
@@ -79,6 +66,7 @@ class AverageLinkWeight(Operator):
         assert self._tracks is not None
         tv = self._tracks[0]
         assert tv is not None
+
         dense = tv.firstTrackView().trackFormat.isDense()
 
         self._trackRequirements = \
@@ -115,6 +103,8 @@ class AverageLinkWeight(Operator):
     def createOperation(cls, args):
         """
         Generator classmethod used by GTool
+
+        Create one factory at the operator level
 
         :param args: args from GTool
         :return: Intersect object

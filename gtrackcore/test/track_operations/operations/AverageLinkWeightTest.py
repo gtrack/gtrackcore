@@ -10,7 +10,7 @@ from gtrackcore.test.track_operations.TestUtils import \
     createSimpleTestTrackContent
 
 
-class ValueSelectTest(unittest.TestCase):
+class AverageLinkWeightTest(unittest.TestCase):
 
     def setUp(self):
         self.chr1 = (GenomeRegion('hg19', 'chr1', 0,
@@ -33,7 +33,8 @@ class ValueSelectTest(unittest.TestCase):
                                              customChrLength=customChrLength)
 
         a = AverageLinkWeight(track,
-                              customAverageFunction=customAverageFunction)
+                              customAverageFunction=customAverageFunction,
+                              debug=debug)
 
         self.assertTrue((a is not None))
         result = a.calculate()
@@ -59,7 +60,7 @@ class ValueSelectTest(unittest.TestCase):
 
         # Value is scalar
         self._runTest(ids=[1], edges=[2], weights=[[1]],
-                      starts=[1], expAverage=1)
+                      starts=[1], expAverage=1, debug=True)
         self._runTest(ids=[1,2], edges=[2,1], weights=[[1],[3]],
                       starts=[1,2], expAverage=2)
 

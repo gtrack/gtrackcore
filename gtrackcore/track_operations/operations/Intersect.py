@@ -16,6 +16,28 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 
 class Intersect(Operator):
 
+    def __init__(self, *args, **kwargs):
+        self._kwargs = kwargs
+        self._options = {'debug': False,
+                         'allowOverlap': False,
+                         'resultAllowOverlap': False
+                         }
+        # Save the tracks
+        self._tracks = args
+
+        self._numTracks = 2
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=False),
+             TrackFormatReq(dense=False, allowOverlaps=False)]
+
+        # Set defaults for changeable properties
+        self._resultIsTrack = True
+        # For now the result track is always of the same type as track A
+        # TODO: Solve this for the case where A and b are not of the same type.
+        self._resultTrackRequirements = self._trackRequirements[0]
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def _calculate(self, region, tv1, tv2):
 
         # TODO
@@ -47,56 +69,6 @@ class Intersect(Operator):
                                             encoding=encoding)
         else:
             return None
-
-    def _setConfig(self, tracks):
-        # None changeable properties
-        self._numTracks = 2
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False),
-             TrackFormatReq(dense=False, allowOverlaps=False)]
-
-        # Set defaults for changeable properties
-        self._allowOverlap = False
-        self._resultAllowOverlaps = False
-        self._resultIsTrack = True
-        # For now the result track is always of the same type as track A
-        # TODO: Solve this for the case where A and b are not of the same type.
-        self._resultTrackRequirements = self._trackRequirements[0]
-
-    def _parseKwargs(self, **kwargs):
-        """
-        :param kwargs:
-        :return: None
-        """
-        if 'allowOverlap' in kwargs:
-            self._allowOverlap = kwargs['allowOverlap']
-            self._updateTrackFormat()
-
-        if 'resultAllowOverlap' in kwargs:
-            self._resultAllowOverlaps = kwargs['resultAllowOverlap']
-            self._updateResultTrackFormat()
-
-
-
-    def _updateTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks as input, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap),
-             TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap)]
-
-    def _updateResultTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks in the result, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        self._resultTrackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=self._resultAllowOverlaps),
-             TrackFormatReq(dense=False, allowOverlaps=self._resultAllowOverlaps)]
 
     def preCalculation(self, tracks):
         return tracks

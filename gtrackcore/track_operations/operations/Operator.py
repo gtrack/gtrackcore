@@ -2,12 +2,14 @@ __author__ = 'skh'
 
 import abc
 import glob
+import time
 from collections import OrderedDict
 from os.path import dirname, basename, isfile
 
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track.format.TrackFormat import TrackFormatReq
 
 class InvalidArgumentError(Exception):
     pass
@@ -16,24 +18,19 @@ class Operator(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, *args, **kwargs):
-        self._allowOverlap = False
-        self._numTracks = 0
+        self._kwargs = kwargs
 
         # The result
-        self._out = None
+        self._out = None  # Redundant with _resultTrack
         self._resultTrack = None
-        self._resultFound = False
+        self._resultFound = False  # Redundant with _resultTrack
 
-        # subclasse nottrack
-        self._resultIsTrack = False
-        self._trackRequirements = None
-        self._resultAllowOverlaps = False
-        self._resultTrackRequirements = None
-        self._setConfig(args)
-        self._parseKwargs(**kwargs)
-
-        self._nestedOperator = False
         self._args = self.preCalculation(args)
+
+        # Update the track format requirements.
+        self._updateTrackFormat()
+        self._updateResultTrackFormat()
+
 
         self._checkArgs()
 
@@ -85,6 +82,19 @@ class Operator(object):
                 if arg.genome != genomeFirstArg:
                     raise InvalidArgumentError("All tracks must have the same genome")
 
+    def __getattr__(self, item):
+        print("in getattr. Item: {}".format(item))
+        try:
+            if item.startswith('_') and item[1:] in self._options.keys():
+                if item[1:] in self._kwargs.keys():
+                    # Option in kwargs. Returning it.
+                    return self._kwargs[item[1:]]
+                else:
+                    # Option not defined in kwargs. Returning the default.
+                    return self._options[item[1:]]
+        except KeyError:
+            raise AttributeError
+
     def __call__(self, *args, **kwargs):
         """
         Legacy, remove at a later point.
@@ -92,7 +102,6 @@ class Operator(object):
         :param kwargs:
         :return:
         """
-        print("Remove use of __call__!")
         return self.calculate()
 
     def calculate(self):
@@ -152,47 +161,31 @@ class Operator(object):
         """
         pass
 
-    @abc.abstractmethod
-    def _parseKwargs(self, **kwargs):
-        """
-        Parse the kwargs if any. Used to give options to operations. We are
-        using kwargs so we can separate the tracks (witch are checked in the
-        the superclass method _checkArgs) and options specific to the
-        operation at hand
-        optional agruments.
-        :param kwargs: Kwargs form init
-        :return: None
-        """
-        pass
-
-    @abc.abstractmethod
     def _updateTrackFormat(self):
         """
         Called when we have updated some of the properties that the track
         requirement depend on.
 
-        The implemented method should create a new track requirement using
-        the properties.
+        TODO: make this more general. Are there more things we need to support?
+
         :return: None
         """
-        pass
+        self._trackRequirements = \
+            [TrackFormatReq(dense=r.isDense(),
+                            allowOverlaps=self._allowOverlap) for r in
+             self._trackRequirements]
 
-    @abc.abstractmethod
     def _updateResultTrackFormat(self):
         """
         Equal to _updateTrackFormat but now updating the result track
         requirments (if any)
         :return: None
         """
-        pass
-
-    @abc.abstractmethod
-    def _setConfig(self, trackViews):
-        """
-        This method should sett all of the required properties of a operation.
-        :return: None
-        """
-        pass
+        if self._resultTrackRequirements is not None:
+            # Result is a track.
+            dense = self._resultTrackRequirements.isDense()
+            self._resultTrackRequirements = \
+                TrackFormatReq(dense=dense, allowOverlaps=self._allowOverlap)
 
     @abc.abstractmethod
     def printResult(self):
@@ -210,6 +203,7 @@ class Operator(object):
 
     @abc.abstractmethod
     def postCalculation(self, result):
+        super(Operator, self).postCalculation(result)
         pass
 
     # **** Abstract class methods ****
@@ -236,9 +230,7 @@ class Operator(object):
         """
         pass
 
-    @classmethod
-    @abc.abstractmethod
-    def createTrackName(cls):
+    def createTrackName(self):
         """
         Used by GTools.
         Creates a track name that GTools uses when saving the track in
@@ -250,8 +242,10 @@ class Operator(object):
         :return: String. Generated track name for the result of a track
         operation.
         """
-        pass
-
+        if self.resultIsTrack:
+            return "{}-{}".format(self.__class__.__name__, int(time.time()))
+        else:
+            return None
 
     # **** Common properties ***
     # Properties common to all operation

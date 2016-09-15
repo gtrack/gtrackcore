@@ -15,6 +15,26 @@ from gtrackcore.track_operations.Genome import Genome
 
 class Subtract(Operator):
 
+    def __init__(self, *args, **kwargs):
+        self._kwargs = kwargs
+        self._options = {'debug': False,
+                         'allowOverlap': False,
+                         'resultAllowOverlap': False,
+                        }
+        # Save the tracks
+        self._tracks = args
+
+        # Core properties
+        self._numTracks = 2
+        self._resultIsTrack = True
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=False),
+             TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultTrackRequirements = self._trackRequirements[0]
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+
     def _calculate(self, region, tv1, tv2):
 
         t1Starts = tv1.startsAsNumpyArray()
@@ -38,64 +58,6 @@ class Subtract(Operator):
                                             newStarts=starts, newEnds=ends)
         else:
             return None
-
-    def _setConfig(self, tracks):
-        # None changeable properties
-        self._numTracks = 2
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False),
-             TrackFormatReq(dense=False, allowOverlaps=False)]
-
-        # Set defaults for changeable properties
-        self._allowOverlap = False
-        self._resultAllowOverlaps = False
-        self._resultIsTrack = True
-        # For now the result track is always of the same type as track A
-        # TODO: Solve this for the case where A and b are not of the same type.
-        self._resultTrackRequirements = self._trackRequirements[0]
-
-    def _parseKwargs(self, **kwargs):
-        """
-        :param kwargs:
-        :return: None
-        """
-        if 'allowOverlap' in kwargs:
-            self._allowOverlap = kwargs['allowOverlap']
-            self._updateTrackFormat()
-
-        if 'resultAllowOverlap' in kwargs:
-            self._resultAllowOverlaps = kwargs['resultAllowOverlap']
-            self._updateResultTrackFormat()
-
-    def _updateTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks as input, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        if self._allowOverlap:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
-
-    def _updateResultTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks in the result, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        if self._resultAllowOverlaps:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
 
     def preCalculation(self, track):
         return track
@@ -138,14 +100,6 @@ class Subtract(Operator):
         # TODO: use overlap...
 
         return Subtract(trackA, trackB)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Track name used by GTools when saving the track i GTrackCore
-        :return: Generated track name as a string
-        """
-        return "subtracted-{0}".format(int(time.time()))
 
     def printResult(self):
         """

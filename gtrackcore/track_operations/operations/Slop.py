@@ -84,15 +84,15 @@ class Slop(Operator):
         self._useFraction = False
 
         # Keep the values and links from the base track.
-        self._keepValuesAndLinks = True
+        # self._keepValuesAndLinks = True
 
         # Strand handling
-        self._useStrands = False
-        self._useMissingStrands = True
+        self._useStrands = True
+        # self._useMissingStrands = True
         self._treatMissingAsNegative = False
-        self._ignorePositive = False
-        self._ignoreNegative = False
-        self._updateMissingStrand = False
+        # self._ignorePositive = False
+        # self._ignoreNegative = False
+        # self._updateMissingStrand = False
 
         self._allowOverlap = False
         self._resultAllowOverlaps = False

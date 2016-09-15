@@ -52,7 +52,7 @@ class Union(Operator):
         # Set defaults for changeable properties
         self._allowOverlap = False
         self._resultAllowOverlaps = False
-        self._useStands = True
+        self._useStrands = True
         self._useMissingStrands = True
         self._treatMissingAsPositive = True
         self._mergeValues = True
@@ -103,6 +103,7 @@ class Union(Operator):
         if 'mergeLinks' in kwargs:
             self._mergeLinks = kwargs['mergeLinks']
 
+        # TODO makeIdsUnique
         if 'makeLinksUnique' in kwargs:
             self._makeLinksUnique = kwargs['makeLinksUnique']
 

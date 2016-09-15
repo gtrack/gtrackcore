@@ -27,6 +27,37 @@ class Flank(Operator):
     # s = Slop(track, size)
     # res = Subtract(s, track)
 
+    def __init__(self, *args, **kwargs):
+        self._kwargs = kwargs
+        self._options = {'both': None,
+                         'start': None,
+                         'end': None,
+                         'useFraction': False,
+                         'ignoreStrand': False,
+                         'useMissingStrands': True,
+                         'treatMissingAsNegative': False,
+                         'resultAllowOverlaps': False,
+                         'debug': False
+                         }
+        self._name = "Flank"
+
+        # Move this into the track req
+        #if 'allowOverlap' in kwargs:
+        #    self._allowOverlap = kwargs['allowOverlap']
+        #    self._updateTrackFormat()
+
+        self._numTracks = 1
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultIsTrack = True
+
+        # Set defaults for changeable properties
+        self._allowOverlap = False
+
+        self._resultTrackRequirements = self._trackRequirements[0]
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def _calculate(self, region, tv):
         # Remove RawOperationsContent
         logging.debug("Start call! region:{0}".format(region))
@@ -66,80 +97,8 @@ class Flank(Operator):
             return None
 
     def _setConfig(self, tracks):
-        # None changeable properties
-        self._numTracks = 1
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
-        self._resultIsTrack = True
+        pass
 
-        # Set defaults for changeable properties
-        self._allowOverlap = False
-        self._resultAllowOverlaps = False
-
-        self._useFraction = False
-        self._useMissingStrands = False
-        self._treatMissingAsPositive = True
-        # For now the result track is always of the same type as track A
-        # TODO: Solve this for the case where A and b are not of the same type.
-        self._resultTrackRequirements = self._trackRequirements[0]
-
-    def _parseKwargs(self, **kwargs):
-        """
-        :param kwargs:
-        :return: None
-        """
-        if 'allowOverlap' in kwargs:
-            self._allowOverlap = kwargs['allowOverlap']
-            self._updateTrackFormat()
-
-        if 'ignoreStrand' in kwargs:
-            self._ignoreStrand = kwargs['ignoreStrand']
-        else:
-            self._ignoreStrand = False
-
-        if 'both' in kwargs:
-            self._both = kwargs['both']
-            if self._both is not None:
-                assert self._both > 0
-        else:
-            self._both = None
-
-        if 'start' in kwargs:
-            self._start = kwargs['start']
-            if self._start is not None:
-                assert self._start > 0
-
-        else:
-            self._start = None
-
-        if 'end' in kwargs:
-            self._end = kwargs['end']
-            if self._end is not None:
-                assert self._end > 0
-        else:
-            self._end = None
-
-        if 'useFraction' in kwargs:
-            # Define inputs as a fraction of the size of the segment.
-            # To be implemented.
-            self._useFraction = kwargs['useFraction']
-
-        if 'useMissingStrands' in kwargs:
-            self._useMissingStrands = kwargs['useMissingStrands']
-
-        if 'treatMissingAsPositive' in kwargs:
-            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
-
-        if 'debug' in kwargs:
-            self._debug = kwargs['debug']
-        else:
-            self._debug = False
-
-        if self._debug:
-            level = logging.DEBUG
-        else:
-            level = logging.INFO
-        logging.basicConfig(stream=sys.stderr, level=level)
 
     def preCalculation(self, track):
         return track

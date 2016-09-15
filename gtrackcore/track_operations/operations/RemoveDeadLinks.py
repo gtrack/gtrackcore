@@ -38,6 +38,29 @@ class RemoveDeadLinks(Operator):
         - localIds
     """
 
+    def __init__(self, *args, **kwargs):
+        self._kwargs = kwargs
+        self._options = {'debug': False,
+                         'allowOverlap': False,
+                         'resultAllowOverlap': False,
+                         'newId': None,
+                         'useGlobalIds': False
+                         }
+        # Save the tracks
+        self._tracks = args
+
+        # Core properties
+        self._numTracks = 1
+        self._resultIsTrack = True
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=False)]
+        self._resultTrackRequirements = self._trackRequirements[0]
+
+        if 'useGlobalIds' in kwargs and kwargs['useGlobalIds']:
+            self._setGlobalIds(args[0])
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def _calculate(self, region, tv):
         logging.debug("Start call! region:{0}".format(region))
         ids = tv.idsAsNumpyArray()
@@ -61,98 +84,19 @@ class RemoveDeadLinks(Operator):
         else:
             return None
 
-    def _setConfig(self, trackViews):
-        # Access to the operations tracks.
-        self._tracks = trackViews
-
-        # None changeable properties
-        self._numTracks = 1
-        self._updateTrackFormat()
-        self._resultIsTrack = True
-
-        # Set defaults for changeable properties
-        self._allowOverlap = False
-        self._resultAllowOverlaps = False
-
-        self._newId = None
-        self._useGlobalIds = False
-        self._globalIds = None
-
-        # For now the result track is always of the same type as track A
-        self._resultTrackRequirements = self._trackRequirements[0]
-
-    def _parseKwargs(self, **kwargs):
+    def _setGlobalIds(self, track):
         """
-        :param kwargs:
-        :return: None
+        Improvements: test for uniqueness?
+        Takes time.. Better to assume that the user knows this and have
+        used ids that are unique.
+        :param track: Input track of opreation
+        :return:
         """
-        if 'allowOverlap' in kwargs:
-            self._allowOverlap = kwargs['allowOverlap']
-            self._updateTrackFormat()
-
-        if 'resultAllowOverlaps' in kwargs:
-            self._resultAllowOverlaps = kwargs['resultAllowOverlaps']
-            self._updateResultTrackFormat()
-
-        if 'newId' in kwargs:
-            self._newId = kwargs['newId']
-
-        if 'useGlobalIds' in kwargs:
-            self._useGlobalIds = kwargs['useGlobalIds']
-
-        if 'debug' in kwargs:
-            self._debug = kwargs['debug']
-        else:
-            self._debug = False
-
-        if self._debug:
-            level = logging.DEBUG
-        else:
-            level = logging.INFO
-        logging.basicConfig(stream=sys.stderr, level=level)
-
-    def _updateTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks as input, we need to
-        update the track requirement as well.
-        :return: None
-        """
-
-        assert self._tracks is not None
-        tv = self._tracks[0]
-        assert tv is not None
-        dense = tv.firstTrackView().trackFormat.isDense()
-
-        self._trackRequirements = \
-            [TrackFormatReq(dense=dense, allowOverlaps=self._allowOverlap)]
-
-    def _updateResultTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks in the result, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        # Probably OK. Result will i most cases be a non dense track..
-        if self._resultAllowOverlaps:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False)]
+        trackViews = track.trackViews
+        self._globalIds = np.concatenate(([x.idsAsNumpyArray() for x in
+                                           trackViews.values()]))
 
     def preCalculation(self, track):
-
-        if self._useGlobalIds:
-            # Creating a global ids array.
-            trackViews = track[0].trackViews
-            self._globalIds  = \
-                np.concatenate(([x.idsAsNumpyArray() for x in
-                                 trackViews.values()]))
-
-            # Improvements: test for uniqueness?
-            # Takes time.. Better to assume that the user knows this and have
-            # used ids that are unique.
-
         return track
 
     def postCalculation(self, track):
@@ -194,14 +138,6 @@ class RemoveDeadLinks(Operator):
         allowOverlap = args.allowOverlap
 
         return RemoveDeadLinks(track, allowOverlap=allowOverlap)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Track name used by GTools when saving the track i GTrackCore
-        :return: Generated track name as a string
-        """
-        return "deadLinksRemoved-{0}".format(int(time.time()))
 
     def printResult(self):
         """
