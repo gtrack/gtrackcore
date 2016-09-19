@@ -128,23 +128,22 @@ class AutonomousTrackElement(TrackElement):
 
 class TrackView(object):
     def _handlePointsAndPartitions(self):
-
-        #if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
-        #    self._startList = self._endList[:-1]
-        #    self._endList = self._endList[1:]
-        #    if self._valList is not None:
-        #        self._valList = self._valList[1:]
-        #    if self._strandList is not None:
-        #        self._strandList = self._strandList[1:]
-        #    if self._idList is not None:
-        #        self._idList = self._idList[1:]
-        #    if self._edgesList is not None:
-        #        self._edgesList = self._edgesList[1:]
-        #    if self._weightsList is not None:
-        #        self._weightsList = self._weightsList[1:]
-        #    for key, extraList in self._extraLists.items():
-        #        if extraList is not None:
-        #            self._extraLists[key] = extraList[1:]
+        if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
+            self._startList = self._endList[:-1]
+            self._endList = self._endList[1:]
+            if self._valList is not None:
+                self._valList = self._valList[1:]
+            if self._strandList is not None:
+                self._strandList = self._strandList[1:]
+            if self._idList is not None:
+                self._idList = self._idList[1:]
+            if self._edgesList is not None:
+                self._edgesList = self._edgesList[1:]
+            if self._weightsList is not None:
+                self._weightsList = self._weightsList[1:]
+            for key, extraList in self._extraLists.items():
+                if extraList is not None:
+                    self._extraLists[key] = extraList[1:]
         if not self.trackFormat.isDense() and not self.trackFormat.isInterval():
             self._endList = VirtualPointEnd(self._startList)
 
@@ -171,7 +170,7 @@ class TrackView(object):
         self._weightsList = weightsList
         self._extraLists = copy(extraLists)
 
-        #self._handlePointsAndPartitions()
+        self._handlePointsAndPartitions()
 
         if self._startList is None:
             self._trackElement.start = noneFunc
@@ -247,21 +246,10 @@ class TrackView(object):
             raise StopIteration
 
     def _findLeftIndex(self):
-        """
-        Remove track elements entirely to the left of the anchor
-        """
         leftIndex = 0
-
-        if self._endList is None:
-            # Track is of point type. Comparing the start against the anchor.
-            while leftIndex < len(self._startList) and \
-                            self._startList[leftIndex]\
-                            <= self.genomeAnchor.start:
-                leftIndex += 1
-        else:
-            while leftIndex < len(self._endList) and self._endList[leftIndex] \
-                    <= self.genomeAnchor.start:
-                leftIndex += 1
+        #remove track elements entirely to the left of the anchor
+        while leftIndex < len(self._endList) and self._endList[leftIndex] <= self.genomeAnchor.start:
+            leftIndex += 1
         return leftIndex
 
     def _findRightIndex(self):
@@ -281,10 +269,9 @@ class TrackView(object):
         if self._bpSize() == 0:
             rightIndex = leftIndex
 
-        if self._startList is not None:
-            self._startList = self._startList[leftIndex:rightIndex]
-        if self._endList is not None:
-            self._endList = self._endList[leftIndex:rightIndex]
+        self._startList = self._startList[leftIndex:rightIndex]
+        self._endList = self._endList[leftIndex:rightIndex]
+
         if self._valList is not None:
             self._valList = self._valList[leftIndex:rightIndex]
         if self._strandList is not None:
@@ -380,29 +367,19 @@ class TrackView(object):
         return bpLevelArray
 
     def _removeBlindPassengersFromNumpyArray(self, numpyArray):
-        """
+        '''
         To remove any blind passengers - segments entirely in front of genomeanchor,
         but sorted after a larger segment crossing the border.
-
-        Disabling handlePointsAsPartitions brakes this for points.
-        self._endList is then None. Fix this by then checking the startList
-        instead
-        """
+        '''
         if self.allowOverlaps and len(numpyArray) > 0:
-            if self._endList is None:
-                # Points
-                numpyArray = numpyArray[numpy.where(self._startList >
-                                                    self.genomeAnchor.start)]
-            else:
-                numpyArray = numpyArray[numpy.where(self._endList >
-                                                    self.genomeAnchor.start)]
-
+            numpyArray = numpyArray[numpy.where(self._endList > self.genomeAnchor.start)]
         return numpyArray
 
     def _commonAsNumpyArray(self, numpyArray, numpyArrayModMethod, name):
         assert(self.borderHandling in ['crop'])
         if numpyArray is None:
             return None
+
         numpyArray = self._removeBlindPassengersFromNumpyArray(numpyArray)
 
         if numpyArrayModMethod is not None:
