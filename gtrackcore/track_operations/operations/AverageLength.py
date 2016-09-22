@@ -15,46 +15,33 @@ class AverageLength(Operator):
         self._kwargs = kwargs
         self._options = {'debug': False,
                          'allowOverlap': False,
-                         'resultAllowOverlap': False
+                         'resultAllowOverlap': False,
+                         'customAverageFunction': None
                          }
         # Save the tracks
         self._tracks = args
 
         # Operations core requirements
         self._numTracks = 1
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=True)]
+
+        self._trackFormat = args[0].trackFormat
+
+        # Problem.. How do we support multiple track types?
+
+        self._trackRequirements = [TrackFormatReq(dense=False)]
         self._resultIsTrack = False
         self._resultTrackRequirements = None
 
         super(self.__class__, self).__init__(*args, **kwargs)
-
-
 
     def _calculate(self, region, tv):
 
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
 
-        nr = averageLength(starts, ends)
+        nr = averageLength(starts, ends, self._customAverageFunction)
 
         return nr
-
-    def _updateResultTrackFormat(self):
-        """
-        Result is not a track. Just passing
-        :return:
-        """
-        pass
-
-    def _updateTrackFormat(self):
-        """
-        Ignore this for now. We just analyse the track as it is given.
-        If the user wants to merge segments, it can be done before calling
-        this operation.
-        :return:
-        """
-        pass
 
     def preCalculation(self, track):
         return track
@@ -76,30 +63,6 @@ class AverageLength(Operator):
         parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
         parser.set_defaults(which='Count')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.trackA,
-                                           args.allowOverlap)
-
-        return AverageLength(track)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Result is not a track so we do not care about a name
-        :param cls:
-        :return:
-        """
-        return None
 
     def printResult(self):
         """
