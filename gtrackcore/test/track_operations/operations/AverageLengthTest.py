@@ -43,7 +43,6 @@ class AverageLengthTest(unittest.TestCase):
         for (k, v) in result.iteritems():
             if cmp(k, self.chr1) == 0 or cmp(k, self.chr1Small) == 0:
                 # All test tracks are in chr1
-                print(v)
                 self.assertTrue(v == expAverage)
                 resFound = True
 
@@ -106,11 +105,7 @@ class AverageLengthTest(unittest.TestCase):
         """
 
         def averageLimit(lengths):
-
             index = np.where(lengths > 10)
-
-            print(lengths)
-            print(lengths[index])
             return np.average(lengths[index])
 
         self._runTest(starts=[20,30], ends=[25,50], expAverage=20,
