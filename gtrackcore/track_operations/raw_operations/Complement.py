@@ -64,4 +64,12 @@ def complement(starts, ends, regionSize, allowOverlap=False):
             # end part for the track
             ends = np.append(ends, regionSize)
 
+        # When we have two segments where start[n+1] = end[n], we get
+        # dangling segments with length zero.
+        # For now we fix it by removing all segments with length 0.
+        # if (newStarts == newEnds).any():
+        danglingPoints = np.where(starts == ends)
+        starts = np.delete(starts, danglingPoints)
+        ends = np.delete(ends, danglingPoints)
+
         return starts, ends, None
