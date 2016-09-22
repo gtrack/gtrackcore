@@ -69,7 +69,6 @@ class Complement(Operator):
         else:
             return None
 
-
     def preCalculation(self, track):
         return track
 
