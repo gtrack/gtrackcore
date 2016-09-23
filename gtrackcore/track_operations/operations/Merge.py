@@ -26,50 +26,65 @@ class Merge(Operator):
     None dense tracks only
     """
 
+    def __init__(self, *args, **kwargs):
+        assert len(args) == 1
+        assert args[0] is not None
+        self._kwargs = kwargs
+        self._options = {'allowOverlap': False,
+                         'resultAllowOverlap': False,
+                         'trackFormatReqChangeable': False,
+                         'resultTrackFormatReqChangeable': False,
+                         'mergeValuesFunction': None,
+                         'useStrands': True,
+                         'treatMissingAsNegative': False
+                         }
+
+        # Save the tracks
+        self._tracks = args[0]
+
+        # Core properties
+        self._numTracks = 1
+        self._resultIsTrack = True
+
+        # Merge support all tracks type with the exception if function,
+        # linked function and linked base pairs.
+        self._trackRequirements = [[TrackFormatReq(dense=False),
+                                    TrackFormatReq(dense=True, interval=True)]]
+
+        # The TrackFormat of the result
+        self._trackFormat = args[0].trackFormat
+
+        # We set the resultTrackRequirements based on the input track
+        tr = self._trackFormat
+
+        # TODO create a createFromTrackFormat method in TrackFormatReq
+        self._resultTrackRequirements = TrackFormatReq(dense=tr.isDense(),
+                                                       val=tr._val,
+                                                       interval=tr.isInterval(),
+                                                       linked=tr.isLinked(),
+                                                       allowOverlaps=self._resultAllowOverlap)
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def _calculate(self, region, tv):
         # Remove RawOperationsContent
         logging.debug("Start call! region:{0}".format(region))
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
         strands = tv.strandsAsNumpyArray()
-        values = None
-        ids = None
-        edges = None
-        weights = None
-
-        print("**********")
-        print(strands)
-        print("**********")
+        values = tv.valsAsNumpyArray()
+        ids = tv.idsAsNumpyArray()
+        edges = tv.edgesAsNumpyArray()
+        weights = tv.weightsAsNumpyArray()
 
         if self._useStrands:
-            if strands is None or strands.size == 0:
-                # Track has no strand information, ignoring strands.
-                strands = None
+            if strands is None:
                 self._useStrands = False
-
-        if self._mergeValues:
-            values = tv.valsAsNumpyArray()
-            if values is None or values.size == 0:
-                # Track has no values, ignoring..
-                values = None
-                self._mergeValues = False
-
-        if self._mergeLinks:
-            ids = tv.idsAsNumpyArray()
-            edges = tv.edgesAsNumpyArray()
-            if ids is None or edges is None:
-                # Track has no links. ignoring..
-                ids = None
-                edges = None
-                self._mergeLinks = False
 
         ret = merge(starts, ends, strands=strands, values=values, ids=ids,
                     edges=edges, weights=weights, useStrands=self._useStrands,
-                    useMissingStrands=self._useMissingStrands,
-                    treatMissingAsPositive=self._treatMissingAsPositive,
-                    mergeValues=self._mergeValues,
-                    mergeValuesFunction=self._mergeValuesFunction,
-                    mergeLinks=self._mergeLinks)
+                    treatMissingAsNegative=self._treatMissingAsNegative,
+                    mergeValuesFunction=self._mergeValuesFunction)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 7
@@ -77,104 +92,32 @@ class Merge(Operator):
             # the new track will only contain starts, ends and (strands if
             # present.
 
-            print(ret)
+            #starts, ends, values, strands, ids, edges, weights
+            starts = ret[0]
+            ends = ret[1]
+            values = ret[2]
+            strands = ret[3]
+            ids = ret[4]
+            edges = ret[5]
+            weights = ret[6]
 
-            tv = TrackView(region, ret[0], ret[1], ret[2], ret[3], ret[4],
-                           ret[5], ret[6], borderHandling='crop',
-                           allowOverlaps=self._allowOverlap)
+            tv = createRawResultTrackView(None, region, None,
+                                          self.allowOverlaps,
+                                          newStarts=starts, newEnds=ends,
+                                          newValues=values, newStrands=strands,
+                                          newIds=ids, newEdges=edges,
+                                          newWeights=weights,
+                                          trackFormat=self._trackFormat)
+
             return tv
         else:
             return None
-
-    def _setConfig(self, tracks):
-        # None changeable properties
-        self._numTracks = 1
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
-        self._resultIsTrack = True
-
-        # Set defaults for changeable properties
-
-        self._mergeValues = False
-        self._mergeValuesFunction = None
-
-        self._mergeLinks = False
-
-        self._useStrands = False
-        self._useMissingStrands = False
-        self._treatMissingAsPositive = True
-        # For now the result track is always of the same type as track A
-        # TODO: Solve this for the case where A and b are not of the same type.
-        self._resultTrackRequirements = self._trackRequirements[0]
-
-    def _parseKwargs(self, **kwargs):
-        """
-        :param kwargs:
-        :return: None
-        """
-
-        # Merge values
-        if 'mergeValues' in kwargs:
-            self._mergeValues = kwargs['mergeValues']
-
-        if 'mergeValuesFunction' in kwargs:
-            self._mergeValuesFunction = kwargs['mergeValuesFunction']
-
-        # Merge links
-        if 'mergeLinks' in kwargs:
-            self._mergeLinks = kwargs['mergeLinks']
-
-        # Strands
-        if 'useStrands' in kwargs:
-            self._useStrands = kwargs['useStrands']
-
-        if 'useMissingStrands' in kwargs:
-            self._useMissingStrands = kwargs['useMissingStrands']
-
-        if 'treatMissingAsPositive' in kwargs:
-            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
-
-        # Misc
-        if 'debug' in kwargs:
-            self._debug = kwargs['debug']
-        else:
-            self._debug = False
-
-        if self._debug:
-            level = logging.DEBUG
-        else:
-            level = logging.INFO
-        logging.basicConfig(stream=sys.stderr, level=level)
 
     def preCalculation(self, tracks):
         return tracks
 
     def postCalculation(self, track):
         return track
-
-    def _updateTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks as input, we need to
-        update the track requirement as well.
-        :return: None
-        """
-
-        # TODO update dense from the input track
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap),
-             TrackFormatReq(dense=False, allowOverlaps=self._allowOverlap)]
-
-    def _updateResultTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks in the result, we need to
-        update the track requirement as well.
-        :return: None
-        """
-
-        # TODO update dense from the input track
-        self._resultTrackRequirements =\
-            [TrackFormatReq(dense=False, allowOverlaps=self.resultAllowOverlaps),
-             TrackFormatReq(dense=False, allowOverlaps=self.resultAllowOverlaps)]
 
     @classmethod
     def createSubParser(cls, subparsers):
@@ -191,34 +134,6 @@ class Merge(Operator):
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
         parser.set_defaults(which='Merge')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.track,
-                                           args.allowOverlap)
-
-        # TODO, add support for mergeValues, mergeLinks..
-
-        allowOverlap = args.allowOverlap
-
-        return Merge(track, mergeValues=True, mergeLinks=True, useStrands=True,
-                     allowOverlap=allowOverlap)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Track name used by GTools when saving the track i GTrackCore
-        :return: Generated track name as a string
-        """
-        return "merge-{0}".format(int(time.time()))
 
     def printResult(self):
         """

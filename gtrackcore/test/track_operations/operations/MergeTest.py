@@ -5,6 +5,7 @@ from collections import OrderedDict
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track.format.TrackFormat import TrackFormatReq
 
 from gtrackcore.track_operations.operations.Merge import Merge
 from gtrackcore.track_operations.TrackContents import TrackContents
@@ -26,12 +27,15 @@ class MergeTest(unittest.TestCase):
                  ids=None, edges=None, weights=None, extras=None,
                  expStarts=None, expEnds=None,expValues=None,
                  expStrands=None, expIds=None, expEdges=None,
-                 expWeights=None, expExtras=None,
-                 useStrands=False, useMissingStrands=False,
-                 treatMissingAsPositive=True,
-                 mergeValues=True, mergeValuesFunction=None,
-                 mergeLinks=True, mergeLinksFunction=None,
+                 expWeights=None, expExtras=None, expTrackFormatType=None,
+                 useStrands=False, treatMissingAsNegative=False,
+                 mergeValuesFunction=None, mergeLinksFunction=None,
                  debug=False):
+
+        if debug:
+            print("in _runTest")
+            print("start: {}".format(starts))
+            print("end: {}".format(ends))
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
                                              strandList=strands,
@@ -40,12 +44,9 @@ class MergeTest(unittest.TestCase):
                                              weightsList=weights)
 
         m = Merge(track, useStrands=useStrands,
-                  useMissingStrands=useMissingStrands,
-                  treatMissingAsPositive=treatMissingAsPositive,
-                  mergeValues=mergeValues,
+                  treatMissingAsNegative=treatMissingAsNegative,
                   mergeValuesFunction=mergeValuesFunction,
-                  mergeLinks=mergeLinks,
-                  mergeLinksFunction=mergeLinksFunction)
+                  mergeLinksFunction=mergeLinksFunction, debug=debug)
 
         self.assertTrue((m is not None))
 
@@ -54,6 +55,7 @@ class MergeTest(unittest.TestCase):
         resFound = False
 
         for (k, v) in result.getTrackViews().items():
+
             newStarts = v.startsAsNumpyArray()
             newEnds = v.endsAsNumpyArray()
             newVals = v.valsAsNumpyArray()
@@ -64,18 +66,34 @@ class MergeTest(unittest.TestCase):
             #newExtras = v.extrasAsNumpyArray()
 
             if cmp(k, self.chr1) == 0:
+
+                if expTrackFormatType is not None:
+                    points = ['Points', 'Valued points', 'Linked points',
+                              'Linked valued points']
+
+                    # Todo fix for segments and partitions
+                    if expTrackFormatType in points:
+                        assert v.trackFormat.getFormatName() == \
+                               expTrackFormatType
+                        expEnds = np.array(expStarts) + 1
+
                 # All test tracks are in chr1
                 if debug:
-                    print(v.startsAsNumpyArray())
-                    print(v.endsAsNumpyArray())
-                    print(expStarts)
-                    print(expEnds)
+                    print("**************************************")
+                    print("Result and expected results:")
+                    print("expStarts: {}".format(expStarts))
+                    print("newStarts: {}".format(v.startsAsNumpyArray()))
+                    print("expEnds: {}".format(expEnds))
+                    print("newEnds: {}".format(v.endsAsNumpyArray()))
+                    print("expStrands: {}".format(expStrands))
+                    print("newStrands: {}".format(v.strandsAsNumpyArray()))
                     print("expValues: {}".format(expValues))
                     print("newValues: {}".format(v.valsAsNumpyArray()))
                     print("expIds: {}".format(expIds))
                     print("newIds: {}".format(v.idsAsNumpyArray()))
                     print("expEdges: {}".format(expEdges))
                     print("newEdges: {}".format(v.edgesAsNumpyArray()))
+                    print("**************************************")
 
                 resFound = True
 
@@ -149,203 +167,387 @@ class MergeTest(unittest.TestCase):
         self.assertTrue(resFound)
 
     # **** Points ****
-    def testPoints(self):
-        self._runTest(starts=[10,10], expStarts=[10])
-
-        self._runTest(starts=[1,5,5,10,32,32,43,64],
-                      expStarts=[1,5,10,32,43,64])
-
-        # Overlap at region end
-        self._runTest(starts=[1,5,5,10,32,32,40,len(self.chr1)],
-                      expStarts=[1,5,10,32,40,len(self.chr1)])
-        self._runTest(starts=[1,5,5,10,32,32,43,len(self.chr1),len(self.chr1)],
-                      expStarts=[1,5,10,32,43,len(self.chr1)])
-
-    def testPointsWithStrands(self):
+    def testPointsOverlap(self):
         """
-        Testing merging of strand info. Here we just combine strand
-        information.
+        Test simple overlap of two points
+        :return:
+        """
+        self._runTest(starts=[10,10], expStarts=[10],
+                      expTrackFormatType="Points")
+
+    def testPointsOverlapMultiple(self):
+        """
+        Test overlap of multiple points
+        :return:
+        """
+        self._runTest(starts=[1,5,5,10,32,32,43,64],
+                      expStarts=[1,5,10,32,43,64],
+                      expTrackFormatType="Points")
+
+    def testPointsOverlapAtRegionEnd(self):
+        """
+        Overlap at the region end.
+        The points is from end-1 -> end
+        :return: None
+        """
+        self._runTest(starts=[1,5,5,10,32,32,40,len(self.chr1)-1],
+                      expStarts=[1,5,10,32,40,len(self.chr1)-1],
+                      expTrackFormatType="Points")
+
+    def testPointsOverlapAtRegionEndMultiple(self):
+        """
+        Multiple overlapping points at the region end
+        :return: None
+        """
+        self._runTest(starts=[1,5,5,10,32,32,43,len(self.chr1)-1,
+                              len(self.chr1)-1],
+                      expStarts=[1,5,10,32,43,len(self.chr1)-1],
+                      expTrackFormatType="Points", debug=True)
+
+    # **** Points with strands ****
+    # Here we are not using the stand information in the merg. We just test
+    # that the strand information is merged
+
+    def testPointsWithStrandsPositive(self):
+        """
+        Positive strands
         :return:
         """
         self._runTest(starts=[10,10], strands=['+','+'], expStarts=[10],
-                      expStrands=['+'])
+                      expStrands=['+'], expTrackFormatType="Points")
 
+    def testPointsWithStrandsNegative(self):
+        """
+        Negative strands
+        :return:
+        """
+        self._runTest(starts=[10,10], strands=['-','-'], expStarts=[10],
+                      expStrands=['-'], expTrackFormatType="Points")
+
+    def testPointsWithStrandsPositiveComplex(self):
+        """
+        More complex track
+        :return:
+        """
         self._runTest(starts=[1,5,5,10], strands=['+','+','+','+'],
-                      expStarts=[1,5,10], expStrands=['+','+','+'])
+                      expStarts=[1,5,10], expStrands=['+','+','+'],
+                      expTrackFormatType="Points")
 
+    def testPointsWithStrandsBoth(self):
+        """
+        Using both '+' and '-'
+        :return:
+        """
         self._runTest(starts=[1,5,5,10], strands=['+','-','-','+'],
-                      expStarts=[1,5,10], expStrands=['+','-','+'])
+                      expStarts=[1,5,10], expStrands=['+','-','+'],
+                      expTrackFormatType="Points")
 
+    def testPointsWithStrandsMissingAsResult(self):
+        """
+        When merging '+' and '-' we expect to get '.' as result
+        :return:
+        """
         self._runTest(starts=[1,5,5,10], strands=['+','-','+','+'],
-                      expStarts=[1,5,10], expStrands=['+','.','+'])
+                      expStarts=[1,5,10], expStrands=['+','.','+'],
+                      expTrackFormatType="Points")
 
     # **** Valued Points ****
-    def testValuedPoints(self):
+    def testValuedPointsDefault(self):
+        """
+        Test the default merge function. np.max(overlapping)
+        :return:
+        """
         self._runTest(starts=[10,10], values=[2,4], expStarts=[10],
-                      expValues=[4], mergeValues=True, debug=True)
+                      expValues=[4], expTrackFormatType="Valued points")
+
+    def testValuedPointsDefaultComplex(self):
+        """
+        A more complex test.
+        :return:
+        """
         self._runTest(starts=[3,10,10,25], values=[10,2,4,90],
                       expStarts=[3,10,25], expValues=[10,4,90],
-                      mergeValues=True, mergeValuesFunction=np.maximum)
+                      mergeValuesFunction=np.maximum,
+                      expTrackFormatType="Valued points")
 
-        # Using a custom mergeValueFunction
+    def testValuedPointsCustomMerge(self):
+        """
+        Test using a custom mergeValueFunction
+        :return:
+        """
         self._runTest(starts=[10,10], values=[2,4], expStarts=[10],
-                      expValues=[2], mergeValues=True,
-                      mergeValuesFunction=np.minimum, debug=True)
+                      expValues=[2], mergeValuesFunction=np.minimum,
+                      expTrackFormatType="Valued points")
+
+    def testValuedPointsCustomMergeComplex(self):
         self._runTest(starts=[3,10,10,25], values=[10,2,4,90],
                       expStarts=[3,10,25], expValues=[10,2,90],
-                      mergeValues=True, mergeValuesFunction=np.minimum)
+                      mergeValuesFunction=np.minimum,
+                      expTrackFormatType="Valued points")
 
-        # Multiple overlap
+    def testValuedPointsMultipleOverlap(self):
+        """
+        Test merge of multiple overlapping valued points
+        :return:
+        """
+        self._runTest(starts=[1,1,1], values=[2,4,10], expStarts=[1],
+                      expValues=[10], expTrackFormatType="Valued points")
+
+    def testValuedPointsMultipleOverlapMultiple(self):
+        """
+        Test multiple merge of multiple overlapping valued points.
+        :return:
+        """
         self._runTest(starts=[5,10,10,10,10,14,15,15,15,15],
                       values=[8,2,2,2,4,100,6,6,6,8],
-                      expStarts=[5,10,14,15],
-                      expValues=[8,4,100,8], mergeValues=True,
-                      debug=True)
+                      expStarts=[5,10,14,15], expValues=[8,4,100,8],
+                      expTrackFormatType="Valued points")
 
+    def testValuedPointsMultipleOverlapMultiple2(self):
+        """
+        Second multiple test
+        :return:
+        """
         self._runTest(starts=[10,10,10,20,20,20], values=[2,4,2,4,4,6],
-                      expStarts=[10,20],
-                      expValues=[4,6], mergeValues=True, debug=True)
+                      expStarts=[10,20], expValues=[4,6],
+                      expTrackFormatType="Valued points")
 
+    def testValuedPointsWithStrand(self):
+        """
+        Test merge of multiple overlapping valued points, with stands
+        :return:
+        """
+        self._runTest(starts=[1,1,1,4], strands=['+','+','-','+'],
+                      values=[2,4,10,14], expStarts=[1,4],
+                      expStrands=['.','+'], expValues=[10,14],
+                      expTrackFormatType="Valued points")
 
     # **** Linked points ****
-    def testLinkedPoints(self):
+    def testLinkedPointsOverlap(self):
+        """
+        Merge of two overlapping linked points
+        :return: None
+        """
         self._runTest(starts=[10,10], ids=['1','2'], edges=['2','1'],
                       expStarts=[10], expIds=['merge-1'],
                       expEdges=[['merge-1','merge-1']],
-                      debug=True)
+                      expTrackFormatType="Linked points")
 
+    def testLinkedPointsNonSortedIds(self):
+        """
+        Simple test. Ids not in sorted order.
+        :return: None
+        """
         self._runTest(starts=[10,10], ids=['2','1'], edges=['2','1'],
                       expStarts=[10], expIds=['merge-1'],
                       expEdges=[['merge-1','merge-1']],
-                      debug=True)
+                      expTrackFormatType="Linked points")
 
+    def testLinkedPointsOverlapPadding(self):
+        """
+        Test that none overlapping points are left alone and that the edge
+        is padded correctly.
+        :return: None
+        """
         self._runTest(starts=[10,10,20], ids=['1','2','3'],
                       edges=['2','1','3'],
                       expStarts=[10,20], expIds=['merge-1','3'],
                       expEdges=[['merge-1','merge-1'],['3','']],
-                      debug=True)
+                      expTrackFormatType="Linked points")
 
-        self._runTest(starts=[10,10,15], ids=['1','2','3'],
-                      edges=['2','1','3'],
-                      expStarts=[10,15], expIds=['merge-1', '3'],
-                      expEdges=[['merge-1','merge-1'],['3', '']],
-                      debug=True)
-
+    def testLinkedPointsOverlapMultiple(self):
+        """
+        Test that overlap on multiple points works.
+        :return: None
+        """
         self._runTest(starts=[10,10,15,15], ids=['1','2','3','4'],
                       edges=['2','1','4','3'],
                       expStarts=[10,15], expIds=['merge-1', 'merge-2'],
                       expEdges=[['merge-1','merge-1'],
                                 ['merge-2','merge-2']],
-                      debug=True)
+                      expTrackFormatType="Linked points")
 
+    def testLinkedPointsMultipleOverlap(self):
+        """
+        Test that overlap on more then two points work.
+        Testing that all of the edges are saved.
+        :return: None
+        """
         self._runTest(starts=[10,10,10], ids=['1','2','3'],
                       edges=['2','3','1'],
-                      expStarts=[10], expIds=['merge-1'],
-                      expEdges=[['merge-1','merge-1','merge-1']],
-                      debug=True)
+                      expStarts=[10], expIds=['merge-2'],
+                      expEdges=[['merge-2','merge-2','merge-2']],
+                      expTrackFormatType="Linked points")
 
+    def testLinkedPointsMultipleOverlap2(self):
+        """
+        Test that overlap on more then two points work.
+        :return: None
+        """
         self._runTest(starts=[10,10,10,10], ids=['1','2','3','4'],
                       edges=['2','3','4','1'],
-                      expStarts=[10], expIds=['merge-1'],
-                      expEdges=[['merge-1','merge-1','merge-1','merge-1']],
-                      debug=True)
+                      expStarts=[10], expIds=['merge-3'],
+                      expEdges=[['merge-3','merge-3','merge-3','merge-3']],
+                      expTrackFormatType="Linked points")
 
+    def testLinkedPointsMultipleOverlapMultiple(self):
+        """
+        Test that multiple points overlapping multiple times works as expected.
+        :return:
+        """
         self._runTest(starts=[10,10,10,10,20,20,20,20],
                       ids=['1','2','3','4','5','6','7','8'],
                       edges=['2','3','4','1','6','7','8','5'],
-                      expStarts=[10,20], expIds=['merge-1','merge-4'],
-                      expEdges=[['merge-1','merge-1','merge-1','merge-1'],
-                                ['merge-4','merge-4','merge-4','merge-4']],
-                      debug=True)
+                      expStarts=[10,20], expIds=['merge-5','merge-6'],
+                      expEdges=[['merge-5','merge-5','merge-5','merge-5'],
+                                ['merge-6','merge-6','merge-6','merge-6']],
+                      expTrackFormatType="Linked points")
 
     # **** Linked valued points ****
-    def atestLinkedValuedPoints(self):
+    def testLinkedValuedPointsSimple(self):
+        """
+        Simple test on overlap of two points
+        :return:
+        """
         self._runTest(starts=[10,10], ids=['1','2'], edges=['2','1'],
                       values=[10,5], expValues=[10],
                       expStarts=[10], expIds=['merge-1'],
                       expEdges=[['merge-1','merge-1']],
-                      debug=True)
+                      debug=True, expTrackFormatType="Linked valued points")
 
-        self._runTest(starts=[10,10], ids=['2','1'], edges=['2','1'],
-                      values=[10,5], expValues=[10],
-                      expStarts=[10], expIds=['merge-1'],
-                      expEdges=[['merge-1','merge-1']],
-                      debug=True)
-
+    def testLinkedValuedPointsComplex(self):
+        """
+        Test overlap on more then one point
+        :return:
+        """
         self._runTest(starts=[10,10,20], ids=['1','2','3'],
-                      edges=['2','1','3'],
-                      values=[10,5,20], expValues=[10,20],
+                      edges=['2','1','3'], values=[10,5,20], expValues=[10,20],
                       expStarts=[10,20], expIds=['merge-1','3'],
                       expEdges=[['merge-1','merge-1'],['3','']],
-                      debug=True)
+                      expTrackFormatType="Linked valued points")
 
-        self._runTest(starts=[10,10,15], ids=['1','2','3'],
-                      edges=['2','1','3'],
-                      values=[10,5,20], expValues=[10,20],
-                      expStarts=[10,15], expIds=['merge-1', '3'],
-                      expEdges=[['merge-1','merge-1'],['3', '']],
-                      debug=True)
-
+    def testLinkedValuedPointsMany(self):
+        """
+        Test overlap on multiple overlapping points.
+        :return:
+        """
         self._runTest(starts=[10,10,15,15], ids=['1','2','3','4'],
-                      edges=['2','1','4','3'],
-                      values=[10,5,20,15], expValues=[10,20],
-                      expStarts=[10,15], expIds=['merge-1', 'merge-2'],
+                      edges=['2','1','4','3'], values=[10,5,20,15],
+                      expValues=[10,20], expStarts=[10,15],
+                      expIds=['merge-1', 'merge-2'],
                       expEdges=[['merge-1','merge-1'],
                                 ['merge-2','merge-2']],
-                      debug=True)
+                      expTrackFormatType="Linked valued points")
 
-    def testLinkedValuedPoints(self):
+    def testLinkedValuedPointsMultiple(self):
+        """
+        Test multiple overlapping points. Test that the links and values are
+        merged correctly
+        :return:
+        """
         self._runTest(starts=[10,10,10], ids=['1','2','3'],
-                      edges=['2','3','1'],
-                      values=[10,5,20], expValues=[20],
-                      expStarts=[10], expIds=['merge-1'],
-                      expEdges=[['merge-1','merge-1','merge-1']],
-                      debug=True)
+                      edges=['2','3','1'], values=[10,5,20], expValues=[20],
+                      expStarts=[10], expIds=['merge-2'],
+                      expEdges=[['merge-2','merge-2','merge-2']],
+                      expTrackFormatType="Linked valued points")
 
-    def daf(self):
+    def testLinkedValuedPointsMultiple2(self):
+        """
+        Test multiple overlapping points. Test that the links and values are
+        merged correctly
+        :return:
+        """
         self._runTest(starts=[10,10,10,10], ids=['1','2','3','4'],
                       edges=['2','3','4','1'],
                       values=[10,5,20,4], expValues=[20],
-                      expStarts=[10], expIds=['merge-1'],
-                      expEdges=[['merge-1','merge-1','merge-1','merge-1']],
-                      debug=True)
+                      expStarts=[10], expIds=['merge-3'],
+                      expEdges=[['merge-3','merge-3','merge-3','merge-3']],
+                      expTrackFormatType="Linked valued points",)
 
+    def testLinkedValuedPointsManyMultiple2(self):
+        """
+        Test a track with many, multiple overlapping points. Test that the
+        links and values aremerged correctly
+        :return:
+        """
         self._runTest(starts=[10,10,10,10,20,20,20,20],
                       ids=['1','2','3','4','5','6','7','8'],
                       edges=['2','3','4','1','6','7','8','5'],
                       values=[10,5,20,4,10,15,16,4], expValues=[20,16],
-                      expStarts=[10,20], expIds=['merge-1','merge-4'],
-                      expEdges=[['merge-1','merge-1','merge-1','merge-1'],
-                                ['merge-4','merge-4','merge-4','merge-4']],
+                      expStarts=[10,20], expIds=['merge-5','merge-6'],
+                      expEdges=[['merge-5','merge-5','merge-5','merge-5'],
+                                ['merge-6','merge-6','merge-6','merge-6']],
+                      expTrackFormatType="Linked valued points",
                       debug=True)
 
     # **** Segments ****
 
-    def atestSegments(self):
-        self._runTest(starts=[10,20], ends=[30, 25],
-                      expStarts=[10], expEnds=[30])
+    def testSegmentsPartialOverlap(self):
+        """
+        Test that two partial overlapping segments are merged correctly
+        :return:
+        """
+        self._runTest(starts=[10,20], ends=[30,25], expStarts=[10],
+                      expEnds=[30], expTrackFormatType="Segments")
 
-        self._runTest(starts=[10,10], ends=[30, 30],
-                      expStarts=[10], expEnds=[30])
+    def testSegmentsOverlapEqual(self):
+        """
+        Test that two equal segments are merged correctly.
+        :return:
+        """
+        self._runTest(starts=[10,10], ends=[30,30], expStarts=[10],
+                      expEnds=[30], expTrackFormatType="Segments")
 
-        # Multiple overlap
-        self._runTest(starts=[10,20,40], ends=[50,25,45],
-                      expStarts=[10], expEnds=[50])
+    def testSegmentsMultipleOverlapEqual(self):
+        """
+        Test overlap of multiple equal segments.
+        :return:
+        """
+        self._runTest(starts=[10,10,10,10], ends=[30,30,30,30],
+                      expStarts=[10], expEnds=[30],
+                      expTrackFormatType="Segments")
 
-        # No overlap
-        self._runTest(starts=[10], ends=[50],
-                      expStarts=[10], expEnds=[50])
-        self._runTest(starts=[10,100], ends=[50,300],
-                      expStarts=[10,100], expEnds=[50,300])
+    def testSegmentsMultipleOverlap(self):
+        """
+        Test overlap when there are multiple segments inside a segment.
+        :return:
+        """
+        self._runTest(starts=[10,20,40], ends=[50,25,45], expStarts=[10],
+                      expEnds=[50], expTrackFormatType="Segments")
 
-        # Total overlap
-        self._runTest(starts=[10,20], ends=[25, 40],
-                      expStarts=[10], expEnds=[40], debug=True)
+    def testSegmentsNoOverlap(self):
+        """
+        Test that we do nothing when we have no overlap
+        :return:
+        """
+        self._runTest(starts=[10], ends=[50], expStarts=[10], expEnds=[50],
+                      expTrackFormatType="Segments")
 
-    def testSegments(self):
-        # Multiple. Partial and total
+    def testSegmentsNoOverlapMultiple(self):
+        """
+        Test that we do nothing when we have no overlap
+        :return:
+        """
+        self._runTest(starts=[10,100], ends=[50,300], expStarts=[10,100],
+                      expEnds=[50,300], expTrackFormatType="Segments")
+
+    def testSegmentsPartial(self):
+        """
+        Test that two partially overlapping segments are merge
+        :return:
+        """
+        self._runTest(starts=[10,20], ends=[25, 40], expStarts=[10],
+                      expEnds=[40], expTrackFormatType="Segments")
+
+    def testSegmentsCombinesMultiple(self):
+        """
+        Segment A combines two other segments  B and C creating one new
+        segment.
+        :return: None
+        """
         self._runTest(starts=[10,20,35], ends=[25,40,100],
-                      expStarts=[10], expEnds=[100])
+                      expStarts=[10], expEnds=[100], debug=True,
+                      expTrackFormatType="Segments")
 
     # **** Valued Segments ****
 
@@ -353,26 +555,23 @@ class MergeTest(unittest.TestCase):
 
         # No overlap
         self._runTest(starts=[10,20], ends=[15,25], values=[1,2],
-                      expStarts=[10,20], expEnds=[15,25], expValues=[1,2],
-                      mergeValues=True)
+                      expStarts=[10,20], expEnds=[15,25], expValues=[1,2])
 
         # Total overlap
         self._runTest(starts=[10,20], ends=[30, 25], values=[10,20],
-                      expStarts=[10], expEnds=[30], expValues=[20],
-                      mergeValues=True)
+                      expStarts=[10], expEnds=[30], expValues=[20])
 
         # Using a custom mergeValueFunction
         self._runTest(starts=[10,20], ends=[30, 25], values=[10,20],
                       expStarts=[10], expEnds=[30], expValues=[10],
-                      mergeValues=True, mergeValuesFunction=np.minimum)
+                      mergeValuesFunction=np.minimum)
 
         # Multiple. Partial and total
         self._runTest(starts=[10,20,35], ends=[25,40,100], values=[10,20,30],
-                      expStarts=[10], expEnds=[100], expValues=[30],
-                      mergeValues=True)
+                      expStarts=[10], expEnds=[100], expValues=[30])
         self._runTest(starts=[10,20,35], ends=[25,40,100], values=[10,20,30],
                       expStarts=[10], expEnds=[100], expValues=[10],
-                      mergeValues=True, mergeValuesFunction=np.minimum)
+                      mergeValuesFunction=np.minimum)
 
     # **** LinkedSegments ****
 

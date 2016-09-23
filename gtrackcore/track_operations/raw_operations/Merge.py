@@ -1,24 +1,8 @@
 
 import numpy as np
 
+def _mergeIds(ids, overlapIndex, removeIndex, mergeNr, idsDict):
 
-def _mergeMultipleValues(values, start, end, mergeFunction=None):
-    """
-    Used when we need to merge the values of more then two features.
-
-
-    :param values:
-    :param start:
-    :param end:
-    :param mergeFunction:
-    :return:
-    """
-    pass
-
-
-def _mergeIds(ids, overlapIndex, mergeNr, multipleOverlap=None, i=None):
-
-    removeIndex = overlapIndex + 1
     # Create new ids for the merged features
     newIds = np.array(["merge-{}".format(x) for x in
                        range(mergeNr, mergeNr+len(overlapIndex))])
@@ -35,23 +19,26 @@ def _mergeIds(ids, overlapIndex, mergeNr, multipleOverlap=None, i=None):
 
     newIdsDict.update({k:v for k,v in zip(ids[removeIndex], newIds)})
 
-    if multipleOverlap != None and len(multipleOverlap) > 0:
-        # rename i..
-        assert i is not None
-        # If we have multiple overlap we need to update the
-        # ids is the dict. We need to do this here as we create
-        # the merge-ids here.
-        for p in i:
-            first = newIdsDict[ids[p[0]]]
-            for t in p[1:]:
-                newIdsDict[ids[t]] = first
+    idsDict.update(newIdsDict)
+
+    # If we merge a already merged ids, we need update old mergeid
+    k = np.array(idsDict.keys())
+    v = np.array(idsDict.values())
+
+    keysToUpdate = k[np.in1d(v, k)]
+
+    if len(keysToUpdate) > 0:
+        oldValues = [idsDict[x] for x in keysToUpdate]
+        newValues = [idsDict[x] for x in oldValues]
+
+        idsDict.update({k:v for k,v in zip(keysToUpdate,newValues)})
 
     ids[overlapIndex] = newIds
     ids = np.delete(ids, removeIndex)
 
     return ids, newIdsDict, mergeNr
 
-def _mergeEdges(edges, overlapIndex, weight=None):
+def _mergeEdges(edges, overlapIndex, removeIndex, weight=None):
     """
 
     TODO: When we change order of the edges, we need to do the same on the
@@ -62,31 +49,32 @@ def _mergeEdges(edges, overlapIndex, weight=None):
     :return:
     """
 
-    removeIndex = overlapIndex + 1
     # Find all the edges n and n+1
     edges1 = edges[overlapIndex]
     edges2 = edges[removeIndex]
 
-    # New edges for the merged feature
-    newEdges = np.c_[edges1,edges2]
-
     # Expand edges to edges*2
     if isinstance(edges[0], (list, np.ndarray)):
-        # Edges are already lists. We expand it needed
-        padding = np.zeros((len(edges), len(edges[0])),dtype=edges.dtype)
+        # List of lists
+        newEdges = np.column_stack((edges1,edges2))
+
+        # Edges are already lists. We expand with padding
+        padding = np.zeros((len(edges), len(edges[0])),
+                           dtype=newEdges.dtype)
 
         # Extend all edges withe the padding
         edges = np.c_[edges, padding]
     else:
+        # List of scalars
         # Edges is scalar. We need to convert it to a list
         # type. As we use ndarrays we need to pad the new
         # array with empty edges.
 
+        newEdges = np.c_[edges1, edges2]
         edges = np.array([np.array([edge,''], dtype=newEdges.dtype)
                           for edge in edges])
 
     # Update edges
-
     edges[overlapIndex] = newEdges
     edges = np.delete(edges, removeIndex, 0)
 
@@ -94,9 +82,8 @@ def _mergeEdges(edges, overlapIndex, weight=None):
 
 def merge(starts, ends, strands=None, values=None, ids=None,
           edges=None, weights=None, useStrands=False,
-          useMissingStrands=False, treatMissingAsPositive=True,
-          mergeValues=False, mergeValuesFunction=None,
-          mergeStrands=True, mergeLinks=False):
+          treatMissingAsNegative=True,
+          mergeValuesFunction=None):
 
     # Two types
     #
@@ -129,60 +116,192 @@ def merge(starts, ends, strands=None, values=None, ids=None,
 
     newIdsDict = {}
 
-    print("start merge : vals {} ".format(values))
-    if starts is not None and ends is not None:
-        assert len(starts) == len(ends)
+    assert len(starts) == len(ends)
 
-    if mergeValues and mergeValuesFunction is None:
+    if useStrands and strands is None:
+        useStrands = False
+
+    if mergeValuesFunction is None:
         # Set the default mergeValue function
-        assert values is not None
         mergeValuesFunction= np.maximum
-
-    if mergeStrands and strands is None:
-        mergeStrands = False
 
     if useStrands:
         # TODO: fix for points
-        if useMissingStrands:
-            # TODO!!
-            raise NotImplementedError
-        else:
-            assert strands is not None
-            assert len(strands) == len(starts)
+        # TODO
+        assert strands is not None
+        assert len(strands) == len(starts)
 
-            positiveIndex = np.where(strands == '+')
-            negativeIndex = np.where(strands == '-')
+        positiveIndex = np.where(strands == '+')
+        negativeIndex = np.where(strands == '-')
 
-            combined = np.column_stack((starts, ends))
+        combined = np.column_stack((starts, ends))
 
-            if len(positiveIndex) > 0:
+        if len(positiveIndex) > 0:
+
+            totalOverlapIndex = np.where((ends[1:] < ends[:-1]))
+            while len(totalOverlapIndex[0]) > 0:
+                # As we are removing n+1 we need to shift the index.
+                removeIndex = totalOverlapIndex[0] + 1
+                starts = np.delete(starts, removeIndex[0])
+                ends = np.delete(ends, removeIndex[0])
 
                 totalOverlapIndex = np.where((ends[1:] < ends[:-1]))
-                while len(totalOverlapIndex[0]) > 0:
-                    # As we are removing n+1 we need to shift the index.
-                    removeIndex = totalOverlapIndex[0] + 1
-                    starts = np.delete(starts, removeIndex[0])
-                    ends = np.delete(ends, removeIndex[0])
 
-                    totalOverlapIndex = np.where((ends[1:] < ends[:-1]))
+            # Remove partial overlapping segments
+            # start[n+1] <= end[n]
+            partialOverlapIndex = np.where(starts[1:] <= ends[:-1] )
+            while len(partialOverlapIndex[0]) > 0:
+                # Found partial overlap. Merge the two.
+                # end[n] = end[n+1]
+                # remove n+1
 
-                # Remove partial overlapping segments
-                # start[n+1] <= end[n]
-                partialOverlapIndex = np.where(starts[1:] <= ends[:-1] )
-                while len(partialOverlapIndex[0]) > 0:
-                    # Found partial overlap. Merge the two.
-                    # end[n] = end[n+1]
-                    # remove n+1
+                removeIndex = partialOverlapIndex[0] + 1
+                ends[partialOverlapIndex] = ends[removeIndex]
+                starts = np.delete(starts, removeIndex[0])
+                ends = np.delete(ends, removeIndex[0])
 
-                    removeIndex = partialOverlapIndex[0] + 1
-                    ends[partialOverlapIndex] = ends[removeIndex]
-                    starts = np.delete(starts, removeIndex[0])
-                    ends = np.delete(ends, removeIndex[0])
-
-                    partialOverlapIndex = np.where(starts[1:] < ends[:-1] )
+                partialOverlapIndex = np.where(starts[1:] < ends[:-1] )
 
     else:
         # Ignoring or missing strand info
+
+        # Segments
+        # First we remove totally overlapping segments.
+        # end[n] > end[n+1]
+
+        mergeNr = 1
+
+        totalOverlapIndex = np.where((ends[1:] <= ends[:-1]))
+
+        # If we have multiple
+
+        while len(totalOverlapIndex[0]) > 0:
+            # As we are removing n+1 we need to shift the index.
+            totalOverlapIndex = totalOverlapIndex[0]
+            removeIndex = totalOverlapIndex + 1
+
+            # If we have multiple overlap, we only remove the last element.
+            inRemove = np.in1d(removeIndex, totalOverlapIndex, invert=True)
+            if len(inRemove > 0):
+                # We have multiple overlap
+                inOverlap = np.in1d(totalOverlapIndex, removeIndex, invert=True)
+
+                # Remove multiple overlap for now:
+                removeIndex = removeIndex[inRemove]
+                totalOverlapIndex = totalOverlapIndex[inOverlap]
+
+            if strands is not None:
+                # Found strands, merging them.
+
+                s1 = strands[totalOverlapIndex]
+                s2 = strands[removeIndex]
+
+                sNew = [a if a == b else '.' for a,b in zip(s1,s2)]
+                strands[totalOverlapIndex] = sNew
+                strands = np.delete(strands, removeIndex)
+
+            if values is not None:
+                # Found values, merging them
+                v1 = values[totalOverlapIndex]
+                v2 = values[removeIndex]
+
+                values[totalOverlapIndex] = mergeValuesFunction(v1, v2)
+                values = np.delete(values, removeIndex)
+
+            if ids is not None:
+                # Found ids, merging them
+
+                ids, tmpIdsDict, mergeNr = _mergeIds(ids,
+                                                     totalOverlapIndex,
+                                                     removeIndex,
+                                                     mergeNr,
+                                                     newIdsDict)
+                newIdsDict.update(tmpIdsDict)
+
+                if edges is not None:
+                    # Found edges, merging them
+                    edges = _mergeEdges(edges, totalOverlapIndex, removeIndex)
+
+                if weights is not None:
+                    # Found weights, merging them
+                    raise NotImplementedError
+
+            starts = np.delete(starts, removeIndex)
+            ends = np.delete(ends, removeIndex)
+
+            totalOverlapIndex = np.where((ends[1:] <= ends[:-1]))
+
+        # Remove partially overlapping segments
+        # start[n+1] <= end[n]
+        partialOverlapIndex = np.where(starts[1:] < ends[:-1])
+        while len(partialOverlapIndex[0]) > 0:
+            print("In remove partial!")
+            partialOverlapIndex = partialOverlapIndex[0]
+
+            removeIndex = partialOverlapIndex + 1
+
+            # If we have multiple overlap, we only remove the last element.
+            inRemove = np.in1d(removeIndex, partialOverlapIndex, invert=True)
+            if len(inRemove > 0):
+                # We have multiple overlap
+                inOverlap = np.in1d(partialOverlapIndex, removeIndex,
+                                    invert=True)
+
+                # We save the starts and ends bye pushing then down the array.
+
+                starts[partialOverlapIndex[~inOverlap]] = \
+                    starts[partialOverlapIndex[~inOverlap] +1]
+
+                ends[partialOverlapIndex[~inOverlap]] = \
+                    ends[partialOverlapIndex[~inOverlap] +1]
+
+                # Remove multiple overlap from the index.
+                removeIndex = removeIndex[inRemove]
+                partialOverlapIndex = partialOverlapIndex[inOverlap]
+
+            if strands is not None:
+                # Found, strands, merging them.
+
+                s1 = strands[partialOverlapIndex]
+                s2 = strands[removeIndex]
+
+                sNew = [a if a == b else '.' for a,b in zip(s1,s2)]
+
+                strands[partialOverlapIndex] = sNew
+                strands = np.delete(strands, removeIndex)
+
+            if values is not None:
+                # Found values, merging them
+
+                v1 = values[partialOverlapIndex]
+                v2 = values[removeIndex]
+
+                values[partialOverlapIndex] = mergeValuesFunction(v1, v2)
+                values = np.delete(values, removeIndex)
+            if ids is not None:
+                # Found ids, merging them
+                ids, newIdsDict, mergeNr = _mergeIds(ids,
+                                                     partialOverlapIndex,
+                                                     removeIndex,
+                                                     mergeNr,
+                                                     newIdsDict)
+
+                if edges is not None:
+                    # Found edges, merging them
+                    edges = _mergeEdges(edges, partialOverlapIndex,
+                                        removeIndex)
+
+                if weights is not None:
+                    # Found Weights, merging them
+                    raise NotImplementedError
+
+            ends[partialOverlapIndex] = ends[removeIndex]
+            starts = np.delete(starts, removeIndex)
+            ends = np.delete(ends, removeIndex)
+
+            partialOverlapIndex = np.where(starts[1:] < ends[:-1])
+
+        """
         if starts is None:
             # Partitions
             raise NotImplementedError
@@ -194,7 +313,6 @@ def merge(starts, ends, strands=None, values=None, ids=None,
             mergeNr = 1
             overlapIndex = np.where((starts[1:] == starts[:-1]))
 
-            print("overlapIndex: {}".format(overlapIndex))
             while len(overlapIndex[0]) > 0:
                 print("In remove overlap!")
                 # As we are removing n+1 we need to shift the index.
@@ -242,25 +360,16 @@ def merge(starts, ends, strands=None, values=None, ids=None,
                             newEdge = tmpEdge.flatten()
 
                             if isinstance(edges[p[0]], (list, np.ndarray)):
-                                print("There")
                                 # Edges are already lists. We expand it needed
                                 if newEdge.dtype > edges[0].dtype:
                                     edges = edges.astype(newEdge.dtype)
                             else:
-                                print("Here!")
                                 padding = np.zeros((len(edges), len(newEdge) -
                                                 len(edges[0])),
                                                dtype=edges.dtype)
                                 # Extend all edges withe the padding
-
-                                print("edges: {}".format(edges))
-                                print("padding: {}".format(padding))
-
                                 edges = np.c_[edges, padding]
-                                print("edges: {}".format(edges))
 
-                            print(edges)
-                            print(newEdge)
                             edges[p[0]] = newEdge
                             edges[p[1:]] = np.zeros((edges[p[1:]].shape),
                                                     dtype=edges.dtype)
@@ -393,7 +502,9 @@ def merge(starts, ends, strands=None, values=None, ids=None,
 
                 partialOverlapIndex = np.where(starts[1:] < ends[:-1])
 
-    if mergeLinks:
+    """
+
+    if edges is not None:
 
         # Remove excessive padding
         newEdges = np.array([None] * len(edges))
@@ -409,22 +520,11 @@ def merge(starts, ends, strands=None, values=None, ids=None,
         edges = np.array([np.pad(x, (0,maxLength-len(x)), mode='constant')
                           for x in newEdges])
 
-
-        # Updating edges that points to the now merge features
         # Cast the edges array to the same type as the ids array
         edges = edges.astype(ids.dtype)
 
-        print(newIdsDict)
+        # Update the edges
         for k,v in newIdsDict.iteritems():
             edges[np.where(edges == k)] = v
 
-    print("*******************RETURN MERGE************************")
-    print("starts: {}".format(starts))
-    print("ends: {}".format(ends))
-    print("values: {}".format(values))
-    print("strands: {}".format(strands))
-    print("ids: {}".format(ids))
-    print("edges: {}".format(edges))
-    print("weights: {}".format(weights))
-    print("*******************RETURN MERGE************************")
     return starts, ends, values, strands, ids, edges, weights
