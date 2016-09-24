@@ -7,15 +7,31 @@ from collections import OrderedDict
 from os.path import dirname, basename, isfile
 
 from gtrackcore.track_operations.TrackContents import TrackContents
+from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createTrackContentFromFile
+
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
+
 
 class InvalidArgumentError(Exception):
     pass
 
 class Operator(object):
     __metaclass__ = abc.ABCMeta
+
+    # Global default options. If a default value is not defined in a
+    # operation, we use the global default. __getattr__ will use this as
+    # a last resort.
+    GLOBAL_DEFAULT_OPTIONS = {
+        'debug': False,
+        'allowOverlap': False,
+        'resAllowOverlap': False,
+        'trackFormatReqChangeable': False,
+        'resultTrackFormatReqChangeable': False
+        }
 
     def __init__(self, *args, **kwargs):
         self._kwargs = kwargs
@@ -27,10 +43,12 @@ class Operator(object):
 
         self._args = self.preCalculation(args)
 
-        # Update the track format requirements.
-        self._updateTrackFormat()
-        self._updateResultTrackFormat()
+        # Default value
+        self._nestedOperator = False
 
+        # Update the track format requirements.
+        #self._updateTrackFormat()
+        #self._updateResultTrackFormat()
 
         self._checkArgs()
 
@@ -44,17 +62,25 @@ class Operator(object):
             if isinstance(arg, Operator):
                 # Track is another operator
                 self._nestedOperator = True
-                trackReq = self.trackRequirements[i]
-                trackFormat = self.resultTrackRequirements
+                trackReq = self._trackRequirements[i]
+                trackFormat = self._resultTrackRequirements
 
                 #TODO fix this! broken
                 trackFormat = TrackFormat(startList=[], endList=[])
                 #trackFormat = self.resultTrackRequirements
 
-                if not trackReq.isCompatibleWith(trackFormat):
-                    raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
-                                               "the following requirements: %s. " % trackReq +
-                                               "The format of the supplied track is: %s" % trackFormat)
+                if isinstance(trackReq, list):
+                    # Track supports multiple track requirements.
+                    if not any([tr.isCompatibleWith(trackFormat)
+                                for tr in trackReq]):
+                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
+                                                   "the following requirements: %s. " % trackReq +
+                                                   "The format of the supplied track is: %s" % trackFormat)
+                else:
+                    if not trackReq.isCompatibleWith(trackFormat):
+                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
+                                                   "the following requirements: %s. " % trackReq +
+                                                   "The format of the supplied track is: %s" % trackFormat)
             else:
                 if not isinstance(arg, TrackContents):
                     raise InvalidArgumentError("Operation requires TrackContent objects as arguments")
@@ -62,9 +88,19 @@ class Operator(object):
                 trackReq = self.trackRequirements[i]
                 trackFormat = arg.firstTrackView().trackFormat
 
-                if not trackReq.isCompatibleWith(trackFormat):
-                    raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
-                                               "the following requirements: %s. " % trackReq +
+                if isinstance(trackReq, list):
+                    # Track supports multiple track requirements.
+                    if not any([tr.isCompatibleWith(trackFormat)
+                                for tr in trackReq]):
+                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
+                                                    "the following requirements: %s. " % trackReq +
+                                               "The format of the supplied track is: %s" % trackFormat)
+
+                else:
+                    #
+                    if not trackReq.isCompatibleWith(trackFormat):
+                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
+                                                    "the following requirements: %s. " % trackReq +
                                                "The format of the supplied track is: %s" % trackFormat)
 
         regionsFirstArg = self.getResultRegion()
@@ -82,17 +118,31 @@ class Operator(object):
                 if arg.genome != genomeFirstArg:
                     raise InvalidArgumentError("All tracks must have the same genome")
 
-    def __getattr__(self, item):
-        print("in getattr. Item: {}".format(item))
-        try:
-            if item.startswith('_') and item[1:] in self._options.keys():
-                if item[1:] in self._kwargs.keys():
-                    # Option in kwargs. Returning it.
-                    return self._kwargs[item[1:]]
-                else:
-                    # Option not defined in kwargs. Returning the default.
-                    return self._options[item[1:]]
-        except KeyError:
+    def __getattr__(self, name):
+        """
+        Dynamically return the given options or default value.
+        :param name: Variable name
+        :return:
+        """
+        if name is '_options' or name is '_kwargs':
+            # The operation is missing the _options and _kwargs variables
+            # These need to be set in the __init__ method.
+            raise AttributeError("The operations is missing {}".format(name))
+        elif name.startswith('_'):
+            try:
+                # If in kwargs, return it
+                return self._kwargs[name[1:]]
+            except KeyError:
+                try:
+                    # Try to return the default value if we have it
+                    return self._options[name[1:]]
+                except KeyError:
+                    try:
+                        # Last resort. Try to return the global default
+                        return self.GLOBAL_DEFAULT_OPTIONS[name[1:]]
+                    except KeyError:
+                        raise AttributeError
+        else:
             raise AttributeError
 
     def __call__(self, *args, **kwargs):
@@ -142,6 +192,7 @@ class Operator(object):
 
         if self.resultIsTrack:
             self._resultFound = True
+
             self._resultTrack = TrackContents(self._resultGenome, self._out)
             self._resultTrack = self.postCalculation(self._resultTrack)
             return self._resultTrack
@@ -161,31 +212,83 @@ class Operator(object):
         """
         pass
 
-    def _updateTrackFormat(self):
+    @classmethod
+    def factory(cls, args):
+        """
+        We get the args dict from argparse
+
+        From this dict we need to pop the track names and create the
+        trackContent objects. The rest we give to the object as the kwargs.
+
+        Any arg starting with track is interpreted as a track.
+
+        Track* is reserved for tracks only.
+
+        :param args:
+        :return:
+        """
+
+        # args is a namespace. Get it's dict
+        args = vars(args)
+
+        # Get the genome
+        assert 'genome' in args.keys()
+        genome = Genome.createFromJson(args['genome'])
+        del args['genome']
+
+        # Any key matching 'track*' is assumed to be a track.
+        trackKeys = [key for key in args.keys()
+                     if key.startswith('track')]
+        assert len(trackKeys) > 0
+
+        # TODO: Add support for different allowOverlap on each track.
+        allowOverlap = False
+        if 'allowOverlap' in args:
+            allowOverlap = args['allowOverlap']
+        else:
+            # Assume False if not set.
+            allowOverlap = False
+
+        # Sort the keys
+        # The tracks will be given to the operation in alphabetical order.
+        trackKeys = sorted(trackKeys)
+
+        tracks = [createTrackContentFromFile(genome, args[key], allowOverlap)
+                  for key in trackKeys]
+
+        # Delete the tracks from args
+        for key in trackKeys:
+            del args[key]
+
+        return cls(*tracks, **args)
+
+    def _updateTrackFormatRequirements(self):
         """
         Called when we have updated some of the properties that the track
         requirement depend on.
 
-        TODO: make this more general. Are there more things we need to support?
-
-        :return: None
+        :return:
         """
-        self._trackRequirements = \
-            [TrackFormatReq(dense=r.isDense(),
-                            allowOverlaps=self._allowOverlap) for r in
-             self._trackRequirements]
+        if self._trackFormatReqChangeable:
+            # Only update requirements if the operation allows it
+            self._trackRequirements = \
+                [TrackFormatReq(dense=r.isDense(),
+                                allowOverlaps=self._allowOverlap) for r in
+                 self._trackRequirements]
 
-    def _updateResultTrackFormat(self):
+    def _updateResultTrackFormatRequirements(self):
         """
         Equal to _updateTrackFormat but now updating the result track
         requirments (if any)
         :return: None
         """
-        if self._resultTrackRequirements is not None:
-            # Result is a track.
-            dense = self._resultTrackRequirements.isDense()
-            self._resultTrackRequirements = \
-                TrackFormatReq(dense=dense, allowOverlaps=self._allowOverlap)
+        if self._resultTrackFormatReqChangeable:
+            # Only update requirements if the operation allows it
+            if self._resultIsTrack is not None:
+                # Result is a track.
+                dense = self._resultTrackRequirements.isDense()
+                self._resultTrackRequirements = \
+                    TrackFormatReq(dense=dense, allowOverlaps=self._allowOverlap)
 
     @abc.abstractmethod
     def printResult(self):
@@ -219,16 +322,16 @@ class Operator(object):
         """
         pass
 
-    @classmethod
-    @abc.abstractmethod
-    def createOperation(cls, args):
-        """
-        Used by GTools.
-        Create a operation object from the arguments given from GTools.
-        :param args: Arguments from the parser in GTools
-        :return: A operation object.
-        """
-        pass
+    #@classmethod
+    #@abc.abstractmethod
+    #def createOperation(cls, args):
+    #    """
+    #    Used by GTools.
+    #    Create a operation object from the arguments given from GTools.
+    #    :param args: Arguments from the parser in GTools
+    #    :return: A operation object.
+    #    """
+    #    pass
 
     def createTrackName(self):
         """
