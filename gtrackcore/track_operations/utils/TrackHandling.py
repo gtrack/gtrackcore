@@ -16,6 +16,9 @@ from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.core.TrackView import TrackView
+from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track.format.TrackFormat import TrackFormatReq
+
 
 from gtrackcore.track_operations.TrackContents import TrackContents
 
@@ -110,7 +113,7 @@ def printTrackView(tv):
 def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                              newStarts=None, newEnds=None, newStrands=None,
                              newValues=None, newIds=None, newEdges=None,
-                             newWeights=None, encoding=None):
+                             newWeights=None, encoding=None, trackFormat=None):
     """
 
     TODO: Expand to support more track types.
@@ -140,18 +143,8 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
     logging.debug("Creating new raw result track view")
 
     if newStarts is not None and newEnds is not None:
-        print(newStarts)
-        print(newEnds)
         assert len(newStarts) == len(newEnds)
 
-    if index is None:
-        # Expand this co use what we have..
-        if newStarts is None or newEnds is None:
-            raise NotImplementedError
-        tv = TrackView(region, newStarts, newEnds, None, newStrands, None,
-                   None, None, borderHandling='crop',
-                   allowOverlaps=allowOverlap)
-        return tv
 
     starts = None
     ends = None
@@ -161,211 +154,233 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
     edges = None
     weights = None
 
-    if encoding is not None:
-        print("Using encoding!")
+    if index is not None:
+        if encoding is not None:
 
-        nrBaseTracks = len(baseTrack)
+            nrBaseTracks = len(baseTrack)
 
-        print("number of base tracks: {}".format(nrBaseTracks))
-        print("encoding: {}".format(encoding))
-        assert nrBaseTracks > 1
-        assert isinstance(baseTrack, list)
-        assert len(encoding) == len(index)
+            assert nrBaseTracks > 1
+            assert isinstance(baseTrack, list)
+            assert len(encoding) == len(index)
 
-        # index in the base track
-        ind = [None] * nrBaseTracks
+            # index in the base track
+            ind = [None] * nrBaseTracks
 
-        # Indexes in the new track
-        enc = [None] * nrBaseTracks
-        for i in range(1, nrBaseTracks+1):
-            t = np.where(encoding == i)
-            print(t)
+            # Indexes in the new track
+            enc = [None] * nrBaseTracks
+            for i in range(1, nrBaseTracks+1):
+                t = np.where(encoding == i)
 
-            enc[i-1] = t
-            ind[i-1] = index[t]
+                enc[i-1] = t
+                ind[i-1] = index[t]
 
-        startsBase = np.array([None] * nrBaseTracks)
-        endsBase = np.array([None] * nrBaseTracks)
-        valsBase = np.array([None] * nrBaseTracks)
-        strandsBase = np.array([None] * nrBaseTracks)
-        idsBase = np.array([None] * nrBaseTracks)
-        edgesBase = np.array([None] * nrBaseTracks)
-        weightsBase = np.array([None] * nrBaseTracks)
-        #extrasBase = np.array([None] * nrBaseTracks)
-        # Add the extra..
+            startsBase = np.array([None] * nrBaseTracks)
+            endsBase = np.array([None] * nrBaseTracks)
+            valsBase = np.array([None] * nrBaseTracks)
+            strandsBase = np.array([None] * nrBaseTracks)
+            idsBase = np.array([None] * nrBaseTracks)
+            edgesBase = np.array([None] * nrBaseTracks)
+            weightsBase = np.array([None] * nrBaseTracks)
+            #extrasBase = np.array([None] * nrBaseTracks)
+            # Add the extra..
 
-        # Get all of the numpy arrays from the tracks
-        for i, track in enumerate(baseTrack):
-            startsBase[i] = track.startsAsNumpyArray()
-            endsBase[i] = track.endsAsNumpyArray()
-            valsBase[i] = track.valsAsNumpyArray()
-            strandsBase[i] = track.strandsAsNumpyArray()
-            idsBase[i] = track.idsAsNumpyArray()
-            edgesBase[i] = track.edgesAsNumpyArray()
-            weightsBase[i] = track.weightsAsNumpyArray()
+            # Get all of the numpy arrays from the tracks
+            for i, track in enumerate(baseTrack):
+                startsBase[i] = track.startsAsNumpyArray()
+                endsBase[i] = track.endsAsNumpyArray()
+                valsBase[i] = track.valsAsNumpyArray()
+                strandsBase[i] = track.strandsAsNumpyArray()
+                idsBase[i] = track.idsAsNumpyArray()
+                edgesBase[i] = track.edgesAsNumpyArray()
+                weightsBase[i] = track.weightsAsNumpyArray()
 
-        # If one of the base track is missing a base we ignore it for the
-        # rest of the base tracks.
-        # This should possible be extended to save the data we have.
-        if not all(s is not None for s in startsBase):
-            startsBase = None
-        if not all(e is not None for e in endsBase):
-            endsBase = None
-        if not all(v is not None for v in valsBase):
-            valsBase = None
-        if not all(s is not None for s in strandsBase):
-            strandsBase = None
-        if not all(i is not None for i in idsBase):
-            idsBase = None
-        if not all(e is not None for e in edgesBase):
-            edgesBase = None
-        if not all(w is not None for w in weightsBase):
-            weightsBase = None
+            # If one of the base track is missing a base we ignore it for the
+            # rest of the base tracks.
+            # This should possible be extended to save the data we have.
+            if not all(s is not None for s in startsBase):
+                startsBase = None
+            if not all(e is not None for e in endsBase):
+                endsBase = None
+            if not all(v is not None for v in valsBase):
+                valsBase = None
+            if not all(s is not None for s in strandsBase):
+                strandsBase = None
+            if not all(i is not None for i in idsBase):
+                idsBase = None
+            if not all(e is not None for e in edgesBase):
+                edgesBase = None
+            if not all(w is not None for w in weightsBase):
+                weightsBase = None
 
-        if newStarts is not None:
-            starts = newStarts
-
-            print("In newStarts!: starts: {}".format(newStarts))
-        else:
-            if startsBase is None:
-                starts = None
+            if newStarts is not None:
+                starts = newStarts
             else:
-                starts = np.zeros(len(index))
-                for i in range(0, nrBaseTracks):
-                    starts[enc[i]] = startsBase[i][ind[i]]
+                if startsBase is None:
+                    starts = None
+                else:
+                    starts = np.zeros(len(index))
+                    for i in range(0, nrBaseTracks):
+                        starts[enc[i]] = startsBase[i][ind[i]]
 
-        if newEnds is not None:
-            ends = newEnds
-        else:
-            if endsBase is None:
-                ends = None
+            if newEnds is not None:
+                ends = newEnds
             else:
-                ends = np.zeros(len(index))
-                for i in range(0, nrBaseTracks):
-                    ends[enc[i]] = endsBase[i][ind[i]]
+                if endsBase is None:
+                    ends = None
+                else:
+                    ends = np.zeros(len(index))
+                    for i in range(0, nrBaseTracks):
+                        ends[enc[i]] = endsBase[i][ind[i]]
 
-        if newValues is not None:
-            # If the operation has created new values we use them instead.
-            vals = newValues
-        else:
-            if valsBase is None:
-                vals = None
+            if newValues is not None:
+                # If the operation has created new values we use them instead.
+                vals = newValues
             else:
-                vals = np.zeros(len(index))
-                for i in range(0, nrBaseTracks):
-                    vals[enc[i]] = valsBase[i][ind[i]]
+                if valsBase is None:
+                    vals = None
+                else:
+                    vals = np.zeros(len(index))
+                    for i in range(0, nrBaseTracks):
+                        vals[enc[i]] = valsBase[i][ind[i]]
 
-        if newStrands is not None:
-            strands = newStrands
-        else:
-            if strandsBase is None:
-                strands = None
+            if newStrands is not None:
+                strands = newStrands
             else:
-                strands = np.zeros(len(index), dtype=strandsBase.dtype)
-                for i in range(0, nrBaseTracks):
-                    strands[enc[i]] = strandsBase[i][ind[i]]
+                if strandsBase is None:
+                    strands = None
+                else:
+                    strands = np.zeros(len(index), dtype=strandsBase.dtype)
+                    for i in range(0, nrBaseTracks):
+                        strands[enc[i]] = strandsBase[i][ind[i]]
 
-        if newIds is not None:
-            ids = newIds
-        else:
-            if idsBase is None:
-                ids = None
+            if newIds is not None:
+                ids = newIds
             else:
-                ids = np.empty(len(index), dtype=getDtype(idsBase))
-                for i in range(0, nrBaseTracks):
-                    ids[enc[i]] = idsBase[i][ind[i]]
+                if idsBase is None:
+                    ids = None
+                else:
+                    ids = np.empty(len(index), dtype=getDtype(idsBase))
+                    for i in range(0, nrBaseTracks):
+                        ids[enc[i]] = idsBase[i][ind[i]]
 
-        if newEdges is not None:
-            assert len(newEdges) == len(ids)
-            edges = newEdges
-        else:
-            if edgesBase is None:
-                edges = None
+            if newEdges is not None:
+                assert len(newEdges) == len(ids)
+                edges = newEdges
             else:
-                edges = np.empty(len(index), dtype=getDtype(edgesBase))
-                for i in range(0, nrBaseTracks):
-                    edges[enc[i][0]] = edgesBase[i][ind[i]]
+                if edgesBase is None:
+                    edges = None
+                else:
+                    edges = np.empty(len(index), dtype=getDtype(edgesBase))
+                    for i in range(0, nrBaseTracks):
+                        edges[enc[i][0]] = edgesBase[i][ind[i]]
 
-        if newWeights is not None:
-            print("Found newWeights!")
-            assert len(newWeights) == len(ids)
-            weights = newWeights
-        else:
-            print("Weights from old track!")
-            if weightsBase is None:
-                weights = None
+            if newWeights is not None:
+                assert len(newWeights) == len(ids)
+                weights = newWeights
             else:
-                weights = np.zeros(len(index))
-                for i in range(0, nrBaseTracks):
-                    weights[enc[i]] = weightsBase[i][ind[i]]
+                if weightsBase is None:
+                    weights = None
+                else:
+                    weights = np.zeros(len(index))
+                    for i in range(0, nrBaseTracks):
+                        weights[enc[i]] = weightsBase[i][ind[i]]
+        else:
+            if newStarts is not None:
+                starts = newStarts
+            else:
+                s = baseTrack.startsAsNumpyArray()
+                if s is not None:
+                    starts = s[index]
+
+            if newEnds is not None:
+                ends = newEnds
+            else:
+                e = baseTrack.endsAsNumpyArray()
+                if e is not None:
+                    ends = e[index]
+
+            if newValues is not None:
+                # If the operation has created new values we use them instead.
+                vals = newValues
+            else:
+                v = baseTrack.valsAsNumpyArray()
+                if v is not None:
+                    vals = v[index]
+
+            if newStrands is not None:
+                strands = newStrands
+            else:
+                s = baseTrack.strandsAsNumpyArray()
+                if s is not None:
+                    strands = s[index]
+
+            if newIds is not None:
+                ids = newIds
+            else:
+                i = baseTrack.idsAsNumpyArray()
+                if i is not None:
+                    ids = i[index]
+
+            if newEdges is not None:
+                assert len(newEdges) == len(ids)
+                edges = newEdges
+            else:
+                e = baseTrack.edgesAsNumpyArray()
+                if e is not None:
+                    edges = e[index]
+
+            if newWeights is not None:
+                assert ids is not None
+                assert edges is not None
+                assert len(newWeights) == len(ids)
+                weights = newWeights
+
+            else:
+                w = baseTrack.weightsAsNumpyArray()
+                if w is not None:
+                    weights = w[index]
+
     else:
-        if newStarts is not None:
-            starts = newStarts
-        else:
-            s = baseTrack.startsAsNumpyArray()
-            if s is not None:
-                starts = s[index]
+        # No index given. Creating a track based on the new* inputs
 
-        if newEnds is not None:
-            ends = newEnds
-        else:
-            e = baseTrack.endsAsNumpyArray()
-            if e is not None:
-                ends = e[index]
-
-        if newValues is not None:
-            # If the operation has created new values we use them instead.
-            vals = newValues
-        else:
-            v = baseTrack.valsAsNumpyArray()
-            if v is not None:
-                vals = v[index]
-
-        if newStrands is not None:
-            strands = newStrands
-        else:
-            s = baseTrack.strandsAsNumpyArray()
-            if s is not None:
-                strands = s[index]
-
-        if newIds is not None:
-            ids = newIds
-        else:
-            i = baseTrack.idsAsNumpyArray()
-            if i is not None:
-                ids = i[index]
-
-        if newEdges is not None:
-            assert len(newEdges) == len(ids)
-            edges = newEdges
-        else:
-            e = baseTrack.edgesAsNumpyArray()
-            if e is not None:
-                edges = e[index]
-
-        if newWeights is not None:
-            assert ids is not None
-            assert edges is not None
-            assert len(newWeights) == len(ids)
-            weights = newWeights
-
-        else:
-            w = baseTrack.weightsAsNumpyArray()
-            if w is not None:
-                weights = w[index]
+        starts = newStarts
+        ends = newEnds
+        strands = newStrands
+        vals = newValues
+        ids = newIds
+        edges = newEdges
+        weights = newWeights
 
     # TODO fix extra
+    #print("before tv creation: starts: {}".format(starts))
 
-    print("before tv creation: starts: {}".format(starts))
+    if trackFormat is not None:
+        # If a trackFormat is given, we us it to create the correct track.
+        name = trackFormat.getFormatName()
 
+        points = ['Points', 'Valued points', 'Linked points',
+                  'Linked valued points']
+        segments = []
+
+        if name in points:
+            # Remove the ends when creating a point type track
+            ends = None
+
+    print("*****************")
+    print("In create tv")
+
+    print("newIds: {}".format(newIds))
+    print("newEdges: {}".format(edges))
     tv = TrackView(region, starts, ends, vals, strands, ids, edges, weights,
                    borderHandling='crop', allowOverlaps=allowOverlap)
 
-    print("after: {}".format(tv.startsAsNumpyArray()))
-
+    print("ids from tv: {}".format(tv.idsAsNumpyArray()))
+    print("edges from tv: {}".format(tv.edgesAsNumpyArray()))
+    print("*****************")
     return tv
 
 def createTrackContentFromFile(genome, path, allowOverlaps):
+    # TODO fix
 
     #trackName = trackName.split(':')
     # NOT SYSTEM safe!! Fix this later!
@@ -375,6 +390,8 @@ def createTrackContentFromFile(genome, path, allowOverlaps):
     importTrackIntoGTrack(trackName, genome, path)
 
     track = Track(trackName.split(':'))
+
+    # We do not want to set this..
     track.addFormatReq(TrackFormatReq(allowOverlaps=False,
                                       borderHandling='crop'))
     trackViewList = OrderedDict()
