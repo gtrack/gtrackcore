@@ -9,12 +9,24 @@ from gtrackcore.track_operations.Genome import Genome
 class TrackContents(object):
 
     def __init__(self, genome, trackViews):
+        assert len(trackViews) > 0
         assert isinstance(genome, Genome)
         self._genome = genome
+
+        # TODO: Check that the regions in genome matches the ones in the
+        # orderedDict
 
         #self._trackViews = OrderedDict([(r, tv) for r, tv in
         # trackViewList.items()])
         self._trackViews = trackViews
+
+        # Find and set the trackFormat
+        formats = [tv.trackFormat for tv in self._trackViews.values()]
+        # test = [tv.trackFormat for tv.genomeAnchor in
+        #        self._trackViews.values()]
+        # Assume that the TrackFormat is the same for all trackViews
+        assert formats.count(formats[0]) == len(formats)
+        self._trackFormat = formats[0]
 
     def getTrackViews(self):
         # TODO remove. Check if used and change to the property
@@ -31,8 +43,19 @@ class TrackContents(object):
         return self._trackViews
 
     @property
+    def trackFormat(self):
+        """
+        Returns the trackFormat
+        :return:
+        """
+        return self._trackFormat
+
+    @property
     def allowOverlaps(self):
         # TODO: Do this in a better way..
+
+        print(self._trackViews)
+
         return self._trackViews.items()[0][1].allowOverlaps
 
     @property
