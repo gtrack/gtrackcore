@@ -73,8 +73,11 @@ class MergeTest(unittest.TestCase):
 
                     # Todo fix for segments and partitions
                     if expTrackFormatType in points:
-                        assert v.trackFormat.getFormatName() == \
-                               expTrackFormatType
+                        # Point type track, we create the expected "virtual"
+                        # ends.
+                        self.assertTrue(v.trackFormat.getFormatName() == \
+                               expTrackFormatType)
+                        self.assertTrue(expEnds is None)
                         expEnds = np.array(expStarts) + 1
 
                 # All test tracks are in chr1
@@ -623,6 +626,8 @@ class MergeTest(unittest.TestCase):
                       expEdges=[['merge-2','merge-2','merge-2']],
                       expStarts=[10], expEnds=[100])
 
+    # TODO, Test merging mixed track type. What happens if one of the tracks
+    # are missing one or more of of the
 
 if __name__ == "__main__":
     unittest.main()

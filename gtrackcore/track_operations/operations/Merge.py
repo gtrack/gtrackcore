@@ -77,6 +77,10 @@ class Merge(Operator):
         edges = tv.edgesAsNumpyArray()
         weights = tv.weightsAsNumpyArray()
 
+        print("in merge: edges: {}".format(edges))
+
+        print("")
+
         if self._useStrands:
             if strands is None:
                 self._useStrands = False
@@ -85,6 +89,7 @@ class Merge(Operator):
                     edges=edges, weights=weights, useStrands=self._useStrands,
                     treatMissingAsNegative=self._treatMissingAsNegative,
                     mergeValuesFunction=self._mergeValuesFunction)
+
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 7
@@ -100,6 +105,8 @@ class Merge(Operator):
             ids = ret[4]
             edges = ret[5]
             weights = ret[6]
+
+            print("edges in result: {}".format(edges))
 
             tv = createRawResultTrackView(None, region, None,
                                           self.allowOverlaps,

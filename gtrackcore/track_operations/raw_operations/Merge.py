@@ -235,7 +235,6 @@ def merge(starts, ends, strands=None, values=None, ids=None,
         # start[n+1] <= end[n]
         partialOverlapIndex = np.where(starts[1:] < ends[:-1])
         while len(partialOverlapIndex[0]) > 0:
-            print("In remove partial!")
             partialOverlapIndex = partialOverlapIndex[0]
 
             removeIndex = partialOverlapIndex + 1
@@ -506,19 +505,19 @@ def merge(starts, ends, strands=None, values=None, ids=None,
 
     if edges is not None:
 
-        # Remove excessive padding
-        newEdges = np.array([None] * len(edges))
+        if isinstance(edges[0], (list, np.ndarray)):
+            # The merging of edges creates excessive padding.
+            # Removing it.
+            newEdges = np.array([None] * len(edges))
 
-        for i, edge in enumerate(edges):
-            ind = np.where(edge != '')
-            newEdges[i] = edge[ind[0]]
-
-        # Find the longest edge
-        maxLength = max(len(x) for x in newEdges)
-
-        # Recreate the edges with correct padding
-        edges = np.array([np.pad(x, (0,maxLength-len(x)), mode='constant')
-                          for x in newEdges])
+            for i, edge in enumerate(edges):
+                ind = np.where(edge != '')
+                newEdges[i] = edge[ind[0]]
+            # Find the longest edge
+            maxLength = max(len(x) for x in newEdges)
+            # Recreate the edges with correct padding
+            edges = np.array([np.pad(x, (0,maxLength-len(x)), mode='constant')
+                              for x in newEdges])
 
         # Cast the edges array to the same type as the ids array
         edges = edges.astype(ids.dtype)
