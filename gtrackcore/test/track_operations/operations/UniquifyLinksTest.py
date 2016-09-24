@@ -34,6 +34,8 @@ class UniquifyLinksTest(unittest.TestCase):
 
         u = UniquifyLinks(track, trackIdentifier=trackIdentifier, debug=debug)
 
+        u.createOperation()
+
         result = u.calculate()
         self.assertTrue(result is not None)
 

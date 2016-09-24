@@ -33,21 +33,24 @@ class UniquifyLinks(Operator):
     """
 
     def __init__(self, *args, **kwargs):
+
+        assert args[0] is not None
+
         self._kwargs = kwargs
         self._options = {'debug': False,
                          'allowOverlap': False,
                          'resultAllowOverlap': False,
-                         'trackIdentifier': None
+                         'identifier': None
                          }
         # Save the tracks
-        self._tracks = args
+        self._tracks = args[0]
 
         # Core properties
         self._numTracks = 1
         self._resultIsTrack = True
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
-        self._resultTrackRequirements = self._trackRequirements[0]
+        self._trackRequirements = [TrackFormatReq(dense=False, linked=True)]
+
+        self._resultTrackRequirement = self._trackRequirements[0]
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -57,15 +60,18 @@ class UniquifyLinks(Operator):
         ids = tv.idsAsNumpyArray()
         edges = tv.edgesAsNumpyArray()
 
-        ret = uniquifyLinks(ids, edges, self._trackIdentifier,
+        ret = uniquifyLinks(ids, edges, self._identifier,
                             self._allowOverlap, self._debug)
 
         if ret is not None and len(ret) != 0:
             assert len(ret) == 3
+            newIds = ret[0]
+            newEdges = ret[1]
+            index = ret[2]
 
             tv = createRawResultTrackView(ret[2], region, tv,
-                                          self._allowOverlap, newIds=ret[0],
-                                          newEdges=ret[1])
+                                          self._allowOverlap, newIds=newIds,
+                                          newEdges=newEdges)
             return tv
         else:
             return None
@@ -92,28 +98,9 @@ class UniquifyLinks(Operator):
         parser.add_argument('genome', help='File path of Genome definition')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
-        parser.add_argument('--trackIdentifier',
+        parser.add_argument('--identifier',
                             help="Identifier to add to the ids.")
         parser.set_defaults(which='UniquifyLinks')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.track,
-                                           args.allowOverlap)
-
-        allowOverlap = args.allowOverlap
-        trackIdentifier = args.trackIdentifier
-
-        return UniquifyLinks(track, trackIdentifier=trackIdentifier,
-                             allowOverlap=allowOverlap)
 
     def printResult(self):
         """
