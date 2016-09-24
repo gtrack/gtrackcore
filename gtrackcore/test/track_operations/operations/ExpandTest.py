@@ -6,14 +6,14 @@ from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.format.TrackFormat import TrackFormat
 
-from gtrackcore.track_operations.operations.Slop import Slop
+from gtrackcore.track_operations.operations.Expand import Expand
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.test.track_operations.TestUtils import createTrackView
 from gtrackcore.test.track_operations.TestUtils import \
     createSimpleTestTrackContent
 
 
-class SlopTest(unittest.TestCase):
+class ExpandTest(unittest.TestCase):
 
     def setUp(self):
         self.chr1 = (GenomeRegion('hg19', 'chr1', 0,
@@ -28,10 +28,7 @@ class SlopTest(unittest.TestCase):
                  expEdges=None, expWeights=None, customChrLength=None,
                  allowOverlap=True, resultAllowOverlap=False, start=None,
                  end=None, both=None, useFraction=False, useStrands=False,
-                 useMissingStrands=True, treatMissingAsNegative=False,
-                 updateMissingStrand=False, ignoreNegative=False,
-                 ignorePositive=False, keepValuesAndLinks=False,
-                 debug=False):
+                 treatMissingAsNegative=False, debug=False):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
                                              valList=values,
@@ -40,15 +37,10 @@ class SlopTest(unittest.TestCase):
                                              weightsList=weights,
                                              customChrLength=customChrLength)
 
-        s = Slop(track, both=both, start=start, end=end,
-                 useFraction=useFraction, useStrands=useStrands,
-                 useMissingStrands=useMissingStrands,
-                 treatMissingAsNegative=treatMissingAsNegative,
-                 updateMissingStrand=updateMissingStrand,
-                 resultAllowOverlap=resultAllowOverlap,
-                 ignorePositive=ignorePositive,
-                 ignoreNegative=ignoreNegative,
-                 keepValuesAndLinks=keepValuesAndLinks, debug=debug)
+        s = Expand(track, both=both, start=start, end=end,
+                   useFraction=useFraction, useStrands=useStrands,
+                   treatMissingAsNegative=treatMissingAsNegative,
+                   resultAllowOverlap=resultAllowOverlap, debug=debug)
 
         result = s.calculate()
         self.assertTrue(result is not None)
@@ -140,23 +132,22 @@ class SlopTest(unittest.TestCase):
     # a segment track. For each point we get a new segment.
     def testPoints(self):
         # Test of start
-        self._runTest(starts=[10], expStarts=[5], expEnds=[10],
-                      start=5, resultAllowOverlap=True)
+        self._runTest(starts=[10], ends=[11], expStarts=[5], expEnds=[11],
+                      start=5, resultAllowOverlap=True, debug=True)
 
         # Test of end
-        self._runTest(starts=[10], expStarts=[10], expEnds=[15],
+        self._runTest(starts=[10], ends=[11], expStarts=[10], expEnds=[16],
                       end=5, resultAllowOverlap=True)
-
         # Test of both
-        self._runTest(starts=[10], expStarts=[5], expEnds=[15],
+        self._runTest(starts=[10], ends=[11], expStarts=[5], expEnds=[16],
                       both=5, resultAllowOverlap=True)
 
         # test of star and end
-        self._runTest(starts=[10], expStarts=[5], expEnds=[15],
+        self._runTest(starts=[10], ends=[11], expStarts=[5], expEnds=[16],
                       start=5, end=5, resultAllowOverlap=True)
 
         # test of star and end. Different values
-        self._runTest(starts=[10], expStarts=[6], expEnds=[20],
+        self._runTest(starts=[10], ends=[11], expStarts=[6], expEnds=[21],
                       start=4, end=10, resultAllowOverlap=True)
 
     # **** Test Segments ****
@@ -212,7 +203,7 @@ class SlopTest(unittest.TestCase):
                       expStarts=[400000], expEnds=[len(self.chr1)], end=300,
                       resultAllowOverlap=True)
 
-    def testSegmentsMultiple(self):
+    def atestSegmentsMultiple(self):
         """
         Tests slop on multiple tracks. Some overlap. Test merge of the overlap
         :return: None
@@ -229,9 +220,10 @@ class SlopTest(unittest.TestCase):
         self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4,14],
                       expEnds=[15,40], start=6, resultAllowOverlap=True)
 
+    def testSegmentsMultiple(self):
         # Start, multiple, overlap, merge overlap in result.
         self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4],
-                      expEnds=[40], start=6, resultAllowOverlap=False)
+                      expEnds=[40], start=6, resultAllowOverlap=False, debug=True)
 
     # test overlap in input
 
@@ -452,79 +444,6 @@ class SlopTest(unittest.TestCase):
                       start=0.5, end=1, useFraction=True,
                       resultAllowOverlap=True)
 
-    def testIgnorePartOfStrand(self):
-        """
-
-        :return:
-        """
-
-        # Nothing to ignore.
-        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
-                      expEnds=[20], expStrands=['+'], start=5, useStrands=True,
-                      ignoreNegative=True, resultAllowOverlap=True)
-
-        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[10],
-                      expEnds=[25], expStrands=['-'], start=5, useStrands=True,
-                      ignorePositive=True, resultAllowOverlap=True)
-
-        # Ignoring positive
-        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[10],
-                      expEnds=[20], expStrands=['+'], start=5, useStrands=True,
-                      ignorePositive=True, resultAllowOverlap=True, debug=True)
-
-        # Ignoring negative
-        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[10],
-                      expEnds=[20], expStrands=['-'], start=5, useStrands=True,
-                      ignoreNegative=True, resultAllowOverlap=True, debug=True)
-
-        # Treat missing as positive and ignore them..
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
-                      expEnds=[20], expStrands=['.'], end=5, useStrands=True,
-                      useMissingStrands=True, ignorePositive=True,
-                      resultAllowOverlap=True)
-
-        # Treat missing as negative and ignore them..
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
-                      expEnds=[20], expStrands=['.'], end=5, useStrands=True,
-                      useMissingStrands=True, ignoreNegative=True,
-                      treatMissingAsNegative=True,
-                      resultAllowOverlap=True)
-
-        # Positive, both
-        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
-                      expEnds=[25], expStrands=['+'], both=5, useStrands=True,
-                      resultAllowOverlap=True)
-
-        # Positive, start and end
-        self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
-                      expEnds=[30], expStrands=['+'], start=5, end=10,
-                      useStrands=True, resultAllowOverlap=True)
-
-        # Negative, start
-        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[10],
-                      expEnds=[25], expStrands=['-'], start=5, useStrands=True,
-                      resultAllowOverlap=True)
-
-        # Negative, end
-        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
-                      expEnds=[20], expStrands=['-'], end=5, useStrands=True,
-                      resultAllowOverlap=True)
-
-        # Negative, both
-        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
-                      expEnds=[25], expStrands=['-'], both=5, useStrands=True,
-                      resultAllowOverlap=True)
-
-        # Negative, start and end
-        self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
-                      expEnds=[30], expStrands=['-'], start=10, end=5,
-                      useStrands=True, resultAllowOverlap=True)
-
-
-        # Test ignoring negative, positive, missing positive and missing
-        # negative.
-        # Test resorting
-
     def testSegmentsResorting(self):
         """
         In some cases the we loose the ordering of the segments.
@@ -550,11 +469,9 @@ class SlopTest(unittest.TestCase):
         """
 
         self._runTest(starts=[5,10], ends=[8,15], strands=['-','+'],
-                      ids=['1','2'], edges=['2','1'], start=6,
-                      expStarts=[4,5], expEnds=[15,14], expStrands=['+','-'],
-                      expIds=['2','1'], expEdges=['1','2'], useStrands=True,
-                      keepValuesAndLinks=True, resultAllowOverlap=True,
-                      debug=True)
+                      start=6, expStarts=[4,5], expEnds=[15,14],
+                      expStrands=['+','-'], useStrands=True,
+                      resultAllowOverlap=True, debug=True)
 
 if __name__ == "__main__":
     unittest.main()
