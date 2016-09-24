@@ -63,7 +63,7 @@ class GTools(object):
 
             oper = self._importedOperations[operation]
             # check args?
-            a = oper.createOperation(self._args)
+            a = oper.factory(self._args)
             res = a.calculate()
 
             if a.resultIsTrack:
@@ -74,8 +74,23 @@ class GTools(object):
                 # TODO add support for custom name..
                 name = a.createTrackName()
                 logging.debug("Importing track. Name: {0}".format(name))
-                print(res)
                 print(name)
+
+                for k,v in res.trackViews.iteritems():
+                    s = v.startsAsNumpyArray()
+
+                    if s is not None and len(s) > 0:
+                        print(s)
+                        print(type(s))
+                        print(v.endsAsNumpyArray())
+                        print(type(v.endsAsNumpyArray()))
+                        print(v.idsAsNumpyArray())
+                        print(type(v.idsAsNumpyArray()))
+                        print(v.edgesAsNumpyArray())
+                        print(type(v.edgesAsNumpyArray()))
+                        print(v.weightsAsNumpyArray())
+                        print(type(v.weightsAsNumpyArray()))
+
                 importTrackFromTrackContents(trackContents=res, trackName=name)
 
     def _importOperations(self):

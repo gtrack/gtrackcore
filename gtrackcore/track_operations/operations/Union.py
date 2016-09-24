@@ -19,6 +19,63 @@ from gtrackcore.track_operations.Genome import Genome
 
 class Union(Operator):
 
+    def __init__(self, *args, **kwargs):
+        assert len(args) == 2
+        assert args[0] is not None
+        self._kwargs = kwargs
+        self._options = {'allowOverlap': False,
+                         'resultAllowOverlap': False,
+                         'trackFormatReqChangeable': False,
+                         'resultTrackFormatReqChangeable': False,
+                         'useStrands': True,
+                         'treatMissingAsNegative': False,
+                         'mergeValuesFunction': None,
+                         'makeLinksUnique': False,
+                         'trackALinkTag': None,
+                         'trackBLinkTag': None
+                         }
+
+        # Save the tracks
+        self._tracks = args
+
+        # Core properties
+        self._numTracks = 2
+        self._resultIsTrack = True
+
+        # Merge support all tracks type with the exception if function,
+        # linked function and linked base pairs.
+        self._trackRequirements = [[TrackFormatReq(dense=False),
+                                    TrackFormatReq(dense=True, interval=True)],
+                                   [TrackFormatReq(dense=False),
+                                    TrackFormatReq(dense=True, interval=True)]]
+
+        # TODO, fix this when track A and B have a different trackFormat..
+        # The TrackFormat of the result
+
+        t1Trackformat = args[0].trackFormat
+        t2Trackformat = args[1].trackFormat
+
+        print(t1Trackformat)
+        print(t2Trackformat)
+        if t1Trackformat == t2Trackformat:
+            # Equal trackFormat
+            self._trackFormat = t1Trackformat
+        else:
+            # TODO. Make the correct trackFormat for the result.
+            print("No equal!")
+            raise NotImplementedError
+        # We set the resultTrackRequirements based on the input track
+        tr = self._trackFormat
+
+        # TODO create a createFromTrackFormat method in TrackFormatReq
+        self._resultTrackRequirements = TrackFormatReq(dense=tr.isDense(),
+                                                       val=tr._val,
+                                                       interval=tr.isInterval(),
+                                                       linked=tr.isLinked(),
+                                                       allowOverlaps=self._resultAllowOverlap)
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def _calculate(self, region, tv1, tv2):
 
         t1Starts = tv1.startsAsNumpyArray()
@@ -27,165 +84,60 @@ class Union(Operator):
         t2Starts = tv2.startsAsNumpyArray()
         t2Ends = tv2.endsAsNumpyArray()
 
+        print("edges tv1: {}".format(tv1.edgesAsNumpyArray()))
+        print("edges tv2: {}".format(tv2.edgesAsNumpyArray()))
+
         ret = union(t1Starts, t1Ends, t2Starts, t2Ends,
-                    self._resultAllowOverlaps)
+                    self._resultAllowOverlap)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 4
 
+            print(self._trackFormat)
             tv = createRawResultTrackView(ret[2], region, [tv1,tv2],
                                             self.allowOverlaps,
                                             newStarts=ret[0], newEnds=ret[1],
-                                            encoding=ret[3])
+                                            encoding=ret[3],
+                                            trackFormat=self._trackFormat)
             return tv
         else:
             return None
 
-    def _setConfig(self, args):
-        # None changeable properties
-        self._numTracks = 2
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False),
-             TrackFormatReq(dense=False, allowOverlaps=False)]
-        self._resultIsTrack = True
-
-        # Set defaults for changeable properties
-        self._allowOverlap = False
-        self._resultAllowOverlaps = False
-        self._useStrands = True
-        self._useMissingStrands = True
-        self._treatMissingAsPositive = True
-        self._mergeValues = True
-        self._mergeValuesFunction = None
-        self._mergeLinks = True
-        self._makeLinksUnique = False
-        self._trackALinkTag = None
-        self._trackBLinkTag = None
-
-        # For now the result track is always of the same type as track A
-        # TODO: Solve this for the case where A and b are not of the same type.
-        self._resultTrackRequirement = TrackFormat(startList=[], endList=[])
-
-        # Merge with parseKwargs
-
-    def _parseKwargs(self, **kwargs):
-        """
-        :param kwargs:
-        :return: None
-        """
-        # Overlap
-        if 'allowOverlap' in kwargs:
-            self._allowOverlap = kwargs['allowOverlap']
-            self._updateTrackFormat()
-
-        if 'resultAllowOverlap' in kwargs:
-            self._resultAllowOverlaps = kwargs['resultAllowOverlap']
-            self._updateResultTrackFormat()
-
-        # Strand handling
-        if 'useStrands' in kwargs:
-            self._useStands = kwargs['useStrands']
-
-        if 'useMissingStrands' in kwargs:
-            self._useMissingStrands = kwargs['useMissingStrands']
-
-        if 'treatMissingAsPositive' in kwargs:
-            self._treatMissingAsPositive = kwargs['treatMissingAsPositive']
-
-        # Value handling
-        if 'mergeValues' in kwargs:
-            self._mergeValues = kwargs['mergeValues']
-
-        if 'mergeValuesFunction' in kwargs:
-            self._mergeValuesFunction = kwargs['mergeValuesFunction']
-
-        # Link handling
-        if 'mergeLinks' in kwargs:
-            self._mergeLinks = kwargs['mergeLinks']
-
-        # TODO makeIdsUnique
-        if 'makeLinksUnique' in kwargs:
-            self._makeLinksUnique = kwargs['makeLinksUnique']
-
-        if 'trackALinkTag' in kwargs:
-            self._trackALinkTag = kwargs['trackALinkTag']
-
-        if 'trackBLinkTag' in kwargs:
-            self._trackBLinkTag = kwargs['trackBLinkTag']
-
     def preCalculation(self, tracks):
-
         if self._makeLinksUnique:
             t1 = tracks[0]
             t2 = tracks[1]
 
             if self._trackALinkTag is not None:
-                u = UniquifyLinks(t1, trackIdentifier=self._trackALinkTag)
+                u = UniquifyLinks(t1, identifier=self._trackALinkTag)
                 t1 = u.calculate()
             else:
-                u = UniquifyLinks(t1, trackIdentifier="track-1")
+                u = UniquifyLinks(t1, identifier="track-1")
                 t1 = u.calculate()
 
             if self._trackBLinkTag is not None:
-                u = UniquifyLinks(t2, trackIdentifier=self._trackALinkTag)
+                u = UniquifyLinks(t2, identifier=self._trackALinkTag)
                 t2 = u.calculate()
             else:
-                u = UniquifyLinks(t2, trackIdentifier="track-2")
+                u = UniquifyLinks(t2, identifier="track-2")
                 t2 = u.calculate()
 
-            return t1, t2
+            return [t1, t2]
 
         else:
             return tracks
 
     def postCalculation(self, track):
 
-        if not self._resultAllowOverlaps:
+        if not self._resultAllowOverlap:
             print("Removing overlap in result!!")
             # Overlap not allowed in the result. Using merge to remove it
-            m = Merge(track, both=True, mergeValues=self._mergeValues,
-                      useStrands=True,
-                      mergeLinks=True, allowOverlap=False)
+            m = Merge(track, both=True, useStrands=True, allowOverlap=False)
             res = m.calculate()
             return res
         else:
             return track
 
-    def _updateTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks as input, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        if self._allowOverlap:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
-
-    def _updateResultTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks in the result, we need to
-        update the track requirement as well.
-        :return: None
-        """
-
-        pass
-
-        # TODO, the compatible with test breaks this.
-        """
-        if self._resultAllowOverlaps:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
-        """
     @classmethod
     def createSubParser(cls, subparsers):
         """
@@ -201,34 +153,6 @@ class Union(Operator):
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
         parser.set_defaults(which='Union')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        trackA = createTrackContentFromFile(genome, args.trackA,
-                                            args.allowOverlap)
-        trackB = createTrackContentFromFile(genome, args.trackB,
-                                            args.allowOverlap)
-
-        allowOverlap = args.allowOverlap
-        # TODO: use overlap...
-
-        return Union(trackA, trackB)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Track name used by GTools when saving the track i GTrackCore
-        :return: Generated track name as a string
-        """
-        return "union-{0}".format(int(time.time()))
 
     def printResult(self):
         pass
