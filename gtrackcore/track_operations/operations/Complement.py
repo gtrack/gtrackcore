@@ -26,23 +26,26 @@ class Complement(Operator):
     def __init__(self, *args, **kwargs):
         self._kwargs = kwargs
         self._options = {'debug': False,
+                         'allowOverlaps': False,
+                         'resultAllowOverlap': False,
                          'trackFormatReqChangeable': False,
                          'resultTrackFormatReqChangeable': False
                          }
 
         self._tracks = args
-        self._trackFormat = args[0]
+        self._trackFormat = args[0].trackFormat
 
         self._numTracks = 1
         self._resultIsTrack = True
 
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
+        # Complement supports all non-dense tracks (Segments and points)
+        # Any overlap must be merged before.
+        self._trackRequirements = [TrackFormatReq(dense=False,
+                                                  allowOverlaps=False)]
 
-        self._resultTrackRequirements = TrackFormatReq(dense=False,
-                                                       allowOverlaps=False,
-                                                       val=False,
-                                                       linked=False)
+        # The result will always be a segment track.
+        self._resultTrackRequirements = TrackFormatReq(name="Segments",
+                                                       allowOverlaps=False)
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
