@@ -28,7 +28,8 @@ class ExpandTest(unittest.TestCase):
                  expEdges=None, expWeights=None, customChrLength=None,
                  allowOverlap=True, resultAllowOverlap=False, start=None,
                  end=None, both=None, useFraction=False, useStrands=False,
-                 treatMissingAsNegative=False, debug=False):
+                 treatMissingAsNegative=False, debug=False,
+                 expTrackFormatType=None):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
                                              valList=values,
@@ -36,6 +37,10 @@ class ExpandTest(unittest.TestCase):
                                              idList=ids, edgeList=edges,
                                              weightsList=weights,
                                              customChrLength=customChrLength)
+
+        print("*********")
+        print(track.trackFormat)
+        print("*********")
 
         s = Expand(track, both=both, start=start, end=end,
                    useFraction=useFraction, useStrands=useStrands,
@@ -72,6 +77,15 @@ class ExpandTest(unittest.TestCase):
                     print("expIds: {}".format(expIds))
                     print("newEdges: {}".format(newEdges))
                     print("expEdges: {}".format(expEdges))
+
+                if expTrackFormatType is not None:
+                    # Check that the track is of the expected type.
+                    self.assertTrue(v.trackFormat.getFormatName() ==
+                                    expTrackFormatType)
+
+                if expEnds is None:
+                    # Assuming a point type track. Creating the expected ends.
+                    expEnds = np.array(expStarts) + 1
 
                 if expStarts is not None:
                     self.assertTrue(newStarts is not None)
@@ -130,319 +144,481 @@ class ExpandTest(unittest.TestCase):
     # **** Test Points ****
     # Just doing some simple test. When giving Slop a point track we return
     # a segment track. For each point we get a new segment.
-    def testPoints(self):
-        # Test of start
-        self._runTest(starts=[10], ends=[11], expStarts=[5], expEnds=[11],
-                      start=5, resultAllowOverlap=True, debug=True)
+    def testPointsStart(self):
+        """
+        Expand at the start of a point
+        :return:
+        """
+        self._runTest(starts=[10], expStarts=[5], expEnds=[11],
+                      start=5, expTrackFormatType="Segments")
 
-        # Test of end
-        self._runTest(starts=[10], ends=[11], expStarts=[10], expEnds=[16],
-                      end=5, resultAllowOverlap=True)
-        # Test of both
-        self._runTest(starts=[10], ends=[11], expStarts=[5], expEnds=[16],
-                      both=5, resultAllowOverlap=True)
+    def testPointsEnd(self):
+        """
+        Expand at the end of a point
+        :return:
+        """
+        self._runTest(starts=[10], expStarts=[10], expEnds=[16],
+                      end=5, expTrackFormatType="Segments")
 
-        # test of star and end
-        self._runTest(starts=[10], ends=[11], expStarts=[5], expEnds=[16],
-                      start=5, end=5, resultAllowOverlap=True)
+    def testPointsBoth(self):
+        """
+        Expand a point at both sides
+        :return:
+        """
+        self._runTest(starts=[10], expStarts=[5], expEnds=[16],
+                      both=5, expTrackFormatType="Segments")
 
-        # test of star and end. Different values
-        self._runTest(starts=[10], ends=[11], expStarts=[6], expEnds=[21],
-                      start=4, end=10, resultAllowOverlap=True)
+    def testPointsStartAndEnd(self):
+        """
+        Expand point a start and end
+        :return:
+        """
+        self._runTest(starts=[10], expStarts=[5], expEnds=[16],
+                      start=5, end=5, expTrackFormatType="Segments")
+
+    def testPointsStartAndEndDiff(self):
+        """
+        Expand point a start and end using different values
+        :return:
+        """
+        self._runTest(starts=[10], expStarts=[6], expEnds=[21],
+                      start=4, end=10, expTrackFormatType="Segments")
 
     # **** Test Segments ****
-    def testSegmentSimple(self):
+    def testSegmentSimpleStart(self):
         """
+        Test expanding at the start of a segment
         :return: None
         """
-        # Test of start
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[20],
-                      start=5, resultAllowOverlap=True)
+                      start=5, expTrackFormatType="Segments")
 
-        # Test of end
-        self._runTest(starts=[10], ends=[20], expStarts=[10], expEnds=[25],
-                      end=5, resultAllowOverlap=True)
-
-        # Test of bofh
-        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
-                      both=5, resultAllowOverlap=True)
-
-        # test of star and end
-        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
-                      start=5, end=5, resultAllowOverlap=True,)
-
-        # test of star and end. Different values
-        self._runTest(starts=[10], ends=[20], expStarts=[6], expEnds=[35],
-                      start=4, end=15, resultAllowOverlap=True)
-
-    def testSegmentsOverAndUnderflow(self):
+    def testSegmentSimpleEnd(self):
         """
+        Test expanding at the end of a segment
+        :return:
+        """
+        self._runTest(starts=[10], ends=[20], expStarts=[10], expEnds=[25],
+                      end=5, expTrackFormatType="Segments")
+
+    def testSegmentSimpleBoth(self):
+        """
+        Test expanding a segment at both ends
+        :return:
+        """
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
+                      both=5, expTrackFormatType="Segments")
+
+    def testSegmentSimpleStartAndEnd(self):
+        """
+        Test expanding a segment at the start and end
+        :return:
+        """
+        self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
+                      start=5, end=5, expTrackFormatType="Segments")
+
+    def testSegmentSimpleStartAndEndDiff(self):
+        """
+        Test expanding a segment at the start and end using different values
+        :return:
+        """
+        self._runTest(starts=[10], ends=[20], expStarts=[6], expEnds=[35],
+                      start=4, end=15, expTrackFormatType="Segments")
+
+    def testUnderflowAtStart(self):
+        """
+        Test that a new segment can start at 0
         :return: None
         """
-        # Underflow.
-        # New start at 0
         self._runTest(starts=[10], ends=[20], expStarts=[0], expEnds=[20],
-                      start=10, resultAllowOverlap=True)
+                      start=10, expTrackFormatType="Segments")
 
-        # Cutting underflow
+    def testUnderflowCut(self):
+        """
+        Test that a segment bellow 0 is cut
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], expStarts=[0], expEnds=[20],
-                      start=100, resultAllowOverlap=True)
+                      start=100, expTrackFormatType="Segments")
 
-        # Start at 0
+    def testUnderflowFromStart(self):
+        """
+        Test that the underflow is cut when the start is at 0
+        :return:
+        """
         self._runTest(starts=[0], ends=[20], expStarts=[0], expEnds=[20],
-                      start=10, resultAllowOverlap=True)
+                      start=10, expTrackFormatType="Segments")
 
-        # Overflow
-        # New end at len(region)
+    def testOverflowAtEnd(self):
+        """
+        Test that a new end can be at the len(region)
+        :return:
+        """
         self._runTest(starts=[400000], ends=[len(self.chr1)-20],
                       expStarts=[400000], expEnds=[len(self.chr1)], end=20,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Cuting overflow to region size
+    def testOverflowCut(self):
+        """
+        Test that a segments over the region size are cut down to the region
+        size.
+        :return:
+        """
         self._runTest(starts=[400000], ends=[len(self.chr1)-20],
                       expStarts=[400000], expEnds=[len(self.chr1)], end=300,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-    def atestSegmentsMultiple(self):
+    def testSegmentsMultipleStartNoOverlap(self):
         """
-        Tests slop on multiple tracks. Some overlap. Test merge of the overlap
+        Using start
+        Test expand on multiple segments. No overlap
         :return: None
         """
-        # Start, multiple, no overlap.
-        self._runTest(starts=[10,40], ends=[20, 70], expStarts=[5,35],
-                      expEnds=[20,70], start=5, resultAllowOverlap=True)
+        self._runTest(starts=[10,40], ends=[20,70], expStarts=[5,35],
+                      expEnds=[20,70], start=5, expTrackFormatType="Segments")
 
-        # End, multiple, no overlap.
+    def testSegmentsMultipleEndNoOverlap(self):
+        """
+        Using end
+        Test expand on multiple segments. No overlap
+        :return: None
+        """
         self._runTest(starts=[10,40], ends=[20, 70], expStarts=[10,40],
-                      expEnds=[25,75], end=5, resultAllowOverlap=True)
+                      expEnds=[25,75], end=5, expTrackFormatType="Segments")
 
-        # Start, multiple, overlap, allow overlap in result.
-        self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4,14],
-                      expEnds=[15,40], start=6, resultAllowOverlap=True)
-
-    def testSegmentsMultiple(self):
-        # Start, multiple, overlap, merge overlap in result.
-        self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4],
-                      expEnds=[40], start=6, resultAllowOverlap=False, debug=True)
-
-    # test overlap in input
-
-    def testSegmentsWithStrands(self):
+    def testSegmentsMultipleStartOverlapAllow(self):
         """
+        Using start
+        Test expand on multiple segments. Overlap, allow
         :return: None
         """
+        self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4,14],
+                      expEnds=[15,40], start=6, resultAllowOverlap=True,
+                      expTrackFormatType="Segments")
 
+    def testSegmentsMultipleStartOverlapMerge(self):
+        """
+        Using start
+        Test expand on multiple segments. Overlap, merge
+        :return: None
+        """
+        self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4],
+                      expEnds=[40], start=6, resultAllowOverlap=False,
+                      expTrackFormatType="Segments")
+
+    def testStrandsPositiveStart(self):
+        """
+        Using strand, positive at the start.
+        :return: None
+        """
         # Positive, start
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
                       expEnds=[20], expStrands=['+'], start=5, useStrands=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Positive, end
+    def testStrandsPositiveEnd(self):
+        """
+        Using strand, positive at the end.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[10],
                       expEnds=[25], expStrands=['+'], end=5, useStrands=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Positive, both
+    def testStrandsPositiveBoth(self):
+        """
+        Using strand, positive at both ends
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
                       expEnds=[25], expStrands=['+'], both=5, useStrands=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Positive, start and end
+    def testStrandsPositiveStartAndEnd(self):
+        """
+        Using strand, positive at start and end
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
                       expEnds=[30], expStrands=['+'], start=5, end=10,
-                      useStrands=True, resultAllowOverlap=True)
+                      useStrands=True, expTrackFormatType="Segments")
 
-        # Negative, start
+    def testStrandsNegativeStart(self):
+        """
+        Using strand, negative at start
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[10],
                       expEnds=[25], expStrands=['-'], start=5, useStrands=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Negative, end
+    def testStrandsNegativeEnd(self):
+        """
+        Using strand, negative at end
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
                       expEnds=[20], expStrands=['-'], end=5, useStrands=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Negative, both
+    def testStrandsNegativeBoth(self):
+        """
+        Using strand, negative at both ends
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
                       expEnds=[25], expStrands=['-'], both=5, useStrands=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Negative, start and end
+    def testStrandsNegativeStartAndEndDifferent(self):
+        """
+        Using strand, negative at start and end, different values
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
                       expEnds=[30], expStrands=['-'], start=10, end=5,
-                      useStrands=True, resultAllowOverlap=True)
+                      useStrands=True, expTrackFormatType="Segments")
 
-        # Strand missing. As positive, start
+    def testStrandsMissingStart(self):
+        """
+        Using strand, at start. Strand info missing. Treating as positive.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[20], expStrands=['.'], start=5, useStrands=True,
-                      useMissingStrands=True, resultAllowOverlap=True)
+                      expEnds=[20], expStrands=['+'], start=5,
+                      useStrands=True, expTrackFormatType="Segments")
 
-        # Strand missing. As positive, end
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
-                      expEnds=[25], expStrands=['.'], end=5, useStrands=True,
-                      useMissingStrands=True, resultAllowOverlap=True)
-
-        # Strand missing. As positive, both
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[25], expStrands=['.'], both=5, useStrands=True,
-                      useMissingStrands=True, resultAllowOverlap=True)
-
-        # Strand missing. As positive, start and end
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[30], expStrands=['.'], start=5, end=10,
-                      useStrands=True, useMissingStrands=True,
-                      resultAllowOverlap=True)
-
-        # Strand missing. As negative, start
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
-                      expEnds=[25], expStrands=['.'], start=5, useStrands=True,
-                      useMissingStrands=True, treatMissingAsNegative=True,
-                      resultAllowOverlap=True)
-
-        # Strand missing. As negative, end
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[20], expStrands=['.'], end=5, useStrands=True,
-                      useMissingStrands=True, treatMissingAsNegative=True,
-                      resultAllowOverlap=True)
-
-        # Strand missing. As negative, both
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[25], expStrands=['.'], both=5, useStrands=True,
-                      useMissingStrands=True, treatMissingAsNegative=True,
-                      resultAllowOverlap=True)
-
-        # Strand missing. As negative, start and end
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[0],
-                      expEnds=[25], expStrands=['.'], start=5, end=10,
-                      useStrands=True, useMissingStrands=True,
-                      treatMissingAsNegative=True, resultAllowOverlap=True)
-
-        # Strand missing. As positive, start, keeping strand
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[20], expStrands=['+'], start=5, useStrands=True,
-                      useMissingStrands=True, updateMissingStrand=True,
-                      resultAllowOverlap=True)
-
-        # Strand missing. As positive, end
+    def testStrandsMissingEnd(self):
+        """
+        Using strand, at end. Strand info missing. Treating as positive.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
                       expEnds=[25], expStrands=['+'], end=5, useStrands=True,
-                      useMissingStrands=True, updateMissingStrand=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Strand missing. As positive, both
+    def testStrandsMissingBoth(self):
+        """
+        Using strand, at both ends. Strand info missing. Treating as positive.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
                       expEnds=[25], expStrands=['+'], both=5, useStrands=True,
-                      useMissingStrands=True, updateMissingStrand=True,
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Segments")
 
-        # Strand missing. As positive, start and end
+    def testStrandsMissingStartAndEnds(self):
+        """
+        Using strand, at start and ends. Strand info missing. Treating as
+        positive.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
                       expEnds=[30], expStrands=['+'], start=5, end=10,
-                      useStrands=True, useMissingStrands=True,
-                      updateMissingStrand=True, resultAllowOverlap=True)
+                      useStrands=True, expTrackFormatType="Segments")
 
-        # Strand missing. As negative, start
+    def testStrandsMissingAsNegativeStart(self):
+        """
+        Using strand, at start. Strand info missing. Treating as
+        negative.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
                       expEnds=[25], expStrands=['-'], start=5, useStrands=True,
-                      useMissingStrands=True, treatMissingAsNegative=True,
-                      updateMissingStrand=True, resultAllowOverlap=True)
+                      treatMissingAsNegative=True,
+                      expTrackFormatType="Segments")
 
-        # Strand missing. As negative, end
+    def testStrandsMissingAsNegativeEnd(self):
+        """
+        Using strand, at end. Strand info missing. Treating as
+        negative.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
                       expEnds=[20], expStrands=['-'], end=5, useStrands=True,
-                      useMissingStrands=True, treatMissingAsNegative=True,
-                      updateMissingStrand=True, resultAllowOverlap=True)
+                      treatMissingAsNegative=True,
+                      expTrackFormatType="Segments")
 
-        # Strand missing. As negative, both
+    def testStrandsMissingAsNegativeBoth(self):
+        """
+        Using strand, at both. Strand info missing. Treating as
+        negative.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
                       expEnds=[25], expStrands=['-'], both=5, useStrands=True,
-                      useMissingStrands=True, treatMissingAsNegative=True,
-                      updateMissingStrand=True, resultAllowOverlap=True)
+                      treatMissingAsNegative=True,
+                      expTrackFormatType="Segments")
 
-        # Strand missing. As negative, start and end
+    def testStrandsMissingAsNegativeStartAndEnd(self):
+        """
+        Using strand, at both. Strand info missing. Treating as
+        negative.
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[0],
                       expEnds=[25], expStrands=['-'], start=5, end=10,
-                      useStrands=True, useMissingStrands=True,
-                      treatMissingAsNegative=True, updateMissingStrand=True,
-                      resultAllowOverlap=True)
+                      useStrands=True, treatMissingAsNegative=True,
+                      expTrackFormatType="Segments")
 
-        # Strand missing. Ignoring
-        self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
-                      expEnds=[20], expStrands=['.'], start=5, useStrands=True,
-                      useMissingStrands=False, resultAllowOverlap=True)
-
-    def testSegmentsOverlap(self):
+    def testOverlapStartAllow(self):
         """
-        Test that we get overlapping segments and that they are merged
-        correctly.
+        Using start
+        Overlapping segments after expand. We allow overlap in the result.
+        Check that we get the correct segment.
         :return: None
         """
-
-        # Test of start, allow overlap in result
         self._runTest(starts=[10,25], ends=[20,30], expStarts=[4,19],
-                      expEnds=[20,30], start=6, resultAllowOverlap=True)
+                      expEnds=[20,30], start=6, resultAllowOverlap=True,
+                      expTrackFormatType="Segments")
 
-        # Test of start, merge overlap in result
+    def testOverlapStartMerge(self):
+        """
+        Using start
+        Overlapping segments after expand. Check that they are merge
+        correctly if we do not allow overlap.
+        :return:
+        """
         self._runTest(starts=[10,25], ends=[20,30], expStarts=[4],
-                      expEnds=[30], start=6, resultAllowOverlap=False)
+                      expEnds=[30], start=6, resultAllowOverlap=False,
+                      expTrackFormatType="Segments")
 
-        # Test of end, allow overlap in result
+    def testOverlapEndAllow(self):
+        """
+        Using end
+        Overlapping segments after expand. We allow overlap in the result.
+        Check that we get the correct segment.
+        :return: None
+        """
         self._runTest(starts=[10,24], ends=[20,100], expStarts=[10, 24],
-                      expEnds=[25,105], end=5, resultAllowOverlap=True)
+                      expEnds=[25,105], end=5, resultAllowOverlap=True,
+                      expTrackFormatType="Segments")
 
-        # Test of end, merge overlap in result
+    def testOverlapEndMerge(self):
+        """
+        Using end
+        Overlapping segments after expand. Check that they are merge
+        correctly if we do not allow overlap.
+        :return:
+        """
         self._runTest(starts=[10,24], ends=[20,100], expStarts=[10],
-                      expEnds=[105], end=5, resultAllowOverlap=False)
+                      expEnds=[105], end=5, resultAllowOverlap=False,
+                      expTrackFormatType="Segments")
 
-        # Test of both, allow overlap in result
+    def testOverlapBothAllow(self):
+        """
+        Using both
+        Overlapping segments after expand. We allow overlap in the result.
+        Check that we get the correct segment.
+        :return: None
+        """
         self._runTest(starts=[10,22], ends=[20,30], expStarts=[5,17],
-                      expEnds=[25,35], both=5, resultAllowOverlap=True)
+                      expEnds=[25,35], both=5, resultAllowOverlap=True,
+                      expTrackFormatType="Segments")
 
-        # Test of both, merge overlap in result
+    def testOverlapBothMerge(self):
+        """
+        Using both
+        Overlapping segments after expand. Check that they are merge
+        correctly if we do not allow overlap.
+        :return:
+        """
         self._runTest(starts=[10,22], ends=[20,30], expStarts=[5],
-                      expEnds=[35], both=5, resultAllowOverlap=False)
+                      expEnds=[35], both=5, resultAllowOverlap=False,
+                      expTrackFormatType="Segments")
 
-        # test of star and end, allow overlap in result
+    def testOverlapStartAndEndAllow(self):
+        """
+        Using start and end
+        Overlapping segments after expand. We allow overlap in the result.
+        Check that we get the correct segment.
+        :return: None
+        """
         self._runTest(starts=[10,22], ends=[20,30], expStarts=[5,17],
                       expEnds=[25,35], start=5, end=5,
-                      resultAllowOverlap=True)
+                      resultAllowOverlap=True, expTrackFormatType="Segments")
 
-        # test of star and end, merge overlap
+    def testOverlapStartAndEndMerge(self):
+        """
+        Using start and end
+        Overlapping segments after expand. Check that they are merge
+        correctly if we do not allow overlap.
+        :return:
+        """
         self._runTest(starts=[10,22], ends=[20,30], expStarts=[5],
-                      expEnds=[35], start=5, end=5, resultAllowOverlap=False)
+                      expEnds=[35], start=5, end=5, resultAllowOverlap=False,
+                      expTrackFormatType="Segments")
 
-        # test of star and end. Different values, allow overlap in result
+    def testOverlapStartAndEndAllowDiff(self):
+        """
+        Using start and end, different values
+        Overlapping segments after expand. We allow overlap in the result.
+        Check that we get the correct segment.
+        :return: None
+        """
         self._runTest(starts=[10,37], ends=[20,50], expStarts=[6],
                       expEnds=[65], start=4, end=15,
-                      resultAllowOverlap=False, debug=True)
+                      resultAllowOverlap=False, expTrackFormatType="Segments")
 
-        # test of star and end. Different values, merge overlap in result
+    def testOverlapStartAndEndMergeDiff(self):
+        """
+        Using start and end, different values
+        Overlapping segments after expand. Check that they are merge
+        correctly if we do not allow overlap.
+        :return:
+        """
         self._runTest(starts=[10,37], ends=[20,50], expStarts=[6],
                       expEnds=[65], start=4, end=15,
-                      resultAllowOverlap=False, debug=True)
+                      resultAllowOverlap=False, expTrackFormatType="Segments")
 
-    def testFractions(self):
-        # Test of start
+    def testFractionsStart(self):
+        """
+        Using start
+        Test expanding using a fraction of the segments length
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[20],
-                      start=0.5, useFraction=True, resultAllowOverlap=True)
+                      start=0.5, useFraction=True, resultAllowOverlap=True,
+                      expTrackFormatType="Segments")
 
-        # Test of end
+    def testFractionsEnd(self):
+        """
+        Using end
+        Test expanding using a fraction of the segments length
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], expStarts=[10], expEnds=[25],
-                      end=0.5, useFraction=True, resultAllowOverlap=True)
+                      end=0.5, useFraction=True, resultAllowOverlap=True,
+                      expTrackFormatType="Segments")
 
-        # Test of both
+    def testFractionsBoth(self):
+        """
+        Using both
+        Test expanding using a fraction of the segments length
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
-                      both=0.5, useFraction=True, resultAllowOverlap=True)
+                      both=0.5, useFraction=True, resultAllowOverlap=True,
+                      expTrackFormatType="Segments")
 
-        # test of star and end
+    def testFractionsStartAndEnd(self):
+        """
+        Using start and end
+        Test expanding using a fraction of the segments length
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
                       start=0.5, end=0.5, useFraction=True,
-                      resultAllowOverlap=True,)
+                      resultAllowOverlap=True, expTrackFormatType="Segments")
 
-        # test of star and end. Different values
+    def testFractionsStartAndEndDiff(self):
+        """
+        Using start and end, different values
+        Test expanding using a fraction of the segments length
+        :return:
+        """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[30],
                       start=0.5, end=1, useFraction=True,
-                      resultAllowOverlap=True)
+                      resultAllowOverlap=True, expTrackFormatType="Segments")
 
     def testSegmentsResorting(self):
         """
@@ -471,7 +647,66 @@ class ExpandTest(unittest.TestCase):
         self._runTest(starts=[5,10], ends=[8,15], strands=['-','+'],
                       start=6, expStarts=[4,5], expEnds=[15,14],
                       expStrands=['+','-'], useStrands=True,
-                      resultAllowOverlap=True, debug=True)
+                      resultAllowOverlap=True, expTrackFormatType="Segments")
+
+    # *** Test track input ***
+    # Test that the different information is saved into the new track
+    def testInputValuedPoints(self):
+        """
+        Test that the values are kept.
+        :return:
+        """
+        self._runTest(starts=[10], values=[100], end=10, expStarts=[10],
+                      expEnds=[21], expValues=[100],
+                      expTrackFormatType="Valued segments",
+                      debug=True)
+
+    def testInputLinkedPoints(self):
+        """
+        Test linked points as input
+        :return:
+        """
+        self._runTest(starts=[10], ids=['1'], edges=['1'], end=10,
+                      expStarts=[10], expEnds=[21], expIds=['1'],
+                      expEdges=['1'], expTrackFormatType="Linked segments")
+
+    def testInputLinkedValuedPoints(self):
+        """
+        Test linked valued points as input
+        :return:
+        """
+        self._runTest(starts=[10], values=[100], ids=['1'], edges=['1'],
+                      end=10, expStarts=[10], expEnds=[21], expValues=[100],
+                      expIds=['1'], expEdges=['1'],
+                      expTrackFormatType="Linked valued segments",)
+
+    def testInputValuedSegments(self):
+        """
+        Test Valued segments as input
+        :return:
+        """
+        self._runTest(starts=[10], ends=[20], values=[100], end=10,
+                      expStarts=[10], expEnds=[30], expValues=[100],
+                      expTrackFormatType="Valued segments",)
+
+    def testInputLinkedSegments(self):
+        """
+        Test Linked segments as input
+        :return:
+        """
+        self._runTest(starts=[10], ends=[20], ids=['1'], edges=['1'],
+                      end=10, expStarts=[10], expEnds=[30], expIds=['1'],
+                      expEdges=['1'], expTrackFormatType="Linked segments",)
+
+    def testInputLinkedValuedSegments(self):
+        """
+        Test Linked valued segments as inpout
+        :return:
+        """
+        self._runTest(starts=[10], ends=[20], values=[100], ids=['1'],
+                      edges=['1'], end=10, expStarts=[10], expEnds=[30],
+                      expValues=[100], expIds=['1'], expEdges=['1'],
+                      expTrackFormatType="Linked valued segments",)
 
 if __name__ == "__main__":
     unittest.main()
