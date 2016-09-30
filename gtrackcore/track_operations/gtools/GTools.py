@@ -13,6 +13,7 @@ from gtrackcore.track_operations.utils.TrackHandling import importTrackIntoGTrac
 from gtrackcore.track_operations.Genome import Genome
 
 from gtrackcore.core.Api import importFile
+from gtrackcore.core.Api import exportFile
 
 from gtrackcore.metadata import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
@@ -55,6 +56,18 @@ class GTools(object):
         elif operation == 'import':
             genome = Genome.createFromJson(self._args.genome)
             importTrackIntoGTrack(self._args.name, genome, self._args.path)
+
+        elif operation == 'export':
+
+            #genome = Genome.createFromJson(self._args.genome)
+
+            # fileFormatName = GTrack
+
+            exportFile(outFileName=self._args.outName,
+                       genome=self._args.genome,
+                       trackName=self._args.name,
+                       fileFormatName='GTrack',
+                       allowOverlaps=self._args.allowOverlaps)
 
         else:
             assert operation in self._importedOperations.keys()
@@ -154,6 +167,14 @@ class GTools(object):
         imp.add_argument('path', help="File path of track")
         imp.add_argument('name', help="Name of the track")
         imp.set_defaults(which='import')
+
+        exp = subparsers.add_parser('export', help='Export track to disk')
+        exp.add_argument('genome', help='Name of genome')
+        exp.add_argument('name', help='Name of the track')
+        exp.add_argument('allowOverlaps', action='store_true',
+                         help='Name of the track')
+        exp.add_argument('outName', help='File name of track')
+        exp.set_defaults(which='export')
 
         for operation in self._importedOperations.values():
             operation.createSubParser(subparsers)
