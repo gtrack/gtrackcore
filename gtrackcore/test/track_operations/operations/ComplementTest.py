@@ -62,7 +62,8 @@ class ComplementTest(unittest.TestCase):
                     print("expEnds: {}".format(expEnds))
 
                 if expTrackFormatType is not None:
-                    assert v.trackFormat.getFormatName() == expTrackFormatType
+                    self.assertTrue(v.trackFormat.getFormatName() ==
+                                    expTrackFormatType)
 
                 if expEnds is None:
                     # Assuming a point type track. Creating the expected ends.

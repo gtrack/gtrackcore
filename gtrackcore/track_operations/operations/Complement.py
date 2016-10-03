@@ -26,7 +26,7 @@ class Complement(Operator):
     def __init__(self, *args, **kwargs):
         self._kwargs = kwargs
         self._options = {'debug': False,
-                         'allowOverlaps': False,
+                         'allowOverlap': False,
                          'resultAllowOverlap': False,
                          'trackFormatReqChangeable': False,
                          'resultTrackFormatReqChangeable': False
