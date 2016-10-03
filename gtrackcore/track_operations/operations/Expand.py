@@ -41,22 +41,19 @@ class Expand(Operator):
                          }
         # Save the tracks
         self._tracks = args[0]
+        self._trackFormat = self._tracks.trackFormat
 
         # Core properties
         self._numTracks = 1
         self._resultIsTrack = True
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
-        self._resultTrackRequirements = self._trackRequirements[0]
 
-        # Remove these.
-        # Keep the values and links from the base track.
-        # self._keepValuesAndLinks = True
-        # Strand handling
-        # self._useMissingStrands = True
-        # self._ignorePositive = False
-        # self._ignoreNegative = False
-        # self._updateMissingStrand = False
+        # Input need to be a none dense track
+        self._trackRequirements = [TrackFormatReq(dense=False)]
+
+        # TrackResultReq is always a segment type
+        self._resultTrackRequirements = TrackFormatReq(
+            name=self._trackFormat.getFormatName(),
+            allowOverlaps=self._resultAllowOverlaps)
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -90,7 +87,8 @@ class Expand(Operator):
             return createRawResultTrackView(ret[3], region, tv,
                                             self._resultAllowOverlap,
                                             newStarts=ret[0], newEnds=ret[1],
-                                            newStrands=ret[2])
+                                            newStrands=ret[2],
+                                            trackFormatReq=self.resultTrackRequirements)
         else:
             return None
 
@@ -98,9 +96,7 @@ class Expand(Operator):
         return track
 
     def postCalculation(self, track):
-        # TODO call merge.
         if not self._resultAllowOverlap:
-            print("Removing overlap in result!!")
             # Overlap not allowed in the result. Using merge to remove it
             m = Merge(track, both=True, mergeValues=True,
                       useStrands=self._useStrands,
