@@ -49,7 +49,6 @@ def averageLinkWeight(weights, customAverageFunction=None):
             # type the weights have.
             avgPerWeight = np.array([customAverageFunction(x) for x in weights])
             return customAverageFunction(avgPerWeight)
-
         # The calculations is equal for list, pairs and vectors.
         elif isinstance(first[0], (bool, np.bool_)):
             # Average of a boolean.. Return the all(weight) for now.
@@ -58,12 +57,10 @@ def averageLinkWeight(weights, customAverageFunction=None):
         elif isinstance(first[0], (int, long, float)):
             # Number
             avgPerWeight = np.array([np.nanmean(x) for x in weights])
-            print(avgPerWeight)
             return np.nanmean(avgPerWeight)
         else:
             # character or category
             raise NotImplementedError
-
     else:
         # Scalar
         if customAverageFunction is not None:
