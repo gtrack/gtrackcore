@@ -23,8 +23,9 @@ class ComplementTest(unittest.TestCase):
                             GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
     def _runTest(self, starts=None, ends=None, strands=None, values=None,
-                 ids=None, edges=None, weights=None, expStarts=None,
-                 expEnds=None, expNoResult=False, expTrackFormatType=None,
+                 ids=None, edges=None, weights=None, useStrands=True,
+                 treatMissingAsNegative=False, expStarts=None, expEnds=None,
+                 expStrands=None, expNoResult=False, expTrackFormatType=None,
                  customChrLength=None, debug=False):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
@@ -34,7 +35,9 @@ class ComplementTest(unittest.TestCase):
                                              weightsList=weights,
                                              customChrLength=customChrLength)
 
-        c = Complement(track, debug=debug)
+        c = Complement(track, useStrands=useStrands,
+                       treatMissingAsNegative=treatMissingAsNegative,
+                       debug=debug)
 
         self.assertTrue((c is not None))
 
@@ -69,16 +72,23 @@ class ComplementTest(unittest.TestCase):
                     # Assuming a point type track. Creating the expected ends.
                     expEnds = np.array(expStarts) + 1
 
+
                 self.assertTrue(newStarts is not None)
                 self.assertTrue(np.array_equal(newStarts, expStarts))
 
                 self.assertTrue(newEnds is not None)
                 self.assertTrue(np.array_equal(newEnds, expEnds))
 
+                if useStrands:
+                    if expStrands is not None:
+                        self.assertTrue(np.array_equal(newStrands, expStrands))
+                    else:
+                        self.assertTrue(newStrands is None)
+                else:
+                    self.assertTrue(newStrands is None)
                 # Complement removes all other information.
                 # Test that none of it is left
                 self.assertTrue(newValues is None)
-                self.assertTrue(newStrands is None)
                 self.assertTrue(newIds is None)
                 self.assertTrue(newEdges is None)
                 self.assertTrue(newWeights is None)
@@ -203,6 +213,61 @@ class ComplementTest(unittest.TestCase):
         self._runTest(starts=[1], ends=[len(self.chr1)], expStarts=[0],
                       expEnds=[1], expTrackFormatType="Segments")
 
+    # **** Tests using strands ****
+    def testStrandsOnlyPositive(self):
+        """
+        Test using the strand. Only positive
+        :return:
+        """
+        self._runTest(starts=[40, 500], ends=[200, 600],
+                      strands=['+','+'], useStrands=True,
+                      expStarts=[0,200,600], expEnds=[40,500,len(self.chr1)],
+                      expStrands=['+','+','+'], expTrackFormatType="Segments")
+
+    def testStrandsOnlyNegative(self):
+        """
+        Test using the strand. Only negative
+        :return:
+        """
+        self._runTest(starts=[40, 500], ends=[200, 600],
+                      strands=['-','-'], useStrands=True,
+                      expStarts=[0,200,600], expEnds=[40,500,len(self.chr1)],
+                      expStrands=['-','-','-'], expTrackFormatType="Segments")
+
+    def testStrandsMixed(self):
+        """
+        Test using the strand. Mix of positive and negative
+        :return:
+        """
+        self._runTest(starts=[40, 500], ends=[200, 600],
+                      strands=['+','-'], useStrands=True,
+                      expStarts=[0,0,200,600],
+                      expEnds=[40,500,len(self.chr1),len(self.chr1)],
+                      expStrands=['+','-','+','-'],
+                      expTrackFormatType="Segments")
+
+    def testStrandsMissingDefault(self):
+        """
+        Test with missing strand info, treating as positive (default)
+        :return:
+        """
+        self._runTest(starts=[40, 500], ends=[200, 600],
+                      strands=['+','.'], useStrands=True,
+                      expStarts=[0,200,600], expEnds=[40,500,len(self.chr1)],
+                      expStrands=['+','+','+'], expTrackFormatType="Segments")
+
+    def testStrandsMissingAsNegative(self):
+        """
+        Test with missing strand info, treating as negative
+        :return:
+        """
+        self._runTest(starts=[40, 500], ends=[200, 600],
+                      strands=['+','.'], useStrands=True,
+                      treatMissingAsNegative=True, expStarts=[0,0,200,600],
+                      expEnds=[40,500,len(self.chr1),len(self.chr1)],
+                      expStrands=['+','-','+','-'],
+                      expTrackFormatType="Segments")
+
     # *** Other tracks as input ***
     # These tests check that the information from the other valid track types
     # are removed.
@@ -211,7 +276,7 @@ class ComplementTest(unittest.TestCase):
         Test that we get no values or strand in return
         :return:
         """
-        self._runTest(starts=[5], strands=['+'], values=[1],
+        self._runTest(starts=[5], strands=['+'], values=[1], useStrands=False,
                       expStarts=[0,6], expEnds=[5,len(self.chr1)],
                       expTrackFormatType="Segments")
 
@@ -222,7 +287,7 @@ class ComplementTest(unittest.TestCase):
         """
         self._runTest(starts=[5,10], strands=['+','-'], ids=[1,2],
                       edges=[2,1], weights=[[1],[1]], expStarts=[0,6,11],
-                      expEnds=[5,10,len(self.chr1)],
+                      expEnds=[5,10,len(self.chr1)], useStrands=False,
                       expTrackFormatType="Segments")
 
     def testInputLinkedValuedPoints(self):
@@ -232,7 +297,8 @@ class ComplementTest(unittest.TestCase):
         """
         self._runTest(starts=[5,10], strands=['+','-'], values=[1,3],
                       ids=[1,2], edges=[2,1], weights=[[1],[1]],
-                      expStarts=[0,6,11], expEnds=[5,10,len(self.chr1)],
+                      useStrands=False, expStarts=[0,6,11],
+                      expEnds=[5,10,len(self.chr1)],
                       expTrackFormatType="Segments")
 
     def testInputValuedSegments(self):
@@ -242,8 +308,7 @@ class ComplementTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[0,20], ends=[10,30], strands=['+','-'],
-                      values=[1,2],
-                      expStarts=[10,30],
+                      values=[1,2], useStrands=False, expStarts=[10,30],
                       expEnds=[20,len(self.chr1)],
                       expTrackFormatType="Segments")
 
@@ -254,7 +319,8 @@ class ComplementTest(unittest.TestCase):
         """
         self._runTest(starts=[0,20], ends=[10,30], strands=['+','-'],
                       ids=[1,2], edges=[2,1], weights=[[1],[1]],
-                      expStarts=[10,30], expEnds=[20,len(self.chr1)],
+                      useStrands=False, expStarts=[10,30],
+                      expEnds=[20,len(self.chr1)],
                       expTrackFormatType="Segments")
 
     def testInputLinkedValuedSegments(self):
@@ -265,7 +331,7 @@ class ComplementTest(unittest.TestCase):
         """
         self._runTest(starts=[0,20], ends=[10,30], strands=['+','-'],
                       values=[1,2], ids=[1,2], edges=[2,1],
-                      weights=[[1],[1]], expStarts=[10,30],
+                      weights=[[1],[1]], useStrands=False, expStarts=[10,30],
                       expEnds=[20,len(self.chr1)],
                       expTrackFormatType="Segments")
 
