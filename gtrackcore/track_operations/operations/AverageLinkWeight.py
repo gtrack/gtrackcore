@@ -29,7 +29,7 @@ class AverageLinkWeight(Operator):
         self._kwargs = kwargs
         self._options = {'debug': False,
                          'allowOverlap': True,
-                         'resultAllowOverlap': True,
+                         'resultAllowOverlap': False,
                          'customAverageFunction': None}
 
         # Save the tracks
@@ -42,9 +42,6 @@ class AverageLinkWeight(Operator):
 
         self._trackRequirements = [TrackFormatReq(linked=True)]
         self._resultTrackRequirements = None
-
-        self._resultTrackRequirements = TrackFormatReq(
-            name=self._trackFormat.getFormatName())
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
