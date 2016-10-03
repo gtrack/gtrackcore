@@ -29,7 +29,9 @@ class Complement(Operator):
                          'allowOverlap': False,
                          'resultAllowOverlap': False,
                          'trackFormatReqChangeable': False,
-                         'resultTrackFormatReqChangeable': False
+                         'resultTrackFormatReqChangeable': False,
+                         'useStrands': True,
+                         'treatMissingAsNegative': False
                          }
 
         self._tracks = args
@@ -54,20 +56,38 @@ class Complement(Operator):
 
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
+        strands = tv.strandsAsNumpyArray()
+
+        if self._useStrands and strands is not None:
+            assert strands is not None
+        else:
+            self._useStrands = False
+            strands = None
 
         # Get genome size.
         regionSize = len(region)
 
-        ret = complement(starts, ends, regionSize)
+        ret = complement(starts, ends, strands, regionSize,
+                         useStrands=self._useStrands,
+                         treatMissingAsNegative=self._treatMissingAsNegative)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
             # We do not care about info from the base track..
             # the new track will only contain the starts and ends
 
-            tv = TrackView(region, ret[0], ret[1], None, None, None,
-                           None, None, borderHandling='crop',
-                           allowOverlaps=self._allowOverlap)
+            starts = ret[0]
+            ends = ret[1]
+            strands = ret[2]
+
+            tv = createRawResultTrackView(None, region, None,
+                                          self._allowOverlap,
+                                          newStarts=starts, newEnds=ends,
+                                          newStrands=strands)
+
+            #tv = TrackView(region, ret[0], ret[1], None, None, None,
+            #               None, None, borderHandling='crop',
+            #               allowOverlaps=self._allowOverlap)
             return tv
         else:
             return None
