@@ -14,8 +14,7 @@ class AverageLength(Operator):
     def __init__(self, *args, **kwargs):
         self._kwargs = kwargs
         self._options = {'debug': False,
-                         'allowOverlap': False,
-                         'resultAllowOverlap': False,
+                         'allowOverlap': True,
                          'customAverageFunction': None
                          }
         # Save the tracks
@@ -25,8 +24,6 @@ class AverageLength(Operator):
         self._numTracks = 1
 
         self._trackFormat = args[0].trackFormat
-
-        # Problem.. How do we support multiple track types?
 
         self._trackRequirements = [TrackFormatReq(dense=False)]
         self._resultIsTrack = False
@@ -56,10 +53,9 @@ class AverageLength(Operator):
         :param subparsers:
         :return: None
         """
-        parser = subparsers.add_parser('averageLegnth', help='Find the average'
-                                                             'length '
-                                                             'of the elements'
-                                                             'in a track')
+        parser = subparsers.add_parser('averageLength',
+                                       help='Find the average length of the '
+                                            'elements in a track')
         parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
         parser.set_defaults(which='Count')
