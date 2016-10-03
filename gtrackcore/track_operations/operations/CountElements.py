@@ -12,51 +12,36 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 
 class CountElements(Operator):
 
-    def _calculate(self, region, tv):
+    def __init__(self, *args, **kwargs):
+        assert len(args) == 1
 
+        self._kwargs = kwargs
+        self._options = {'debug': False,
+                         'allowOverlap': True,
+                         'resultAllowOverlap': False,
+                         }
+
+        # Save the tracks
+        self._tracks = args
+        self._trackFormat = args[0].trackFormat
+
+        # None changeable properties
+        self._numTracks = 1
+        self._resultIsTrack = False
+
+        self._trackRequirements = [[TrackFormatReq(dense=False),
+                                   TrackFormatReq(dense=True, interval=True)]]
+        self._resultTrackRequirements = None
+
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def _calculate(self, region, tv):
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
 
         nr = countElements(starts, ends)
 
         return nr
-
-    def _parseKwargs(self, **kwargs):
-        """
-        No kwargs to parse
-        :param kwargs:
-        :return:
-        """
-        pass
-
-    def _updateResultTrackFormat(self):
-        """
-        Result is not a track. Just passing
-        :return:
-        """
-        pass
-
-    def _updateTrackFormat(self):
-        """
-        Ignore this for now. We just analyse the track as it is given.
-        If the user wants to merge segments, it can be done before calling
-        this operation.
-        :return:
-        """
-        pass
-
-    def _setConfig(self, track):
-        # None changeable properties
-        self._numTracks = 1
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=True)]
-        self._resultIsTrack = False
-
-        # Set defaults for changeable properties
-        self._allowOverlap = False
-
-        # For now the result track is always of the same type as track A
-        self._resultTrackRequirements = None
 
     def preCalculation(self, track):
         return track
@@ -71,42 +56,18 @@ class CountElements(Operator):
         :param subparsers:
         :return: None
         """
-        parser = subparsers.add_parser('countElemts', help='Find the nr of '
-                                                           'elements in a '
-                                                           'track')
+        parser = subparsers.add_parser('countElements',
+                                       help='Find the nr of elements in a '
+                                            'track')
         parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
         parser.set_defaults(which='Count')
 
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.trackA,
-                                            args.allowOverlap)
-
-        return CountElements(track)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Result is not a track so we do not care about a name
-        :param cls:
-        :return:
-        """
-        return None
-
     def printResult(self):
         """
+        Print the results if calculation is finished.
         :return:
         """
-
         if self._resultFound:
             print(self._out)
         else:
