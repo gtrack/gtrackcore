@@ -25,7 +25,8 @@ class AverageLength(Operator):
 
         self._trackFormat = args[0].trackFormat
 
-        self._trackRequirements = [TrackFormatReq(dense=False)]
+        self._trackRequirements = [TrackFormatReq(dense=False),
+                                   TrackFormatReq(dense=True, interval=True)]
         self._resultIsTrack = False
         self._resultTrackRequirements = None
 
