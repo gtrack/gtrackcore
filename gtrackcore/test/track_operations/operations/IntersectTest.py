@@ -27,7 +27,8 @@ class IntersectTest(unittest.TestCase):
                  t1Weights=None, t2Weights=None, expStarts=None, expEnds=None,
                  expValues=None, expStrands=None, expIds=None, expEdges=None,
                  expWeights=None, expNoResult=False, customChrLength=None,
-                 allowOverlap=True, debug=False):
+                 allowOverlaps=True, resultAllowOverlaps=True,
+                 debug=False, expTrackFormatType=None):
 
         t1 = createSimpleTestTrackContent(startList=t1Starts, endList=t1Ends,
                                           valList=t1Vals, strandList=t1Strands,
@@ -41,7 +42,8 @@ class IntersectTest(unittest.TestCase):
                                           weightsList=t2Weights,
                                           customChrLength=customChrLength)
 
-        i = Intersect(t1, t2, allowOverlap=allowOverlap, debug=debug)
+        i = Intersect(t1, t2, allowOverlaps=allowOverlaps,
+                      resultAllowOverlaps=resultAllowOverlaps, debug=debug)
 
         result = i.calculate()
         self.assertTrue(result is not None)
@@ -64,9 +66,30 @@ class IntersectTest(unittest.TestCase):
                 newWeights = v.weightsAsNumpyArray()
                 #newExtras = v.extrasAsNumpyArray()
 
-                if expStarts is not None:
+                if debug:
+                    print("expFormatName: {}".format(expTrackFormatType))
+                    print("newFormatName: {}".format(v.trackFormat.getFormatName()))
                     print("newStarts: {}".format(newStarts))
                     print("expStarts: {}".format(expStarts))
+                    print("newEnds: {}".format(newEnds))
+                    print("expEnds: {}".format(expEnds))
+                    print("newStrands: {}".format(newStrands))
+                    print("expStrands: {}".format(expStrands))
+                    print("newIds: {}".format(newIds))
+                    print("expIds: {}".format(expIds))
+                    print("newEdges: {}".format(newEdges))
+                    print("expEdges: {}".format(expEdges))
+
+                if expTrackFormatType is not None:
+                    # Check that the track is of the expected type.
+                    self.assertTrue(v.trackFormat.getFormatName() ==
+                                    expTrackFormatType)
+
+                if expEnds is None:
+                    # Assuming a point type track. Creating the expected ends.
+                    expEnds = np.array(expStarts) + 1
+
+                if expStarts is not None:
                     self.assertTrue(newStarts is not None)
                     self.assertTrue(np.array_equal(newStarts, expStarts))
                 else:
@@ -127,109 +150,129 @@ class IntersectTest(unittest.TestCase):
         else:
             self.assertTrue(resFound)
 
-    def testPoints(self):
+    def testPointsNoOverlap(self):
         """
-        Test of intersect on point tracks
+        Intersect of two point tracks, no overlap
         :return:
         """
         # No overlap
         self._runTest(t1Starts=[1,2,3], t2Starts=[4,5,6], expNoResult=True)
 
+    def testPointsTotalOverlap(self):
+        """
+        Points, total overlap of A and B
+        :return:
+        """
         # Total overlap
-        self._runTest(t1Starts=[2,6], t2Starts=[2,6], expStarts=[2,6])
+        self._runTest(t1Starts=[2,6], t2Starts=[2,6], expStarts=[2,6],
+                      expTrackFormatType="Points")
 
-        # Some overlap
-        self._runTest(t1Starts=[2,6,8,15], t2Starts=[2,8], expStarts=[2,8])
+    def testPointsSomeOverlap(self):
+        """
+        Points, some overlap.
+        :return:
+        """
+        self._runTest(t1Starts=[2,6,8,15], t2Starts=[2,8], expStarts=[2,8],
+                      expTrackFormatType="Points")
 
     # **** Segments ****
     def testNoIntersect(self):
         """
         No intersect between A and B
-        Test for case 1
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2], t1Ends=[4], t2Starts=[5], t2Ends=[8],
-                      expNoResult=True, debug=True)
+                      expNoResult=True, expTrackFormatType="Segments")
 
     def testTotalIntersect(self):
         """
         A == b
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2,6], t1Ends=[4,8], t2Starts=[2,6],
-                      t2Ends=[4,8], expStarts=[2,6], expEnds=[4,8])
+                      t2Ends=[4,8], expStarts=[2,6], expEnds=[4,8],
+                      expTrackFormatType="Segments")
 
     def testABeforeBIntersect(self):
         """
         A intersects B at the end of A
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2], t1Ends=[6], t2Starts=[4], t2Ends=[8],
-                      expStarts=[4], expEnds=[6])
+                      expStarts=[4], expEnds=[6],
+                      expTrackFormatType="Segments")
 
     def testBBeforeAIntersect(self):
         """
         B intersects A at the end of B
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[4], t1Ends=[8], t2Starts=[2], t2Ends=[6],
-                      expStarts=[4], expEnds=[6])
+                      expStarts=[4], expEnds=[6],
+                      expTrackFormatType="Segments")
 
     def testAInsideBIntersect(self):
         """
         A is totally inside B
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[4], t1Ends=[6], t2Starts=[2], t2Ends=[8],
-                      expStarts=[4], expEnds=[6])
+                      expStarts=[4], expEnds=[6],
+                      expTrackFormatType="Segments")
 
     def testBInsideAIntersect(self):
         """
         B is totally inside A
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2], t1Ends=[8], t2Starts=[4], t2Ends=[6],
-                      expStarts=[4], expEnds=[6])
+                      expStarts=[4], expEnds=[6],
+                      expTrackFormatType="Segments")
 
     def testAInsideBStartIntersect(self):
         """
         A is totally inside B, Start of A equals start of B
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2], t1Ends=[4], t2Starts=[2], t2Ends=[8],
-                      expStarts=[2], expEnds=[4])
+                      expStarts=[2], expEnds=[4],
+                      expTrackFormatType="Segments")
 
     def testBInsideAStartIntersect(self):
         """
         B is totally inside A, Start of A equals start of B
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2], t1Ends=[8], t2Starts=[2], t2Ends=[4],
-                      expStarts=[2], expEnds=[4])
+                      expStarts=[2], expEnds=[4],
+                      expTrackFormatType="Segments")
 
     def testAInsideBEndIntersect(self):
         """
         A is totally inside B, End of A equals start of B
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[6], t1Ends=[8], t2Starts=[2], t2Ends=[8],
-                      expStarts=[6], expEnds=[8])
+                      expStarts=[6], expEnds=[8],
+                      expTrackFormatType="Segments")
 
     def testBInsideAEndIntersect(self):
         """
         B is totally inside A, End of A equals start of B
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2], t1Ends=[8], t2Starts=[6], t2Ends=[8],
-                      expStarts=[6], expEnds=[8])
+                      expStarts=[6], expEnds=[8],
+                      expTrackFormatType="Segments")
 
     def testMultipleIntersect(self):
         """
         B overlaps multiple segments in A
-        :return: None
+        :return:
         """
         self._runTest(t1Starts=[2,6], t1Ends=[4, 10], t2Starts=[3],
-                      t2Ends=[8],  expStarts=[3, 6], expEnds=[4,8])
+                      t2Ends=[8],  expStarts=[3, 6], expEnds=[4,8],
+                      expTrackFormatType="Segments")
 
     # **** Values/Links ****
 
@@ -240,9 +283,9 @@ class IntersectTest(unittest.TestCase):
         """
         pass
 
-    # **** Mixed tracks ****
+    # **** Mixed tracks types ****
 
-    def testMixedTracks(self):
+    def testSegmentsAndPointsNoOverlap(self):
         """
         Tests where the input tracks are a mix of points and segments
         :return:
@@ -251,18 +294,30 @@ class IntersectTest(unittest.TestCase):
         self._runTest(t1Starts=[5], t1Ends=[10], t2Starts=[2],
                       expNoResult=True)
 
-        # Simple overlap. When mixing segments we expect a point track as
-        # the result.
+    def testSegmentsAndPointsOverlap(self):
+        """
+        Segments and points.
+        :return:
+        """
         self._runTest(t1Starts=[5], t1Ends=[10], t2Starts=[8],
-                      expStarts=[8])
+                      expStarts=[8], expTrackFormatType="Points")
 
-        # points + segments
+    def testPointsAndSegmentsOverlap(self):
+        """
+        Points and segments
+        :return:
+        """
         self._runTest(t1Starts=[8], t2Starts=[5], t2Ends=[10],
-                      expStarts=[8])
+                      expStarts=[8], expTrackFormatType="Points")
 
-        # Multiple overlap in the same segment
+    def testPointsAndSegmentsMultiple(self):
+        """
+        Points and segments
+        Multiple overlap in the same segment
+        :return:
+        """
         self._runTest(t1Starts=[5], t1Ends=[10], t2Starts=[6,8,9],
-                      expStarts=[6,8,9])
+                      expStarts=[6,8,9], expTrackFormatType="Points")
 
 if __name__ == "__main__":
     unittest.main()
