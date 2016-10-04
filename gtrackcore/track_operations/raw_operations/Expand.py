@@ -19,6 +19,10 @@ def expand(regionSize, starts=None, ends=None, strands=None, start=None,
     :return:
     """
 
+    if debug:
+        print("starts: {}".format(starts))
+        print("ends: {}".format(ends))
+
     assert (end is not None or start is not None) or both is not None
 
     assert starts is not None
