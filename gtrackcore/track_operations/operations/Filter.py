@@ -36,14 +36,14 @@ class Filter(Operator):
 
         self._kwargs = kwargs
         self._options = {'debug': False,
-                         'allowOverlap': True,
-                         'resultAllowOverlap': True,
+                         'allowOverlaps': True,
+                         'resultAllowOverlaps': True,
                          'removeStrands': False,
                          'removeValues': False,
                          'removeIds': False,
                          'removeEdges': False,
                          'removeWeights': False,
-                         'removeExtras': False,
+                         'removeExtras': False
                          }
         # Save the tracks
         self._tracks = args[0]
@@ -108,7 +108,9 @@ class Filter(Operator):
             weighted = None
 
         req = TrackFormatReq(dense=dense, interval=intervals, linked=linked,
-                             weights=weighted, val=valued, strand=stranded)
+                             weights=weighted, val=valued, strand=stranded,
+                             allowOverlaps=self._resultAllowOverlaps)
+
         return req
 
     def _calculate(self, region, tv):
@@ -153,7 +155,7 @@ class Filter(Operator):
             #extras = tv.extrasAsNumpyArray()
 
         tv = createRawResultTrackView(None, region, [None],
-                                      self._resultAllowOverlap,
+                                      self._resultAllowOverlaps,
                                       newStarts=starts, newEnds=ends,
                                       newStrands=strands, newValues=vals,
                                       newIds=ids, newEdges=edges,
