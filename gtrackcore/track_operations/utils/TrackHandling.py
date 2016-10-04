@@ -113,7 +113,8 @@ def printTrackView(tv):
 def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                              newStarts=None, newEnds=None, newStrands=None,
                              newValues=None, newIds=None, newEdges=None,
-                             newWeights=None, encoding=None, trackFormat=None):
+                             newWeights=None, encoding=None,
+                             trackFormatReq=None):
     """
 
     TODO: Expand to support more track types.
@@ -145,6 +146,8 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
     if newStarts is not None and newEnds is not None:
         assert len(newStarts) == len(newEnds)
 
+    print("index: {}".format(index))
+    print("encoding: {}".format(encoding))
 
     starts = None
     ends = None
@@ -194,6 +197,8 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
                 edgesBase[i] = track.edgesAsNumpyArray()
                 weightsBase[i] = track.weightsAsNumpyArray()
 
+            print("endsBase: {}".format(endsBase))
+
             # If one of the base track is missing a base we ignore it for the
             # rest of the base tracks.
             # This should possible be extended to save the data we have.
@@ -225,11 +230,14 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
             if newEnds is not None:
                 ends = newEnds
             else:
-                if endsBase is None:
+                if endsBase is None or newStarts is not None:
                     ends = None
                 else:
                     ends = np.zeros(len(index))
                     for i in range(0, nrBaseTracks):
+                        print(i)
+                        print(endsBase[i])
+                        print(ind[i])
                         ends[enc[i]] = endsBase[i][ind[i]]
 
             if newValues is not None:
@@ -354,29 +362,29 @@ def createRawResultTrackView(index, region, baseTrack, allowOverlap,
     # TODO fix extra
     #print("before tv creation: starts: {}".format(starts))
 
-    if trackFormat is not None:
+    if trackFormatReq is not None:
         # If a trackFormat is given, we us it to create the correct track.
-        name = trackFormat.getFormatName()
 
-        points = ['Points', 'Valued points', 'Linked points',
-                  'Linked valued points']
-        segments = []
-
-        if name in points:
-            # Remove the ends when creating a point type track
+        if not trackFormatReq.isDense() and not trackFormatReq.isInterval():
+            # Point type track. We remove the ends to the the correct
+            # trackFormat in the new track.
             ends = None
 
-    print("*****************")
-    print("In create tv")
+        if trackFormatReq.isDense() and trackFormatReq.isInterval():
+            # Partition type track. Removing the starts
+            starts = None
 
-    print("newIds: {}".format(newIds))
-    print("newEdges: {}".format(edges))
+    print("before tv")
+    print("starts: {}".format(starts))
+    print("ends: {}".format(ends))
+
     tv = TrackView(region, starts, ends, vals, strands, ids, edges, weights,
                    borderHandling='crop', allowOverlaps=allowOverlap)
 
-    print("ids from tv: {}".format(tv.idsAsNumpyArray()))
-    print("edges from tv: {}".format(tv.edgesAsNumpyArray()))
-    print("*****************")
+    print("after tv")
+    print("starts: {}".format(tv.startsAsNumpyArray()))
+    print("ends: {}".format(tv.endsAsNumpyArray()))
+
     return tv
 
 def createTrackContentFromFile(genome, path, allowOverlaps):
