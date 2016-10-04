@@ -273,6 +273,17 @@ class FilterTest(unittest.TestCase):
                       expStarts=[1,10], expEnds=[5,15], expValues=[3,4],
                       expTrackFormatType="Valued segments")
 
+    def testLinkedValuedSegmentsToLinkedSegments(self):
+        """
+        Removing both links keeping values
+        :return:
+        """
+        self._runTest(starts=[1,10], ends=[5,15], ids=['1','2'],
+                      edges=['2','1'], values=[3,4], removeValues=True,
+                      expStarts=[1,10], expEnds=[5,15], expIds=['1','2'],
+                      expEdges=['2','1'],
+                      expTrackFormatType="Linked segments")
+
     def testLinkedValuedSegmentToSegments(self):
         """
         Removing both links and values
