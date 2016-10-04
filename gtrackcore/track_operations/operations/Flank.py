@@ -1,4 +1,3 @@
-__author__ = 'skh'
 
 import logging
 import sys
@@ -9,6 +8,7 @@ from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
+from gtrackcore.track_operations.operations.Merge import Merge
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track_operations.RawOperationContent import RawOperationContent
 from gtrackcore.track_operations.utils.TrackHandling import \
@@ -24,37 +24,35 @@ class Flank(Operator):
     """
     Creates a new track of flanking segments.
     """
-    # s = Slop(track, size)
-    # res = Subtract(s, track)
 
     def __init__(self, *args, **kwargs):
+        assert args[0] is not None
         self._kwargs = kwargs
-        self._options = {'both': None,
+        self._options = {'debug': False,
+                         'allowOverlaps': False,
+                         'resultAllowOverlaps': False,
+                         'both': None,
                          'start': None,
                          'end': None,
                          'useFraction': False,
-                         'ignoreStrand': False,
-                         'useMissingStrands': True,
-                         'treatMissingAsNegative': False,
-                         'resultAllowOverlaps': False,
-                         'debug': False
+                         'useStrands': True,
+                         'treatMissingAsNegative': False
                          }
-        self._name = "Flank"
+        # Save the tracks
+        self._tracks = args[0]
+        self._trackFormat = self._tracks.trackFormat
 
-        # Move this into the track req
-        #if 'allowOverlap' in kwargs:
-        #    self._allowOverlap = kwargs['allowOverlap']
-        #    self._updateTrackFormat()
-
+        # Core properties
         self._numTracks = 1
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
         self._resultIsTrack = True
 
-        # Set defaults for changeable properties
-        self._allowOverlap = False
+        # Input need to be a none dense track
+        self._trackRequirements = \
+            [TrackFormatReq(dense=False, allowOverlaps=self._allowOverlaps)]
 
-        self._resultTrackRequirements = self._trackRequirements[0]
+        # TrackResultReq is always a segment type
+        self._resultTrackRequirements = \
+            TrackFormatReq(dense=False, allowOverlaps=self._resultAllowOverlaps)
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -63,25 +61,22 @@ class Flank(Operator):
         logging.debug("Start call! region:{0}".format(region))
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
-        strands = None
+        strands = tv.strandsAsNumpyArray()
 
-        if not self._ignoreStrand:
-            strands = tv.strandsAsNumpyArray()
+        if self._useStrands:
             if strands is None or strands.size == 0:
                 # Track has no strand information, ignoring strands.
-                strands = None
-                self._ignoreStrand = True
+                self._useStrands = False
 
-        # Get genome size.
-        genomeSize = len(region)
+        # Get region size.
+        regionSize = len(region)
 
-        ret = flank(starts, ends, genomeSize, strands=strands,
+        ret = flank(starts, ends, regionSize, strands=strands,
                     start=self._start, end=self._end, both=self._both,
-                    ignoreStrands=self._ignoreStrand,
+                    useStrands=self._useStrands,
                     useFraction=self._useFraction,
-                    useMissingStrands=self._useMissingStrands,
-                    treatMissingAsPositive=self._treatMissingAsPositive,
-                    allowOverlap=self._allowOverlap, debug=self._debug)
+                    treatMissingAsNegative=self._treatMissingAsNegative,
+                    debug=self._debug)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
@@ -89,52 +84,30 @@ class Flank(Operator):
             # the new track will only contain starts, ends and (strands if
             # present.
 
-            tv = TrackView(region, ret[0], ret[1], None, ret[2], None,
+            starts = ret[0]
+            ends = ret[1]
+            strands = ret[2]
+
+            tv = TrackView(region, starts, ends, None, strands, None,
                            None, None, borderHandling='crop',
-                           allowOverlaps=self._allowOverlap)
+                           allowOverlaps=True)
             return tv
         else:
             return None
 
-    def _setConfig(self, tracks):
-        pass
-
-
     def preCalculation(self, track):
         return track
 
-    def postCalculation(self, result):
-        return result
-
-    def _updateTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks as input, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        if self._allowOverlap:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
+    def postCalculation(self, track):
+        if not self._resultAllowOverlap:
+            # Overlap not allowed in the result. Using merge to remove it
+            m = Merge(track, both=True, mergeValues=True,
+                      useStrands=self._useStrands,
+                      mergeLinks=True, allowOverlap=False)
+            res = m.calculate()
+            return res
         else:
-            self._trackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
-
-    def _updateResultTrackFormat(self):
-        """
-        If we enable or disable overlapping tracks in the result, we need to
-        update the track requirement as well.
-        :return: None
-        """
-        if self._resultAllowOverlaps:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=True),
-                 TrackFormatReq(dense=False, allowOverlaps=True)]
-        else:
-            self._resultTrackRequirements = \
-                [TrackFormatReq(dense=False, allowOverlaps=False),
-                 TrackFormatReq(dense=False, allowOverlaps=False)]
+            return track
 
     @classmethod
     def createSubParser(cls, subparsers):
@@ -151,51 +124,24 @@ class Flank(Operator):
         parser.add_argument('-b', type=int, dest='both')
         parser.add_argument('-s', type=int, dest='start')
         parser.add_argument('-e', type=int, dest='end')
-        parser.add_argument('--allowOverlap', action='store_true',
+        parser.add_argument('-f', '--fractions', action='store_true',
+                            dest='fractions',
+                            help="Instead if flanks a given nr of base "
+                                 "pairs, create them as a fraction of the "
+                                 "features length." )
+        parser.add_argument('-u', '--useStrands', action='store_true',
+                            dest='useStrands',
+                            help="Flow the strand direction when creating "
+                                 "the flanking segments")
+        parser.add_argument('--missingAsNegative', action='store_true',
+                            dest='treatMissingAsNegative',
+                            help="Treat any features with missing strand "
+                                 "information as if they ware negative. The "
+                                 "default is to treat them as positive")
+        parser.add_argument('--resultAllowOverlap', action='store_true',
+                            dest='resultAllowOverlaps',
                             help="Allow overlap in the resulting track")
         parser.set_defaults(which='Flank')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.track,
-                                           args.allowOverlap)
-
-        allowOverlap = args.allowOverlap
-        # TODO: use overlap...
-
-        if 'both' in args:
-            both = args.both
-        else:
-            both = None
-
-        if 'start' in args:
-            start = args.start
-        else:
-            start = None
-
-        if 'end' in args:
-            end = args.end
-        else:
-            end = None
-
-        return Flank(track, both=both, start=start, end=end,
-                     allowOverlap=allowOverlap)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Track name used by GTools when saving the track i GTrackCore
-        :return: Generated track name as a string
-        """
-        return "flank-{0}".format(int(time.time()))
 
     def printResult(self):
         """
