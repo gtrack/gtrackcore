@@ -4,12 +4,15 @@ from collections import OrderedDict
 from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track_operations.exeptions.Track import TrackContentsEmptyError
 from gtrackcore.track_operations.Genome import Genome
-
+from gtrackcore.core.Api import importTrackFromTrackContents
+from gtrackcore.track_operations.exeptions.Track import TrackNameExistsError
+from gtrackcore.track.format.TrackFormat import TrackFormat
 
 class TrackContents(object):
 
     def __init__(self, genome, trackViews):
-        assert len(trackViews) > 0
+        print("trackViews: {}".format(trackViews))
+#        assert len(trackViews) > 0
         assert isinstance(genome, Genome)
         self._genome = genome
 
@@ -25,12 +28,27 @@ class TrackContents(object):
         # test = [tv.trackFormat for tv.genomeAnchor in
         #        self._trackViews.values()]
         # Assume that the TrackFormat is the same for all trackViews
-        assert formats.count(formats[0]) == len(formats)
-        self._trackFormat = formats[0]
+        if len(trackViews) > 0:
+            assert formats.count(formats[0]) == len(formats)
+            self._trackFormat = formats[0]
+        else:
+            # Track is empty
+            self._trackFormat = TrackFormat()
 
     def getTrackViews(self):
         # TODO remove. Check if used and change to the property
         return self._trackViews
+
+    def save(self, name):
+        """
+        Save this track into GTrackCore
+        :param name: Name of track
+        :return:
+        """
+        try:
+            importTrackFromTrackContents(trackContents=self, name=name)
+        except TrackNameExistsError, e:
+            print(e)
 
     @property
     def trackViews(self):
