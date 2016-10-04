@@ -1,21 +1,17 @@
 import numpy as np
 
-def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
+def flank(starts, ends, genomeSize, strands=None, useStrands=True,
           start=None, end=None, both=None, useFraction=False,
-          useMissingStrands=False, treatMissingAsPositive=True,
-          allowOverlap=False, debug=False):
+          treatMissingAsNegative=False, debug=False):
 
     assert starts is not None
     assert ends is not None
-    assert isinstance(starts, np.ndarray)
-    assert isinstance(ends, np.ndarray)
     assert len(starts) == len(ends)
     assert (end is not None or start is not None) or both is not None
 
-    if not ignoreStrands:
+    if useStrands:
         assert strands is not None
 
-    index = np.arange(0, len(starts), 1, dtype='int32')
     flankStarts = None
     flankEnds = None
 
@@ -43,12 +39,11 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
                 end = lengths * end
                 end.astype(int)
 
-    if ignoreStrands:
+    if not useStrands:
         # Ignoring strand. Every element is treated like it has a positive
         # strand.
         if both is not None:
-            # Both flank given..
-            # !STRAND->BOTH
+            # Both flank given.
             assert start is None
             assert end is None
 
@@ -114,17 +109,20 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
                 flankEnds = endFlank[:,1]
                 flankStrands = None
     else:
-        # STRAND
         # We have and use strand information.
         assert strands is not None
+
+        if treatMissingAsNegative:
+            positiveStrand = np.where(strands == '+')
+            negativeStrand = np.where((strands == '-') | (strands == '.'))
+        else:
+            positiveStrand = np.where((strands == '+') | (strands == '.'))
+            negativeStrand = np.where(strands == '-')
 
         if both is not None:
             # STRAND -> BOTH
             assert start is None
             assert end is None
-
-            # Find and create flanks for the positive segments
-            positiveStrand = np.where(strands == '+')
 
             positiveStartEnds = starts[positiveStrand]
             positiveStartStarts = starts[positiveStrand] - both
@@ -148,11 +146,8 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
             positiveFlank = np.concatenate((positiveStartFlank,
                                             positiveEndFlank))
 
-            # Find and create flanks for the negative segments
-            negativeStrand = np.where(strands == '-')
-
             negativeStartStarts = ends[negativeStrand]
-            negativeStartEnds =  ends[negativeStrand] + both
+            negativeStartEnds = ends[negativeStrand] + both
 
             # 1 = '-'
             negativeStartFlank = \
@@ -174,77 +169,10 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
             negativeFlank = np.concatenate((negativeStartFlank,
                                             negativeEndFlank))
 
-            missingFlank = None
-            if useMissingStrands:
-                # STRAND->BOTH->MISSING
-                missingStrand = np.where(strands == '.')
+            # combine and sort
+            res = np.concatenate((positiveFlank, negativeFlank))
 
-                if treatMissingAsPositive:
-
-                    # STRAND->BOTH->MISSING->POS
-                    # Treat the missing strands as if they weare positive.
-                    missingStartEnds = starts[missingStrand]
-                    missingStartStarts = starts[missingStrand] - both
-
-                    # 0 = '+'
-                    missingStartFlank = \
-                        np.column_stack((missingStartStarts,
-                                         missingStartEnds,
-                                         np.zeros(len(missingStartStarts),
-                                                  dtype=np.int) + 0))
-
-                    missingEndStarts = ends[missingStrand]
-                    missingEndEnds = ends[missingStrand] + both
-
-                    # 0 = '+'
-                    missingEndFlank = \
-                        np.column_stack((missingEndStarts, missingEndEnds,
-                                         np.zeros(len(
-                                             missingEndStarts),
-                                             dtype=np.int) + 0))
-
-                    missingFlank = np.concatenate((missingStartFlank,
-                                                   missingEndFlank))
-
-                else:
-                    # STRAND->BOTH->MISSING->NEG
-                    # Treat the missing strands as if they are negative.
-                    missingStartStarts = ends[missingStrand]
-                    missingStartEnds =  ends[missingStrand] + both
-
-                    # 1 == '-'
-                    missingStartFlank = \
-                        np.column_stack((missingStartStarts,
-                                         missingStartEnds,
-                                         np.zeros(len(
-                                             missingStartStarts),
-                                             dtype=np.int) + 1))
-
-                    missingEndEnds = starts[missingStrand]
-                    missingEndStarts = starts[missingStrand] - both
-
-                    # 1 == '-'
-                    missingEndFlank = \
-                        np.column_stack((missingEndStarts, missingEndEnds,
-                                         np.zeros(len(
-                                             missingEndStarts),
-                                             dtype=np.int) + 1))
-
-                    missingFlank = np.concatenate((missingStartFlank,
-                                                   missingEndFlank))
-
-            if missingFlank is not None:
-                # combine and sort
-                res = np.concatenate((positiveFlank, negativeFlank,
-                                      missingFlank))
-                # TODO check sort
-                res = res[np.lexsort((res[:,0], res[:,1]))]
-            else:
-                # combine and sort
-                res = np.concatenate((positiveFlank, negativeFlank))
-
-                # TODO check sort
-                res = res[np.lexsort((res[:,0], res[:,1]))]
+            res = res[np.lexsort((res[:,0], res[:,1]))]
 
             flankStarts = res[:,0]
             flankEnds = res[:,1]
@@ -254,16 +182,8 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
             # STRAND->END/START
             assert (start is not None or end is not None)
 
-            # if start, add to start
-            # if end, add to end
-
             startFlank = None
             endFlank = None
-            missingFlank = None
-
-            positiveStrand = np.where(strands == '+')
-            negativeStrand = np.where(strands == '-')
-            missingStrand = np.where(strands == '.')
 
             if start is not None:
                 # Find and create flanks for the positive segments
@@ -292,7 +212,6 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
 
                 startFlank = np.concatenate((positiveStartFlank,
                                              negativeStartFlank))
-
             if end is not None:
                 positiveEndStarts = ends[positiveStrand]
                 positiveEndEnds = ends[positiveStrand] + end
@@ -318,116 +237,22 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
                 endFlank = np.concatenate((positiveEndFlank,
                                            negativeEndFlank))
 
-            if useMissingStrands:
-                # STRAND->END/START->MISSING
-                missingStartFlank = None
-                missingEndFlank = None
+            # Calculate start, end, strand..
+            res = None
+            if startFlank is not None and endFlank is not None:
+                res = np.concatenate((startFlank, endFlank))
+            elif startFlank is not None:
+                res = startFlank
+            elif endFlank is not None:
+                res = endFlank
 
-                if treatMissingAsPositive:
-                    # STRAND->END/START->MISSING->POS
-
-                    if start is not None:
-                        missingPosStartEnds = starts[missingStrand]
-                        missingPosStartStarts = starts[missingStrand] - \
-                                               start
-
-                        # 0 == '+'
-                        missingStartFlank = \
-                            np.column_stack((missingPosStartStarts,
-                                             missingPosStartEnds,
-                                             np.zeros(len(
-                                                 missingPosStartStarts),
-                                                 dtype=np.int) + 0))
-
-                    if end is not None:
-                        missingPosEndStarts = ends[missingStrand]
-                        missingPosEndEnds = ends[missingStrand] + end
-
-                        # 0 == '+'
-                        missingEndFlank = \
-                            np.column_stack((missingPosEndStarts,
-                                            missingPosEndEnds,
-                                            np.zeros(len(
-                                                 missingPosEndStarts),
-                                                dtype=np.int) + 0))
-
-                else:
-                    # STRAND->END/START->MISSING->NEG
-                    if start is not None:
-                        missingNegStartStarts = ends[missingStrand]
-                        missingNegStartEnds = ends[missingStrand] + start
-
-                        # 1 == '-'
-                        missingStartFlank = \
-                            np.column_stack((missingNegStartStarts,
-                                            missingNegStartEnds,
-                                            np.zeros(len(
-                                                missingNegStartStarts),
-                                                dtype=np.int) + 1))
-
-                    if end is not None:
-                        missingNegEndEnds = starts[missingStrand]
-                        missingNegEndStarts = starts[missingStrand] - end
-
-                        # 1 == '-'
-                        missingEndFlank = \
-                            np.column_stack((missingNegEndStarts,
-                                            missingNegEndEnds,
-                                            np.zeros(len(
-                                                missingNegEndStarts),
-                                                dtype=np.int) + 1))
-
-                if missingStartFlank is not None and missingEndFlank is \
-                        not None:
-                    missingFlank = np.concatenate((missingStartFlank,
-                                                   missingEndFlank))
-                elif missingStartFlank is not None:
-                    missingFlank = missingStartFlank
-                elif missingEndFlank is not None:
-                    missingFlank = missingEndFlank
-
-                # Calculate start, end, strand..
-
-                res = None
-                if startFlank is not None and endFlank is not None:
-                    res = np.concatenate((startFlank, endFlank))
-                elif startFlank is not None:
-                    res = startFlank
-                elif endFlank is not None:
-                    res = endFlank
-
-                if missingFlank is not None:
-                    # Add the missing flank
-                    if res is not None:
-                        res = np.concatenate((res, missingFlank))
-                    else:
-                        res = missingFlank
-
-                # TODO check sort
-                res = res[np.lexsort((res[:,0], res[:,1]))]
-                flankStarts = res[:,0]
-                flankEnds = res[:,1]
-                flankStrands = res[:,2]
-
-            else:
-                if startFlank is not None and endFlank is not None:
-                    res = np.concatenate((startFlank, endFlank))
-                    res = res[np.lexsort((res[:,0], res[:,1]))]
-                    flankStarts = res[:,0]
-                    flankEnds = res[:,1]
-                    flankStrands = res[:,2]
-
-                elif startFlank is not None:
-                    flankStarts = startFlank[:,0]
-                    flankEnds = startFlank[:,1]
-                    flankStrands = startFlank[:,2]
-                else:
-                    flankStarts = endFlank[:,0]
-                    flankEnds = endFlank[:,1]
-                    flankStrands = endFlank[:,2]
+            res = res[np.lexsort((res[:,0], res[:,1]))]
+            flankStarts = res[:,0]
+            flankEnds = res[:,1]
+            flankStrands = res[:,2]
 
     if flankStarts is None:
-        return [], [], []
+        return None, None, None
 
     # Check if the flank over/under flows the genome size.
     underflowIndex = np.where(flankStarts < 0)
@@ -437,44 +262,6 @@ def flank(starts, ends, genomeSize, strands=None, ignoreStrands=False,
         flankStarts[underflowIndex] = 0
     if len(overflowIndex[0]) > 0:
         flankEnds[overflowIndex] = genomeSize
-
-    if not allowOverlap:
-        # Fix later..
-        raise NotImplementedError
-        # Check, equal starts?
-        # Check first is a segment is completely inside another segment
-        # If it is we remove it.
-        # if end[n] > end[n+1] => remover n
-        totalOverlapIndex = np.where(ends[:-1] >= ends[1:])
-
-        if len(totalOverlapIndex[0]) > 0:
-            # As there can be more then one segment inside another segment
-            # we need to iterate over it until we have no more total overlap.
-            while len(totalOverlapIndex[0]) != 0:
-                ends = np.delete(ends, totalOverlapIndex, 0)
-                starts = np.delete(starts, totalOverlapIndex, 0)
-                index = np.delete(index, totalOverlapIndex, 0)
-                totalOverlapIndex = np.where(ends[:-1] >= ends[:1])
-
-        # Find partially overlapping segments
-        # end[n] > start[n+1]
-        partialOverlapIndex = np.where(ends[:-1] > starts[1:])
-
-        if len(partialOverlapIndex[0]) > 0:
-            # Creating masks to merge the overlapping segments
-            overlapStartMask = np.ones(len(starts), dtype=bool)
-            overlapStartMask[[partialOverlapIndex[0]+1]] = False
-
-            overlapEndMask = np.ones(len(ends), dtype=bool)
-            overlapEndMask[partialOverlapIndex[0]] = False
-
-            starts = starts[overlapStartMask]
-            ends = ends[overlapEndMask]
-
-        # Do we need to save strands?
-        index = None
-
-    # TODO add index...
 
     if flankStrands is not None:
         # Convert the flankStrands to a gtrack strand array
