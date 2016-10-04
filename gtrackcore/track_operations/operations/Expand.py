@@ -31,7 +31,7 @@ class Expand(Operator):
         self._kwargs = kwargs
         self._options = {'debug': False,
                          'allowOverlap': False,
-                         'resultAllowOverlap': False,
+                         'resultAllowOverlaps': False,
                          'both': None,
                          'start': None,
                          'end': None,
@@ -51,11 +51,30 @@ class Expand(Operator):
         self._trackRequirements = [TrackFormatReq(dense=False)]
 
         # TrackResultReq is always a segment type
-        self._resultTrackRequirements = TrackFormatReq(
-            name=self._trackFormat.getFormatName(),
-            allowOverlaps=self._resultAllowOverlaps)
+        self._resultTrackRequirements = self._createTrackFormatReq()
 
         super(self.__class__, self).__init__(*args, **kwargs)
+
+    def _createTrackFormatReq(self):
+        """
+        Creates the correct TrackFormatReq according to what kind of data we
+        are filtering out.
+        :return:
+        """
+
+        tr = self._trackFormat
+
+        valued = tr.isValued()
+        weighted = tr.isWeighted()
+        if valued:
+            valued = tr._val
+        if weighted:
+            weighted = tr._weights
+        req = TrackFormatReq(dense=False, interval=True, linked=tr.isLinked(),
+                             weights=weighted, val=valued,
+                             strand=tr.hasStrand(),
+                             allowOverlaps=self._resultAllowOverlaps)
+        return req
 
     def _calculate(self, region, tv):
 
@@ -72,9 +91,9 @@ class Expand(Operator):
                 self._useStrand = False
 
         # Get genome size.
-        genomeSize = len(region)
+        regionSize = len(region)
 
-        ret = expand(genomeSize, starts=starts, ends=ends, strands=strands,
+        ret = expand(regionSize, starts=starts, ends=ends, strands=strands,
                      start=self._start, end=self._end, both=self._both,
                      useFraction=self._useFraction,
                      useStrands=self._useStrands,
