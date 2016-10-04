@@ -23,8 +23,8 @@ class FilterTest(unittest.TestCase):
                  ids=None, edges=None, weights=None, expStarts=None,
                  expEnds=None, expValues=None, expStrands=None, expIds=None,
                  expEdges=None, expWeights=None, customChrLength=None,
-                 removeStrands=False, removeValues=False, removeIds=False,
-                 removeEdges=False, removeWeights=False, removeExtras=False,
+                 removeStrands=False, removeValues=False, removeLinks=False,
+                 removeWeights=False, removeExtras=False,
                  debug=False, expTrackFormatType=None):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
@@ -35,9 +35,9 @@ class FilterTest(unittest.TestCase):
                                              customChrLength=customChrLength)
 
         f = Filter(track, removeStrands=removeStrands,
-                   removeValues=removeValues, removeIds=removeIds,
-                   removeEdges=removeEdges, removeWeights=removeWeights,
-                   removeExtras=removeExtras, debug=debug)
+                   removeValues=removeValues, removeLinks=removeLinks,
+                   removeWeights=removeWeights, removeExtras=removeExtras,
+                   debug=debug)
 
         result = f.calculate()
         self.assertTrue(result is not None)
@@ -80,7 +80,6 @@ class FilterTest(unittest.TestCase):
                 if expEnds is None:
                     # Assuming a point type track. Creating the expected ends.
                     expEnds = np.array(expStarts) + 1
-
 
                 if expStarts is not None:
                     self.assertTrue(newStarts is not None)
@@ -146,29 +145,20 @@ class FilterTest(unittest.TestCase):
 
     def testLinkedPointsToPoints(self):
         """
-        Removing all links by removing the ids
+        Removing all links
         :return:
         """
         self._runTest(starts=[1,2], ids=['1','2'], edges=['2','1'],
-                      removeIds=True, expStarts=[1,2],
-                      expTrackFormatType="Points")
-
-    def testLinkedPointsRemoveEdges(self):
-        """
-        Removing all edges.
-        :return:
-        """
-        self._runTest(starts=[1,2], ids=['1','2'], edges=['2','1'],
-                      removeEdges=True, expStarts=[1,2], expIds=['1','2'],
+                      removeLinks=True, expStarts=[1,2],
                       expTrackFormatType="Points")
 
     def testLinkedValuedPointsToValuedPoints(self):
         """
-        Removing both links keeping values
+        Removing links keeping values
         :return:
         """
         self._runTest(starts=[1,2], ids=['1','2'], edges=['2','1'],
-                      values=[3,4], removeIds=True,
+                      values=[3,4], removeLinks=True,
                       expStarts=[1,2], expValues=[3,4],
                       expTrackFormatType="Valued points")
 
@@ -178,7 +168,7 @@ class FilterTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[1,2], ids=['1','2'], edges=['2','1'],
-                      values=[3,4], removeIds=True, removeValues=True,
+                      values=[3,4], removeLinks=True, removeValues=True,
                       expStarts=[1,2], expTrackFormatType="Points")
 
     def testRemovingWeightsFromLinkedPoints(self):
@@ -217,22 +207,13 @@ class FilterTest(unittest.TestCase):
         self._runTest(starts=[1,2], removeValues=True,
                       expStarts=[1,2], expTrackFormatType="Points")
 
-    def testRemoveIdsMissing(self):
+    def testRemoveLinksMissing(self):
         """
-        Try to remove ids from a track without ids. Expect to get the
+        Try to remove links from a track without links. Expect to get the
         same track in return
         :return:
         """
-        self._runTest(starts=[1,2], removeIds=True,
-                      expStarts=[1,2], expTrackFormatType="Points")
-
-    def testRemoveEdgesMissing(self):
-        """
-        Try to remove edges from a track without edges. Expect to get the
-        same track in return
-        :return:
-        """
-        self._runTest(starts=[1,2], removeEdges=True,
+        self._runTest(starts=[1,2], removeLinks=True,
                       expStarts=[1,2], expTrackFormatType="Points")
 
     def testRemoveWeightsMissing(self):
@@ -256,20 +237,20 @@ class FilterTest(unittest.TestCase):
 
     def testLinkedSegmentsToSegments(self):
         """
-        Removing all links by removing the ids
+        Removing links.
         :return:
         """
         self._runTest(starts=[1,10], ends=[5,15], ids=['1','2'],
-                      edges=['2','1'], removeIds=True, expStarts=[1,10],
+                      edges=['2','1'], removeLinks=True, expStarts=[1,10],
                       expEnds=[5,15], expTrackFormatType="Segments")
 
     def testLinkedValuedSegmentsToValuedSegments(self):
         """
-        Removing both links keeping values
+        Removing links keeping values
         :return:
         """
         self._runTest(starts=[1,10], ends=[5,15], ids=['1','2'],
-                      edges=['2','1'], values=[3,4], removeIds=True,
+                      edges=['2','1'], values=[3,4], removeLinks=True,
                       expStarts=[1,10], expEnds=[5,15], expValues=[3,4],
                       expTrackFormatType="Valued segments")
 
@@ -290,7 +271,7 @@ class FilterTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[1,10], ends=[5,15], ids=['1','2'],
-                      edges=['2','1'], values=[3,4], removeIds=True,
+                      edges=['2','1'], values=[3,4], removeLinks=True,
                       removeValues=True, expStarts=[1,10], expEnds=[5,15],
                       expTrackFormatType="Segments")
 

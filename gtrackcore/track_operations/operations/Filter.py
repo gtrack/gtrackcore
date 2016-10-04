@@ -40,8 +40,7 @@ class Filter(Operator):
                          'resultAllowOverlaps': True,
                          'removeStrands': False,
                          'removeValues': False,
-                         'removeIds': False,
-                         'removeEdges': False,
+                         'removeLinks': False,
                          'removeWeights': False,
                          'removeExtras': False
                          }
@@ -93,19 +92,18 @@ class Filter(Operator):
             valued = None
 
         if linked:
-            if self._removeIds:
+            if self._removeLinks:
                 linked = False
+                weighted = False
 
-            if weighted:
-                if self._removeWeights:
+            else:
+                if weighted and self._removeWeights:
                     weighted = False
-                else:
+                elif weighted:
                     # Same as with the value name
                     weighted = tr._weights
-            else:
-                weighted = None
-        else:
-            weighted = None
+                else:
+                    weighted = None
 
         req = TrackFormatReq(dense=dense, interval=intervals, linked=linked,
                              weights=weighted, val=valued, strand=stranded,
@@ -129,7 +127,7 @@ class Filter(Operator):
         else:
             vals = tv.valsAsNumpyArray()
 
-        if self._removeIds:
+        if self._removeLinks:
             # As edges needs its, we need to remove them,
             # and as weights needs edges, we need to remove them as well.
             ids = None
@@ -137,17 +135,12 @@ class Filter(Operator):
             weights = None
         else:
             ids = tv.idsAsNumpyArray()
+            edges = tv.edgesAsNumpyArray()
 
-            if self._removeEdges:
-                edges = None
+            if self._removeWeights:
                 weights = None
             else:
-                edges = tv.edgesAsNumpyArray()
-
-                if self._removeWeights:
-                    weights = None
-                else:
-                    weights = tv.weightsAsNumpyArray()
+                weights = tv.weightsAsNumpyArray()
 
         #if self._removeExtras:
             #extras = None
