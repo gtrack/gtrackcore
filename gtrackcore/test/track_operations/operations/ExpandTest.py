@@ -38,10 +38,6 @@ class ExpandTest(unittest.TestCase):
                                              weightsList=weights,
                                              customChrLength=customChrLength)
 
-        print("*********")
-        print(track.trackFormat)
-        print("*********")
-
         s = Expand(track, both=both, start=start, end=end,
                    useFraction=useFraction, useStrands=useStrands,
                    treatMissingAsNegative=treatMissingAsNegative,
@@ -67,6 +63,8 @@ class ExpandTest(unittest.TestCase):
                 #newExtras = v.extrasAsNumpyArray()
 
                 if debug:
+                    print("expTrackFormat: {}".format(expTrackFormatType))
+                    print("newTrackFormat: {}".format(v.trackFormat.getFormatName()))
                     print("newStarts: {}".format(newStarts))
                     print("expStarts: {}".format(expStarts))
                     print("newEnds: {}".format(newEnds))
