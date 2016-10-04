@@ -16,3 +16,12 @@ class TrackContentsEmptyError(Exception):
 
     def __init__(self):
         self.message = "Track Content is empty!"
+
+
+class TrackNameExistsError(Exception):
+    """
+    Used when trying to save a track using an existing track name
+    """
+
+    def __init__(self):
+        self.message = "Track name already in use, try using a different name."
