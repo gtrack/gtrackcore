@@ -19,24 +19,45 @@ class Intersect(Operator):
     def __init__(self, *args, **kwargs):
         self._kwargs = kwargs
         self._options = {'debug': False,
-                         'allowOverlap': False,
-                         'resultAllowOverlap': False
+                         'allowOverlaps': False,
+                         'resultAllowOverlaps': False
                          }
         # Save the tracks
         self._tracks = args
+        self._trackFormat = [x.trackFormat for x in self._tracks]
 
         self._numTracks = 2
         self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False),
-             TrackFormatReq(dense=False, allowOverlaps=False)]
+            [TrackFormatReq(dense=False, allowOverlaps=self._allowOverlaps),
+             TrackFormatReq(dense=False, allowOverlaps=self._allowOverlaps)]
 
-        # Set defaults for changeable properties
         self._resultIsTrack = True
-        # For now the result track is always of the same type as track A
-        # TODO: Solve this for the case where A and b are not of the same type.
-        self._resultTrackRequirements = self._trackRequirements[0]
+        self._resultTrackRequirements = self._createTrackFormatReq()
 
         super(self.__class__, self).__init__(*args, **kwargs)
+
+    def _createTrackFormatReq(self):
+        """
+        Create the correct resultTrackFormatReq
+        :return:
+        """
+
+        # if one is a point then result is point.
+        # else segments.
+
+        trs = self._trackFormat
+
+        for tr in trs:
+            if not tr.isDense() and not tr.isInterval():
+                print("Result is points")
+                # One of the inputs is a point type.
+                return TrackFormatReq(dense=False, interval=False,
+                                      allowOverlaps=self.resultAllowOverlaps)
+
+        print("Result is segments")
+
+        return TrackFormatReq(dense=False, interval=True,
+                              allowOverlaps=self.resultAllowOverlaps)
 
     def _calculate(self, region, tv1, tv2):
 
@@ -44,15 +65,12 @@ class Intersect(Operator):
         # Select with links
         #   - Follow all links in the intersect and add these segments as well.
 
-        print("in intersect!")
         t1Starts = tv1.startsAsNumpyArray()
         t1Ends = tv1.endsAsNumpyArray()
 
         t2Starts = tv2.startsAsNumpyArray()
         t2Ends = tv2.endsAsNumpyArray()
         ret = intersect(t1Starts, t1Ends, t2Starts, t2Ends)
-
-        print(ret)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 4
@@ -62,13 +80,24 @@ class Intersect(Operator):
             index = ret[2]
             encoding = ret[3]
 
-            print("in createTV: starts: {}".format(starts))
+            if not self.resultTrackRequirements.isInterval():
+                # Result is a point track.
+                print("Points")
+                ends = None
+            else:
+                print("Not points")
+
+            print(starts)
+            print(ends)
+
             return createRawResultTrackView(index, region, [tv1,tv2],
-                                            self.resultAllowOverlaps,
+                                            self._resultAllowOverlaps,
                                             newStarts=starts, newEnds=ends,
                                             encoding=encoding)
         else:
             return None
+
+
 
     def preCalculation(self, tracks):
         return tracks
@@ -90,26 +119,6 @@ class Intersect(Operator):
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
         parser.set_defaults(which='Intersect')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        trackA = createTrackContentFromFile(genome, args.trackA,
-                                            args.allowOverlap)
-        trackB = createTrackContentFromFile(genome, args.trackB,
-                                            args.allowOverlap)
-
-        allowOverlap = args.allowOverlap
-        # TODO: use overlap...
-
-        return Intersect(trackA, trackB)
 
     def printResult(self):
         pass
