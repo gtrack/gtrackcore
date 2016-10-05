@@ -32,11 +32,6 @@ class MergeTest(unittest.TestCase):
                  mergeValuesFunction=None, mergeLinksFunction=None,
                  debug=False):
 
-        if debug:
-            print("in _runTest")
-            print("start: {}".format(starts))
-            print("end: {}".format(ends))
-
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
                                              strandList=strands,
                                              valList=values, idList=ids,
@@ -85,17 +80,19 @@ class MergeTest(unittest.TestCase):
                     print("**************************************")
                     print("Result and expected results:")
                     print("expStarts: {}".format(expStarts))
-                    print("newStarts: {}".format(v.startsAsNumpyArray()))
+                    print("newStarts: {}".format(newStarts))
                     print("expEnds: {}".format(expEnds))
-                    print("newEnds: {}".format(v.endsAsNumpyArray()))
+                    print("newEnds: {}".format(newStarts))
                     print("expStrands: {}".format(expStrands))
-                    print("newStrands: {}".format(v.strandsAsNumpyArray()))
+                    print("newStrands: {}".format(newStrands))
                     print("expValues: {}".format(expValues))
-                    print("newValues: {}".format(v.valsAsNumpyArray()))
+                    print("newValues: {}".format(newVals))
                     print("expIds: {}".format(expIds))
-                    print("newIds: {}".format(v.idsAsNumpyArray()))
+                    print("newIds: {}".format(newIds))
                     print("expEdges: {}".format(expEdges))
-                    print("newEdges: {}".format(v.edgesAsNumpyArray()))
+                    print("newEdges: {}".format(newEdges))
+                    print("expWeights: {}".format(expWeights))
+                    print("newWeights: {}".format(newWeights))
                     print("**************************************")
 
                 resFound = True
@@ -168,6 +165,73 @@ class MergeTest(unittest.TestCase):
                 #    self.assertEqual(newExtras, 0)
 
         self.assertTrue(resFound)
+
+    # **** Use strands ****
+    # **** Stranded points, following strands ****
+    # Here we use the strand information and only merge points with ewual
+    # strand
+    def testUseStrandsPositive(self):
+        """
+        Positive strands
+        :return:
+        """
+        self._runTest(starts=[10,10], strands=['+','+'],
+                      expStarts=[10],
+                      expStrands=['+'], useStrands=True,
+                      expTrackFormatType="Points")
+
+    def testUseStrandsNegative(self):
+        """
+        Negative strands
+        :return:
+        """
+        self._runTest(starts=[10,10], strands=['-','-'], expStarts=[10],
+                      expStrands=['-'], useStrands=True,
+                      expTrackFormatType="Points")
+
+    def testUseStrandsPositiveComplex(self):
+        """
+        More complex track
+        :return:
+        """
+        self._runTest(starts=[1,5,5,10], strands=['-','+','+','+'],
+                      expStarts=[1,5,10], expStrands=['-','+','+'],
+                      useStrands=True, expTrackFormatType="Points")
+
+    def testUseStrandsMultiple(self):
+        """
+        More complex track
+        :return:
+        """
+        self._runTest(starts=[1,5,5,10,10,20],
+                      strands=['-','+','+','-','-','+'],
+                      expStarts=[1,5,10,20], expStrands=['-','+','-','+'],
+                      useStrands=True, expTrackFormatType="Points")
+
+    def testUseStrandMix(self):
+        """
+        Multiple overlap with mixed strands. Test that we merge the positive
+        points and that the negative one is unaltered.
+        :return:
+        """
+        self._runTest(starts=[1,1,1,4], strands=['+','+','-','+'],
+                      values=[2,4,10,14], expStarts=[1,1,4],
+                      expStrands=['+','-','+'], expValues=[4,10,14],
+                      useStrands=True, expTrackFormatType="Valued points")
+
+    def testUseStrandsCrossingLinks(self):
+        """
+        Test that links from a positive segment to a negative segment are
+        updated to the new merge-ids
+        :return: None
+        """
+        self._runTest(starts=[10,15,30], ends=[20,25,40],
+                      strands=['+','+','-'], ids=['1','2','3'],
+                      edges=['2','3','1'],
+                      expStarts=[10,30], expEnds=[25,40], expStrands=['+','-'],
+                      expIds=['merge-1','3'],
+                      expEdges=[['merge-1','3'],['merge-1', '']],
+                      expTrackFormatType="Linked segments")
 
     # **** Points ****
     def testPointsOverlap(self):
@@ -253,6 +317,7 @@ class MergeTest(unittest.TestCase):
         self._runTest(starts=[1,5,5,10], strands=['+','-','+','+'],
                       expStarts=[1,5,10], expStrands=['+','.','+'],
                       expTrackFormatType="Points")
+
 
     # **** Valued Points ****
     def testValuedPointsDefault(self):
@@ -484,7 +549,6 @@ class MergeTest(unittest.TestCase):
                       debug=True)
 
     # **** Segments ****
-
     def testSegmentsPartialOverlap(self):
         """
         Test that two partial overlapping segments are merged correctly
@@ -553,81 +617,188 @@ class MergeTest(unittest.TestCase):
                       expTrackFormatType="Segments")
 
     # **** Valued Segments ****
-
-    def testValuedSegments(self):
-
-        # No overlap
+    def testValuedSegmentsNoOverlap(self):
+        """
+        No overlapp in track
+        :return:
+        """
         self._runTest(starts=[10,20], ends=[15,25], values=[1,2],
-                      expStarts=[10,20], expEnds=[15,25], expValues=[1,2])
+                      expStarts=[10,20], expEnds=[15,25], expValues=[1,2],
+                      expTrackFormatType="Valued segments")
 
-        # Total overlap
+    def testValuedSegmentsTotalOverlap(self):
+        """
+        Segment B is totally inside A.
+        :return:
+        """
         self._runTest(starts=[10,20], ends=[30, 25], values=[10,20],
-                      expStarts=[10], expEnds=[30], expValues=[20])
+                      expStarts=[10], expEnds=[30], expValues=[20],
+                      expTrackFormatType="Valued segments")
 
-        # Using a custom mergeValueFunction
+    def testValuedSegmentsCustomMerge(self):
+        """
+        Test using a custom mergeValuesFunction
+        :return:
+        """
         self._runTest(starts=[10,20], ends=[30, 25], values=[10,20],
                       expStarts=[10], expEnds=[30], expValues=[10],
-                      mergeValuesFunction=np.minimum)
+                      mergeValuesFunction=np.minimum,
+                      expTrackFormatType="Valued segments")
 
-        # Multiple. Partial and total
-        self._runTest(starts=[10,20,35], ends=[25,40,100], values=[10,20,30],
-                      expStarts=[10], expEnds=[100], expValues=[30])
+    def testValuedSegmentsPartial(self):
+        """
+        Test of partial overlap
+        :return:
+        """
+        self._runTest(starts=[10,20,35], ends=[25,40,100], values=[50,40,30],
+                      expStarts=[10], expEnds=[100], expValues=[50],
+                      expTrackFormatType="Valued segments")
+
+    def testValuedSegmentsPartialCustomMerge(self):
+        """
+        Partial overlap using a custom mergeValuesFunction
+        :return:
+        """
         self._runTest(starts=[10,20,35], ends=[25,40,100], values=[10,20,30],
                       expStarts=[10], expEnds=[100], expValues=[10],
-                      mergeValuesFunction=np.minimum)
+                      mergeValuesFunction=np.minimum,
+                      expTrackFormatType="Valued segments")
 
     # **** LinkedSegments ****
-
-    def atestLinkedSegments(self):
+    def testLinkedSegmentsNoOverlap(self):
+        """
+        No overlap
+        :return:
+        """
         self._runTest(starts=[10,20], ends=[15, 25],
                       ids=['1','2'], edges=['2','1'],
                       expIds=['1','2'], expEdges=['2','1'],
-                      expStarts=[10,20], expEnds=[15,25])
+                      expStarts=[10,20], expEnds=[15,25],
+                      expTrackFormatType="Linked segments")
 
+    def testLinkedSegmentsTotalOverlap(self):
+        """
+        B inside A
+        :return:
+        """
         self._runTest(starts=[10,20], ends=[30, 25],
                       ids=['1','2'], edges=['2','1'],
                       expIds=['merge-1'], expEdges=[['merge-1','merge-1']],
-                      expStarts=[10], expEnds=[30], debug=True)
+                      expStarts=[10], expEnds=[30],
+                      expTrackFormatType="Linked segments")
 
+    def testLinkedSegmentsEqualOverlap(self):
+        """
+        A == B
+        :return:
+        """
         self._runTest(starts=[10,10], ends=[30, 30],
                       ids=['1','2'], edges=['2','1'],
                       expIds=['merge-1'], expEdges=[['merge-1','merge-1']],
-                      expStarts=[10], expEnds=[30])
+                      expStarts=[10], expEnds=[30],
+                      expTrackFormatType="Linked segments")
 
-        # Multiple overlap
+    def testLinkedSegmentsMultipleTotalOverlap(self):
+        """
+        B and C inside A
+        :return:
+        """
         self._runTest(starts=[10,20,40], ends=[50,25,45],
                       ids=['1','2','3'], edges=['2','3','1'],
                       expIds=['merge-2'],
                       expEdges=[['merge-2','merge-2','merge-2']],
-                      expStarts=[10], expEnds=[50])
+                      expStarts=[10], expEnds=[50],
+                      expTrackFormatType="Linked segments")
 
+    def testLinkedSegmentsOneSegment(self):
         # No overlap
         self._runTest(starts=[10], ends=[50],
                       ids=['1'], edges=['1'],
                       expIds=['1'], expEdges=['1'],
-                      expStarts=[10], expEnds=[50])
+                      expStarts=[10], expEnds=[50],
+                      expTrackFormatType="Linked segments")
 
-        self._runTest(starts=[10,100], ends=[50,300],
-                      ids=['1','2'], edges=['2','1'],
-                      expIds=['1','2'], expEdges=['2','1'],
-                      expStarts=[10,100], expEnds=[50,300])
-
-        # Total overlap
-        self._runTest(starts=[10,20], ends=[25, 40],
-                      ids=['1','2'], edges=['2','1'],
-                      expIds=['merge-1'], expEdges=[['merge-1','merge-1']],
-                      expStarts=[10], expEnds=[40], debug=True)
-
-    def atestLinkedSegments(self):
-        # Multiple. Partial and total
-        self._runTest(starts=[10,20,35], ends=[25,40,100],
+    def testLinkedSegmentsMultiplePartialOverlap(self):
+        """
+        B joins A and C
+        :return:
+        """
+        self._runTest(starts=[10,20,30], ends=[25,35,50],
                       ids=['1','2','3'], edges=['2','3','1'],
                       expIds=['merge-2'],
                       expEdges=[['merge-2','merge-2','merge-2']],
-                      expStarts=[10], expEnds=[100])
+                      expStarts=[10], expEnds=[50],
+                      expTrackFormatType="Linked segments")
 
-    # TODO, Test merging mixed track type. What happens if one of the tracks
-    # are missing one or more of of the
+    # **** weights ****
+    def testWeightedLinksNoOverlap(self):
+        """
+        Weighted links, no overlap
+        :return:
+        """
+        self._runTest(starts=[10,20], ends=[15, 25],
+                      ids=['1','2'], edges=['2','1'], weights=[[1.],[2.]],
+                      expIds=['1','2'], expEdges=['2','1'],
+                      expWeights=[[1.],[2.]],
+                      expStarts=[10,20], expEnds=[15,25], debug=True,
+                      expTrackFormatType="Linked segments")
+
+    def testWeightedLinkedTotalOverlap(self):
+        """
+        B inside A
+        :return:
+        """
+        self._runTest(starts=[10,20], ends=[30, 25],
+                      ids=['1','2'], edges=['2','1'], weights=[[1.],[2.]],
+                      expIds=['merge-1'], expEdges=[['merge-1','merge-1']],
+                      expWeights=[[1., 2.]], expStarts=[10], expEnds=[30],
+                      expTrackFormatType="Linked segments")
+
+    def testWeightedLinksEqualOverlap(self):
+        """
+        A == B
+        :return:
+        """
+        self._runTest(starts=[10,10], ends=[30, 30],
+                      ids=['1','2'], edges=['2','1'], weights=[[1.],[2.]],
+                      expIds=['merge-1'], expEdges=[['merge-1','merge-1']],
+                      expStarts=[10], expEnds=[30], expWeights=[[1.,2.]],
+                      expTrackFormatType="Linked segments")
+
+    def testWeightedLinksMultipleTotalOverlap(self):
+        """
+        B and C inside A
+        :return:
+        """
+        self._runTest(starts=[10,20,40], ends=[50,25,45],
+                      ids=['1','2','3'], edges=['2','3','1'],
+                      weights=[[1.],[2.],[3.]], expIds=['merge-2'],
+                      expEdges=[['merge-2','merge-2','merge-2']],
+                      expWeights=[[1.,2.,3.]], expStarts=[10], expEnds=[50],
+                      expTrackFormatType="Linked segments")
+
+    def testWeightedLinksOneSegment(self):
+        # No overlap
+        self._runTest(starts=[10], ends=[50],
+                      ids=['1'], edges=['1'], weights=[[1.]],
+                      expIds=['1'], expEdges=['1'],
+                      expStarts=[10], expEnds=[50], expWeights=[[1.]],
+                      expTrackFormatType="Linked segments")
+
+    def testWeightedLinksMultiplePartialOverlap(self):
+        """
+        B joins A and C
+        The way we merge multiple overlap from the end, the order of the
+        resulting weights is not intuitive, but the weight is attached to
+        the correct edge.
+        :return:
+        """
+        self._runTest(starts=[10,20,30], ends=[25,35,50],
+                      ids=['1','2','3'], edges=['2','3','1'],
+                      weights=[[1.],[2.],[3.]], expIds=['merge-2'],
+                      expEdges=[['merge-2','merge-2','merge-2']],
+                      expStarts=[10], expEnds=[50], expWeights=[[1.,3.,2.]],
+                      expTrackFormatType="Linked segments")
 
 if __name__ == "__main__":
     unittest.main()
