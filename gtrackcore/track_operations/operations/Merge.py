@@ -1,18 +1,9 @@
 
 import logging
-import sys
-import time
 
-from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.RawOperationContent import RawOperationContent
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-from gtrackcore.track_operations.Genome import Genome
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
 
@@ -30,8 +21,9 @@ class Merge(Operator):
         assert len(args) == 1
         assert args[0] is not None
         self._kwargs = kwargs
-        self._options = {'allowOverlap': False,
-                         'resultAllowOverlap': False,
+        self._options = {'debug': False,
+                         'allowOverlaps': False,
+                         'resultAllowOverlaps': False,
                          'trackFormatReqChangeable': False,
                          'resultTrackFormatReqChangeable': False,
                          'mergeValuesFunction': None,
@@ -57,12 +49,7 @@ class Merge(Operator):
         # We set the resultTrackRequirements based on the input track
         tr = self._trackFormat
 
-        # TODO create a createFromTrackFormat method in TrackFormatReq
-        self._resultTrackRequirements = TrackFormatReq(dense=tr.isDense(),
-                                                       val=tr._val,
-                                                       interval=tr.isInterval(),
-                                                       linked=tr.isLinked(),
-                                                       allowOverlaps=self._resultAllowOverlap)
+        self._resultTrackRequirements = TrackFormatReq(name=tr.getFormatName())
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -77,10 +64,6 @@ class Merge(Operator):
         edges = tv.edgesAsNumpyArray()
         weights = tv.weightsAsNumpyArray()
 
-        print("in merge: edges: {}".format(edges))
-
-        print("")
-
         if self._useStrands:
             if strands is None:
                 self._useStrands = False
@@ -88,8 +71,8 @@ class Merge(Operator):
         ret = merge(starts, ends, strands=strands, values=values, ids=ids,
                     edges=edges, weights=weights, useStrands=self._useStrands,
                     treatMissingAsNegative=self._treatMissingAsNegative,
-                    mergeValuesFunction=self._mergeValuesFunction)
-
+                    mergeValuesFunction=self._mergeValuesFunction,
+                    debug=self._debug)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 7
@@ -106,16 +89,13 @@ class Merge(Operator):
             edges = ret[5]
             weights = ret[6]
 
-            print("edges in result: {}".format(edges))
-
             tv = createRawResultTrackView(None, region, None,
                                           self.allowOverlaps,
                                           newStarts=starts, newEnds=ends,
                                           newValues=values, newStrands=strands,
                                           newIds=ids, newEdges=edges,
                                           newWeights=weights,
-                                          trackFormat=self._trackFormat)
-
+                                          trackFormatReq=self._trackFormat)
             return tv
         else:
             return None
