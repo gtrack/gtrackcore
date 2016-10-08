@@ -6,34 +6,32 @@ from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.raw_operations.Shift import shift
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.operations.Merge import Merge
 
 class Shift(Operator):
 
     def __init__(self, *args, **kwargs):
         self._kwargs = kwargs
         self._options = {'debug': False,
-                         'allowOverlap': False,
-                         'resultAllowOverlap': False,
-                         'shift': None,
-                         'positive': None,
-                         'negative': None,
-                         'fraction': False,
-                         'useStrand': True,
-                         'useMissingStrand': True,
+                         'allowOverlaps': False,
+                         'resultAllowOverlaps': False,
+                         'shiftLength': None,
+                         'useFraction': False,
+                         'useStrands': True,
                          'treatMissingAsNegative': False
                          }
         # Save the tracks
         self._tracks = args
 
+        self._trackFormat = args[0].trackFormat
+
         # Core properties
         self._numTracks = 1
         self._resultIsTrack = True
         self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
-        self._resultTrackRequirements = self._trackRequirements[0]
+            [TrackFormatReq(dense=False)]
+        self._resultTrackRequirements = TrackFormatReq(
+            name=self._trackFormat.getFormatName())
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -48,17 +46,29 @@ class Shift(Operator):
         regionSize = len(region)
 
         ret = shift(starts, ends, regionSize, strands=strands,
-                    shift=self._shift, positive=self._positive,
-                    negative=self._negative, fraction=self._fraction,
-                    useMissingStrand=self._useMissingStrand,
-                    treatMissingAsPositive=self._treatMissingAsPositive,
-                    allowOverlap=self._allowOverlap)
+                    shiftLength=self._shiftLength,
+                    useFraction=self._useFraction,
+                    useStrands=self._useStrands,
+                    treatMissingAsNegative=self._treatMissingAsNegative)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 4
-            return createRawResultTrackView(ret[0], ret[1], ret[2], region,
-                                            tv, self._allowOverlap,
-                                            newStrands=ret[3])
+
+            starts = ret[0]
+            ends = ret[1]
+            index = ret[2]
+            strands = ret[3]
+
+            if starts is None:
+                print()
+                return None
+
+            tv = createRawResultTrackView(index, region, tv,
+                                          self._resultAllowOverlaps,
+                                          newStarts=starts, newEnds=ends,
+                                          newStrands=strands,
+                                          trackFormatReq=self._resultTrackRequirements)
+            return tv
         else:
             return None
 
@@ -66,6 +76,13 @@ class Shift(Operator):
         return track
 
     def postCalculation(self, result):
+
+        if not self._resultAllowOverlaps and not result.isEmpty():
+            m = Merge(result, useStrands=self._useStrands,
+                      treatMissingAsNegative=self._treatMissingAsNegative)
+            track = m.calculate()
+            return track
+
         return result
 
     @classmethod
@@ -80,25 +97,7 @@ class Shift(Operator):
         parser.add_argument('genome', help='File path of Genome definition')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
-        parser.set_defaults(which='Subtract')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.trackA,
-                                            args.allowOverlap)
-
-        allowOverlap = args.allowOverlap
-        # TODO: use overlap...
-
-        return Shift(track)
+        parser.set_defaults(which='Shift')
 
     def printResult(self):
         pass

@@ -2,21 +2,15 @@
 import numpy as np
 
 
-def shift(starts, ends, regionSize, strands=None, shift=None, positive=None,
-          negative=None, fraction=False, useMissingStrand=False,
-          treatMissingAsPositive=True, allowOverlap=True):
+def shift(starts, ends, regionSize, strands=None, shiftLength=None,
+          useFraction=False, useStrands=True, treatMissingAsNegative=False):
     """
     Shift elements in a track a give nr of BP.
     :param starts: numpy array. Starts
     :param ends: numpy array. Ends
     :param regionSize: Int. The regions max size.
     :param strands: numpy array. Strand info
-    :param shift: Int. Nr of BP to shift if we want to shift all segments the
-    equal
-    :param positive: Int/Float. Nr of BP to shift segments with positive
-    strand.
-    :param negative: Int/Float. nr of BP to shift segments with negative
-    strand.
+    :param shift: Int. Nr of BP to shift if we want to shift all segments
     :param fraction: Boolean. Shift is a fraction of the size of the segment.
     :param useMissingStrand: Boolean. If we are to use segment with missing
     strand information.
@@ -28,86 +22,57 @@ def shift(starts, ends, regionSize, strands=None, shift=None, positive=None,
     :return: New shifted track as start, ends, strand and index
     """
 
-    if strands is not None:
-        if fraction:
-            assert shift is None
-            assert positive is None
-            assert negative is None
-            # TODO
-            raise NotImplementedError
+    assert shiftLength is not None
 
-        elif shift != None:
-            # Shifting all segments
-            assert positive is None
-            assert negative is None
+    if useStrands and strands is None:
+        # We need strand info to follow it.
+        useStrands = False
 
+
+    if useStrands:
+        # Shift in the strand direction.
+
+        if treatMissingAsNegative:
             positiveIndex = np.where(strands == '+')
+            negativeIndex = np.where((strands == '-') | (strands == '.'))
+        else:
+            positiveIndex = np.where((strands == '+') | (strands == '.'))
             negativeIndex = np.where(strands == '-')
 
-            # Update the positive segments
-            starts[positiveIndex] = starts[positiveIndex] + shift
-            ends[positiveIndex] = ends[positiveIndex] + shift
+        if useFraction:
+            positiveLengths = ends[positiveIndex] - starts[positiveIndex]
+            negativeLengths = ends[negativeIndex] - starts[negativeIndex]
 
-            # Update the negative segments
-            starts[negativeIndex] = starts[negativeIndex] - shift
-            ends[negativeIndex] = ends[negativeIndex] - shift
+            positiveShift = positiveLengths * shiftLength
+            positiveShift = positiveShift.astype(int)
 
-            if useMissingStrand:
-                # Update the rest
-                missingIndex = np.where(strands == '.')
-
-                if treatMissingAsPositive:
-                    starts[missingIndex] = starts[missingIndex] + shift
-                    ends[missingIndex] = ends[missingIndex] + shift
-                else:
-                    starts[missingIndex] = starts[missingIndex] - shift
-                    ends[missingIndex] = ends[missingIndex] - shift
+            negativeShift = negativeLengths * shiftLength
+            negativeShift = negativeShift.astype(int)
 
         else:
-            # Shifting positive and/or negative segments
-            assert positive is not None or negative is not None
+            positiveShift = shiftLength
+            negativeShift = shiftLength
 
-            if positive is not None:
-                # Updating positive segments
-                positiveIndex = np.where(strands == '+')
-                starts[positiveIndex] = starts[positiveIndex] + positive
-                ends[positiveIndex] = ends[positiveIndex] + positive
+        # Update the positive segments
+        starts[positiveIndex] = starts[positiveIndex] + positiveShift
+        ends[positiveIndex] = ends[positiveIndex] + positiveShift
 
-                if useMissingStrand:
-                    # Update segments with missing strand info
-                    missingIndex = np.where(strands == '.')
-
-                    if treatMissingAsPositive:
-                        starts[missingIndex] = starts[missingIndex] + positive
-                        ends[missingIndex] = ends[missingIndex] + positive
-
-            if negative is not None:
-                # Updating negative segments
-                negativeIndex = np.where(strands == '-')
-                starts[negativeIndex] = starts[negativeIndex] - negative
-                ends[negativeIndex] = ends[negativeIndex] - negative
-
-                if useMissingStrand:
-                    # Update segments with missing strand info
-                    missingIndex = np.where(strands == '.')
-
-                    if not treatMissingAsPositive:
-                        starts[missingIndex] = starts[missingIndex] - negative
-                        ends[missingIndex] = ends[missingIndex] - negative
+        # Update the negative segments
+        starts[negativeIndex] = starts[negativeIndex] - negativeShift
+        ends[negativeIndex] = ends[negativeIndex] - negativeShift
 
     else:
-        # Strand is not given or we are to ignore it.
-        # We will only use the shift value or fraction.
-        if fraction:
-            raise NotImplementedError
-        else:
-            # Using the shift value
-            assert positive is None
-            assert negative is None
-            assert shift is not None
+        if useFraction:
+            # Using a fraction of the length as a basis for the shift.
+            # Round to int
 
-            starts = starts + shift
-            ends = ends + shift
+            lengths = ends - starts
+            shiftLength = lengths * shiftLength
+            shiftLength = shiftLength.astype(int)
+            # Strand is not given or we are to ignore it.
+
+        starts = starts + shiftLength
+        ends = ends + shiftLength
 
     # We now check and fix any underflow/overflow
     # This is where one of the segments is shifted under 0 or over the size
@@ -136,7 +101,16 @@ def shift(starts, ends, regionSize, strands=None, shift=None, positive=None,
     endOverflowIndex = np.where(ends > regionSize)
     ends[endOverflowIndex] = regionSize
 
-    if not allowOverlap:
-        raise NotImplementedError
+    # When two segments overlap totally, we get dangling points...
+    # For now we fix it by removing all points. This is probably not the
+    # way to go..
+    # if (newStarts == newEnds).any():
+    danglingPoints = np.where(starts == ends)
+    starts = np.delete(starts, danglingPoints)
+    ends = np.delete(ends, danglingPoints)
+
+    if strands is not None:
+        strands = np.delete(strands, danglingPoints)
+    index = np.delete(index, danglingPoints)
 
     return starts, ends, index, strands
