@@ -29,9 +29,9 @@ class RemoveDeadLinksTest(unittest.TestCase):
                  ids=None, edges=None, weights=None, newId=None,
                  expStarts=None, expEnds=None, expValues=None,
                  expStrands=None, expIds=None, expEdges=None,
-                 expWeights=None, customChrLength=None, allowOverlap=True,
-                 resultAllowOverlap=False, expTrackFormatType=None,
-                 debug=False):
+                 expWeights=None, expExtras=None, customChrLength=None,
+                 allowOverlap=True, resultAllowOverlap=False,
+                 expTrackFormatType=None, debug=False):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
                                              valList=values,
@@ -61,7 +61,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                 newIds = v.idsAsNumpyArray()
                 newEdges = v.edgesAsNumpyArray()
                 newWeights = v.weightsAsNumpyArray()
-                #newExtras = v.extrasAsNumpyArray()
+                newExtras = v.allExtrasAsDictOfNumpyArrays()
 
                 if debug:
                     print("newTrackFormatType: {}".format(v.trackFormat))
@@ -91,8 +91,6 @@ class RemoveDeadLinksTest(unittest.TestCase):
                     self.assertTrue(newStarts is not None)
                     self.assertTrue(np.array_equal(newStarts, expStarts))
                 else:
-                    print(newStarts)
-                    print(newEnds)
                     self.assertTrue(newStarts is None)
 
                 if expEnds is not None:
@@ -139,11 +137,15 @@ class RemoveDeadLinksTest(unittest.TestCase):
                 else:
                     self.assertTrue(newWeights is None)
 
-                #if expExtras is not None:
-                #    self.assertTrue(newExtras is not None)
-                #    self.assertTrue(np.array_equal(newExtras, expExtras))
-                #else:
-                #    self.assertTrue(newExtras is None)
+                if expExtras is not None:
+                    for key in expExtras.keys():
+                        self.assertTrue(v.hasExtra(key))
+
+                        expExtra = expExtras[key]
+                        newExtra = newExtras[key]
+                        self.assertTrue(np.array_equal(newExtra, expExtra))
+                else:
+                    self.assertTrue(len(newExtras) == 0)
 
             else:
                 # Tests if all tracks no in chr1 have a size of 0.
@@ -520,7 +522,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
         self._runTest(ids=['1','2','3'], edges=['2','3','5'],
                       values=[1,2,3], expValues=[1,2,3],
                       expIds=['1','2','3'],expEdges=['2', '3', ''],
-                      customChrLength=3)
+                      customChrLength=3, expTrackFormatType="Linked function")
 
     def testInputLinkedBasePairs(self):
         """
