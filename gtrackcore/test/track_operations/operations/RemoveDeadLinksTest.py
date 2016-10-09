@@ -20,6 +20,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
     def setUp(self):
         self.chr1 = (GenomeRegion('hg19', 'chr1', 0,
                                   GenomeInfo.GENOMES['hg19']['size']['chr1']))
+        self.chr1Small = (GenomeRegion('hg19', 'chr1', 0, 3))
         self.chromosomes = (GenomeRegion('hg19', c, 0, l)
                             for c, l in
                             GenomeInfo.GENOMES['hg19']['size'].iteritems())
@@ -29,7 +30,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                  expStarts=None, expEnds=None, expValues=None,
                  expStrands=None, expIds=None, expEdges=None,
                  expWeights=None, customChrLength=None, allowOverlap=True,
-                 resultAllowOverlap=False,
+                 resultAllowOverlap=False, expTrackFormatType=None,
                  debug=False):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
@@ -63,6 +64,8 @@ class RemoveDeadLinksTest(unittest.TestCase):
                 #newExtras = v.extrasAsNumpyArray()
 
                 if debug:
+                    print("newTrackFormatType: {}".format(v.trackFormat))
+                    print("expTrackFormatType: {}".format(expTrackFormatType))
                     print("newStarts: {}".format(newStarts))
                     print("expStarts: {}".format(expStarts))
                     print("newEnds: {}".format(newEnds))
@@ -76,10 +79,20 @@ class RemoveDeadLinksTest(unittest.TestCase):
                     print("newWeights: {}".format(newWeights))
                     print("expWeights: {}".format(expWeights))
 
+                if expTrackFormatType is not None:
+                    self.assertTrue(v.trackFormat.getFormatName() ==
+                                    expTrackFormatType)
+
+                if expEnds is None and expStarts is not None:
+                    # Assuming a point type track. Creating the expected ends.
+                    expEnds = np.array(expStarts) + 1
+
                 if expStarts is not None:
                     self.assertTrue(newStarts is not None)
                     self.assertTrue(np.array_equal(newStarts, expStarts))
                 else:
+                    print(newStarts)
+                    print(newEnds)
                     self.assertTrue(newStarts is None)
 
                 if expEnds is not None:
@@ -141,7 +154,8 @@ class RemoveDeadLinksTest(unittest.TestCase):
     def _runMultipleTest(self, t1Starts, t1Ends, t1Ids, t1Edges, t2Starts,
                          t2Ends, t2Ids, t2Edges, t1ExpStarts, t1ExpEnds,
                          t1ExpIds, t1ExpEdges, t2ExpStarts, t2ExpEnds,
-                         t2ExpIds, t2ExpEdges, debug=False):
+                         t2ExpIds, t2ExpEdges, debug=False,
+                         expTrackFormatType=None):
         """
         Run test on multiple chromosomes.
         :return:
@@ -197,11 +211,17 @@ class RemoveDeadLinksTest(unittest.TestCase):
                     print("newEdges: {}".format(edges))
                     print("t1ExpEdges: {}".format(t1ExpEdges))
 
+                if expTrackFormatType is not None:
+                    self.assertTrue(v.trackFormat.getFormatName() ==
+                                    expTrackFormatType)
+
+
                 self.assertTrue(np.array_equal(starts, t1ExpStarts))
                 self.assertTrue(np.array_equal(ends, t1ExpEnds))
                 self.assertTrue(np.array_equal(ids, t1ExpIds))
                 self.assertTrue(np.array_equal(edges, t1ExpEdges))
                 chr1Found = True
+
             elif cmp(k, chr2) == 0:
                 if debug:
                     print("newStarts: {}".format(starts))
@@ -212,6 +232,11 @@ class RemoveDeadLinksTest(unittest.TestCase):
                     print("t2ExpIds: {}".format(t2ExpIds))
                     print("newEdges: {}".format(edges))
                     print("t2ExpEdges: {}".format(t2ExpEdges))
+
+                if expTrackFormatType is not None:
+                    self.assertTrue(v.trackFormat.getFormatName() ==
+                                    expTrackFormatType)
+
 
                 self.assertTrue(np.array_equal(starts, t2ExpStarts))
                 self.assertTrue(np.array_equal(ends, t2ExpEnds))
@@ -225,14 +250,14 @@ class RemoveDeadLinksTest(unittest.TestCase):
         self.assertTrue(chr1Found)
         self.assertTrue(chr2Found)
 
-    def testSimple(self):
+    def testPointsSimple(self):
         """
         Simple test
         :return: None
         """
         self._runTest(starts=[10,20], ids=['3','10'], edges=['8','3'],
                       expStarts=[10,20], expIds=['3','10'], expEdges=['','3'],
-                      resultAllowOverlap=True)
+                      expTrackFormatType="Linked points", debug=True)
 
     def testMultipleEdges(self):
         """
@@ -243,26 +268,40 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       edges=[['3','9'],['3','10']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
-        # Removed edge, not at the end
+    def testMultipleEdgesNotAtEnd(self):
+        """
+        Edge is not at the end of the list
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['9','3'],['3','10']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
+    def testRemoveAllEdges(self):
+        """
+        Remove all edges
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=['9','424'],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=['',''],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
+    def testRemoveAllEdgesMultiple(self):
+        """
+        Remove all edges, lists
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['9','43'],['43','424']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=['',''],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
     def testChangingEdgesLength(self):
         """
@@ -274,15 +313,21 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       edges=[['3','9'],['3','4']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['3']],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
+
+    def testChangingEdgesLengthRemoveHole(self):
+        """
+        Test removing all of the edges in a list
+        :return:
+        """
 
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['34','4']],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['']],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
-    def testWithWeights(self):
+    def testWithWeightsSimple(self):
         """
         Check that the corresponding weights are removed as well.
 
@@ -292,42 +337,56 @@ class RemoveDeadLinksTest(unittest.TestCase):
         self._runTest(starts=[10,20], ids=['3','10'], edges=['8','3'],
                       weights=[[0.33], [3.31]], expStarts=[10,20],
                       expIds=['3','10'], expEdges=['','3'],
-                      expWeights=[[np.nan], [3.31]], resultAllowOverlap=True,
-                      debug=False)
+                      expWeights=[[np.nan], [3.31]],
+                      expTrackFormatType="Linked points")
 
+    def testWithWeightsList(self):
+        """
+        Test with list of edges/weights
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['3','10']],
                       weights=[[1.,2.],[3.,4.]],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
                       expWeights=[[1.,np.nan],[3.,4.]],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
-        # Removed edge, not at the end
+    def testWithWeightsListNotAtEnd(self):
+        """
+        Edge to remove in not at the end of the list
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['9','3'],['3','10']],
                       weights=[[1.,3.],[4.,10,]],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3',''],['3','10']],
                       expWeights=[[3., np.nan],[4.,10.]],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
-        # Change the length
+    def testWithWeightsChangeLength(self):
+        """
+        Change the length of the list
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['3','4']],
                       weights=[[4.,3.3],[98.,13.4]],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['3']],
                       expWeights=[[4.],[98.]],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
+    def testWithWeightsChangeLengthRemoveHole(self):
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['34','4']],
                       weights=[[32.,4.],[23.,43.4]],
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3'],['']],
                       expWeights=[[32.],[np.nan]],
-                      resultAllowOverlap=True, debug=False)
+                      expTrackFormatType="Linked points")
 
     def testNewIds(self):
         """
@@ -340,12 +399,22 @@ class RemoveDeadLinksTest(unittest.TestCase):
                       expEdges=['dead','3'], debug=False,
                       resultAllowOverlap=True)
 
+    def testNewIdsList(self):
+        """
+        Edge is list
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['3','4']], newId='dead',
                       expStarts=[10,20], expIds=['3','10'],
                       expEdges=[['3','dead'],['3','dead']],
                       resultAllowOverlap=True, debug=False)
 
+    def testNewIdsListAll(self):
+        """
+        All edges on id are updated
+        :return:
+        """
         self._runTest(starts=[10,20], ids=['3','10'],
                       edges=[['3','9'],['34','4']], newId='dead',
                       expStarts=[10,20], expIds=['3','10'],
@@ -385,36 +454,84 @@ class RemoveDeadLinksTest(unittest.TestCase):
                               t1ExpIds=t1ExpIds, t1ExpEdges=t1ExpEdges,
                               t2ExpStarts=t2ExpStarts, t2ExpEnds=t2ExpEnds,
                               t2ExpIds=t2ExpIds, t2ExpEdges=t2ExpEdges,
-                              debug=False)
+                              expTrackFormatType="Linked segments")
 
-        t1Starts = [5,15]
-        t1Ends = [10,20]
-        t1Ids = ['1','2']
-        t1Edges = ['2','9']
+    # *** Test track type inputs ***
+    def testInputLinkedValuedPoints(self):
+        """
+        Most of this is tested i the LP test. Mostly checking that adding
+        columns does not change anything.
+        :return:
+        """
+        self._runTest(starts=[1,2], values=[1,2], ids=['1','2'],
+                      edges=['2','4'], expStarts=[1,2], expValues=[1,2],
+                      expIds=['1','2'],expEdges=['2', ''],
+                      expTrackFormatType="Linked valued points")
 
-        t2Starts = [50,230]
-        t2Ends = [100,500]
-        t2Ids = ['3','4']
-        t2Edges = ['4','1']
+    def testInputLinkedSegments(self):
+        """
+        Most of this is tested i the LP test. Mostly checking that adding
+        columns does not change anything.
+        :return:
+        """
+        self._runTest(starts=[1,5], ends=[3,10], ids=['1','2'],
+                      edges=['2','4'], expStarts=[1,5], expEnds=[3,10],
+                      expIds=['1','2'],expEdges=['2', ''],
+                      expTrackFormatType="Linked segments")
 
-        t1ExpStarts = [5,15]
-        t1ExpEnds = [10,20]
-        t1ExpIds = ['1','2']
-        t1ExpEdges = ['2','']
+    def testInputLinkedValuedSegments(self):
+        """
+        Most of this is tested i the LP test. Mostly checking that adding
+        columns does not change anything.
+        :return:
+        """
+        self._runTest(starts=[1,5], ends=[3,10], values=[1,2], ids=['1','2'],
+                      edges=['2','4'], expStarts=[1,5], expEnds=[3,10],
+                      expValues=[1,2], expIds=['1','2'],expEdges=['2', ''],
+                      expTrackFormatType="Linked valued segments")
 
-        t2ExpStarts = [50,230]
-        t2ExpEnds = [100,500]
-        t2ExpIds = ['3','4']
-        t2ExpEdges = ['4', '1']
+    def atestInputLinkedGenomePartitioning(self):
+        """
+        Most of this is tested i the LP test. Mostly checking that adding
+        columns does not change anything.
+        :return:
+        """
+        self._runTest(ends=[0,1,2], ids=['','1','2'], edges=['','2','4'],
+                      expEnds=[1,3], expIds=['1','2'],
+                      expEdges=['2', ''], customChrLength=3, debug=True)
 
-        self._runMultipleTest(t1Starts=t1Starts, t1Ends=t1Ends, t1Ids=t1Ids,
-                              t1Edges=t1Edges, t2Starts=t2Starts,
-                              t2Ends=t2Ends, t2Ids=t2Ids, t2Edges=t2Edges,
-                              t1ExpStarts=t1ExpStarts, t1ExpEnds=t1ExpEnds,
-                              t1ExpIds=t1ExpIds, t1ExpEdges=t1ExpEdges,
-                              t2ExpStarts=t2ExpStarts, t2ExpEnds=t2ExpEnds,
-                              t2ExpIds=t2ExpIds, t2ExpEdges=t2ExpEdges,
-                              debug=False)
+    def atestInputLinkedStepFunction(self):
+        """
+        Most of this is tested i the LP test. Mostly checking that adding
+        columns does not change anything.
+        :return:
+        """
+        self._runTest(ids=['1','2'], edges=['2','8'], ends=[1,3],
+                      values=[1,2], expValues=[1,2], expEnds=[1,3],
+                      expIds=['1','2'], expEdges=['2', ''],
+                      customChrLength=3, debug=True)
+
+    def testInputLinkedFunction(self):
+        """
+        Most of this is tested i the LP test. Mostly checking that adding
+        columns does not change anything.
+        :return:
+        """
+        self._runTest(ids=['1','2','3'], edges=['2','3','5'],
+                      values=[1,2,3], expValues=[1,2,3],
+                      expIds=['1','2','3'],expEdges=['2', '3', ''],
+                      customChrLength=3)
+
+    def testInputLinkedBasePairs(self):
+        """
+        Most of this is tested i the LP test. Mostly checking that adding
+        columns does not change anything.
+        :return:
+        """
+        self._runTest(ids=['1','2','3'], edges=['2','3','8'],
+                      expIds=['1','2','3'], expEdges=['2', '3', ''],
+                      customChrLength=3,
+                      expTrackFormatType="Linked base pairs")
 
 if __name__ == "__main__":
     unittest.main()
