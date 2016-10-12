@@ -30,7 +30,8 @@ class SubtractTest(unittest.TestCase):
                  expIds=None, expEdges=None, expWeights=None, expExtras=None,
                  expNoResult=False, expTrackFormatType=None,
                  customChrLength=None, allowOverlap=False,
-                 resultAllowOverlap=False, debug=False):
+                 resultAllowOverlap=False, useStrands=True,
+                 treatMissingAsNegative=False, debug=False):
         """
         Run a union test
         :param startsA:
@@ -78,7 +79,10 @@ class SubtractTest(unittest.TestCase):
                                               customChrLength=customChrLength)
 
         s = Subtract(track1, track2, allowOverlap=allowOverlap,
-                     resultAllowOverlap=resultAllowOverlap, debug=debug)
+                     resultAllowOverlap=resultAllowOverlap,
+                     useStrands=useStrands,
+                     treatMissingAsNegative=treatMissingAsNegative,
+                     debug=debug)
 
         tc = s.calculate()
 
@@ -400,6 +404,149 @@ class SubtractTest(unittest.TestCase):
                       endsB=[5,10,13], expStarts=[2,5,10,13],
                       expEnds=[3,8,12,15], expVals=[10,10,10,10],
                       expTrackFormatType="Valued segments")
+
+    # *** Strands, only extract ***
+    # We do not follow the strands, just testing that the strand info from
+    # track A is kept.
+    def testStrandsNotUsedStart(self):
+        """
+        Test if the index is correct
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['+'], startsB=[4],
+                      endsB=[8], expStarts=[2], expEnds=[4], expStrands=['+'],
+                      expTrackFormatType="Segments")
+
+    def testStrandNotUsedEnd(self):
+        """
+        Test if the index is correct
+        :return: None
+        """
+        self._runTest(startsA=[6], endsA=[10], strandsA=['-'], startsB=[4],
+                      endsB=[8], expStarts=[8], expEnds=[10], expStrands=['-'],
+                      expTrackFormatType="Segments")
+
+    def testStrandsNotUsedNoOverlap(self):
+        """
+        Segment intersect, no overlap
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[4], strandsA=['.'], startsB=[6],
+                      endsB=[8], expStarts=[2], expEnds=[4], expStrands=['.'],
+                      expTrackFormatType="Segments")
+
+    def testStrandsNotUsedMultipleOverlap(self):
+        """
+        Two overlapping segments inside A
+        :return:
+        """
+        self._runTest(startsA=[2], endsA=[15], strandsA=['+'],
+                      startsB=[3,8,12], endsB=[5,10,13], expStarts=[2,5,10,13],
+                      expEnds=[3,8,12,15], expStrands=['+','+','+','+'],
+                      expTrackFormatType="Segments")
+
+    # *** Strands, follow direction ***
+    # Test that we only subtract elements with the same strand
+    def testUseStrandsOnlyPositive(self):
+        """
+        Test if the index is correct
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['+'], startsB=[4],
+                      endsB=[8], strandsB=['+'], expStarts=[2], expEnds=[4],
+                      expStrands=['+'], useStrands=True,
+                      treatMissingAsNegative=False,
+                      expTrackFormatType="Segments")
+
+    def testUseStrandsOnlyNegative(self):
+        """
+        Test if the index is correct
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['-'], startsB=[4],
+                      endsB=[8], strandsB=['-'], expStarts=[2], expEnds=[4],
+                      expStrands=['-'], useStrands=True,
+                      treatMissingAsNegative=False,
+                      expTrackFormatType="Segments")
+
+    def testUseStrandsOnlyMissingDefault(self):
+        """
+        Test missing, default
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['.'], startsB=[4],
+                      endsB=[8], strandsB=['+'], expStarts=[2], expEnds=[4],
+                      expStrands=['.'], useStrands=True,
+                      treatMissingAsNegative=False,
+                      expTrackFormatType="Segments")
+
+    def testUseStrandsOnlyMissingDefaultNoSubtract(self):
+        """
+        Test missing, default
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['.'], startsB=[4],
+                      endsB=[8], strandsB=['-'], expStarts=[2], expEnds=[6],
+                      expStrands=['.'], useStrands=True,
+                      treatMissingAsNegative=False,
+                      expTrackFormatType="Segments")
+
+    def testUseStrandsOnlyMissingAsNegative(self):
+        """
+        Test missing, default
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['.'], startsB=[4],
+                      endsB=[8], strandsB=['-'], expStarts=[2], expEnds=[4],
+                      expStrands=['.'], useStrands=True,
+                      treatMissingAsNegative=True,
+                      expTrackFormatType="Segments")
+
+    def testUseStrandsOnlyMissingAsNegativeNoOverlap(self):
+        """
+        Test missing, default
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['.'], startsB=[4],
+                      endsB=[8], strandsB=['+'], expStarts=[2], expEnds=[6],
+                      expStrands=['.'], useStrands=True,
+                      treatMissingAsNegative=True,
+                      expTrackFormatType="Segments")
+
+    def testUseStrandsPositiveNegative(self):
+        """
+        We expect to se no subtracktion
+        :return: None
+        """
+        self._runTest(startsA=[2], endsA=[6], strandsA=['+'], startsB=[4],
+                      endsB=[8], strandsB=['-'], expStarts=[2], expEnds=[6],
+                      expStrands=['+'], useStrands=True,
+                      treatMissingAsNegative=False,
+                      expTrackFormatType="Segments")
+
+    def testUseStrandsMix(self):
+        """
+        Test with both
+        :return:
+        """
+        self._runTest(startsA=[5,20], endsA=[10,26], strandsA=['+','-'],
+                      startsB=[6,22], endsB=[8,24], strandsB=['+', '-'],
+                      expStarts=[5,8,20,24], expEnds=[6,10,22,26],
+                      expStrands=['+','+','-','-'], useStrands=True,
+                      treatMissingAsNegative=False,
+                      expTrackFormatType="Segments", debug=True)
+
+    def testUseStrandsMixSorting(self):
+        """
+        Test that the new track is sorted correctly
+        :return:
+        """
+        self._runTest(startsA=[5,20], endsA=[10,26], strandsA=['-','+'],
+                      startsB=[6,22], endsB=[8,24], strandsB=['-', '+'],
+                      expStarts=[5,8,20,24], expEnds=[6,10,22,26],
+                      expStrands=['-','-','+','+'], useStrands=True,
+                      treatMissingAsNegative=False,
+                      expTrackFormatType="Segments", debug=True)
 
     # **** Points - Segments ****
     def testPointsAndSegments(self):

@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 
-def subtract(t1Starts, t1Ends, t2Starts, t2Ends, createIndex=True,
+def _subtract(t1Starts, t1Ends, t2Starts, t2Ends, t1Index, createIndex=True,
              debug=False):
     """
     Subtract a track from another. A-B
@@ -14,7 +14,6 @@ def subtract(t1Starts, t1Ends, t2Starts, t2Ends, createIndex=True,
     :return:
     """
 
-    t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
     t2Index = np.full([len(t2Starts)], -1, dtype='int32')
 
     if len(t2Starts) == 0:
@@ -120,3 +119,98 @@ def subtract(t1Starts, t1Ends, t2Starts, t2Ends, createIndex=True,
     newIndex = np.delete(newIndex, danglingPoints)
 
     return newStarts, newEnds, newIndex
+
+def subtract(t1Starts, t1Ends, t2Starts, t2Ends, t1Strands=None,
+             t2Strands=None, createIndex=True, useStrands=True,
+             treatMissingAsNegative=False, debug=False):
+    """
+    Subtract a track from another. A-B
+    Equal to the set operation relative complement of B in A.
+
+    :param t1Starts: Numpy array: Start positions of track A
+    :param t1Ends: Numpy array: End positions of track A
+    :param t2Starts: Numpy array: Start positions of track B
+    :param t2Ends: Numpy array: End positions of track B
+    :return:
+    """
+
+    assert len(t1Starts) == len(t1Ends)
+    assert len(t2Starts) == len(t2Ends)
+
+    t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
+
+    if t1Strands is None or t2Strands is None:
+        # Not enough strand information.
+        useStrands = False
+    else:
+        assert len(t1Strands) == len(t1Starts)
+        assert len(t2Strands) == len(t2Starts)
+
+    if len(t2Starts) == 0:
+        # Nothing to subtract, returning track 1
+        return t1Starts, t1Ends, t1Strands, t1Index
+
+    if useStrands:
+        if treatMissingAsNegative:
+            t1PositiveStrand = np.where(t1Strands == '+')
+            t1NegativeStrand = np.where((t1Strands == '-') |
+                                        (t1Strands == '.'))
+
+            t2PositiveStrand = np.where(t2Strands == '+')
+            t2NegativeStrand = np.where((t2Strands == '-') |
+                                        (t2Strands == '.'))
+
+        else:
+            t1PositiveStrand = np.where((t1Strands == '+') |
+                                        (t1Strands == '.'))
+            t1NegativeStrand = np.where(t1Strands == '-')
+
+            t2PositiveStrand = np.where((t2Strands == '+') |
+                                        (t2Strands == '.'))
+            t2NegativeStrand = np.where(t2Strands == '-')
+
+        posRes = _subtract(t1Starts[t1PositiveStrand],
+                           t1Ends[t1PositiveStrand],
+                           t2Starts[t2PositiveStrand],
+                           t2Ends[t2PositiveStrand],
+                           t1Index[t1PositiveStrand],
+                           createIndex=createIndex, debug=debug)
+
+        negRes = _subtract(t1Starts[t1NegativeStrand],
+                           t1Ends[t1NegativeStrand],
+                           t2Starts[t2NegativeStrand],
+                           t2Ends[t2NegativeStrand],
+                           t1Index[t1NegativeStrand],
+                           createIndex=createIndex, debug=debug)
+
+        if len(posRes[0]) > 0 and len(negRes[0]) > 0:
+            # result on both strands
+
+            pos = np.column_stack((posRes[0], posRes[1], posRes[2]))
+            neg = np.column_stack((negRes[0], negRes[1], negRes[2]))
+            res = np.concatenate((pos,neg))
+
+            # Sort on start, then end
+            res = res[np.lexsort((res[:,0], res[:,1]))]
+
+            starts = res[:,0]
+            ends = res[:,1]
+            indexes = res[:,2]
+
+            return starts, ends, indexes
+
+        elif len(posRes[0]) == 0 and len(negRes[0]) == 0:
+            # Nothing left to return
+            return None, None, None
+
+        elif len(posRes[0]) > 0:
+            # Only positive left, returning it
+            return posRes
+        else:
+            # Only negative left, returning it
+            return negRes
+
+    else:
+
+        return _subtract(t1Starts, t1Ends, t2Starts, t2Ends, t1Index,
+                         createIndex=createIndex, debug=debug)

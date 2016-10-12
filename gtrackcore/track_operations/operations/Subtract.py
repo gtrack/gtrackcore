@@ -20,7 +20,8 @@ class Subtract(Operator):
         self._options = {'debug': False,
                          'allowOverlaps': False,
                          'resultAllowOverlaps': False,
-                         'useStrands': True
+                         'useStrands': True,
+                         'treatMissingAsNegative': False
                          }
 
         # Save the tracks
@@ -50,7 +51,24 @@ class Subtract(Operator):
         t2Starts = tv2.startsAsNumpyArray()
         t2Ends = tv2.endsAsNumpyArray()
 
-        ret = subtract(t1Starts, t1Ends, t2Starts, t2Ends, debug=self._debug)
+        if self._useStrands:
+            t1Strands = tv1.strandsAsNumpyArray()
+            t2Strands = tv2.strandsAsNumpyArray()
+
+            if t1Strands is None or t2Strands is None:
+                self._useStrands = None
+                t1Strands = None
+                t2Strands = None
+
+        else:
+            t1Strands = None
+            t2Strands = None
+
+        ret = subtract(t1Starts, t1Ends, t2Starts, t2Ends,
+                       t1Strands=t1Strands, t2Strands=t2Strands,
+                       useStrands=self._useStrands,
+                       treatMissingAsNegative=self._treatMissingAsNegative,
+                       debug=self._debug)
 
         if ret is not None and len(ret[0]) != 0:
             assert len(ret) == 3
