@@ -1,107 +1,122 @@
 import numpy as np
 import sys
 
-def subtract(t1Starts, t1Ends, t2Starts, t2Ends, allowOverlapingInputs):
+def subtract(t1Starts, t1Ends, t2Starts, t2Ends, createIndex=True,
+             debug=False):
     """
     Subtract a track from another. A-B
     Equal to the set operation relative complement of B in A.
-
-    TODO: support overlapping inputs
 
     :param t1Starts: Numpy array: Start positions of track A
     :param t1Ends: Numpy array: End positions of track A
     :param t2Starts: Numpy array: Start positions of track B
     :param t2Ends: Numpy array: End positions of track B
-    :param allowOverlapingInputs: Boolean: Allow overlap in input tracks.
     :return:
     """
 
-    if len(t1Starts) == 0:
-        # TODO: fix for partitions
-        # Nothing to subtract from.
-        # Returning empty arrays
-        return [], [], []
+    t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
+    t2Index = np.full([len(t2Starts)], -1, dtype='int32')
 
-    if t1Ends is None and t2Ends is None:
-        # Points - points
-        t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
-        select = np.in1d(t1Starts, t2Starts)
+    if len(t2Starts) == 0:
+        # Nothing to subtract, returning track 1
+        return t1Starts, t1Ends, t1Index
 
-        starts = t1Starts[~select]
-        index = t1Index[~select]
+    t1CodedStarts = t1Starts * 8 + 5
+    t1CodedEnds = t1Ends * 8 + 3
+    t2CodedStarts = t2Starts * 8 + 6
+    t2CodedEnds = t2Ends * 8 + 2
 
-        return starts, None, index
+    allCodedEvents = np.concatenate((t1CodedStarts, t1CodedEnds,
+                                     t2CodedStarts, t2CodedEnds))
 
-    elif t1Ends is None:
-        # Points - segments
-        # We remove points covered by the segments.
-        t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
+    index = np.concatenate((t1Index,t1Index,t2Index,t2Index))
 
-        select = np.in1d(t1Starts, t2Starts)
+    combined = np.column_stack((allCodedEvents, index))
+    combined = combined[np.lexsort((combined[:, -1], combined[:, 0]))]
 
-        t2Starts = np.concatenate([np.arange(x,y) for x,y in zip(t2Starts,
-                                                                     t2Ends)])
-        select = np.in1d(t1Starts, t2Starts)
+    allSortedEvents = combined[:, 0]
+    allEventCodes = (allSortedEvents % 8) - 4
+    allSortedDecodedEvents = allSortedEvents / 8
 
-        starts = t1Starts[~select]
-        index = t1Index[~select]
+    allEventLengths = allSortedDecodedEvents[1:] - allSortedDecodedEvents[:-1]
+    cumulativeCoverStatus = np.add.accumulate(allEventCodes)
 
-        return starts, None, index
+    overlapIndexes = np.where(cumulativeCoverStatus[:-1] == 1)
 
-    elif t2Ends is None:
-        # Segments - points
-        # We split segments covered by a point
-        raise NotImplementedError
-    else:
-        # segments - segments
+    newStarts = allSortedDecodedEvents[overlapIndexes]
+    newEnds = newStarts + allEventLengths[overlapIndexes]
 
-        t1Index = np.arange(0, len(t1Starts), 1, dtype='int32')
-        t2Index = np.arange(0, len(t2Starts), 1, dtype='int32')
+    if createIndex:
+        # When the cover status goes from 3->1 we are going to use a point
+        # from track B. We need to update the index so it reflect witch
+        # element i track A to use.
+        # As we are at status 1, the end point from track A will be
+        # somewhere down the cover status.
+        # We find this point by setting the index for these points to the
+        # index of the next element.
+        # If there are multiple segments from B that overlap one from A,
+        # then we need to do this updating until all elements are updated.
+        # We can do this by only updating the points that do not have a
+        # valid index. All elements from trackB have a non valid index of -1.
+        # We need to update where the cover status goes from 1 to 3 as well.
+        # This is done to "push" the correct index down the array.
 
-        if len(t2Starts) == 0:
-            # Nothing to subtract, returning track 1
-            return t1Starts, t1Ends, t1Index
+        # We check first if there are any any points where we need to find
+        # the index
 
-        t1Encode = np.zeros(len(t1Starts), dtype=np.int) + 1
-        t2Encode = np.zeros(len(t2Starts), dtype=np.int) + 2
+        if len(np.where(combined[:,-1][overlapIndexes] == -1)[0]) > 0:
+            # There are points with incorrect indexes
+            # find points to fix..
 
-        t1CodedStarts = t1Starts * 8 + 5
-        t1CodedEnds = t1Ends * 8 + 3
-        t2CodedStarts = t2Starts * 8 + 6
-        t2CodedEnds = t2Ends * 8 + 2
+            # Find the points where we go from status 3 -> 1
+            atEndIndex = np.where((cumulativeCoverStatus[:-1] == 3) &
+                                   (cumulativeCoverStatus[1:] == 1))[0]
+            atEndIndex = atEndIndex + 1
 
-        allCodedEvents = np.concatenate((t1CodedStarts, t1CodedEnds,
-                                         t2CodedStarts, t2CodedEnds))
+            # Find the points where we go from status 1 -> 3
+            atStartIndex = np.where((cumulativeCoverStatus[:-1] == 1) &
+                                    (cumulativeCoverStatus[1:] == 3))[0]
+            atStartIndex = atStartIndex + 1
 
-        index = np.concatenate((t1Index,t1Index,t2Index,t2Index))
-        encode = np.concatenate((t1Encode,t1Encode,t2Encode,t2Encode))
+            index = combined[:,-1]
+            startsToUpdate = atStartIndex[
+                np.where(combined[:,-1][atStartIndex] == -1)]
+            endsToUpdate = atEndIndex[
+                np.where(combined[:,-1][atEndIndex] == -1)]
 
-        combined = np.column_stack((allCodedEvents, index, encode))
-        combined = combined[np.lexsort((combined[:, -1], combined[:, 0]))]
+            while len(startsToUpdate) > 0 or len(endsToUpdate) > 0:
+                # As the last element will always be a 0, we do not need to
+                # check for overflow of the cumulativeCoverStatus array
 
-        combinedIndex = np.arange(0,len(combined))
-        combined = np.column_stack((combined, combinedIndex))
+                if len(startsToUpdate) > 0:
+                    startsFromIndex = startsToUpdate + 1
+                    combined[:,-1][startsToUpdate] = index[startsFromIndex]
 
-        allSortedEvents = combined[:, 0]
-        allEventCodes = (allSortedEvents % 8) - 4
-        allSortedDecodedEvents = allSortedEvents / 8
+                if len(endsToUpdate) > 0:
+                    endsFromIndex = endsToUpdate + 1
+                    combined[:,-1][endsToUpdate] = index[endsFromIndex]
 
-        allEventLengths = allSortedDecodedEvents[1:] - allSortedDecodedEvents[:-1]
-        cumulativeCoverStatus = np.add.accumulate(allEventCodes)
+                startsToUpdate = atStartIndex[np.where(
+                    combined[:,-1][atStartIndex] == -1)]
+                endsToUpdate = atEndIndex[np.where(
+                    combined[:,-1][atEndIndex] == -1)]
+        else:
+            if debug:
+                print("No points with incorrect index")
 
-        overlapIndexes = np.where(cumulativeCoverStatus[:-1] == 1)
+    newIndex = combined[:,-1][overlapIndexes]
 
-        newStarts = allSortedDecodedEvents[overlapIndexes]
-        newEnds = newStarts + allEventLengths[overlapIndexes]
+    if debug:
+        print(combined)
+        print("newIndex: {}".format(newIndex))
 
-        newIndex = combined[:,-2][overlapIndexes]
+    # When two segments overlap totally, we get dangling points...
+    # For now we fix it by removing all points. This is probably not the
+    # way to go..
+    # if (newStarts == newEnds).any():
+    danglingPoints = np.where(newStarts == newEnds)
+    newStarts = np.delete(newStarts, danglingPoints)
+    newEnds = np.delete(newEnds, danglingPoints)
+    newIndex = np.delete(newIndex, danglingPoints)
 
-        # When two segments overlap totally, we get dangling points...
-        # For now we fix it by removing all points. This is probably not the
-        # way to go..
-        danglingPoints = np.where(newStarts == newEnds)
-        newStarts = np.delete(newStarts, danglingPoints)
-        newEnds = np.delete(newEnds, danglingPoints)
-        newIndex = np.delete(newIndex, danglingPoints)
-
-        return newStarts, newEnds, newIndex
+    return newStarts, newEnds, newIndex
