@@ -1,13 +1,16 @@
 import numpy as np
 
 def flank(starts, ends, genomeSize, strands=None, useStrands=True,
-          start=None, end=None, both=None, useFraction=False,
+          downstream=None, upstream=None, both=None, useFraction=False,
           treatMissingAsNegative=False, debug=False):
 
     assert starts is not None
     assert ends is not None
     assert len(starts) == len(ends)
-    assert (end is not None or start is not None) or both is not None
+
+    print(useFraction)
+
+    assert (downstream is not None or upstream is not None) or both is not None
 
     if useStrands:
         assert strands is not None
@@ -16,37 +19,34 @@ def flank(starts, ends, genomeSize, strands=None, useStrands=True,
     flankEnds = None
 
     if useFraction:
+        # TODO: use strands
         # Using a fraction of the segments length as a basis for the flank.
         # To do this we need to calculate the flank length for each segment.
         # The new arrays are converted to ints.
+        if debug:
+            print("Calculating fractions from lengths ")
 
         lengths = ends - starts
 
         if both is not None:
-            assert start is None
-            assert end is None
-
+            if debug:
+                print("Creating fractions from both")
             # We can ignore strand when calculating length
-
             both = lengths * both
             both.astype(int)
         else:
-            if start is not None:
-                start = lengths * start
-                start.astype(int)
+            if downstream is not None:
+                downstream = lengths * downstream
+                downstream = downstream.astype(int)
 
-            if end is not None:
-                end = lengths * end
-                end.astype(int)
+            if upstream is not None:
+                upstream = lengths * upstream
+                upstream = upstream.astype(int)
 
     if not useStrands:
         # Ignoring strand. Every element is treated like it has a positive
         # strand.
         if both is not None:
-            # Both flank given.
-            assert start is None
-            assert end is None
-
             # Flank at the start side
             startEnds = starts
             startStarts = starts - both
@@ -68,21 +68,20 @@ def flank(starts, ends, genomeSize, strands=None, useStrands=True,
 
         else:
             # !STRAND -> END/START
-            assert (start is not None or end is not None)
 
             startFlank = None
             endFlank = None
 
-            if start is not None:
+            if downstream is not None:
                 # Start flank given.
                 startEnds = starts
-                startStarts = starts - start
+                startStarts = starts - downstream
                 startFlank = np.column_stack((startStarts, startEnds))
 
-            if end is not None:
+            if upstream is not None:
                 # End flank given
                 endStarts = ends
-                endEnds = ends + end
+                endEnds = ends + upstream
                 endFlank = np.column_stack((endStarts, endEnds))
 
             if startFlank is not None and endFlank is not None:
@@ -121,8 +120,6 @@ def flank(starts, ends, genomeSize, strands=None, useStrands=True,
 
         if both is not None:
             # STRAND -> BOTH
-            assert start is None
-            assert end is None
 
             positiveStartEnds = starts[positiveStrand]
             positiveStartStarts = starts[positiveStrand] - both
@@ -180,15 +177,13 @@ def flank(starts, ends, genomeSize, strands=None, useStrands=True,
 
         else:
             # STRAND->END/START
-            assert (start is not None or end is not None)
-
             startFlank = None
             endFlank = None
 
-            if start is not None:
+            if downstream is not None:
                 # Find and create flanks for the positive segments
                 positiveStartEnds = starts[positiveStrand]
-                positiveStartStarts = starts[positiveStrand] - start
+                positiveStartStarts = starts[positiveStrand] - downstream
 
                 # 0 == '+'
                 positiveStartFlank = \
@@ -200,7 +195,7 @@ def flank(starts, ends, genomeSize, strands=None, useStrands=True,
 
                 # Find and create flanks for the negative segments
                 negativeStartStarts = ends[negativeStrand]
-                negativeStartEnds = ends[negativeStrand] + start
+                negativeStartEnds = ends[negativeStrand] + downstream
 
                 # 1 == '-'
                 negativeStartFlank = \
@@ -212,9 +207,9 @@ def flank(starts, ends, genomeSize, strands=None, useStrands=True,
 
                 startFlank = np.concatenate((positiveStartFlank,
                                              negativeStartFlank))
-            if end is not None:
+            if upstream is not None:
                 positiveEndStarts = ends[positiveStrand]
-                positiveEndEnds = ends[positiveStrand] + end
+                positiveEndEnds = ends[positiveStrand] + upstream
 
                 # 0 == '+'
                 positiveEndFlank = \
@@ -225,7 +220,7 @@ def flank(starts, ends, genomeSize, strands=None, useStrands=True,
                                              dtype=np.int) + 0))
 
                 negativeEndEnds = starts[negativeStrand]
-                negativeEndStarts = starts[negativeStrand] - end
+                negativeEndStarts = starts[negativeStrand] - upstream
 
                 # 1 == '-'
                 negativeEndFlank = \
