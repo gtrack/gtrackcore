@@ -1,14 +1,17 @@
 import numpy as np
 
-def uniquifyLinks(ids, edges, trackIdentifier=None,
-                allowOverlap=True, debug=False):
-
+def uniquifyLinks(ids, edges, trackIdentifier=None, debug=False):
     assert ids is not None
 
     if debug:
         print("In uniquifyLinks!")
         print("ids: {}".format(ids))
         print("edges: {}".format(edges))
+
+    if len(ids) == 0:
+        return None
+
+    assert len(ids) == len(edges)
 
     index = np.arange(0,len(ids))
 
