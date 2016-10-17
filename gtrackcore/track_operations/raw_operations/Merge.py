@@ -202,7 +202,7 @@ def _merge(starts, ends, strands=None, values=None, ids=None, edges=None,
 
         # If we have multiple overlap, we only remove the last element.
         inRemove = np.in1d(removeIndex, totalOverlapIndex, invert=True)
-        if len(inRemove > 0):
+        if len(inRemove) > 0:
             # We have multiple overlap
             inOverlap = np.in1d(totalOverlapIndex, removeIndex, invert=True)
 
