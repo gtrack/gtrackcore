@@ -25,9 +25,10 @@ class ExpandTest(unittest.TestCase):
     def _runTest(self, starts=None, ends=None, values=None, strands=None,
                  ids=None, edges=None, weights=None, expStarts=None,
                  expEnds=None, expValues=None, expStrands=None, expIds=None,
-                 expEdges=None, expWeights=None, customChrLength=None,
-                 allowOverlap=True, resultAllowOverlap=False, start=None,
-                 end=None, both=None, useFraction=False, useStrands=False,
+                 expEdges=None, expWeights=None, expExtras=None,
+                 customChrLength=None, allowOverlap=True,
+                 resultAllowOverlap=False, downstream=None, upstream=None, both=None,
+                 useFraction=False, useStrands=False,
                  treatMissingAsNegative=False, debug=False,
                  expTrackFormatType=None):
 
@@ -38,7 +39,7 @@ class ExpandTest(unittest.TestCase):
                                              weightsList=weights,
                                              customChrLength=customChrLength)
 
-        s = Expand(track, both=both, start=start, end=end,
+        s = Expand(track, both=both, downstream=downstream, upstream=upstream,
                    useFraction=useFraction, useStrands=useStrands,
                    treatMissingAsNegative=treatMissingAsNegative,
                    resultAllowOverlap=resultAllowOverlap, debug=debug)
@@ -60,7 +61,7 @@ class ExpandTest(unittest.TestCase):
                 newIds = v.idsAsNumpyArray()
                 newEdges = v.edgesAsNumpyArray()
                 newWeights = v.weightsAsNumpyArray()
-                #newExtras = v.extrasAsNumpyArray()
+                newExtras = v.allExtrasAsDictOfNumpyArrays()
 
                 if debug:
                     print("expTrackFormat: {}".format(expTrackFormatType))
@@ -148,7 +149,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], expStarts=[5], expEnds=[11],
-                      start=5, expTrackFormatType="Segments")
+                      downstream=5, expTrackFormatType="Segments")
 
     def testPointsEnd(self):
         """
@@ -156,7 +157,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], expStarts=[10], expEnds=[16],
-                      end=5, expTrackFormatType="Segments")
+                      upstream=5, expTrackFormatType="Segments")
 
     def testPointsBoth(self):
         """
@@ -172,7 +173,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], expStarts=[5], expEnds=[16],
-                      start=5, end=5, expTrackFormatType="Segments")
+                      downstream=5, upstream=5, expTrackFormatType="Segments")
 
     def testPointsStartAndEndDiff(self):
         """
@@ -180,7 +181,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], expStarts=[6], expEnds=[21],
-                      start=4, end=10, expTrackFormatType="Segments")
+                      downstream=4, upstream=10, expTrackFormatType="Segments")
 
     # **** Test Segments ****
     def testSegmentSimpleStart(self):
@@ -189,7 +190,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[20],
-                      start=5, expTrackFormatType="Segments")
+                      downstream=5, expTrackFormatType="Segments")
 
     def testSegmentSimpleEnd(self):
         """
@@ -197,7 +198,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[10], expEnds=[25],
-                      end=5, expTrackFormatType="Segments")
+                      upstream=5, expTrackFormatType="Segments")
 
     def testSegmentSimpleBoth(self):
         """
@@ -213,7 +214,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
-                      start=5, end=5, expTrackFormatType="Segments")
+                      downstream=5, upstream=5, expTrackFormatType="Segments")
 
     def testSegmentSimpleStartAndEndDiff(self):
         """
@@ -221,7 +222,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[6], expEnds=[35],
-                      start=4, end=15, expTrackFormatType="Segments")
+                      downstream=4, upstream=15, expTrackFormatType="Segments")
 
     def testUnderflowAtStart(self):
         """
@@ -229,7 +230,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10], ends=[20], expStarts=[0], expEnds=[20],
-                      start=10, expTrackFormatType="Segments")
+                      downstream=10, expTrackFormatType="Segments")
 
     def testUnderflowCut(self):
         """
@@ -237,7 +238,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[0], expEnds=[20],
-                      start=100, expTrackFormatType="Segments")
+                      downstream=100, expTrackFormatType="Segments")
 
     def testUnderflowFromStart(self):
         """
@@ -245,7 +246,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[0], ends=[20], expStarts=[0], expEnds=[20],
-                      start=10, expTrackFormatType="Segments")
+                      downstream=10, expTrackFormatType="Segments", debug=True)
 
     def testOverflowAtEnd(self):
         """
@@ -253,7 +254,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[400000], ends=[len(self.chr1)-20],
-                      expStarts=[400000], expEnds=[len(self.chr1)], end=20,
+                      expStarts=[400000], expEnds=[len(self.chr1)], upstream=20,
                       expTrackFormatType="Segments")
 
     def testOverflowCut(self):
@@ -263,7 +264,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[400000], ends=[len(self.chr1)-20],
-                      expStarts=[400000], expEnds=[len(self.chr1)], end=300,
+                      expStarts=[400000], expEnds=[len(self.chr1)], upstream=300,
                       expTrackFormatType="Segments")
 
     def testSegmentsMultipleStartNoOverlap(self):
@@ -273,7 +274,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,40], ends=[20,70], expStarts=[5,35],
-                      expEnds=[20,70], start=5, expTrackFormatType="Segments")
+                      expEnds=[20,70], downstream=5, expTrackFormatType="Segments")
 
     def testSegmentsMultipleEndNoOverlap(self):
         """
@@ -282,7 +283,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,40], ends=[20, 70], expStarts=[10,40],
-                      expEnds=[25,75], end=5, expTrackFormatType="Segments")
+                      expEnds=[25,75], upstream=5, expTrackFormatType="Segments")
 
     def testSegmentsMultipleStartOverlapAllow(self):
         """
@@ -291,7 +292,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4,14],
-                      expEnds=[15,40], start=6, resultAllowOverlap=True,
+                      expEnds=[15,40], downstream=6, resultAllowOverlap=True,
                       expTrackFormatType="Segments")
 
     def testSegmentsMultipleStartOverlapMerge(self):
@@ -301,7 +302,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,20], ends=[15, 40], expStarts=[4],
-                      expEnds=[40], start=6, resultAllowOverlap=False,
+                      expEnds=[40], downstream=6, resultAllowOverlap=False,
                       expTrackFormatType="Segments")
 
     def testStrandsPositiveStart(self):
@@ -311,7 +312,7 @@ class ExpandTest(unittest.TestCase):
         """
         # Positive, start
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
-                      expEnds=[20], expStrands=['+'], start=5, useStrands=True,
+                      expEnds=[20], expStrands=['+'], downstream=5, useStrands=True,
                       expTrackFormatType="Segments")
 
     def testStrandsPositiveEnd(self):
@@ -320,7 +321,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[10],
-                      expEnds=[25], expStrands=['+'], end=5, useStrands=True,
+                      expEnds=[25], expStrands=['+'], upstream=5, useStrands=True,
                       expTrackFormatType="Segments")
 
     def testStrandsPositiveBoth(self):
@@ -338,7 +339,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
-                      expEnds=[30], expStrands=['+'], start=5, end=10,
+                      expEnds=[30], expStrands=['+'], downstream=5, upstream=10,
                       useStrands=True, expTrackFormatType="Segments")
 
     def testStrandsNegativeStart(self):
@@ -347,7 +348,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[10],
-                      expEnds=[25], expStrands=['-'], start=5, useStrands=True,
+                      expEnds=[25], expStrands=['-'], downstream=5, useStrands=True,
                       expTrackFormatType="Segments")
 
     def testStrandsNegativeEnd(self):
@@ -356,7 +357,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
-                      expEnds=[20], expStrands=['-'], end=5, useStrands=True,
+                      expEnds=[20], expStrands=['-'], upstream=5, useStrands=True,
                       expTrackFormatType="Segments")
 
     def testStrandsNegativeBoth(self):
@@ -374,8 +375,9 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
-                      expEnds=[30], expStrands=['-'], start=10, end=5,
-                      useStrands=True, expTrackFormatType="Segments")
+                      expEnds=[30], expStrands=['-'], downstream=10,
+                      upstream=5, useStrands=True,
+                      expTrackFormatType="Segments")
 
     def testStrandsMissingStart(self):
         """
@@ -383,7 +385,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[20], expStrands=['+'], start=5,
+                      expEnds=[20], expStrands=['.'], downstream=5,
                       useStrands=True, expTrackFormatType="Segments")
 
     def testStrandsMissingEnd(self):
@@ -392,8 +394,8 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
-                      expEnds=[25], expStrands=['+'], end=5, useStrands=True,
-                      expTrackFormatType="Segments")
+                      expEnds=[25], expStrands=['.'], upstream=5,
+                      useStrands=True, expTrackFormatType="Segments")
 
     def testStrandsMissingBoth(self):
         """
@@ -401,7 +403,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[25], expStrands=['+'], both=5, useStrands=True,
+                      expEnds=[25], expStrands=['.'], both=5, useStrands=True,
                       expTrackFormatType="Segments")
 
     def testStrandsMissingStartAndEnds(self):
@@ -411,8 +413,9 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[30], expStrands=['+'], start=5, end=10,
-                      useStrands=True, expTrackFormatType="Segments")
+                      expEnds=[30], expStrands=['.'], downstream=5,
+                      upstream=10, useStrands=True,
+                      expTrackFormatType="Segments")
 
     def testStrandsMissingAsNegativeStart(self):
         """
@@ -421,8 +424,8 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[10],
-                      expEnds=[25], expStrands=['-'], start=5, useStrands=True,
-                      treatMissingAsNegative=True,
+                      expEnds=[25], expStrands=['.'], downstream=5,
+                      useStrands=True, treatMissingAsNegative=True,
                       expTrackFormatType="Segments")
 
     def testStrandsMissingAsNegativeEnd(self):
@@ -432,8 +435,8 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[20], expStrands=['-'], end=5, useStrands=True,
-                      treatMissingAsNegative=True,
+                      expEnds=[20], expStrands=['.'], upstream=5,
+                      useStrands=True, treatMissingAsNegative=True,
                       expTrackFormatType="Segments")
 
     def testStrandsMissingAsNegativeBoth(self):
@@ -443,7 +446,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[25], expStrands=['-'], both=5, useStrands=True,
+                      expEnds=[25], expStrands=['.'], both=5, useStrands=True,
                       treatMissingAsNegative=True,
                       expTrackFormatType="Segments")
 
@@ -454,8 +457,9 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[0],
-                      expEnds=[25], expStrands=['-'], start=5, end=10,
-                      useStrands=True, treatMissingAsNegative=True,
+                      expEnds=[25], expStrands=['.'], downstream=5,
+                      upstream=10, useStrands=True,
+                      treatMissingAsNegative=True,
                       expTrackFormatType="Segments")
 
     def testOverlapStartAllow(self):
@@ -466,7 +470,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,25], ends=[20,30], expStarts=[4,19],
-                      expEnds=[20,30], start=6, resultAllowOverlap=True,
+                      expEnds=[20,30], downstream=6, resultAllowOverlap=True,
                       expTrackFormatType="Segments")
 
     def testOverlapStartMerge(self):
@@ -477,7 +481,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10,25], ends=[20,30], expStarts=[4],
-                      expEnds=[30], start=6, resultAllowOverlap=False,
+                      expEnds=[30], downstream=6, resultAllowOverlap=False,
                       expTrackFormatType="Segments")
 
     def testOverlapEndAllow(self):
@@ -488,7 +492,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,24], ends=[20,100], expStarts=[10, 24],
-                      expEnds=[25,105], end=5, resultAllowOverlap=True,
+                      expEnds=[25,105], upstream=5, resultAllowOverlap=True,
                       expTrackFormatType="Segments")
 
     def testOverlapEndMerge(self):
@@ -499,7 +503,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10,24], ends=[20,100], expStarts=[10],
-                      expEnds=[105], end=5, resultAllowOverlap=False,
+                      expEnds=[105], upstream=5, resultAllowOverlap=False,
                       expTrackFormatType="Segments")
 
     def testOverlapBothAllow(self):
@@ -532,7 +536,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,22], ends=[20,30], expStarts=[5,17],
-                      expEnds=[25,35], start=5, end=5,
+                      expEnds=[25,35], downstream=5, upstream=5,
                       resultAllowOverlap=True, expTrackFormatType="Segments")
 
     def testOverlapStartAndEndMerge(self):
@@ -543,7 +547,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10,22], ends=[20,30], expStarts=[5],
-                      expEnds=[35], start=5, end=5, resultAllowOverlap=False,
+                      expEnds=[35], downstream=5, upstream=5, resultAllowOverlap=False,
                       expTrackFormatType="Segments")
 
     def testOverlapStartAndEndAllowDiff(self):
@@ -554,7 +558,7 @@ class ExpandTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10,37], ends=[20,50], expStarts=[6],
-                      expEnds=[65], start=4, end=15,
+                      expEnds=[65], downstream=4, upstream=15,
                       resultAllowOverlap=False, expTrackFormatType="Segments")
 
     def testOverlapStartAndEndMergeDiff(self):
@@ -565,7 +569,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10,37], ends=[20,50], expStarts=[6],
-                      expEnds=[65], start=4, end=15,
+                      expEnds=[65], downstream=4, upstream=15,
                       resultAllowOverlap=False, expTrackFormatType="Segments")
 
     def testFractionsStart(self):
@@ -575,7 +579,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[20],
-                      start=0.5, useFraction=True, resultAllowOverlap=True,
+                      downstream=0.5, useFraction=True, resultAllowOverlap=True,
                       expTrackFormatType="Segments")
 
     def testFractionsEnd(self):
@@ -585,8 +589,8 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[10], expEnds=[25],
-                      end=0.5, useFraction=True, resultAllowOverlap=True,
-                      expTrackFormatType="Segments")
+                      upstream=0.5, useFraction=True, resultAllowOverlap=True,
+                      expTrackFormatType="Segments", debug=True)
 
     def testFractionsBoth(self):
         """
@@ -605,7 +609,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[25],
-                      start=0.5, end=0.5, useFraction=True,
+                      downstream=0.5, upstream=0.5, useFraction=True,
                       resultAllowOverlap=True, expTrackFormatType="Segments")
 
     def testFractionsStartAndEndDiff(self):
@@ -615,7 +619,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[30],
-                      start=0.5, end=1, useFraction=True,
+                      downstream=0.5, upstream=1, useFraction=True,
                       resultAllowOverlap=True, expTrackFormatType="Segments")
 
     def testSegmentsResorting(self):
@@ -643,7 +647,7 @@ class ExpandTest(unittest.TestCase):
         """
 
         self._runTest(starts=[5,10], ends=[8,15], strands=['-','+'],
-                      start=6, expStarts=[4,5], expEnds=[15,14],
+                      downstream=6, expStarts=[4,5], expEnds=[15,14],
                       expStrands=['+','-'], useStrands=True,
                       resultAllowOverlap=True, expTrackFormatType="Segments")
 
@@ -654,7 +658,7 @@ class ExpandTest(unittest.TestCase):
         Test that the values are kept.
         :return:
         """
-        self._runTest(starts=[10], values=[100], end=10, expStarts=[10],
+        self._runTest(starts=[10], values=[100], upstream=10, expStarts=[10],
                       expEnds=[21], expValues=[100],
                       expTrackFormatType="Valued segments",
                       debug=True)
@@ -664,7 +668,7 @@ class ExpandTest(unittest.TestCase):
         Test linked points as input
         :return:
         """
-        self._runTest(starts=[10], ids=['1'], edges=['1'], end=10,
+        self._runTest(starts=[10], ids=['1'], edges=['1'], upstream=10,
                       expStarts=[10], expEnds=[21], expIds=['1'],
                       expEdges=['1'], expTrackFormatType="Linked segments")
 
@@ -674,7 +678,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], values=[100], ids=['1'], edges=['1'],
-                      end=10, expStarts=[10], expEnds=[21], expValues=[100],
+                      upstream=10, expStarts=[10], expEnds=[21], expValues=[100],
                       expIds=['1'], expEdges=['1'],
                       expTrackFormatType="Linked valued segments",)
 
@@ -683,7 +687,7 @@ class ExpandTest(unittest.TestCase):
         Test Valued segments as input
         :return:
         """
-        self._runTest(starts=[10], ends=[20], values=[100], end=10,
+        self._runTest(starts=[10], ends=[20], values=[100], upstream=10,
                       expStarts=[10], expEnds=[30], expValues=[100],
                       expTrackFormatType="Valued segments",)
 
@@ -693,7 +697,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], ids=['1'], edges=['1'],
-                      end=10, expStarts=[10], expEnds=[30], expIds=['1'],
+                      upstream=10, expStarts=[10], expEnds=[30], expIds=['1'],
                       expEdges=['1'], expTrackFormatType="Linked segments",)
 
     def testInputLinkedValuedSegments(self):
@@ -702,7 +706,7 @@ class ExpandTest(unittest.TestCase):
         :return:
         """
         self._runTest(starts=[10], ends=[20], values=[100], ids=['1'],
-                      edges=['1'], end=10, expStarts=[10], expEnds=[30],
+                      edges=['1'], upstream=10, expStarts=[10], expEnds=[30],
                       expValues=[100], expIds=['1'], expEdges=['1'],
                       expTrackFormatType="Linked valued segments",)
 
