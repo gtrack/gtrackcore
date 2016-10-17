@@ -22,7 +22,7 @@ class Intersect(Operator):
     Follow strand
     """
 
-    _trackHelpList = ['Track 1 in the intersect', 'Track 2 intersect']
+    _trackHelpList = ['Track 1 in the intersect', 'Track 2 in the intersect']
     _numTracks = 2
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False),
