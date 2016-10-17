@@ -1,59 +1,33 @@
 
-import logging
-import sys
-import time
+from collections import OrderedDict
 
-from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.format.TrackFormat import TrackFormat
 
+from gtrackcore.track_operations.raw_operations.Complement import complement
+
 from gtrackcore.track_operations.operations.Operator import Operator
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.RawOperationContent import RawOperationContent
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
+
+from gtrackcore.track_operations.operations.Merge import Merge
+
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
-
-from gtrackcore.track_operations.raw_operations.Complement import complement
 
 class Complement(Operator):
     """
     Creates a complementing track.
     """
 
-    def __init__(self, *args, **kwargs):
-        self._kwargs = kwargs
-        self._options = {'debug': False,
-                         'allowOverlap': False,
-                         'resultAllowOverlap': False,
-                         'trackFormatReqChangeable': False,
-                         'resultTrackFormatReqChangeable': False,
-                         'useStrands': True,
-                         'treatMissingAsNegative': False
-                         }
+    _trackHelpList = ['Track to create a complement track from']
+    _numTracks = 1
+    _resultIsTrack = True
+    _trackRequirements = [TrackFormatReq(dense=False)]
 
-        self._tracks = args
-        self._trackFormat = args[0].trackFormat
-
-        self._numTracks = 1
-        self._resultIsTrack = True
-
-        # Complement supports all non-dense tracks (Segments and points)
-        # Any overlap must be merged before.
-        self._trackRequirements = [TrackFormatReq(dense=False,
-                                                  allowOverlaps=False)]
-
-        # The result will always be a segment track.
-        self._resultTrackRequirements = TrackFormatReq(name="Segments",
-                                                       allowOverlaps=False)
-
-        super(self.__class__, self).__init__(*args, **kwargs)
+    # By definition there cannot be any overlap.
+    _resultAllowOverlaps = False
 
     def _calculate(self, region, tv):
-        logging.debug("Start call! region:{0}".format(region))
-
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
         strands = tv.strandsAsNumpyArray()
@@ -79,44 +53,38 @@ class Complement(Operator):
             starts = ret[0]
             ends = ret[1]
             strands = ret[2]
-
             tv = createRawResultTrackView(None, region, None,
-                                          self._allowOverlap,
+                                          self._resultAllowOverlaps,
                                           newStarts=starts, newEnds=ends,
                                           newStrands=strands)
-
-            #tv = TrackView(region, ret[0], ret[1], None, None, None,
-            #               None, None, borderHandling='crop',
-            #               allowOverlaps=self._allowOverlap)
             return tv
         else:
             return None
 
-    def preCalculation(self, track):
-        return track
+    def _postCalculation(self):
+        track = self._tracks[0]
+        merged = Merge(track, useStrands=self._useStrands,
+                       treatMissingAsNegative=self._treatMissingAsNegative,
+                       debug=self._debug)
+        self._tracks = [merged]
 
-    def postCalculation(self, result):
-        return result
-
-    @classmethod
-    def createSubParser(cls, subparsers):
+    def _setResultTrackFormat(self):
         """
-        Creates a subparser. Used by GTool
-        :param subparsers:
-        :return: None
-        """
-        parser = subparsers.add_parser('Complement', help='Creates new track '
-                                       'that is the complement of the track '
-                                       'given')
-        parser.add_argument('track', help='File path of track')
-        parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('--allowOverlap', action='store_true',
-                            help="Allow overlap in the input track")
-        parser.set_defaults(which='Complement')
-
-    def printResult(self):
-        """
-        Operation returns track, not in use
+        Create the correct TrackFormat for the output track.
         :return:
         """
-        pass
+        # The result will always be a segment track.
+        self._resultTrackFormat = TrackFormat(strandList=[], endList=[])
+
+    def _getKwArgumentInfoDict(self):
+        return OrderedDict([
+            ('debug',
+             KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),
+            ('useStrands',
+             KwArgumentInfo('useStrands', 's', 'Follow the strand direction',
+                            bool, True)),
+            ('treatMissingAsNegative',
+             KwArgumentInfo('treatMissingAsNegative', 'n',
+                            'Treat any missing strand as if they are '
+                            'negative. The default is to treat them as positive',
+                            bool, False))])
