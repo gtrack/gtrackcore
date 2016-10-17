@@ -1,7 +1,7 @@
 import numpy as np
 
-def expand(regionSize, starts=None, ends=None, strands=None, start=None,
-           end=None, both=None, useFraction=False, useStrands=False,
+def expand(regionSize, starts=None, ends=None, strands=None, downstream=None,
+           upstream=None, both=None, useFraction=False, useStrands=False,
            treatMissingAsNegative=False, debug=False):
     """
 
@@ -9,8 +9,8 @@ def expand(regionSize, starts=None, ends=None, strands=None, start=None,
     :param starts:
     :param ends:
     :param strands:
-    :param start:
-    :param end:
+    :param downstream:
+    :param upstream:
     :param both:
     :param useFraction:
     :param useStrands:
@@ -23,7 +23,7 @@ def expand(regionSize, starts=None, ends=None, strands=None, start=None,
         print("starts: {}".format(starts))
         print("ends: {}".format(ends))
 
-    assert (end is not None or start is not None) or both is not None
+    assert (downstream is not None or upstream is not None) or both is not None
 
     assert starts is not None
     assert ends is not None
@@ -41,109 +41,49 @@ def expand(regionSize, starts=None, ends=None, strands=None, start=None,
         lengths = ends - starts
 
         if both is not None:
-            assert start is None
-            assert end is None
-
             both = lengths * both
-            both.astype(int)
+            both = both.astype(int)
         else:
-            if start is not None:
-                start = lengths * start
-                start.astype(int)
+            if downstream is not None:
+                downstream = lengths * downstream
+                downstream = downstream.astype(int)
 
-            if end is not None:
-                end = lengths * end
-                end.astype(int)
+            if upstream is not None:
+                upstream = lengths * upstream
+                upstream = upstream.astype(int)
 
     if useStrands:
-        positiveIndex = np.where(strands == '+')
-        if len(positiveIndex[0]) == 0:
-            positiveIndex = None
-
-        negativeIndex = np.where(strands == '-')
-        if len(negativeIndex[0]) == 0:
-            negativeIndex = None
-
-        missingIndex = np.where(strands == '.')
+        if treatMissingAsNegative:
+            positiveStrand = np.where(strands == '+')
+            negativeStrand = np.where((strands == '-') | (strands == '.'))
+        else:
+            positiveStrand = np.where((strands == '+') | (strands == '.'))
+            negativeStrand = np.where(strands == '-')
 
         if debug:
             print("In use strands")
-            print("posIndex: {}".format(positiveIndex))
-            print("negIndex: {}".format(negativeIndex))
-            print("misIndex: {}".format(missingIndex))
-
-        if len(missingIndex[0]) == 0:
-            missingIndex = None
+            print("posStrand: {}".format(positiveStrand))
+            print("negStrand: {}".format(negativeStrand))
 
         if both is not None:
             # When using both, there is no difference in extending negative
             # and positive features.
-            if positiveIndex is not None:
-                starts[positiveIndex] = starts[positiveIndex] - both
-                ends[positiveIndex] = ends[positiveIndex] + both
-            if negativeIndex is not None:
-                starts[negativeIndex] = starts[negativeIndex] - both
-                ends[negativeIndex] = ends[negativeIndex] + both
+            starts[positiveStrand] = starts[positiveStrand] - both
+            ends[positiveStrand] = ends[positiveStrand] + both
 
-            if missingIndex is not None:
-                if treatMissingAsNegative:
-                    starts[missingIndex] = starts[missingIndex] - both
-                    ends[missingIndex] = ends[missingIndex] + both
-                    strands[missingIndex] = '-'
-
-                else:
-                    starts[missingIndex] = starts[missingIndex] - both
-                    ends[missingIndex] = ends[missingIndex] + both
-                    strands[missingIndex] = '+'
+            starts[negativeStrand] = starts[negativeStrand] - both
+            ends[negativeStrand] = ends[negativeStrand] + both
 
         else:
-            if start is not None:
+            if downstream is not None:
                 if debug:
                     print("Extending on start!")
-                if positiveIndex is not None:
-                    if debug:
-                        print("Extending on positive")
-                        print("Start before:")
-                        print(starts)
-                    starts[positiveIndex] = starts[positiveIndex] - start
+                starts[positiveStrand] = starts[positiveStrand] - downstream
+                ends[negativeStrand] = ends[negativeStrand] + downstream
 
-                    if debug:
-                        print("Start after:")
-                        print(starts)
-
-                if negativeIndex is not None:
-                    if debug:
-                        print("Extending on negative")
-                        print("Ends before:")
-                        print(ends)
-                    ends[negativeIndex] = ends[negativeIndex] + start
-
-                    if debug:
-                        print("Ends after:")
-                        print(ends)
-
-                if missingIndex is not None:
-                    if treatMissingAsNegative:
-                        ends[missingIndex] = ends[missingIndex] + start
-                        strands[missingIndex] = '-'
-                    else:
-                        starts[missingIndex] = starts[missingIndex] - start
-                        strands[missingIndex] = '+'
-
-            if end is not None:
-                if positiveIndex is not None:
-                    ends[positiveIndex] = ends[positiveIndex] + end
-                if negativeIndex is not None:
-                    starts[negativeIndex] = starts[negativeIndex] - end
-
-                if missingIndex is not None:
-                    if treatMissingAsNegative:
-                        starts[missingIndex] = starts[missingIndex] - end
-                        strands[missingIndex] = '-'
-                    else:
-                        ends[missingIndex] = ends[missingIndex] + end
-                        strands[missingIndex] = '+'
-
+            if upstream is not None:
+                ends[positiveStrand] = ends[positiveStrand] + upstream
+                starts[negativeStrand] = starts[negativeStrand] - upstream
     else:
         # No strand info or ignoring it.
 
@@ -151,10 +91,10 @@ def expand(regionSize, starts=None, ends=None, strands=None, start=None,
             starts = starts - both
             ends = ends + both
         else:
-            if start is not None:
-                starts = starts - start
-            if end is not None:
-                ends = ends + end
+            if downstream is not None:
+                starts = starts - downstream
+            if upstream is not None:
+                ends = ends + upstream
 
     # The new segments may over/underflow the region.
     # Check that we have no starts bellow 0 and no ends > region size
@@ -190,7 +130,6 @@ def expand(regionSize, starts=None, ends=None, strands=None, start=None,
 
         starts = starts[sortIndex]
         ends = ends[sortIndex]
-        strands = strands[sortIndex]
         index = index[sortIndex]
 
-    return starts, ends, strands, index
+    return starts, ends, index
