@@ -11,7 +11,6 @@ from gtrackcore.track.format.TrackFormat import TrackFormat
 class TrackContents(object):
 
     def __init__(self, genome, trackViews):
-        print("trackViews: {}".format(trackViews))
 #        assert len(trackViews) > 0
         assert isinstance(genome, Genome)
         self._genome = genome
@@ -50,6 +49,12 @@ class TrackContents(object):
         except TrackNameExistsError, e:
             print(e)
 
+    def isEmpty(self):
+        if len(self.regions) == 0:
+            return True
+        else:
+            return False
+
     @property
     def trackViews(self):
         """
@@ -71,8 +76,6 @@ class TrackContents(object):
     @property
     def allowOverlaps(self):
         # TODO: Do this in a better way..
-
-        print(self._trackViews)
 
         return self._trackViews.items()[0][1].allowOverlaps
 
