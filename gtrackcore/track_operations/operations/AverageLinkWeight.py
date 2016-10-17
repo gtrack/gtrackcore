@@ -32,4 +32,4 @@ class AverageLinkWeight(Operator):
              KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),
             ('customAverageFunction',
              KwArgumentInfo('customAverageFunction','c',
-                            'Use a custom average function', None, None)) ])
+                            'Use a custom average function', None, None))])
