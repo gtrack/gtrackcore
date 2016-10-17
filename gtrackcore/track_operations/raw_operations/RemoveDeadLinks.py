@@ -1,6 +1,7 @@
 import numpy as np
 
-def removeDeadLinks(ids, edges, weights, newId=None, globalIds=None, debug=False):
+def removeDeadLinks(ids, edges, weights, newId=None, globalIds=None,
+                    debug=False):
     """
     Checks and remove any dead links.
     A dead links is one that has one that points to a non existing id.
