@@ -63,9 +63,8 @@ class Expand(Operator):
     def _postCalculation(self):
         if not self._resultAllowOverlap:
             # Overlap not allowed in the result. Using merge to remove it
-            m = Merge(self._result, mergeValues=True,
-                      useStrands=self._useStrands,
-                      mergeLinks=True)
+            m = Merge(self._result, useStrands=self._useStrands,
+                      treatMissingAsNegative=self._treatMissingAsNegative)
             self._result = m.calculate()
 
     def _getKwArgumentInfoDict(self):
