@@ -1,68 +1,33 @@
 
-import logging
-import sys
-import time
 import numpy as np
+from collections import OrderedDict
 
-from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.track.format.TrackFormat import TrackFormat
-
-from gtrackcore.track_operations.operations.Operator import Operator
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.RawOperationContent import RawOperationContent
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-from gtrackcore.track_operations.Genome import Genome
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createRawResultTrackView
-
 
 from gtrackcore.track_operations.raw_operations.RemoveDeadLinks import \
     removeDeadLinks
+
+from gtrackcore.track_operations.operations.Operator import Operator
+from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createRawResultTrackView
 
 class RemoveDeadLinks(Operator):
     """
     After operations on linked tracks we can get dead links.
     Links that points to elements that are removed.
 
-    Links in other regions? Find all ids in preCalc and save them..
-
-    Options:
+    Possible extensions:
         - Move link to closest feature
-            - Strand?
-            - Max length
-                - Default value
-                - User value
-        - globalIds
-        - localIds
     """
+    _trackHelpList = ['Track to remove dead links from']
+    _numTracks = 1
+    _resultIsTrack = True
+    _trackRequirements = [TrackFormatReq(linked=True)]
 
-    def __init__(self, *args, **kwargs):
-        self._kwargs = kwargs
-        self._options = {'debug': False,
-                         'allowOverlap': False,
-                         'resultAllowOverlap': False,
-                         'newId': None,
-                         'useGlobalIds': False
-                         }
-        # Save the tracks
-        self._tracks = args
-
-        # Core properties
-        self._numTracks = 1
-        self._resultIsTrack = True
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False, allowOverlaps=False)]
-        self._resultTrackRequirements = self._trackRequirements[0]
-
-        if 'useGlobalIds' in kwargs and kwargs['useGlobalIds']:
-            self._setGlobalIds(args[0])
-
-        super(self.__class__, self).__init__(*args, **kwargs)
+    _globalIds = None
 
     def _calculate(self, region, tv):
-        logging.debug("Start call! region:{0}".format(region))
         ids = tv.idsAsNumpyArray()
         edges = tv.edgesAsNumpyArray()
         weights = tv.weightsAsNumpyArray()
@@ -78,8 +43,10 @@ class RemoveDeadLinks(Operator):
             index = ret[3]
 
             tv = createRawResultTrackView(index, region, tv,
-                                          self._allowOverlap, newIds=ids,
-                                          newEdges=edges, newWeights=weights)
+                                          True,
+                                          newIds=ids, newEdges=edges,
+                                          newWeights=weights,
+                                          trackFormat=self._resultTrackFormat)
             return tv
         else:
             return None
@@ -89,59 +56,37 @@ class RemoveDeadLinks(Operator):
         Improvements: test for uniqueness?
         Takes time.. Better to assume that the user knows this and have
         used ids that are unique.
-        :param track: Input track of opreation
+        :param track: Input track of the operation
         :return:
         """
         trackViews = track.trackViews
         self._globalIds = np.concatenate(([x.idsAsNumpyArray() for x in
                                            trackViews.values()]))
 
-    def preCalculation(self, track):
-        return track
+    def _preCalculation(self):
+        if self._useGlobal:
+            self._setGlobalIds(self._tracks[0])
 
-    def postCalculation(self, track):
-        return track
-
-    @classmethod
-    def createSubParser(cls, subparsers):
+    def _setResultTrackFormat(self):
         """
-        Creates a subparser. Used by GTool
-        :param subparsers:
-        :return: None
-        """
-        parser = subparsers.add_parser('RemoveDeadLinks',
-                                       help='Removes links that are '
-                                            'missing there end node')
-        parser.add_argument('track', help='File path of track')
-        parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('--allowOverlap', action='store_true',
-                            help="Allow overlap in the resulting track")
-        parser.add_argument('-g' '--useGlobal', action='store_true',
-                            help="Check the ids globally.")
-        parser.add_argument('--newId', dest='newId', help="Update the ids to "
-                                                          "the given id")
-        parser.set_defaults(which='RemoveDeadLinks')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.track,
-                                           args.allowOverlap)
-
-        allowOverlap = args.allowOverlap
-
-        return RemoveDeadLinks(track, allowOverlap=allowOverlap)
-
-    def printResult(self):
-        """
-        Operation returns track, not in use
+        Create the correct TrackFormat for the output track.
         :return:
         """
-        pass
+
+        # As we do not change the format of the track we simply use the
+        # input TrackFormat
+        tr = self._tracks[0].trackFormat
+        self._resultTrackFormat = tr
+
+    def _getKwArgumentInfoDict(self):
+        return OrderedDict([
+            ('debug',
+             KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),
+            ('useGlobal',
+             KwArgumentInfo('useGlobal','g',
+                            'Check the ids globally.', bool,
+                            False)),
+            ('newId',
+             KwArgumentInfo('newId', 'm',
+                            'Move the dead links to this id instead of '
+                            'removing them', str, None))])
