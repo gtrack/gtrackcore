@@ -88,13 +88,6 @@ class CountElementsTest(unittest.TestCase):
         """
         self._runTest(starts=[0,20], ends=[10,30], expCount=2)
 
-    def testGenomePartitioning(self):
-        """
-        Simple test of GP
-        :return:
-        """
-        self._runTest(ends=[0,1,3], expCount=2, customChrLength=3)
-
     # **** Test different track types as input ****
     # The test below do not test the function of the operation,
     # only that the operation accepts the supported track types as input.
@@ -158,30 +151,6 @@ class CountElementsTest(unittest.TestCase):
         self._runTest(starts=[0,20], ends=[10,30], strands=['+','-'],
                       values=[1,2], ids=[1,2], edges=[2,1],
                       weights=[[1],[1]], expCount=2)
-
-    def testStepFunction(self):
-        """
-        Simple test of GP
-        :return:
-        """
-        self._runTest(ends=[0,1,3], values=[0,2,2], expCount=2,
-                      customChrLength=3)
-
-    def testLinkedGenomePartition(self):
-        """
-        Simple test of GP
-        :return:
-        """
-        self._runTest(ends=[0,1,3], ids=['1','2','3'], edges=['2','3','2'],
-                      expCount=2, customChrLength=3)
-
-    def testLinkedStepFunction(self):
-        """
-        Simple test of GP
-        :return:
-        """
-        self._runTest(ends=[0,1,3], ids=['1','2','3'], edges=['2','3','2'],
-                      values=[0,1,2], expCount=2, customChrLength=3)
 
 if __name__ == "__main__":
     unittest.main()
