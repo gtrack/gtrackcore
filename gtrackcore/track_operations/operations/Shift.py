@@ -82,7 +82,7 @@ class Shift(Operator):
              KwArgumentInfo('shiftLength', 'l',
                             'Length of shift in number of base pairs or as a '
                             'fraction of the elements length',
-                            bool, True)),
+                            float, None)),
             ('useFraction',
              KwArgumentInfo('useFraction', 'f',
                             'Shift each element a fraction of its length '
