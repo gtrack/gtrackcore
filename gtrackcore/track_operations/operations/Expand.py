@@ -18,7 +18,7 @@ class Expand(Operator):
     """
     Extends all of the segments in a track a given number of BP.
     """
-    _trackHelpList = ['Track to create flank track from']
+    _trackHelpList = ['Track to expand']
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False)]
