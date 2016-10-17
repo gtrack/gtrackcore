@@ -69,7 +69,7 @@ class Filter(Operator):
                                       newValues=vals, newStrands=strands,
                                       newIds=ids, newEdges=edges,
                                       newWeights=weights, newExtras=extras,
-                                      trackFormatReq=self._resultTrackFormat)
+                                      trackFormat=self._resultTrackFormat)
 
         return tv
 
