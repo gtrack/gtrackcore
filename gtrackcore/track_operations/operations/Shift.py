@@ -1,47 +1,33 @@
 
-import time
+from collections import OrderedDict
 
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.track_operations.operations.Operator import Operator
+
 from gtrackcore.track_operations.raw_operations.Shift import shift
+
+from gtrackcore.track_operations.operations.Merge import Merge
+from gtrackcore.track_operations.operations.Operator import Operator
+from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
+
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
-from gtrackcore.track_operations.operations.Merge import Merge
 
 class Shift(Operator):
 
-    def __init__(self, *args, **kwargs):
-        self._kwargs = kwargs
-        self._options = {'debug': False,
-                         'allowOverlaps': False,
-                         'resultAllowOverlaps': False,
-                         'shiftLength': None,
-                         'useFraction': False,
-                         'useStrands': True,
-                         'treatMissingAsNegative': False
-                         }
-        # Save the tracks
-        self._tracks = args
-
-        self._trackFormat = args[0].trackFormat
-
-        # Core properties
-        self._numTracks = 1
-        self._resultIsTrack = True
-        self._trackRequirements = \
-            [TrackFormatReq(dense=False)]
-        self._resultTrackRequirements = TrackFormatReq(
-            name=self._trackFormat.getFormatName())
-
-        super(self.__class__, self).__init__(*args, **kwargs)
+    _trackHelpList = ['Track to be shifted']
+    _numTracks = 1
+    _resultIsTrack = True
+    _trackRequirements = [TrackFormatReq(dense=False)]
 
     def _calculate(self, region, tv):
 
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
 
-        # TODO: only load if we need it?
-        strands = tv.strandsAsNumpyArray()
+        if self._useStrands:
+            strands = tv.strandsAsNumpyArray()
+        else:
+            strands = None
 
         regionSize = len(region)
 
@@ -59,45 +45,59 @@ class Shift(Operator):
             index = ret[2]
             strands = ret[3]
 
-            if starts is None:
-                print()
-                return None
-
             tv = createRawResultTrackView(index, region, tv,
-                                          self._resultAllowOverlaps,
+                                          self._resultAllowOverlap,
                                           newStarts=starts, newEnds=ends,
                                           newStrands=strands,
-                                          trackFormatReq=self._resultTrackRequirements)
+                                          trackFormat=self._resultTrackFormat)
             return tv
         else:
             return None
 
-    def preCalculation(self, track):
-        return track
-
-    def postCalculation(self, result):
-
-        if not self._resultAllowOverlaps and not result.isEmpty():
-            m = Merge(result, useStrands=self._useStrands,
+    def _postCalculation(self):
+        if not self._resultAllowOverlap and not self._result.isEmpty():
+            m = Merge(self._result, useStrands=self._useStrands,
                       treatMissingAsNegative=self._treatMissingAsNegative)
-            track = m.calculate()
-            return track
+            self._result = m.calculate()
 
-        return result
-
-    @classmethod
-    def createSubParser(cls, subparsers):
+    def _setResultTrackFormat(self):
         """
-        Creates a subparser. Used by GTool
-        :param subparsers:
-        :return: None
+        Create the correct TrackFormat for the output track.
+        :return:
         """
-        parser = subparsers.add_parser('shift', help='Shift segments in track')
-        parser.add_argument('trackA', help='File path of track')
-        parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('--allowOverlap', action='store_true',
-                            help="Allow overlap in the resulting track")
-        parser.set_defaults(which='Shift')
+        # As we do not change the trackFormat we simply use the TrackFormat
+        # of the input track.
+        self._resultTrackFormat = self._tracks[0].trackFormat
 
-    def printResult(self):
-        pass
+    def _getKwArgumentInfoDict(self):
+        return OrderedDict([
+            ('debug',
+             KwArgumentInfo('debug', 'd', 'Print debug info',
+                            bool, False)),
+            ('resultAllowOverlap',
+             KwArgumentInfo('resultAllowOverlap','o',
+                            'Allow overlap in the result track.',
+                            bool, False)),
+            ('shiftLength',
+             KwArgumentInfo('shiftLength', 'l',
+                            'Length of shift in number of base pairs or as a '
+                            'fraction of the elements length',
+                            bool, True)),
+            ('useFraction',
+             KwArgumentInfo('useFraction', 'f',
+                            'Shift each element a fraction of its length '
+                            'instead of given number of base pairs',
+                            bool, True)),
+            ('useStrands',
+             KwArgumentInfo('useStrands', 's', 'Follow the strand direction',
+                            bool, True)),
+            ('treatMissingAsNegative',
+             KwArgumentInfo('treatMissingAsNegative', 'n',
+                            'Treat any missing strand as if they are '
+                            'negative. The default is to treat them as '
+                            'positive',
+                            bool, False)),
+            ('mergeValuesFunction',
+             KwArgumentInfo('mergeValuesFunction', 'v',
+                            'Use a custom function when merging values',
+                            None, None))])
