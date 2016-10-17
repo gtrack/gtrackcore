@@ -1,24 +1,17 @@
 
 import logging
-import sys
-import time
 
-from gtrackcore.track.core.TrackView import TrackView
+from collections import OrderedDict
+
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track.core.TrackView import TrackView
 
 from gtrackcore.track_operations.operations.Operator import Operator
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.RawOperationContent import RawOperationContent
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
+
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
-
-
-from gtrackcore.track_operations.raw_operations.UniquifyLinks import \
-    uniquifyLinks
 
 class Filter(Operator):
     """
@@ -29,87 +22,10 @@ class Filter(Operator):
         variable: Remove specific column. Strands, values, links ect..
 
     """
-
-    def __init__(self, *args, **kwargs):
-
-        assert args[0] is not None
-
-        self._kwargs = kwargs
-        self._options = {'debug': False,
-                         'allowOverlaps': True,
-                         'resultAllowOverlaps': True,
-                         'removeStrands': False,
-                         'removeValues': False,
-                         'removeLinks': False,
-                         'removeWeights': False,
-                         'removeExtras': False
-                         }
-        # Save the tracks
-        self._tracks = args[0]
-
-        self._trackFormat = args[0].trackFormat
-
-        # Core properties
-        self._numTracks = 1
-        self._resultIsTrack = True
-        self._trackRequirements = [TrackFormatReq()]
-
-        # S
-        tr = self._trackFormat
-        # TODO, update his to reflect
-        self._resultTrackRequirements = self._createTrackFormatReq()
-        super(self.__class__, self).__init__(*args, **kwargs)
-
-    def _createTrackFormatReq(self):
-        """
-        Creates the correct TrackFormatReq according to what kind of data we
-        are filtering out.
-        :return:
-        """
-
-        tr = self._trackFormat
-        # Gaps and lengths are not changed
-        dense = tr.isDense()
-        intervals = tr.isInterval()
-
-        valued = tr.isValued()
-        linked = tr.isLinked()
-        weighted = tr.isWeighted()
-        stranded = tr.hasStrand()
-
-        if stranded and self._removeStrands:
-            stranded = False
-
-        if valued:
-            if self._removeValues:
-                valued = None
-            else:
-                # Using the _val variable to get the key. The value
-                # name function returns the value from the dict.
-                # TrackFormatReq requires the key in its __init__ function..
-                valued = tr._val
-        else:
-            valued = None
-
-        if linked:
-            if self._removeLinks:
-                linked = False
-                weighted = False
-
-            else:
-                if weighted and self._removeWeights:
-                    weighted = False
-                elif weighted:
-                    # Same as with the value name
-                    weighted = tr._weights
-                else:
-                    weighted = None
-
-        req = TrackFormatReq(dense=dense, interval=intervals, linked=linked,
-                             weights=weighted, val=valued, strand=stranded,
-                             allowOverlaps=self._resultAllowOverlaps)
-
-        return req
+    _trackHelpList = ['Track to filter from']
+    _numTracks = 1
+    _resultIsTrack = True
+    _trackRequirements = [TrackFormatReq()]
 
     def _calculate(self, region, tv):
         logging.debug("Start call! region:{0}".format(region))
@@ -142,63 +58,133 @@ class Filter(Operator):
             else:
                 weights = tv.weightsAsNumpyArray()
 
-        #if self._removeExtras:
-            #extras = None
-        #else:
-            #extras = tv.extrasAsNumpyArray()
+        if self._removeExtras:
+            extras = None
+        else:
+            extras = tv.allExtrasAsDictOfNumpyArrays()
 
-        tv = createRawResultTrackView(None, region, [None],
-                                      self._resultAllowOverlaps,
+        tv = createRawResultTrackView(None, region, None,
+                                      self._resultAllowOverlap,
                                       newStarts=starts, newEnds=ends,
-                                      newStrands=strands, newValues=vals,
+                                      newValues=vals, newStrands=strands,
                                       newIds=ids, newEdges=edges,
-                                      newWeights=weights,
-                                      trackFormatReq=self._resultTrackRequirements)
-                                      # newExtras=extras)
+                                      newWeights=weights, newExtras=extras,
+                                      trackFormatReq=self._resultTrackFormat)
+
         return tv
 
-    def preCalculation(self, track):
-        return track
-
-    def postCalculation(self, track):
-        return track
-
-    @classmethod
-    def createSubParser(cls, subparsers):
+    def _setResultTrackFormat(self):
         """
-        Creates a subparser. Used by GTool
-        :param subparsers:
-        :return: None
-        """
-        parser = subparsers.add_parser('Filter',
-                                       help='Filter out data in track')
-        parser.add_argument('track', help='File path of track')
-        parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('--strands',
-                            action='store_true',
-                            dest='removeStrands',
-                            help="Remove strands, if present")
-        parser.add_argument('--values', action='store_true',
-                            dest='removeValues',
-                            help="Remove values, if present")
-        parser.add_argument('--ids', action='store_true',
-                             dest='removeIds',
-                             help="Remove the ids (and all of the links),"
-                                  " if present")
-        parser.add_argument('--edges', action='store_true',
-                            dest='removeEdges',
-                            help="Remove edges (and weights), if present")
-        parser.add_argument('--weights', action='store_true',
-                            dest='removeWeights',
-                            help="Remove weights, if present")
-        parser.add_argument('--extras', action='store_true',
-                            dest='removeExtras',
-                            help="Remove extras, if present")
-        parser.set_defaults(which='Filter')
-
-    def printResult(self):
-        """
-        Operation returns track, not in use
+        Creates the correct TrackFormat according to what kind of data we
+        are filtering out.
         :return:
         """
-        pass
+
+        tr = self._tracks[0].trackFormat
+        # Gaps and lengths are not changed
+        dense = tr.isDense()
+        interval = tr.isInterval()
+
+        valued = tr.isValued()
+        linked = tr.isLinked()
+        weighted = tr.isWeighted()
+        stranded = tr.hasStrand()
+
+        extra = tr.hasExtra()
+
+        if not dense and not interval:
+            # Points
+            starts = []
+            ends = None
+        elif not dense and interval:
+            # Segments
+            starts = []
+            ends = []
+        elif dense and interval:
+            # partition
+            starts = None
+            ends = []
+        else:
+            # function
+            starts = []
+            ends = []
+
+        if stranded:
+            if self._removeStrands:
+                strands = None
+            else:
+                strands = []
+        else:
+            strands = []
+
+        if valued:
+            if self._removeValues:
+                values = None
+            else:
+                values = []
+        else:
+            values = None
+
+        if linked:
+            if self._removeLinks:
+                ids = None
+                edges = None
+                weights = None
+
+            else:
+                ids = []
+                edges = []
+                if weighted and self._removeWeights:
+                    weights = None
+                elif weighted:
+                    # Same as with the value name
+                    weights = []
+                else:
+                    weights = None
+        else:
+            ids = None
+            edges = None
+            weights = None
+
+        if extra:
+            if self._removeExtras:
+                extras = None
+            else:
+                extras = OrderedDict()
+        else:
+            extras = None
+
+        self._resultTrackFormat = TrackFormat(startList=starts,
+                                              endList=ends,
+                                              strandList=strands,
+                                              valList=values, idList=ids,
+                                              edgesList=edges,
+                                              weightsList=weights,
+                                              extraLists=extras)
+
+    def _getKwArgumentInfoDict(self):
+        return OrderedDict([
+            ('resultAllowOverlap',
+             KwArgumentInfo('resultAllowOverlap','o',
+                            'Allow overlap in the result track.', bool,
+                            False)),
+            ('debug', KwArgumentInfo('debug', 'd', 'Print debug info', bool,
+                                     False)),
+            ('removeStrands',
+             KwArgumentInfo('removeStrands', 's', 'Remove all strands',
+                            bool, False)),
+            ('removeValues',
+             KwArgumentInfo('removeValues', 'v', 'Remove all values',
+                            bool, False)),
+            ('removeLinks',
+             KwArgumentInfo('removeLinks', 'l',
+                            'Remove all link info, if present.', bool, False)),
+            ('removeWeights',
+             KwArgumentInfo('removeWeights', 'w',
+                            'Remove all weight info, if present.',
+                            bool, False)),
+            ('removeExtras',
+             KwArgumentInfo('removeExtras', 'e',
+                            'Remove all extra information, if present.',
+                            bool, False)),
+            ])
