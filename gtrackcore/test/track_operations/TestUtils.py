@@ -61,10 +61,11 @@ def createSimpleTestTrackContent(startList=None, endList=None, valList=None,
     # Create trackViewList
 
     if customChrLength is not None:
-        # We use a custom length when testing F, LF and LBP.
+        # We use a custom length when testing GP, SF, LSF, F LF and LBP.
         genome = Genome('hg19', {"chr1": customChrLength})
     else:
         genome = Genome('hg19', {"chr1": 249250621})
+
     chr1 = genome.regions[0]
 
     if startList is not None:
