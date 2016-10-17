@@ -14,7 +14,6 @@ class CountElements(Operator):
     _numTracks = 1
     _resultIsTrack = False
     _trackRequirements = [TrackFormatReq(dense=False)]
-    _resultTrackFormat = None
 
     def _calculate(self, region, tv):
         starts = tv.startsAsNumpyArray()

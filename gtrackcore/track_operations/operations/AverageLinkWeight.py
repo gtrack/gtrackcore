@@ -19,7 +19,6 @@ class AverageLinkWeight(Operator):
     _resultIsTrack = False
     # TODO: Add a requirement for weight and support multiple types..
     _trackRequirements = [TrackFormatReq(linked=True)]
-    _resultTrackFormat = None
 
     def _calculate(self, region, tv):
         weights = tv.weightsAsNumpyArray()
