@@ -189,7 +189,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
         tvs[chr2] = tv2
         track = TrackContents(hg19, tvs)
 
-        r = RemoveDeadLinks(track, useGlobalIds=True)
+        r = RemoveDeadLinks(track, useGlobal=True)
 
         result = r.calculate()
         self.assertTrue(result is not None)
@@ -456,7 +456,7 @@ class RemoveDeadLinksTest(unittest.TestCase):
                               t1ExpIds=t1ExpIds, t1ExpEdges=t1ExpEdges,
                               t2ExpStarts=t2ExpStarts, t2ExpEnds=t2ExpEnds,
                               t2ExpIds=t2ExpIds, t2ExpEdges=t2ExpEdges,
-                              expTrackFormatType="Linked segments")
+                              expTrackFormatType="Linked segments", debug=True)
 
     # *** Test track type inputs ***
     def testInputLinkedValuedPoints(self):
@@ -522,7 +522,9 @@ class RemoveDeadLinksTest(unittest.TestCase):
         self._runTest(ids=['1','2','3'], edges=['2','3','5'],
                       values=[1,2,3], expValues=[1,2,3],
                       expIds=['1','2','3'],expEdges=['2', '3', ''],
-                      customChrLength=3, expTrackFormatType="Linked function")
+                      customChrLength=3, expTrackFormatType="Linked "
+                                                            "function",
+                      debug=True)
 
     def testInputLinkedBasePairs(self):
         """

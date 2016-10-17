@@ -29,39 +29,8 @@ class SubtractTest(unittest.TestCase):
                  expStarts=None, expEnds=None, expStrands=None, expVals=None,
                  expIds=None, expEdges=None, expWeights=None, expExtras=None,
                  expNoResult=False, expTrackFormatType=None,
-                 customChrLength=None, allowOverlap=False,
-                 resultAllowOverlap=False, useStrands=True,
-                 treatMissingAsNegative=False, debug=False):
-        """
-        Run a union test
-        :param startsA:
-        :param startsB:
-        :param endsA:
-        :param endsB:
-        :param strandsA:
-        :param strandsB:
-        :param valsA:
-        :param valsB:
-        :param idsA:
-        :param idsB:
-        :param edgesA:
-        :param edgesB:
-        :param weightsA:
-        :param weightsB:
-        :param extrasA:
-        :param extrasB:
-        :param expStarts:
-        :param expEnds:
-        :param expStrands:
-        :param expVals:
-        :param expIds:
-        :param expEdges:
-        :param expWeights:
-        :param expExtras:
-        :param allowOverlap:
-        :param resultAllowOverlap:
-        :return:
-        """
+                 customChrLength=None, resultAllowOverlap=False,
+                 useStrands=True, treatMissingAsNegative=False, debug=False):
 
         track1 = createSimpleTestTrackContent(startList=startsA,
                                               endList=endsA, valList=valsA,
@@ -70,6 +39,7 @@ class SubtractTest(unittest.TestCase):
                                               weightsList=weightsA,
                                               extraLists=extrasA,
                                               customChrLength=customChrLength)
+
         track2 = createSimpleTestTrackContent(startList=startsB,
                                               endList=endsB, valList=valsB,
                                               strandList=strandsB,
@@ -78,8 +48,7 @@ class SubtractTest(unittest.TestCase):
                                               extraLists=extrasB,
                                               customChrLength=customChrLength)
 
-        s = Subtract(track1, track2, allowOverlap=allowOverlap,
-                     resultAllowOverlap=resultAllowOverlap,
+        s = Subtract(track1, track2, resultAllowOverlap=resultAllowOverlap,
                      useStrands=useStrands,
                      treatMissingAsNegative=treatMissingAsNegative,
                      debug=debug)

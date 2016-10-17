@@ -22,7 +22,7 @@ class ShiftTest(unittest.TestCase):
                  ids=None, edges=None, weights=None, expStarts=None,
                  expEnds=None, expValues=None, expStrands=None, expIds=None,
                  expEdges=None, expWeights=None, customChrLength=None,
-                 allowOverlaps=True, resultAllowOverlaps=False,
+                 resultAllowOverlap=False,
                  shiftLength=None, useFraction=False, useStrands=False,
                  treatMissingAsNegative=False, debug=False,
                  expTrackFormatType=None, expNoResult=False):
@@ -39,8 +39,7 @@ class ShiftTest(unittest.TestCase):
         f = Shift(track, shiftLength=shiftLength, useFraction=useFraction,
                   useStrands=useStrands,
                   treatMissingAsNegative=treatMissingAsNegative,
-                  allowOverlaps=allowOverlaps,
-                  resultAllowOverlaps=resultAllowOverlaps, debug=debug)
+                  resultAllowOverlap=resultAllowOverlap, debug=debug)
 
         self.assertTrue((f is not None))
         result = f.calculate()
@@ -225,8 +224,8 @@ class ShiftTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[5,30],ends=[35,140], expStarts=[105,130],
-                      expEnds=[135,240], shiftLength=100, allowOverlaps=True,
-                      resultAllowOverlaps=True, expTrackFormatType="Segments")
+                      expEnds=[135,240], shiftLength=100,
+                      resultAllowOverlap=True, expTrackFormatType="Segments")
 
     def testSegmentsOverlappingMerge(self):
         """
@@ -234,8 +233,8 @@ class ShiftTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[5,30],ends=[35,140], expStarts=[105],
-                      expEnds=[240], shiftLength=100, allowOverlaps=True,
-                      resultAllowOverlaps=False, expTrackFormatType="Segments")
+                      expEnds=[240], shiftLength=100,
+                      resultAllowOverlap=False, expTrackFormatType="Segments")
 
     # **** Segments with strands tests ****
 

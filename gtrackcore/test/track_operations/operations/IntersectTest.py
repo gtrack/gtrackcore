@@ -27,7 +27,7 @@ class IntersectTest(unittest.TestCase):
                  t1Weights=None, t2Weights=None, expStarts=None, expEnds=None,
                  expValues=None, expStrands=None, expIds=None, expEdges=None,
                  expWeights=None, expNoResult=False, customChrLength=None,
-                 allowOverlaps=True, resultAllowOverlaps=True,
+                 resultAllowOverlap=True,
                  debug=False, expTrackFormatType=None):
 
         t1 = createSimpleTestTrackContent(startList=t1Starts, endList=t1Ends,
@@ -42,8 +42,8 @@ class IntersectTest(unittest.TestCase):
                                           weightsList=t2Weights,
                                           customChrLength=customChrLength)
 
-        i = Intersect(t1, t2, allowOverlaps=allowOverlaps,
-                      resultAllowOverlaps=resultAllowOverlaps, debug=debug)
+        i = Intersect(t1, t2, resultAllowOverlap=resultAllowOverlap,
+                      debug=debug)
 
         result = i.calculate()
         self.assertTrue(result is not None)
@@ -317,7 +317,7 @@ class IntersectTest(unittest.TestCase):
         :return:
         """
         self._runTest(t1Starts=[5], t1Ends=[10], t2Starts=[6,8,9],
-                      expStarts=[6,8,9], expTrackFormatType="Points")
+                      expStarts=[6,8,9], expTrackFormatType="Points", debug=True)
 
 if __name__ == "__main__":
     unittest.main()

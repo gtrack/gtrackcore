@@ -28,41 +28,9 @@ class UnionTest(unittest.TestCase):
                  weightsA=None, weightsB=None, extrasA=None, extrasB=None,
                  expStarts=None, expEnds=None, expStrands=None, expVals=None,
                  expIds=None, expEdges=None, expWeights=None, expExtras=None,
-                 allowOverlap=False, resultAllowOverlap=False,
-                 useStands=True, treatMissingAsNegative=True,
-                 mergeValuesFunction=None, makeLinksUnique=False,
-                 trackALinkTag=None, trackBLinkTag=None,
+                 resultAllowOverlap=False, useStrands=True,
+                 treatMissingAsNegative=True,
                  expTrackFormatType=None, debug=False):
-        """
-        Run a union test
-        :param startsA:
-        :param startsB:
-        :param endsA:
-        :param endsB:
-        :param strandsA:
-        :param strandsB:
-        :param valsA:
-        :param valsB:
-        :param idsA:
-        :param idsB:
-        :param edgesA:
-        :param edgesB:
-        :param weightsA:
-        :param weightsB:
-        :param extrasA:
-        :param extrasB:
-        :param expStarts:
-        :param expEnds:
-        :param expStrands:
-        :param expVals:
-        :param expIds:
-        :param expEdges:
-        :param expWeights:
-        :param expExtras:
-        :param allowOverlap:
-        :param resultAllowOverlap:
-        :return:
-        """
 
         track1 = createSimpleTestTrackContent(startList=startsA,
                                               endList=endsA, valList=valsA,
@@ -77,12 +45,8 @@ class UnionTest(unittest.TestCase):
                                               weightsList=weightsB,
                                               extraLists=extrasB)
 
-        u = Union(track1, track2, useStands=useStands,
+        u = Union(track1, track2, useStrands=useStrands,
                   treatMissingAsNegative=treatMissingAsNegative,
-                  mergeValuesFunction=mergeValuesFunction,
-                  makeLinksUnique=makeLinksUnique,
-                  trackALinkTag=trackALinkTag, trackBLinkTag=trackBLinkTag,
-                  allowOverlap=allowOverlap,
                   resultAllowOverlap=resultAllowOverlap)
 
         tc = u.calculate()
@@ -98,6 +62,21 @@ class UnionTest(unittest.TestCase):
                 newEdges = v.edgesAsNumpyArray()
                 newWeights = v.weightsAsNumpyArray()
                 #newExtras = v.extrasAsNumpyArray()
+
+                if expTrackFormatType is not None:
+                    points = ['Points', 'Valued points', 'Linked points',
+                              'Linked valued points']
+
+                    print(v.trackFormat.getFormatName())
+                    assert v.trackFormat.getFormatName() == \
+                           expTrackFormatType
+                     # Todo fix for segments and partitions
+
+                    if expTrackFormatType in points:
+                        print("In points!")
+                        # Create the expected ends for a point type track.
+                        assert expEnds is None
+                        expEnds = np.array(expStarts) + 1
 
                 if debug:
                     print("**************************************")
@@ -116,21 +95,6 @@ class UnionTest(unittest.TestCase):
                     print("expEdges: {}".format(expEdges))
                     print("newEdges: {}".format(v.edgesAsNumpyArray()))
                     print("**************************************")
-
-                if expTrackFormatType is not None:
-                    points = ['Points', 'Valued points', 'Linked points',
-                              'Linked valued points']
-
-                    print(v.trackFormat.getFormatName())
-                    assert v.trackFormat.getFormatName() == \
-                           expTrackFormatType
-                     # Todo fix for segments and partitions
-
-                    if expTrackFormatType in points:
-                        # Create the expected ends for a point type track.
-                        assert expEnds is None
-                        expEnds = np.array(expStarts) + 1
-
                 # All test tracks are in chr1
 
                 if expStarts is not None:
@@ -347,9 +311,11 @@ class UnionTest(unittest.TestCase):
         self._runTest(startsA=[1,2,3], startsB=[4,5,6], idsA=['1','2','3'],
                       idsB=['4','5','6'], edgesA=['2','3','1'],
                       edgesB=['5','6','4'], expStarts=[1,2,3,4,5,6],
-                      expIds=['1','2','3','4','5','6'],
-                      expEdges=['2','3','1','5','6','4'],
-                      resultAllowOverlap=False,
+                      expIds=['1-track-1','2-track-1','3-track-1',
+                              '4-track-2','5-track-2','6-track-2'],
+                      expEdges=['2-track-1','3-track-1','1-track-1',
+                                '5-track-2','6-track-2','4-track-2'],
+                      resultAllowOverlap=False, debug=True,
                       expTrackFormatType="Linked points")
 
     def testLinkedPointsOverlapSimple(self):
@@ -360,8 +326,8 @@ class UnionTest(unittest.TestCase):
         self._runTest(startsA=[14,20], startsB=[14], idsA=['1','2'],
                       idsB=['4'], edgesA=['2','1'],
                       edgesB=['4'], expStarts=[14,20],
-                      expIds=['merge-1','2'],
-                      expEdges=[['2','merge-1'],['merge-1', '']],
+                      expIds=['merge-1','2-track-1'],
+                      expEdges=[['2-track-1','merge-1'],['merge-1', '']],
                       resultAllowOverlap=False,
                       expTrackFormatType="Linked points")
 
@@ -373,10 +339,10 @@ class UnionTest(unittest.TestCase):
         self._runTest(startsA=[14,463], startsB=[45,463], idsA=['1','2'],
                       idsB=['3','4'], edgesA=['2','1'],
                       edgesB=['4','3'], expStarts=[14,45,463],
-                      expIds=['1','3','merge-1'],
+                      expIds=['1-track-1','3-track-2','merge-1'],
                       expEdges=[['merge-1',''],
                                 ['merge-1',''],
-                                ['1','3']],
+                                ['1-track-1','3-track-2']],
                       resultAllowOverlap=False,
                       debug=True,
                       expTrackFormatType="Linked points")
@@ -386,8 +352,9 @@ class UnionTest(unittest.TestCase):
         self._runTest(startsA=[14,463], startsB=[45,463], idsA=["1","2"],
                       idsB=["3","4"], edgesA=[2,1],
                       edgesB=[4,3], expStarts=[14,45,463,463],
-                      expIds=["1","3","2","4"],
-                      expEdges=[2,4,1,3], resultAllowOverlap=True,
+                      expIds=["1-track-1","3-track-2","2-track-1","4-track-2"],
+                      expEdges=["2-track-1","4-track-2","1-track-1",
+                                "3-track-2"], resultAllowOverlap=True,
                       expTrackFormatType="Linked points")
 
     # **** Linked Valued Points ****
@@ -403,9 +370,11 @@ class UnionTest(unittest.TestCase):
                       edgesA=['2','1','3'], edgesB=['5','6','7'],
                       startsB=[4,5,6], valsB=[1,2,3],
                       expStarts=[1,2,3,4,5,6], expVals=[4,5,6,1,2,3],
-                      expIds=['1','2','3','4','5','6'],
-                      expEdges=['2','1','3','5','6','7'],
-                      resultAllowOverlap=False,
+                      expIds=['1-track-1','2-track-1','3-track-1','4-track-2',
+                              '5-track-2','6-track-2'],
+                      expEdges=['2-track-1','1-track-1','3-track-1',
+                                '5-track-2','6-track-2','7-track-2'],
+                      resultAllowOverlap=False, debug=True,
                       expTrackFormatType="Linked valued points")
 
     def testLinkedValuedPointsMergeOverlapEnd(self):
@@ -422,11 +391,11 @@ class UnionTest(unittest.TestCase):
                       startsB=[2,10], valsB=[8,100],
                       idsB=['4','5'], edgesB=['5','4'],
                       expStarts=[1,2,3,10], expVals=[6,8,7,100],
-                      expIds=['1','4','2','merge-1'],
-                      expEdges=[['2',''],
+                      expIds=['1-track-1','4-track-2','2-track-1','merge-1'],
+                      expEdges=[['2-track-1',''],
                                 ['merge-1',''],
-                                ['1',''],
-                                ['merge-1','4']],
+                                ['1-track-1',''],
+                                ['merge-1','4-track-2']],
                       resultAllowOverlap=False,
                       expTrackFormatType="Linked valued points")
 
@@ -443,8 +412,10 @@ class UnionTest(unittest.TestCase):
                       startsB=[2,10], valsB=[8,100],
                       idsB=['4','5'], edgesB=['5','4'],
                       expStarts=[1,2,3,10,10], expVals=[6,8,7,45,100],
-                      expIds=['1','4','2','3','5'],
-                      expEdges=['2','5','1','3','4'],
+                      expIds=['1-track-1','4-track-2','2-track-1','3-track-1',
+                              '5-track-2'],
+                      expEdges=['2-track-1','5-track-2','1-track-1',
+                                '3-track-1','4-track-2'],
                       resultAllowOverlap=True,
                       debug=True,
                       expTrackFormatType="Linked valued points")
@@ -458,9 +429,9 @@ class UnionTest(unittest.TestCase):
                       startsB=[2,15], valsB=[8,100],
                       idsB=['4','5'], edgesB=['5','4'],
                       expStarts=[2,3,10,15], expVals=[8,7,45,100],
-                      expIds=['merge-1','2','3','5'],
-                      expEdges=[['2','5'],
-                                ['3',''],
+                      expIds=['merge-1','2-track-1','3-track-1','5-track-2'],
+                      expEdges=[['2-track-1','5-track-2'],
+                                ['3-track-1',''],
                                 ['merge-1',''],
                                 ['merge-1','']],
                       resultAllowOverlap=False,
@@ -478,15 +449,16 @@ class UnionTest(unittest.TestCase):
                       edgesB=['7','8','9','10','6'],
                       expStarts=[1,2,3,6,8,10,20,24],
                       expVals=[6,8,100,45,42,5,3,2],
-                      expIds=['1','6','merge-1', '3','8','merge-2','5','10'],
+                      expIds=['1-track-1','6-track-2','merge-1','3-track-1',
+                              '8-track-2','merge-2','5-track-1','10-track-2'],
                       expEdges=[['merge-1',''],
                                 ['merge-1',''],
-                                ['3','8'],
+                                ['3-track-1','8-track-2'],
                                 ['merge-2',''],
                                 ['merge-2',''],
-                                ['5',10],
-                                ['1',''],
-                                ['6','']],
+                                ['5-track-1','10-track-2'],
+                                ['1-track-1',''],
+                                ['6-track-2','']],
                       resultAllowOverlap=False,
                       expTrackFormatType="Linked valued points")
 
@@ -576,8 +548,8 @@ class UnionTest(unittest.TestCase):
         :return:
         """
         self._runTest(startsA=[2], endsA=[6], startsB=[4], endsB=[6],
-                      expStarts=[2], expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False, expTrackFormatType="Segments")
+                      expStarts=[2], expEnds=[6], resultAllowOverlap=False,
+                      expTrackFormatType="Segments")
 
     def testSegmentsTotalOverlapMergeAInsideBEnd(self):
         """
@@ -587,8 +559,8 @@ class UnionTest(unittest.TestCase):
         :return:
         """
         self._runTest(startsA=[4], endsA=[6], startsB=[2], endsB=[6],
-                      expStarts=[2],expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False, expTrackFormatType="Segments")
+                      expStarts=[2],expEnds=[6], resultAllowOverlap=False,
+                      expTrackFormatType="Segments")
 
     def testSegmentsNoMergeOfTouchingSegmentsAStart(self):
         """
@@ -645,137 +617,98 @@ class UnionTest(unittest.TestCase):
                       expVals=[10,20], resultAllowOverlap=False,
                       expTrackFormatType="Valued segments")
 
-    def daf(self):
-        # Two partially overlapping segments, A before B. Merge overlap
-        self._runTest(startsA=[2], endsA=[4], startsB=[3], endsB=[5],
-                      expStarts=[2], expEnds=[5], allowOverlap=False,
-                      resultAllowOverlap=False)
+    def testValuedSegmentsPartialOverlapABeforeB(self):
+        """
+        Two partially overlapping segments, A before B. Merge overlap
+        :return:
+        """
+        self._runTest(startsA=[2], endsA=[4], valsA=[10], startsB=[3],
+                      endsB=[5], valsB=[100], expStarts=[2], expEnds=[5],
+                      expVals=[100], resultAllowOverlap=False,
+                      expTrackFormatType="Valued segments")
 
-        # Two partially overlapping segments, B before A. Merge overlap
-        self._runTest(startsA=[3], endsA=[5], startsB=[2], endsB=[4],
-                      expStarts=[2], expEnds=[5], allowOverlap=False,
-                      resultAllowOverlap=False)
+    def testValuedSegmentsPartialOverlapBBeforeA(self):
+        """
+        Two partially overlapping segments, B before A. Merge overlap
+        :return:
+        """
+        self._runTest(startsA=[3], endsA=[5], valsA=[10], startsB=[2],
+                      endsB=[4], valsB=[100], expStarts=[2], expEnds=[5],
+                      expVals=[100], resultAllowOverlap=False,
+                      expTrackFormatType="Valued segments")
 
-        # Two overlapping segments, B totally inside A. Merge overlap
-        self._runTest(startsA=[2], endsA=[6], startsB=[3], endsB=[5],
-                      expStarts=[2], expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False)
+    def testValuedSegmentsOverlapBInsideA(self):
+        """
+        Two overlapping segments, B totally inside A. Merge overlap
+        :return:
+        """
+        self._runTest(startsA=[2], endsA=[6], valsA=[10], startsB=[3],
+                      endsB=[5], valsB=[100], expStarts=[2], expEnds=[6],
+                      expVals=[100], resultAllowOverlap=False,
+                      expTrackFormatType="Valued segments")
 
-        # Two overlapping segments, A totally inside B. Merge overlap
-        self._runTest(startsA=[3], endsA=[5], startsB=[2], endsB=[6],
-                      expStarts=[2], expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False)
+    def testValuedSegmentsOverlapAInsideB(self):
+        """
+        Two overlapping segments, A totally inside B. Merge overlap
+        :return:
+        """
+        self._runTest(startsA=[3], endsA=[5], valsA=[10], startsB=[2],
+                      endsB=[6], valsB=[100], expStarts=[2], expEnds=[6],
+                      expVals=[100], resultAllowOverlap=False,
+                      expTrackFormatType="Valued segments")
 
-        # Two totally overlapping segments, A == B. Merge overlap
-        self._runTest(startsA=[2], endsA=[4], startsB=[2], endsB=[4],
-                      expStarts=[2], expEnds=[4], allowOverlap=False,
-                      resultAllowOverlap=False)
-
-        # Two overlapping segments, B totally inside A. Merge overlap
-        # B.start == A.start
-        # len(A) > len(B)
-        self._runTest(startsA=[2], endsA=[6], startsB=[2], endsB=[4],
-                      expStarts=[2], expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False)
-
-        # Two overlaping segments, A totally inside B. Merge overlap
-        # A.start == B.start
-        # len(B) > len (A)
-        self._runTest(startsA=[2], endsA=[4], startsB=[2], endsB=[6],
-                      expStarts=[2], expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False)
-
-        # Two overlapping segments, B totally inside A. Merge overlap
-        # A.end == B.end
-        # len(A) > len (B)
-        self._runTest(startsA=[2], endsA=[6], startsB=[4], endsB=[6],
-                      expStarts=[2], expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False)
-
-        # Two overlapping segments, A totally inside B. Merge overlap
-        # B.end == A.end
-        # len(B) > len (A)
-        self._runTest(startsA=[4], endsA=[6], startsB=[2], endsB=[6],
-                      expStarts=[2],expEnds=[6], allowOverlap=False,
-                      resultAllowOverlap=False)
-
-        # Two none overlapping "touching" segments
-        # A.end == B.start
-        #
-        self._runTest(startsA=[2], endsA=[4], startsB=[4],
-                                   endsB=[6], expStarts=[2,4],expEnds=[4,6],
-                                   allowOverlap=False,
-                                   resultAllowOverlap=False)
-
-        # Two none overlapping "touching" segments
-        # A.end == B.start
-        self._runTest(startsA=[4], endsA=[6], startsB=[2], endsB=[4],
-                      expStarts=[2,4], expEnds=[4,6], allowOverlap=False,
-                      resultAllowOverlap=False)
-
-        # B "joins" two segments in A
-        self._runTest(startsA=[2, 6], endsA=[4, 8], startsB=[3], endsB=[7],
-                      expStarts=[2], expEnds=[8], allowOverlap=False,
-                      resultAllowOverlap=False)
-
-        # A "joins" two segments i B
-        self._runTest(startsA=[3], endsA=[7], startsB=[2, 6], endsB=[4, 8],
-                      expStarts=[2], expEnds=[8], allowOverlap=False,
-                      resultAllowOverlap=False)
+    def testValuedSegmentsOverlapAEqualB(self):
+        """
+        Two totally overlapping segments, A == B. Merge overlap
+        :return:
+        """
+        self._runTest(startsA=[2], endsA=[4], valsA=[10], startsB=[2],
+                      endsB=[4], valsB=[100], expStarts=[2], expEnds=[4],
+                      expVals=[100], resultAllowOverlap=False,
+                      expTrackFormatType="Valued segments")
 
     # *** Link handling ***
-    # Test of how we handle links in the new track
-    def testUniqueLinks(self):
+    # Test that we uniquefy ids
+    def testUniqueLinksSimple(self):
         # Test of the makeLinksUnique feature
-
         # Linked points, no overlap. equal ids. Creating unique ids
         self._runTest(startsA=[14], startsB=[25], idsA=['1'],
                       idsB=['1'], edgesA=['1'],
                       edgesB=['1'], expStarts=[14,25],
                       expIds=['1-track-1','1-track-2'],
                       expEdges=['1-track-1','1-track-2'],
-                      makeLinksUnique=True,
-                      debug=True,
                       resultAllowOverlap=False,
                       expTrackFormatType="Linked points")
 
-    def daf(self):
+    def testUniqueLinksComplex(self):
         # Linked points, no overlap. equal ids. Creating unique ids
         self._runTest(startsA=[14,40], startsB=[25], idsA=['1','2'],
                       idsB=['1'], edgesA=['2','1'],
                       edgesB=['1'], expStarts=[14,25,40],
+                      debug=True,
                       expIds=['1-track-1','1-track-2','2-track-1'],
                       expEdges=['2-track-1','1-track-2','1-track-1'],
-                      makeLinksUnique=True,
-                      resultAllowOverlap=False)
+                      resultAllowOverlap=False,
+                      expTrackFormatType="Linked points")
 
-    # Merge links from two tracks
-
-    # Remove dead links
-
-    def testPointsAndSegmentsNoOverlap(self):
-        # When combining segments and points, the points are recalculated as
-        # segments with a length of 0
+    # Points and segments
+    def atestPointsAndSegmentsNoOverlap(self):
+        # When combining segments and points, t
         self._runTest(startsA=[2], endsA=[4], startsB=[5],
                       expStarts=[2,5], expEnds=[4,6],
                       resultAllowOverlap=False,
+                      debug=True,
                       expTrackFormatType="Segments")
 
-    def testPointsAndSegmentsNoOverlap2(self):
+    def atestPointsAndSegmentsNoOverlap2(self):
         # When combining segments and points, the points are recalculated as
         self._runTest(startsA=[2], startsB=[5], endsB=[10],
                       expStarts=[2,5], expEnds=[3,10],
                       debug=True,
                       resultAllowOverlap=False, expTrackFormatType="Segments")
 
-    def testPointsAndPartition(self):
-
-        # When combining points and partitions, the points becomes new
-        # partitions.
-
-        pass
-
-
+    # strandend and non stranded?
+    # valued and not valued? default values?
 
 if __name__ == "__main__":
     unittest.main()

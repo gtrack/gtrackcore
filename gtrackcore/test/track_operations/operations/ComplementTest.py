@@ -56,7 +56,7 @@ class ComplementTest(unittest.TestCase):
                 newIds = v.idsAsNumpyArray()
                 newEdges = v.edgesAsNumpyArray()
                 newWeights = v.weightsAsNumpyArray()
-                #newExtras = v.extrasAsNumpyArray()
+                newExtras = v.allExtrasAsDictOfNumpyArrays()
 
                 if debug:
                     print("newStarts: {}".format(newStarts))
@@ -71,7 +71,6 @@ class ComplementTest(unittest.TestCase):
                 if expEnds is None:
                     # Assuming a point type track. Creating the expected ends.
                     expEnds = np.array(expStarts) + 1
-
 
                 self.assertTrue(newStarts is not None)
                 self.assertTrue(np.array_equal(newStarts, expStarts))
@@ -92,7 +91,7 @@ class ComplementTest(unittest.TestCase):
                 self.assertTrue(newIds is None)
                 self.assertTrue(newEdges is None)
                 self.assertTrue(newWeights is None)
-                #self.assertTrue(newExtras is None)
+                self.assertTrue(len(newExtras) == 0)
 
             else:
                 # Tests if all tracks no in chr1 have a size of 0.

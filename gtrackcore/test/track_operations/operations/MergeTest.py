@@ -29,8 +29,7 @@ class MergeTest(unittest.TestCase):
                  expStrands=None, expIds=None, expEdges=None,
                  expWeights=None, expExtras=None, expTrackFormatType=None,
                  useStrands=False, treatMissingAsNegative=False,
-                 mergeValuesFunction=None, mergeLinksFunction=None,
-                 debug=False):
+                 mergeValuesFunction=None, debug=False):
 
         track = createSimpleTestTrackContent(startList=starts, endList=ends,
                                              strandList=strands,
@@ -40,8 +39,7 @@ class MergeTest(unittest.TestCase):
 
         m = Merge(track, useStrands=useStrands,
                   treatMissingAsNegative=treatMissingAsNegative,
-                  mergeValuesFunction=mergeValuesFunction,
-                  mergeLinksFunction=mergeLinksFunction, debug=debug)
+                  mergeValuesFunction=mergeValuesFunction, debug=debug)
 
         self.assertTrue((m is not None))
 
