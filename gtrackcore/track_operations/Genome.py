@@ -12,7 +12,7 @@ class Genome(object):
     """
     def __init__(self, name, regionDefinition):
         self.__name = name
-        self.__regions = self._generateGenomeRegions(name, regionDefinition)
+        self.__regions = self.generateGenomeRegions(name, regionDefinition)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -47,6 +47,16 @@ class Genome(object):
 
     @classmethod
     def _generateGenomeRegions(cls, name, regionDefinition):
+        """
+        Legacy, remove if not in use.
+        :param name:
+        :param regionDefinition:
+        :return:
+        """
+        cls.generateGenomeRegions(name, regionDefinition)
+
+    @classmethod
+    def generateGenomeRegions(cls, name, regionDefinition):
         """
         Helper method for setting the genome regions. Takes a simple genome
         definition dict and creates a GenomeRegion list.
