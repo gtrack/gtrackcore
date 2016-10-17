@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from gtrackcore.track_operations.operations.Union import Union
 from gtrackcore.track_operations.operations.Flank import Flank
-from gtrackcore.track_operations.operations.Slop import Slop
+from gtrackcore.track_operations.operations.Expand import Expand
 from gtrackcore.track_operations.operations.ValueSelect import ValueSelect
 
 
@@ -115,7 +115,7 @@ class NestedOperatorTest(unittest.TestCase):
 
         self.assertTrue(resFound)
 
-    def atestUnionAndTrack(self):
+    def testUnionAndTrack(self):
         """
         Test if a union between another union and a track works.
         :return: None
@@ -129,7 +129,7 @@ class NestedOperatorTest(unittest.TestCase):
 
         self._runNestedTest(u2, expStarts=[2, 6, 10], expEnds=[4, 8, 12])
 
-    def atestUnionAndUnion(self):
+    def testUnionAndUnion(self):
         """
         Test if a union between another union and a track works.
         :return: None
@@ -146,20 +146,17 @@ class NestedOperatorTest(unittest.TestCase):
         self._runNestedTest(u3, expStarts=[2, 6, 10, 14],
                             expEnds=[4, 8, 12, 16])
 
-    def testSlopAndUnion(self):
+    def testExpandAndUnion(self):
 
-        track1 = createSimpleTestTrackContent(startList=[10], endList=[15],
-                                              strandList=['-'])
+        track1 = createSimpleTestTrackContent(startList=[10], endList=[15])
 
-        track2 = createSimpleTestTrackContent(startList=[18], endList=[30],
-                                              strandList=['-'])
+        track2 = createSimpleTestTrackContent(startList=[18], endList=[30])
 
-        s = Slop(track1, start=10, useStrands=True)
+        s = Expand(track1, downstream=5, useStrands=False, debug=True)
 
-        u = Union(s, track2)
+        u = Union(s, track2, debug=True)
 
-        self._runNestedTest(u, expStarts=[10,18], expEnds=[25,30],
-                            expStrands=['-', '-'])
+        self._runNestedTest(u, expStarts=[5,18], expEnds=[10,30])
 
 
 
