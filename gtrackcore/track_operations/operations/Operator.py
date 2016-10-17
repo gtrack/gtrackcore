@@ -55,7 +55,7 @@ class Operator(object):
                 # Track is another operator
                 self._nestedOperator = True
                 trackReq = self.trackRequirements[i]
-                trackFormat = track.resultTrackRequirements
+                trackFormat = track.trackFormat
 
                 if not trackReq.isCompatibleWith(trackFormat):
                     raise InvalidArgumentError(
@@ -116,7 +116,10 @@ class Operator(object):
             except KeyError:
                 raise AttributeError("{} not found in kwarg".format(name))
         else:
-            raise AttributeError
+            if self._debug:
+                raise AttributeError("{} not defined!".format(name))
+            else:
+                raise AttributeError
 
     def _parseKwargs(self, **kwargs):
         """
@@ -192,6 +195,9 @@ class Operator(object):
         computedTracks = []
         for track in self._tracks:
             if isinstance(track, Operator):
+                print("**********")
+                print("Computing nesting")
+                print("**********")
                 computedTracks.append(track.calculate())
             else:
                 computedTracks.append(track)
@@ -428,6 +434,15 @@ class Operator(object):
         """
         The TrackFormatReq of the result track (if any).
         :return: None
+        """
+        return self._resultTrackFormat
+
+    @property
+    def trackFormat(self):
+        """
+        Gives the resultTrackFormat
+        Called by a higher operation when nested.
+        :return:
         """
         return self._resultTrackFormat
 
