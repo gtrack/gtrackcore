@@ -77,8 +77,6 @@ class Merge(Operator):
         self._resultTrackFormat = self._tracks[0].trackFormat
 
     def _getKwArgumentInfoDict(self):
-        print("In merge getKwArgument")
-
         return OrderedDict([
             ('debug', KwArgumentInfo('debug', 'd', 'Print debug info', bool,
                                      False)),
