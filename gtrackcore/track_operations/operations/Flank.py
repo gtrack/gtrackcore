@@ -12,8 +12,6 @@ from gtrackcore.track_operations.operations.Operator import Operator
 from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
 
 from gtrackcore.track_operations.operations.Merge import Merge
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createRawResultTrackView
 
 from gtrackcore.track_operations.raw_operations.Flank import flank
 
@@ -41,6 +39,8 @@ class Flank(Operator):
         # Get region size.
         regionSize = len(region)
 
+        print("useStrands: {}".format(self._useStrands))
+
         ret = flank(starts, ends, regionSize, strands=strands,
                     downstream=self._downstream, upstream=self._upstream,
                     both=self._both, useStrands=self._useStrands,
@@ -58,6 +58,14 @@ class Flank(Operator):
             ends = ret[1]
             strands = ret[2]
 
+            if self._debug:
+                print("------------------")
+                print("res _calculate")
+                print("starts: {}".format(starts))
+                print("ends: {}".format(ends))
+                print("strands: {}".format(strands))
+                print("------------------")
+
             tv = TrackView(region, starts, ends, None, strands, None,
                            None, None, borderHandling='crop',
                            allowOverlaps=True)
@@ -69,8 +77,8 @@ class Flank(Operator):
         if not self._resultAllowOverlap:
             track = self._result
             # Overlap not allowed in the result. Using merge to remove it
-            m = Merge(track, mergeValues=True, useStrands=self._useStrands,
-                      mergeLinks=True, allowOverlap=False)
+            m = Merge(track, useStrands=self._useStrands,
+                      treatMissingAsNegative=self._treatMissingAsNegative)
             res = m.calculate()
             self._result = res
 
