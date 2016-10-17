@@ -1,9 +1,9 @@
-__author__ = 'skh'
 
 import abc
 import glob
 import time
 from collections import OrderedDict
+from collections import namedtuple
 from os.path import dirname, basename, isfile
 
 from gtrackcore.track_operations.TrackContents import TrackContents
@@ -22,107 +22,88 @@ class InvalidArgumentError(Exception):
 class Operator(object):
     __metaclass__ = abc.ABCMeta
 
-    # Global default options. If a default value is not defined in a
-    # operation, we use the global default. __getattr__ will use this as
-    # a last resort.
-    GLOBAL_DEFAULT_OPTIONS = {
-        'debug': False,
-        'allowOverlap': False,
-        'resAllowOverlap': False,
-        'trackFormatReqChangeable': False,
-        'resultTrackFormatReqChangeable': False
-        }
+    _numTracks = 0
+    _resultIsTrack = False
+    _nestedOperator = False
+
+    _result = None
 
     def __init__(self, *args, **kwargs):
-        self._kwargs = kwargs
+        self._tracks = args
 
-        # The result
-        self._out = None  # Redundant with _resultTrack
-        self._resultTrack = None
-        self._resultFound = False  # Redundant with _resultTrack
+        # Load the default kwargs and set any given ones.
+        self._kwargs = self._parseKwargs(**kwargs)
 
-        self._args = self.preCalculation(args)
+        # Generate the resultTrackFormat
+        self._setResultTrackFormat()
 
-        # Default value
-        self._nestedOperator = False
-
-        # Update the track format requirements.
-        #self._updateTrackFormat()
-        #self._updateResultTrackFormat()
+        # Run the preCalculate (if any)
+        # preCalc updates the self._tracks
+        self._preCalculation()
 
         self._checkArgs()
 
     def _checkArgs(self):
 
-        if len(self._args) != self.numTracks:
-            raise InvalidArgumentError("Operation requires %s tracks, but %s tracks were given"
-                                       % (self.numTracks, len(self._args)))
+        if len(self._tracks) != self._numTracks:
+            raise InvalidArgumentError("Operation requires {} tracks, but {} "
+                                       "tracks were given"
+                                       .format(self.numTracks, len(self._tracks)))
 
-        for i, arg in enumerate(self._args):
-            if isinstance(arg, Operator):
+        for i, track in enumerate(self._tracks):
+            if isinstance(track, Operator):
                 # Track is another operator
                 self._nestedOperator = True
-                trackReq = self._trackRequirements[i]
-                trackFormat = self._resultTrackRequirements
+                trackReq = self.trackRequirements[i]
+                trackFormat = track.resultTrackRequirements
 
-                #TODO fix this! broken
-                trackFormat = TrackFormat(startList=[], endList=[])
-                #trackFormat = self.resultTrackRequirements
-
-                if isinstance(trackReq, list):
-                    # Track supports multiple track requirements.
-                    if not any([tr.isCompatibleWith(trackFormat)
-                                for tr in trackReq]):
-                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
-                                                   "the following requirements: %s. " % trackReq +
-                                                   "The format of the supplied track is: %s" % trackFormat)
-                else:
-                    if not trackReq.isCompatibleWith(trackFormat):
-                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
-                                                   "the following requirements: %s. " % trackReq +
-                                                   "The format of the supplied track is: %s" % trackFormat)
+                if not trackReq.isCompatibleWith(trackFormat):
+                    raise InvalidArgumentError(
+                        ("Operation requires track number {} to follow "
+                         "the following requirements: {} "
+                         "The format of the supplied track is: {}"
+                         .format(i+1, trackReq,trackFormat)))
             else:
-                if not isinstance(arg, TrackContents):
-                    raise InvalidArgumentError("Operation requires TrackContent objects as arguments")
+                if not isinstance(track, TrackContents):
+                    raise InvalidArgumentError(
+                        "Operation requires TrackContent objects as arguments")
 
                 trackReq = self.trackRequirements[i]
-                trackFormat = arg.firstTrackView().trackFormat
+                trackFormat = track.firstTrackView().trackFormat
 
-                if isinstance(trackReq, list):
-                    # Track supports multiple track requirements.
-                    if not any([tr.isCompatibleWith(trackFormat)
-                                for tr in trackReq]):
-                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
-                                                    "the following requirements: %s. " % trackReq +
-                                               "The format of the supplied track is: %s" % trackFormat)
-
-                else:
-                    #
-                    if not trackReq.isCompatibleWith(trackFormat):
-                        raise InvalidArgumentError("Operation requires track number %s to follow " % i+1 +
-                                                    "the following requirements: %s. " % trackReq +
-                                               "The format of the supplied track is: %s" % trackFormat)
+                if not trackReq.isCompatibleWith(trackFormat):
+                    raise InvalidArgumentError(
+                        ("Operation requires track number {} to follow "
+                         "the following requirements: {} "
+                         "The format of the supplied track is: {}"
+                         .format(i+1, trackReq, trackFormat)))
 
         regionsFirstArg = self.getResultRegion()
         genomeFirstArg = self.getResultGenome()
         self._resultGenome = genomeFirstArg
-        for i, arg in enumerate(self._args[1:]):
-            if isinstance(arg, Operator):
-                if arg.getResultRegion() != regionsFirstArg:
-                    raise InvalidArgumentError("Region lists must be the same for all tracks")
-                if arg.getResultGenome() != genomeFirstArg:
-                    raise InvalidArgumentError("All tracks must have the same genome")
+        for i, track in enumerate(self._tracks[1:]):
+            if isinstance(track, Operator):
+                if track.getResultRegion() != regionsFirstArg:
+                    raise InvalidArgumentError(
+                        "Region lists must be the same for all tracks")
+                if track.getResultGenome() != genomeFirstArg:
+                    raise InvalidArgumentError(
+                        "All tracks must have the same genome")
             else:
-                if arg.regions != regionsFirstArg:
-                    raise InvalidArgumentError("Region lists must be the same for all tracks")
-                if arg.genome != genomeFirstArg:
-                    raise InvalidArgumentError("All tracks must have the same genome")
+                if track.regions != regionsFirstArg:
+                    raise InvalidArgumentError(
+                        "Region lists must be the same for all tracks")
+                if track.genome != genomeFirstArg:
+                    raise InvalidArgumentError(
+                        "All tracks must have the same genome")
 
+    # Kwargs handling methods
     def __getattr__(self, name):
         """
         Dynamically return the given options or default value.
         :param name: Variable name
-        :return:
+        :return: The value from the _kwargs dict with name as key
+        :raises AttributeError: If name is not a key in _kwargs
         """
         if name is '_options' or name is '_kwargs':
             # The operation is missing the _options and _kwargs variables
@@ -133,18 +114,57 @@ class Operator(object):
                 # If in kwargs, return it
                 return self._kwargs[name[1:]]
             except KeyError:
-                try:
-                    # Try to return the default value if we have it
-                    return self._options[name[1:]]
-                except KeyError:
-                    try:
-                        # Last resort. Try to return the global default
-                        return self.GLOBAL_DEFAULT_OPTIONS[name[1:]]
-                    except KeyError:
-                        raise AttributeError
+                raise AttributeError("{} not found in kwarg".format(name))
         else:
             raise AttributeError
 
+    def _parseKwargs(self, **kwargs):
+        """
+        Get the operations default kwargs. Parse the kwargs combine then into
+        one dict that define all off the operations options.
+
+        Kwargs not define are ignored
+        :return:
+        """
+        # Extract the default values
+
+        kw = {k: v.defaultValue for k, v in self.getKwArgumentInfoDict().iteritems()}
+
+        for k, v in kwargs.iteritems():
+            if k in kw:
+                kw[k] = v
+            else:
+                # Maybe remove this at some point. But is is rather nice
+                # when debuging
+                raise TypeError("{} not defined in the "
+                                "KwArgumentInfoDict!".format(k))
+
+        return kw
+
+    def getKwArgumentInfoDict(self):
+        """
+        Return the operations keyword arguments.
+        :return:
+        """
+        return self._getKwArgumentInfoDict()
+
+    def _getKwArgumentInfoDict(self):
+        """
+        Overload this in each operation
+        :return:
+        """
+        pass
+
+    def _setResultTrackFormat(self):
+        """
+        Overload this method if one wants to define the TrackFormat of the
+        result track.
+        :return:
+        """
+        # Set to None if not overloaded
+        self._resultTrackFormat = None
+
+    # Calculation methods
     def __call__(self, *args, **kwargs):
         """
         Legacy, remove at a later point.
@@ -162,45 +182,44 @@ class Operator(object):
         of the result per region.
         """
 
-        if self._resultFound:
-            # Result already calculated
-            if self._resultIsTrack:
-                return self._resultTrack
+        if self._result is not None:
+            # If we have a result we return it
+            return self._result
+
+        self._result = OrderedDict()
+
+        # Compute any nested operations.
+        computedTracks = []
+        for track in self._tracks:
+            if isinstance(track, Operator):
+                computedTracks.append(track.calculate())
             else:
-                return self._out
+                computedTracks.append(track)
 
-        self._out = OrderedDict()
-
-        if self._nestedOperator:
-            # There are nested operators in that needs to be computed.
-            computedArg = []
-            for arg in self._args:
-                if isinstance(arg, Operator):
-                    computedArg.append(arg())
-                else:
-                    computedArg.append(arg)
-        else:
-            computedArg = self._args
-
-        #self._args = self.preCalculation(self._args)
+        result = OrderedDict()
         for region in self.getResultRegion():
-            trackViewPerArg = [arg.getTrackView(region) for arg in computedArg]
+            trackViewPerArg = [track.getTrackView(region) for track in
+                               computedTracks]
             tv = self._calculate(region, *trackViewPerArg)
 
             if tv is not None:
-                self._out[region] = tv
+                result[region] = tv
 
         if self.resultIsTrack:
-            self._resultFound = True
-
-            self._resultTrack = TrackContents(self._resultGenome, self._out)
-            self._resultTrack = self.postCalculation(self._resultTrack)
-            return self._resultTrack
+            # Result is a track. Create new TrackContent
+            self._result = TrackContents(self._resultGenome, result)
         else:
-            # The result is not a track. Int, float, etc.
-            self._resultFound = True
-            res = self.postCalculation(self._out)
-            return res
+            # The result is not a track.
+            self._result = result
+
+        self._postCalculation()
+        return self._result
+
+    def _preCalculation(self):
+        pass
+
+    def _postCalculation(self):
+        pass
 
     # **** Abstract methods ****
     @abc.abstractmethod
@@ -262,8 +281,28 @@ class Operator(object):
 
         return cls(*tracks, **args)
 
+    def getKwArguments(self):
+        """
+        TODO: List all KwArguments recursively down the operations
+        :return:
+        """
+
+        pass
+
+    def setKwArguments(self, **kwargs):
+        """
+        Set a given keyword argument.
+
+        How do we
+        :param kwargs:
+        :return:
+        """
+        pass
+
     def _updateTrackFormatRequirements(self):
         """
+        Remove?
+
         Called when we have updated some of the properties that the track
         requirement depend on.
 
@@ -278,6 +317,7 @@ class Operator(object):
 
     def _updateResultTrackFormatRequirements(self):
         """
+        Remove ?
         Equal to _updateTrackFormat but now updating the result track
         requirments (if any)
         :return: None
@@ -290,48 +330,22 @@ class Operator(object):
                 self._resultTrackRequirements = \
                     TrackFormatReq(dense=dense, allowOverlaps=self._allowOverlap)
 
-    @abc.abstractmethod
     def printResult(self):
         """
         Used by GTools.
         Used if the operation returns something other the a new track.
         GTools uses this method to print the result.
+        Overload if one wants more complex printing
         :return:
         """
-        pass
 
-    @abc.abstractmethod
-    def preCalculation(self, tracks):
-        pass
-
-    @abc.abstractmethod
-    def postCalculation(self, result):
-        super(Operator, self).postCalculation(result)
-        pass
-
-    # **** Abstract class methods ****
-    @classmethod
-    @abc.abstractmethod
-    def createSubParser(cls, subparsers):
-        """
-        Used by GTools.
-        This method should create a appropriate subparser for the GTool
-        program. Define inputs tracks ect.
-        :param subparsers:
-        :return: None
-        """
-        pass
-
-    #@classmethod
-    #@abc.abstractmethod
-    #def createOperation(cls, args):
-    #    """
-    #    Used by GTools.
-    #    Create a operation object from the arguments given from GTools.
-    #    :param args: Arguments from the parser in GTools
-    #    :return: A operation object.
-    #    """
-    #    pass
+        if isinstance(self._result, TrackContents):
+            pass
+        else:
+            if self._result is not None:
+                print(self._out)
+            else:
+                print("ERROR! Calculation not run!")
 
     def createTrackName(self):
         """
@@ -410,12 +424,12 @@ class Operator(object):
         return self._resultIsTrack
 
     @property
-    def resultTrackRequirements(self):
+    def resultTrackFormat(self):
         """
         The TrackFormatReq of the result track (if any).
         :return: None
         """
-        return self._resultTrackRequirements
+        return self._resultTrackFormat
 
     # **** Misc methods ****
     def isNestable(self):
@@ -437,10 +451,10 @@ class Operator(object):
         """
         # TODO: Se paa denne!
         # Use extended genome
-        if isinstance(self._args[0], Operator):
-            return self._args[0].getResultRegion()
+        if isinstance(self._tracks[0], Operator):
+            return self._tracks[0].getResultRegion()
         else:
-            return self._args[0].regions
+            return self._tracks[0].regions
 
     def getResultGenome(self):
         """
@@ -448,10 +462,10 @@ class Operator(object):
         :return:
         """
         if self.isNestable():
-            if isinstance(self._args[0], Operator):
-                return self._args[0].getResultGenome()
+            if isinstance(self._tracks[0], Operator):
+                return self._tracks[0].getResultGenome()
             else:
-                return self._args[0].genome
+                return self._tracks[0].genome
         else:
             return None
 
@@ -478,6 +492,11 @@ class Operator(object):
                          borderHandling='crop',
                          allowOverlaps=self.resultAllowOverlaps,
                          extraLists=extraLists)
+
+
+# Named tuple uses to define the keyword arguments of a operation
+KwArgumentInfo = namedtuple('KwArgumentInfo', ['key', 'shortkey', 'help',
+                                               'contentType', 'defaultValue'])
 
 
 def getOperation():
