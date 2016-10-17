@@ -1,24 +1,17 @@
 
-import logging
-import sys
-import time
+from collections import OrderedDict
 
-from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.format.TrackFormat import TrackFormat
 
-from gtrackcore.track_operations.operations.Operator import Operator
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.RawOperationContent import RawOperationContent
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-from gtrackcore.track_operations.Genome import Genome
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createRawResultTrackView
-
-
 from gtrackcore.track_operations.raw_operations.UniquifyLinks import \
     uniquifyLinks
+
+from gtrackcore.track_operations.operations.Operator import Operator
+from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
+
+from gtrackcore.track_operations.utils.TrackHandling import \
+    createRawResultTrackView
 
 class UniquifyLinks(Operator):
     """
@@ -31,37 +24,17 @@ class UniquifyLinks(Operator):
     Options
         - trackIdentifier
     """
-
-    def __init__(self, *args, **kwargs):
-
-        assert args[0] is not None
-
-        self._kwargs = kwargs
-        self._options = {'debug': False,
-                         'allowOverlap': False,
-                         'resultAllowOverlap': False,
-                         'identifier': None
-                         }
-        # Save the tracks
-        self._tracks = args[0]
-
-        # Core properties
-        self._numTracks = 1
-        self._resultIsTrack = True
-        self._trackRequirements = [TrackFormatReq(dense=False, linked=True)]
-
-        self._resultTrackRequirement = self._trackRequirements[0]
-
-        super(self.__class__, self).__init__(*args, **kwargs)
+    _trackHelpList = ['Track to uniquify links on']
+    _numTracks = 1
+    _resultIsTrack = True
+    _trackRequirements = [TrackFormatReq(linked=True)]
 
     def _calculate(self, region, tv):
-        logging.debug("Start call! region:{0}".format(region))
 
         ids = tv.idsAsNumpyArray()
         edges = tv.edgesAsNumpyArray()
 
-        ret = uniquifyLinks(ids, edges, self._identifier,
-                            self._allowOverlap, self._debug)
+        ret = uniquifyLinks(ids, edges, self._identifier, self._debug)
 
         if ret is not None and len(ret) != 0:
             assert len(ret) == 3
@@ -69,42 +42,32 @@ class UniquifyLinks(Operator):
             newEdges = ret[1]
             index = ret[2]
 
-            tv = createRawResultTrackView(ret[2], region, tv,
-                                          self._allowOverlap, newIds=newIds,
-                                          newEdges=newEdges)
+            tv = createRawResultTrackView(index, region, tv, True,
+                                          newIds=newIds, newEdges=newEdges,
+                                          trackFormat=self._resultTrackFormat)
             return tv
         else:
             return None
 
-    def preCalculation(self, track):
-        return track
-
-    def postCalculation(self, track):
-        return track
-
-    @classmethod
-    def createSubParser(cls, subparsers):
+    def _setResultTrackFormat(self):
         """
-        Creates a subparser. Used by GTool
-        :param subparsers:
-        :return: None
-        """
-        parser = subparsers.add_parser('UniquifyLinks',
-                                       help='Add a extra identifier to a '
-                                            'tracks ids. Used when combining '
-                                            'two track with a similar ids '
-                                            'naming schemes')
-        parser.add_argument('track', help='File path of track')
-        parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('--allowOverlap', action='store_true',
-                            help="Allow overlap in the resulting track")
-        parser.add_argument('--identifier',
-                            help="Identifier to add to the ids.")
-        parser.set_defaults(which='UniquifyLinks')
-
-    def printResult(self):
-        """
-        Operation returns track, not in use
+        Create the correct TrackFormat for the output track.
         :return:
         """
-        pass
+        # As we do not change the format of the track we simply use the
+        # input TrackFormat
+        tr = self._tracks[0].trackFormat
+        self._resultTrackFormat = tr
+
+    def _getKwArgumentInfoDict(self):
+        return OrderedDict([
+            ('debug',
+             KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),
+            ('useGlobal',
+             KwArgumentInfo('useGlobal','g',
+                            'Check the ids globally.', bool,
+                            False)),
+            ('identifier',
+             KwArgumentInfo('identifier', 'i',
+                            'Identifier to add to the ids',
+                            str, None))])
