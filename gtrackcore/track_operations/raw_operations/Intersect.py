@@ -1,7 +1,7 @@
 import numpy as np
 
 def intersect(t1Starts=None, t1Ends=None, t2Starts=None, t2Ends=None,
-              resultIsPoints=False):
+              debug=False):
     """
     Find the intersect of two none dense tracks.
 
@@ -30,8 +30,6 @@ def intersect(t1Starts=None, t1Ends=None, t2Starts=None, t2Ends=None,
     t1CodedEnds = t1Ends * 8 + 3
     t2CodedStarts = t2Starts * 8 + 6
     t2CodedEnds = t2Ends * 8 + 2
-
-    print("t1Index: {}".format(t1Index))
 
     allCodedEvents = np.concatenate((t1CodedStarts, t1CodedEnds,
                                         t2CodedStarts, t2CodedEnds))
@@ -64,7 +62,6 @@ def intersect(t1Starts=None, t1Ends=None, t2Starts=None, t2Ends=None,
         combinedIndex = elementsToUpdate[:,-1]
         updatedCombinedIndex = combinedIndex - 1
 
-        # TODO: check for underflow?
         newElements = combined[updatedCombinedIndex]
 
         # Update combined index
@@ -78,26 +75,10 @@ def intersect(t1Starts=None, t1Ends=None, t2Starts=None, t2Ends=None,
         wrongIndex = np.where(tmpStarts[:,-2] == 2)
         elementsToUpdate = tmpStarts[wrongIndex]
 
-    # Res
-    # Codedvalue, index, encoding, combinedIndex
-
     starts = tmpStarts[:,0]/8
     ends = starts + allEventLengths[allStartIndexes]
 
     trackIndex = tmpStarts[:,-2]
     trackEncoding = tmpStarts[:,-1]
 
-    print("**********")
-    print(tmpStarts)
-    print("**********")
-
-    print("Return of intersect!")
-    print("starts: {}".format(starts))
-    print("ends: {}".format(ends))
-    print("trackIndex: {}".format(trackIndex))
-    print("trackEncoding: {}".format(trackEncoding))
-
-    #if pointTrack:
-    #    return starts, None, trackIndex, trackEncoding
-    #else:
     return starts, ends, trackIndex, trackEncoding
