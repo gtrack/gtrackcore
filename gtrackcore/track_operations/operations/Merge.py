@@ -1,9 +1,11 @@
 
 import logging
+from collections import OrderedDict
 
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
 
 from gtrackcore.track_operations.operations.Operator import Operator
+from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
 
@@ -14,48 +16,13 @@ class Merge(Operator):
     """
     Merge overlapping segments in a track.
 
-    None dense tracks only
     """
-
-    def __init__(self, *args, **kwargs):
-        assert len(args) == 1
-        assert args[0] is not None
-        self._kwargs = kwargs
-        self._options = {'debug': False,
-                         'allowOverlaps': False,
-                         'resultAllowOverlaps': False,
-                         'trackFormatReqChangeable': False,
-                         'resultTrackFormatReqChangeable': False,
-                         'mergeValuesFunction': None,
-                         'useStrands': True,
-                         'treatMissingAsNegative': False
-                         }
-
-        # Save the tracks
-        self._tracks = args[0]
-
-        # Core properties
-        self._numTracks = 1
-        self._resultIsTrack = True
-
-        # Merge support all tracks type with the exception if function,
-        # linked function and linked base pairs.
-        self._trackRequirements = [[TrackFormatReq(dense=False),
-                                    TrackFormatReq(dense=True, interval=True)]]
-
-        # The TrackFormat of the result
-        self._trackFormat = args[0].trackFormat
-
-        # We set the resultTrackRequirements based on the input track
-        tr = self._trackFormat
-
-        self._resultTrackRequirements = TrackFormatReq(name=tr.getFormatName())
-
-        super(self.__class__, self).__init__(*args, **kwargs)
+    _trackHelpList = ['Track to create flank track from']
+    _numTracks = 1
+    _resultIsTrack = True
+    _trackRequirements = [TrackFormatReq(dense=False)]
 
     def _calculate(self, region, tv):
-        # Remove RawOperationsContent
-        logging.debug("Start call! region:{0}".format(region))
         starts = tv.startsAsNumpyArray()
         ends = tv.endsAsNumpyArray()
         strands = tv.strandsAsNumpyArray()
@@ -90,41 +57,44 @@ class Merge(Operator):
             weights = ret[6]
 
             tv = createRawResultTrackView(None, region, None,
-                                          self.allowOverlaps,
+                                          self._resultAllowOverlap,
                                           newStarts=starts, newEnds=ends,
                                           newValues=values, newStrands=strands,
                                           newIds=ids, newEdges=edges,
                                           newWeights=weights,
-                                          trackFormatReq=self._trackFormat)
+                                          trackFormat=self._resultTrackFormat)
             return tv
         else:
             return None
 
-    def preCalculation(self, tracks):
-        return tracks
-
-    def postCalculation(self, track):
-        return track
-
-    @classmethod
-    def createSubParser(cls, subparsers):
+    def _setResultTrackFormat(self):
         """
-        Creates a subparser. Used by GTool
-        :param subparsers:
-        :return: None
-        """
-        parser = subparsers.add_parser('Merge',
-                                       help='Merge overlapping segments in a '
-                                            'non dense track.' )
-        parser.add_argument('track', help='File path of track')
-        parser.add_argument('genome', help='File path of Genome definition')
-        parser.add_argument('--allowOverlap', action='store_true',
-                            help="Allow overlap in the resulting track")
-        parser.set_defaults(which='Merge')
-
-    def printResult(self):
-        """
-        Operation returns track, not in use
+        Create the correct TrackFormat for the output track.
         :return:
         """
-        pass
+        # As we do not change the trackFormat we simply use the TrackFormat
+        # of the input track.
+        self._resultTrackFormat = self._tracks[0].trackFormat
+
+    def _getKwArgumentInfoDict(self):
+        print("In merge getKwArgument")
+
+        return OrderedDict([
+            ('debug', KwArgumentInfo('debug', 'd', 'Print debug info', bool,
+                                     False)),
+            ('resultAllowOverlap',
+             KwArgumentInfo('resultAllowOverlap','o',
+                            'Allow overlap in the result track.', bool,
+                            False)),
+            ('useStrands',
+             KwArgumentInfo('useStrands', 's', 'Follow the strand direction',
+                            bool, True)),
+            ('treatMissingAsNegative',
+             KwArgumentInfo('treatMissingAsNegative', 'n',
+                            'Treat any missing strand as if they are '
+                            'negative. The default is to treat them as '
+                            'positive', bool, False)),
+            ('mergeValuesFunction',
+             KwArgumentInfo('mergeValuesFunction', 'v',
+                            'Use a custom function when merging values',
+                            None, None))])
