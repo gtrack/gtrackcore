@@ -18,11 +18,12 @@ class FlankTest(unittest.TestCase):
                             GenomeInfo.GENOMES['hg19']['size'].iteritems())
 
     def _runTest(self, starts=None, ends=None, values=None, strands=None,
-                 ids=None, edges=None, weights=None, expStarts=None,
-                 expEnds=None, expValues=None, expStrands=None, expIds=None,
-                 expEdges=None, expWeights=None, customChrLength=None,
-                 allowOverlap=True, resultAllowOverlap=False, start=None,
-                 end=None, both=None, useFraction=False, useStrands=False,
+                 ids=None, edges=None, weights=None, extras=None,
+                 expStarts=None, expEnds=None, expValues=None,
+                 expStrands=None, expIds=None, expEdges=None,
+                 expWeights=None, expExtras=None, customChrLength=None,
+                 resultAllowOverlap=False, upstream=None, downstream=None,
+                 both=None, useFraction=False, useStrands=True,
                  treatMissingAsNegative=False, debug=False,
                  expTrackFormatType=None):
 
@@ -31,16 +32,16 @@ class FlankTest(unittest.TestCase):
                                              strandList=strands,
                                              idList=ids, edgeList=edges,
                                              weightsList=weights,
+                                             extraLists=extras,
                                              customChrLength=customChrLength)
         if both is not None:
-            self.assertTrue((start is None and end is None))
+            self.assertTrue((downstream is None and upstream is None))
         else:
-            self.assertTrue((starts is not None or end is not None))
+            self.assertTrue((downstream is not None or upstream is not None))
 
-        f = Flank(track, both=both, start=start, end=end,
-                  allowOverlap=allowOverlap,
+        f = Flank(track, both=both, downstream=downstream, upstream=upstream,
                   resultAllowOverlap=resultAllowOverlap,
-                  useStrand=useStrands, useFraction=useFraction,
+                  useStrands=useStrands, useFraction=useFraction,
                   treatMissingAsNegative=treatMissingAsNegative,
                   debug=debug)
 
@@ -62,7 +63,7 @@ class FlankTest(unittest.TestCase):
                 newIds = v.idsAsNumpyArray()
                 newEdges = v.edgesAsNumpyArray()
                 newWeights = v.weightsAsNumpyArray()
-                #newExtras = v.extrasAsNumpyArray()
+                newExtras = v.allExtrasAsDictOfNumpyArrays()
 
                 if debug:
                     print("newStarts: {}".format(newStarts))
@@ -127,11 +128,15 @@ class FlankTest(unittest.TestCase):
                 else:
                     self.assertTrue(newWeights is None)
 
-                #if expExtras is not None:
-                #    self.assertTrue(newExtras is not None)
-                #    self.assertTrue(np.array_equal(newExtras, expExtras))
-                #else:
-                #    self.assertTrue(newExtras is None)
+                if expExtras is not None:
+                    for key in expExtras.keys():
+                        self.assertTrue(v.hasExtra(key))
+
+                        expExtra = expExtras[key]
+                        newExtra = newExtras[key]
+                        self.assertTrue(np.array_equal(newExtra, expExtra))
+                else:
+                    self.assertTrue(len(newExtras) == 0)
 
             else:
                 # Tests if all tracks no in chr1 have a size of 0.
@@ -151,20 +156,20 @@ class FlankTest(unittest.TestCase):
         self._runTest(starts=[10], expStarts=[5,11], expEnds=[10,16],
                       both=5, expTrackFormatType="Segments")
 
-    def testSegmentsStart(self):
+    def testSegmentsDownstream(self):
         """t
-        Segments, test start
+        Segments, test downstream
         :return: None
         """
-        self._runTest(starts=[10], expStarts=[5], expEnds=[10], start=5,
+        self._runTest(starts=[10], expStarts=[5], expEnds=[10], downstream=5,
                       expTrackFormatType="Segments")
 
-    def testSegmentsEnd(self):
+    def testSegmentsUpstream(self):
         """
-        Segments, test end
+        Segments, test upstream
         :return: None
         """
-        self._runTest(starts=[10], expStarts=[11], expEnds=[16], end=5,
+        self._runTest(starts=[10], expStarts=[11], expEnds=[16], upstream=5,
                       expTrackFormatType="Segments")
 
     # **** Segments tests ****
@@ -231,62 +236,63 @@ class FlankTest(unittest.TestCase):
                       expEnds=[10,20,35], resultAllowOverlap=False,
                       both=5, expTrackFormatType="Segments")
 
-    def testSegmentStartSimple(self):
+    def testSegmentDownstreamSimple(self):
         """
-        Simple test of start, no strand.
+        Simple test of downstream, no strand.
         :return: None
         """
 
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[10],
-                      start=5, expTrackFormatType="Segments")
+                      downstream=5, expTrackFormatType="Segments")
 
-    def testSegmentsStartSimpleFractions(self):
+    def testSegmentsDownstreamSimpleFractions(self):
         """
         No strand, start using fractions
         :return: None
         """
 
         self._runTest(starts=[10], ends=[20], expStarts=[5], expEnds=[10],
-                      start=.5, useFraction=True,
-                      expTrackFormatType="Segments")
+                      downstream=.5, useFraction=True,
+                      expTrackFormatType="Segments", debug=True)
 
-    def testSegmentEndSimple(self):
+    def testSegmentUpstreamSimple(self):
         """
         Simple test of end, no strand
         :return: None
         """
 
         self._runTest(starts=[10], ends=[20], expStarts=[20], expEnds=[25],
-                      end=5, resultAllowOverlap=True,
-                      expTrackFormatType="Segments")
+                      upstream=5, resultAllowOverlap=True,
+                      expTrackFormatType="Segments", debug=True)
 
-    def testSegmentsEndSimpleFraction(self):
+    def testSegmentsUpstreamSimpleFraction(self):
         """
         Simple test of end, no strand.
         :return: None
         """
 
         self._runTest(starts=[10], ends=[20], expStarts=[20], expEnds=[25],
-                      end=.5, useFraction=True, expTrackFormatType="Segments")
+                      upstream=.5, useFraction=True,
+                      expTrackFormatType="Segments")
 
-    def testSegmentsStartAndEndSimple(self):
+    def testSegmentsDownstreamAndUpstreamSimple(self):
         """
         Simple test of start and end, no strand.
         :return: None
         """
 
         self._runTest(starts=[10], ends=[20], expStarts=[5,20],
-                      expEnds=[10,25], start=5, end=5,
+                      expEnds=[10,25], upstream=5, downstream=5,
                       expTrackFormatType="Segments")
 
-    def testSegmentsStartAndEndSimpleFraction(self):
+    def testSegmentsDownstreamAndUpstreamSimpleFraction(self):
         """
         Simple test of start and end using fractions
         :return: None
         """
 
         self._runTest(starts=[10], ends=[20], expStarts=[5,20],
-                      expEnds=[10,25], start=.5, end=.5, useFraction=True,
+                      expEnds=[10,25], upstream=.5, downstream=.5, useFraction=True,
                       expTrackFormatType="Segments")
 
     def testSegmentsStrandPositiveBothSimple(self):
@@ -336,111 +342,113 @@ class FlankTest(unittest.TestCase):
                       expEnds=[10,25], expStrands=['-','-'], both=.5,
                       useFraction=True, expTrackFormatType="Segments")
 
-    def testSegmentsStrandStartSimple(self):
+    def testSegmentsStrandDownstreamSimple(self):
         """
-        Simple test. Segments with strand, using start, only positive
+        Simple test. Segments with strand, using downstream, only positive
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5],
-                      expEnds=[10], expStrands=['+'], start=5,
+                      expEnds=[10], expStrands=['+'], downstream=5,
                       expTrackFormatType="Segments")
 
-    def testSegmentStrandStrandNegativeStartSimple(self):
+    def testSegmentStrandStrandNegativeDownstreamSimple(self):
         """
-        Simple test. Segments with strand, using start, only negative
+        Simple test. Segments with strand, using downstram, only negative
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[20],
-                      expEnds=[25], expStrands=['-'], start=5,
+                      expEnds=[25], expStrands=['-'], downstream=5,
                       expTrackFormatType="Segments")
 
-    def testSegmentStrandStrandStartMultiple(self):
+    def testSegmentStrandStrandDownstreamMultiple(self):
         """
-        Simple test. Segments with strand, using start, only negative
+        Simple test. Segments with strand, using downstream,
         :return: None
         """
         self._runTest(starts=[10,30], ends=[20,40], strands=['+', '-'],
                       expStarts=[5,40], expEnds=[10,45], expStrands=['+','-'],
-                      start=5, expTrackFormatType="Segments")
+                      downstream=5, expTrackFormatType="Segments", debug=True)
 
     # *** Strand, start, remove overlap ***
     # *** Strand, end ***
-    def testSegmentStrandEndSimple(self):
+    def testSegmentStrandUpstreamSimple(self):
         """
-        Segments with strand, using end, only positive
+        Segments with strand, using upstream, only positive
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[20],
-                      expEnds=[25], expStrands=['+'], end=5,
+                      expEnds=[25], expStrands=['+'], upstream=5,
                       expTrackFormatType="Segments")
 
-    def testSegmentsStrandNegativeEndSimple(self):
+    def testSegmentsStrandNegativeUpstreamSimple(self):
         """
-        Segments with strand, using end, only negative
+        Segments with strand, using upstream, only negative
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
-                      expEnds=[10], expStrands=['-'], end=5,
+                      expEnds=[10], expStrands=['-'], upstream=5,
                       expTrackFormatType="Segments")
 
-    # *** Strand, end, fraction ***
-    def testSegmentsStrandEndSimpleFraction(self):
+    # *** Strand, upstream, fraction ***
+    def testSegmentsStrandUpstreamSimpleFraction(self):
         """
-        Segments with strand, using end as fraction, only positive
-        :return: None
+        Segments with strand, using upstream as fraction, only positive
+        :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[20],
-                      expEnds=[25], expStrands=['+'], end=.5, useFraction=True,
-                      expTrackFormatType="Segments")
+                      expEnds=[25], expStrands=['+'], upstream=.5,
+                      useFraction=True, expTrackFormatType="Segments")
 
-    def testSegmentsStrandNegativeEndSimpleFraction(self):
+    def testSegmentsStrandNegativeUpstreamSimpleFraction(self):
         """
-        Segments with strand, using end as fraction, only negative
-        :return: None
+        Segments with strand, using upstream as fraction, only negative
+        :return:
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5],
-                      expEnds=[10], expStrands=['-'], end=.5,useFraction=True,
-                      expTrackFormatType="Segments")
+                      expEnds=[10], expStrands=['-'], upstream=.5,
+                      useFraction=True, expTrackFormatType="Segments")
 
-    # TODO test pos and neg
-
-    # *** Strand, end, remove overlap ***
-    # *** Strand, start and end ***
-    def testSegmentsStrandStartAndEndSimple(self):
+    # *** Strand, upstream, remove overlap ***
+    # *** Strand, downstream and upstream ***
+    def testSegmentsStrandDownStramAndUpstremSimple(self):
         """
-        Segments with strand, using start and end, only positive
+        Segments with strand, using down and upstream, only positive
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['+','+'], start=5, end=5,
-                      expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['+','+'], upstream=5,
+                      downstream=5, expTrackFormatType="Segments")
 
-    def testSegmentsStrandNegativeStartAndEndSimple(self):
+    def testSegmentsStrandNegativeDownstreamAndUpstreamSimple(self):
         """
-        Segments with strand, using start and end, only negative
+        Segments with strand, using down- and upstream, only negative
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['-','-'], start=5, end=5,
-                      expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['-','-'], upstream=5,
+                      downstream=5, expTrackFormatType="Segments")
 
-    def testSegmentsStrandStartAndEndSimpleFraction(self):
+    def testSegmentsStrandDownstreamAndUpstreamSimpleFraction(self):
         """
-        Segments with strand, using start and end as fraction, only positive
+        Segments with strand, using down- and upstream as fraction,
+        only positive
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['+'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['+','+'], start=.5, end=.5,
-                      useFraction=True, expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['+','+'], upstream=.5,
+                      downstream=.5, useFraction=True,
+                      expTrackFormatType="Segments")
 
-    def testSegmentsStrandNegativeStartAndEndSimpleFraction(self):
+    def testSegmentsStrandNegativeDownstreamAndUpstreamSimpleFraction(self):
         """
-        Segments with strand, using start and end as fraction, only negative
+        Segments with strand, using down- and upstream as fraction,
+        only negative
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['-'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['-','-'], start=.5, end=.5,
-                      useFraction=True, expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['-','-'], upstream=.5,
+                      downstream=.5, useFraction=True,
+                      expTrackFormatType="Segments")
 
     # *** Strand, start and end, remove overlap ***
     # TODO pos and neg
@@ -453,7 +461,7 @@ class FlankTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['+','+'], both=5,
+                      expEnds=[10,25], expStrands=['.','.'], both=5,
                       expTrackFormatType="Segments")
 
     # *** Strand, both, missing positive, fraction ***
@@ -465,8 +473,8 @@ class FlankTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['+','+'], both=.5,
-                      useFraction=True, expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['.','.'], both=.5,
+                      useFraction=True, expTrackFormatType="Segments", debug=True)
 
     # *** Strand, both, missing positive, remove overlap ***
     # TODO
@@ -478,7 +486,7 @@ class FlankTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['-','-'], both=5,
+                      expEnds=[10,25], expStrands=['.','.'], both=5,
                       treatMissingAsNegative=True,
                       expTrackFormatType="Segments")
 
@@ -490,7 +498,7 @@ class FlankTest(unittest.TestCase):
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['-','-'], both=.5,
+                      expEnds=[10,25], expStrands=['.','.'], both=.5,
                       treatMissingAsNegative=True, useFraction=True,
                       expTrackFormatType="Segments")
 
@@ -498,47 +506,47 @@ class FlankTest(unittest.TestCase):
     # TODO
     # TODO pos and negative
 
-    def testSegmentsStrandStartMissingDefault(self):
+    def testSegmentsStrandDownstreamMissingDefault(self):
         """
         Strand info missing. Test that the default works.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[10], expStrands=['+'], start=5,
+                      expEnds=[10], expStrands=['.'], downstream=5,
                       expTrackFormatType="Segments")
 
-    def testSegmentsStrandStartMissingDefaultFraction(self):
+    def testSegmentsStrandDownstreamMissingDefaultFraction(self):
         """
         Strand info missing. Test that the default works.
         Using fractions.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[10], expStrands=['+'], start=.5,
+                      expEnds=[10], expStrands=['.'], downstream=.5,
                       useFraction=True, expTrackFormatType="Segments")
 
     # *** Strand, start, missing positive, remove overlap ***
     # TODO, neg and pos
 
-    def testSegmentsStrandStartMissingNegative(self):
+    def testSegmentsStrandDownstreamMissingNegative(self):
         """
         Strand info missing. Test that we can treat is as negative.
         Using fractions.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[20],
-                      expEnds=[25], expStrands=['-'], start=5,
+                      expEnds=[25], expStrands=['.'], downstream=5,
                       treatMissingAsNegative=True,
                       expTrackFormatType="Segments")
 
-    def testSegmentsStrandStartMissingNegativeFraction(self):
+    def testSegmentsStrandDownstreamMissingNegativeFraction(self):
         """
         Strand info missing. Test that we can treat is as negative.
         Using fractions.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[20],
-                      expEnds=[25], expStrands=['-'], start=.5,
+                      expEnds=[25], expStrands=['.'], downstream=.5,
                       treatMissingAsNegative=True, useFraction=True,
                       expTrackFormatType="Segments")
 
@@ -546,95 +554,96 @@ class FlankTest(unittest.TestCase):
     # *** Strand, end, missing positive ***
     # TODO
 
-    def testSegmentsStrandEndMissingPositiveDefault(self):
+    def testSegmentsStrandUpstreamMissingPositiveDefault(self):
         """
         Strand info missing. Test that the default works.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[20],
-                      expEnds=[25], expStrands=['+'], end=5,
+                      expEnds=[25], expStrands=['.'], upstream=5,
                       expTrackFormatType="Segments")
 
-    # *** Strand, end, missing positive, fraction ***
-    def testSegmentsStrandEndMissingDefaultFraction(self):
+    # *** Strand, upstream, missing positive, fraction ***
+    def testSegmentsStrandUpstreamMissingDefaultFraction(self):
         """
         Strand info missing. Test that the default works.
         Using fractions.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[20],
-                      expEnds=[25], expStrands=['+'], end=.5, useFraction=True,
-                      expTrackFormatType="Segments")
+                      expEnds=[25], expStrands=['.'], upstream=.5,
+                      useFraction=True, expTrackFormatType="Segments")
 
-    # *** Strand, end, missing positive, remove overlap ***
+    # *** Strand, upstream, missing positive, remove overlap ***
     # TODO
 
-    def testSegmentsStrandEndMissingNegative(self):
+    def testSegmentsStrandUpstreamMissingNegative(self):
         """
         Strand info missing. Test that we can treat them as negative.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[10], expStrands=['-'], end=5,
+                      expEnds=[10], expStrands=['.'], upstream=5,
                       treatMissingAsNegative=True)
 
-    def testSegmentsStrandEndMissingNegativeFraction(self):
+    def testSegmentsStrandUpstreamMissingNegativeFraction(self):
         """
         Strand info missing. Test that we can treat them as negative.
         Using fractions.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5],
-                      expEnds=[10], expStrands=['-'], end=.5,
+                      expEnds=[10], expStrands=['.'], upstream=.5,
                       treatMissingAsNegative=True, useFraction=True,
                       expTrackFormatType="Segments")
 
-    # *** Strand, end, missing negative, remove overlap ***
+    # *** Strand, upstream, missing negative, remove overlap ***
     # TODO neg and pos
 
-    def testSegmentsStrandStartAndEndMissingDefault(self):
+    def testSegmentsStrandDownstreamAndUpstreamMissingDefault(self):
         """
         Strand info missing. Test that the default works.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'],expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['+','+'], start=5, end=5,
-                      expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['.','.'], upstream=5,
+                      downstream=5, expTrackFormatType="Segments")
 
-    # *** Strand, start and end, missing positive, fraction ***
-    def testSegmentsStrandStartAndEndMissingDefaultFraction(self):
+    # *** Strand, downstream and upstream, missing positive, fraction ***
+    def testSegmentsStrandDownstreamAndUpstreamMissingDefaultFraction(self):
         """
         Strand info missing. Test that the default works.
         Using fractions.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['+','+'], start=.5, end=.5,
-                      useFraction=True, expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['.','.'], upstream=.5,
+                      downstream=.5, useFraction=True,
+                      expTrackFormatType="Segments")
 
     # *** Strand, start and end, missing positive, remove overlap ***
     # TODO
 
-    def testSegmentsStrandStartAndEndMissingNegative(self):
+    def testSegmentsStrandDownstreamAndUpstreamMissingNegative(self):
         """
         Strand info missing. Test that we can treat them as negative.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['-','-'], start=5, end=5,
-                      treatMissingAsNegative=True,
+                      expEnds=[10,25], expStrands=['.','.'], upstream=5,
+                      downstream=5, treatMissingAsNegative=True,
                       expTrackFormatType="Segments")
 
-    def testSegmentsStrandStartAndEndMissingNegativeFractions(self):
+    def testSegmentsStrandDownstreamAndUpstreamMissingNegativeFractions(self):
         """
         Strand info missing. Test that we can treat them as negative.
         Using fractions.
         :return: None
         """
         self._runTest(starts=[10], ends=[20], strands=['.'], expStarts=[5,20],
-                      expEnds=[10,25], expStrands=['-','-'], start=.5, end=.5,
-                      treatMissingAsNegative=True, useFraction=True,
-                      expTrackFormatType="Segments")
+                      expEnds=[10,25], expStrands=['.','.'], upstream=.5,
+                      downstream=.5, treatMissingAsNegative=True,
+                      useFraction=True, expTrackFormatType="Segments")
 
     # *** Test inputs ***
     # Test that the operations accepts the different supported track types.
