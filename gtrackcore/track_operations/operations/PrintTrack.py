@@ -12,6 +12,7 @@ class PrintTrack(Operator):
     """
 
     _trackHelpList = ['Track to print']
+    _operationHelp = "Print a track to terminal"
     _numTracks = 1
     _resultIsTrack = False
     _trackRequirements = [TrackFormatReq()]
@@ -45,7 +46,8 @@ class PrintTrack(Operator):
             print("type(weights): {}".format(type(weights)))
             print("*******")
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('debug', KwArgumentInfo('debug', 'd', 'Print debug info', bool,
                                      False))])

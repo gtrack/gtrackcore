@@ -19,6 +19,7 @@ class Expand(Operator):
     Extends all of the segments in a track a given number of BP.
     """
     _trackHelpList = ['Track to expand']
+    _operationHelp = "Expand the elements in a track."
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -67,7 +68,8 @@ class Expand(Operator):
                       treatMissingAsNegative=self._treatMissingAsNegative)
             self._result = m.calculate()
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('debug',
              KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),
@@ -84,7 +86,7 @@ class Expand(Operator):
                             'Size of the upstream flank. In number of base '
                             'pairs', float, None)),
             ('downstream',
-             KwArgumentInfo('downstream', 'd',
+             KwArgumentInfo('downstream', 'w',
                             'Size of the downstream flank. In number of base '
                             'pairs', float, None)),
             ('useFraction',

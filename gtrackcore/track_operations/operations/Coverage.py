@@ -11,6 +11,7 @@ from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
 class Coverage(Operator):
 
     _trackHelpList = ['Track to be calculated coverage for']
+    _operationHelp = "Find the coverage of a track"
     _numTracks = 1
     _resultIsTrack = False
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -20,7 +21,8 @@ class Coverage(Operator):
         ends = tv.endsAsNumpyArray()
         return coverage(starts, ends)
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('debug',
              KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),

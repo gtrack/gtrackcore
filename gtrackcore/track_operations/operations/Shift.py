@@ -15,6 +15,7 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 class Shift(Operator):
 
     _trackHelpList = ['Track to be shifted']
+    _operationHelp = "Shift the elements in a track"
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -69,6 +70,7 @@ class Shift(Operator):
         # of the input track.
         self._resultTrackFormat = self._tracks[0].trackFormat
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('debug',
@@ -79,7 +81,7 @@ class Shift(Operator):
                             'Allow overlap in the result track.',
                             bool, False)),
             ('shiftLength',
-             KwArgumentInfo('shiftLength', 'l',
+             KwArgumentInfo('shiftLength', None,
                             'Length of shift in number of base pairs or as a '
                             'fraction of the elements length',
                             float, None)),

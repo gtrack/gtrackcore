@@ -17,6 +17,7 @@ from gtrackcore.track_operations.utils.TrackHandling import \
 class Union(Operator):
 
     _trackHelpList = ['Track 1 of Union', 'Track 2 of Union']
+    _operationHelp = "Combine two tracks into one"
     _numTracks = 2
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False),
@@ -48,6 +49,11 @@ class Union(Operator):
     def _preCalculation(self):
         t1 = self._tracks[0]
         t2 = self._tracks[1]
+
+        print("**************")
+        print(t1.trackFormat)
+        print(t2.trackFormat)
+        print("**************")
 
         if t1.trackFormat.isLinked():
             u = UniquifyLinks(t1, identifier="track-1")
@@ -83,12 +89,15 @@ class Union(Operator):
             # Equal trackFormat
             self._resultTrackFormat = t1TrackFormat
         else:
+            print(t1TrackFormat)
+            print(t2TrackFormat)
             # What makes sense?
             # Points and segments?
             # Maybe better to say that the tracks needs to be equal?
             # TODO. Make the correct trackFormat for the result.
             raise NotImplementedError
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('debug',

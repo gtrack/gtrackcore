@@ -23,6 +23,7 @@ class Intersect(Operator):
     """
 
     _trackHelpList = ['Track 1 in the intersect', 'Track 2 in the intersect']
+    _operationHelp = "Find the intersect between two tracks"
     _numTracks = 2
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False),
@@ -78,6 +79,7 @@ class Intersect(Operator):
 
         self._resultTrackFormat = TrackFormat(startList=starts, endList=ends)
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         print("In flank getKwArgument")
         return OrderedDict([

@@ -21,6 +21,7 @@ class RemoveDeadLinks(Operator):
         - Move link to closest feature
     """
     _trackHelpList = ['Track to remove dead links from']
+    _operationHelp = "Remove any dead links in a linked track"
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(linked=True)]
@@ -78,6 +79,7 @@ class RemoveDeadLinks(Operator):
         tr = self._tracks[0].trackFormat
         self._resultTrackFormat = tr
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('debug',

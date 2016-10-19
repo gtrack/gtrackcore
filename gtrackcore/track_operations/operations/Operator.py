@@ -2,6 +2,7 @@
 import abc
 import glob
 import time
+
 from collections import OrderedDict
 from collections import namedtuple
 from os.path import dirname, basename, isfile
@@ -22,10 +23,11 @@ class InvalidArgumentError(Exception):
 class Operator(object):
     __metaclass__ = abc.ABCMeta
 
+    _operationHelp = None
+    _trackHelpList = []
     _numTracks = 0
     _resultIsTrack = False
     _nestedOperator = False
-
     _result = None
 
     def __init__(self, *args, **kwargs):
@@ -131,7 +133,10 @@ class Operator(object):
         """
         # Extract the default values
 
-        kw = {k: v.defaultValue for k, v in self.getKwArgumentInfoDict().iteritems()}
+        kw = {k: v.defaultValue for k, v in
+              self.__class__.getKwArgumentInfoDict(
+
+        ).iteritems()}
 
         for k, v in kwargs.iteritems():
             if k in kw:
@@ -144,19 +149,34 @@ class Operator(object):
 
         return kw
 
-    def getKwArgumentInfoDict(self):
+    @classmethod
+    def getKwArgumentInfoDict(cls):
         """
         Return the operations keyword arguments.
         :return:
         """
-        return self._getKwArgumentInfoDict()
+        return cls._getKwArgumentInfoDict()
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         """
         Overload this in each operation
         :return:
         """
         pass
+
+    @classmethod
+    def getInfoDict(cls):
+        """
+        Return a dict of info about the operation.
+        Useful when creating application that use the operations dynamically
+        :return: Dict containing basic information about the operation
+        """
+
+        return {'name': cls.__name__,
+                'operationHelp': cls._operationHelp,
+                'numTracks': cls._numTracks,
+                'trackHelp': cls._trackHelpList}
 
     def _setResultTrackFormat(self):
         """

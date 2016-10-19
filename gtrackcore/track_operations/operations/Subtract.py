@@ -18,6 +18,7 @@ from gtrackcore.track_operations.operations.RemoveDeadLinks import \
 class Subtract(Operator):
 
     _trackHelpList = ['Base track', 'Track to be subtracted from']
+    _operationHelp = "Subtract one track from another"
     _numTracks = 2
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False),
@@ -91,6 +92,7 @@ class Subtract(Operator):
         # We are not changing the type of base track. Using its TrackFormat.
         self._resultTrackFormat = self._tracks[0].trackFormat
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('debug',

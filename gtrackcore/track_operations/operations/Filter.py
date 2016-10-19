@@ -23,6 +23,7 @@ class Filter(Operator):
 
     """
     _trackHelpList = ['Track to filter from']
+    _operationHelp = "Filter out unwanted data from a track"
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq()]
@@ -162,6 +163,7 @@ class Filter(Operator):
                                               weightsList=weights,
                                               extraLists=extras)
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('resultAllowOverlap',

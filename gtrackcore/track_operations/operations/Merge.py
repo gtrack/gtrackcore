@@ -17,7 +17,8 @@ class Merge(Operator):
     Merge overlapping segments in a track.
 
     """
-    _trackHelpList = ['Track to create flank track from']
+    _trackHelpList = ['Track to merge overlap in']
+    _operationHelp = "Merge any overlapping elements in a track"
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -76,7 +77,8 @@ class Merge(Operator):
         # of the input track.
         self._resultTrackFormat = self._tracks[0].trackFormat
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('debug', KwArgumentInfo('debug', 'd', 'Print debug info', bool,
                                      False)),

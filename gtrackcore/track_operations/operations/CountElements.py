@@ -22,6 +22,7 @@ class CountElements(Operator):
         nr = countElements(starts, ends)
         return nr
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('debug',

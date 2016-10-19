@@ -12,6 +12,7 @@ from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
 class AverageLength(Operator):
 
     _trackHelpList = ['Track to find the average element length on']
+    _operationHelp = "Finds the average length of the elements"
     _numTracks = 1
     _resultIsTrack = False
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -22,7 +23,8 @@ class AverageLength(Operator):
         nr = averageLength(starts, ends, self._customAverageFunction)
         return nr
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('debug',
              KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),

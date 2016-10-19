@@ -20,6 +20,7 @@ class Complement(Operator):
     """
 
     _trackHelpList = ['Track to create a complement track from']
+    _operationHelp = "Create a track that is the complement to the input track"
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -76,7 +77,8 @@ class Complement(Operator):
         # The result will always be a segment track.
         self._resultTrackFormat = TrackFormat(strandList=[], endList=[])
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('debug',
              KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),

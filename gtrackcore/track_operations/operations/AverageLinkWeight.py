@@ -15,6 +15,7 @@ class AverageLinkWeight(Operator):
     """
 
     _trackHelpList = ['Track to find the average link weight on']
+    _operationHelp = "Find the average link weight of a track"
     _numTracks = 1
     _resultIsTrack = False
     # TODO: Add a requirement for weight and support multiple types..
@@ -25,7 +26,8 @@ class AverageLinkWeight(Operator):
         ret = averageLinkWeight(weights, self._customAverageFunction)
         return ret
 
-    def _getKwArgumentInfoDict(self):
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('debug',
              KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),

@@ -1,18 +1,10 @@
 
 import logging
 import sys
-import time
 
-from gtrackcore.track.core.TrackView import TrackView
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.track.format.TrackFormat import TrackFormat
 
 from gtrackcore.track_operations.operations.Operator import Operator
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.RawOperationContent import RawOperationContent
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-from gtrackcore.track_operations.Genome import Genome
 from gtrackcore.track_operations.utils.TrackHandling import \
     createRawResultTrackView
 
@@ -133,45 +125,15 @@ class CreateRandomTrack(Operator):
         :param subparsers:
         :return: None
         """
-        parser = subparsers.add_parser('UniquifyLinks',
-                                       help='Add a extra identifier to a '
-                                            'tracks ids. Used when combining '
-                                            'two track with a similar ids '
-                                            'naming schemes')
+        parser = subparsers.add_parser('CreateRandomTrack',
+                                       help='Create a random track')
         parser.add_argument('track', help='File path of track')
         parser.add_argument('genome', help='File path of Genome definition')
         parser.add_argument('--allowOverlap', action='store_true',
                             help="Allow overlap in the resulting track")
         parser.add_argument('--trackIdentifier',
                             help="Identifier to add to the ids.")
-        parser.set_defaults(which='UniquifyLinks')
-
-    @classmethod
-    def createOperation(cls, args):
-        """
-        Generator classmethod used by GTool
-
-        :param args: args from GTool
-        :return: Intersect object
-        """
-        genome = Genome.createFromJson(args.genome)
-
-        track = createTrackContentFromFile(genome, args.track,
-                                           args.allowOverlap)
-
-        allowOverlap = args.allowOverlap
-        trackIdentifier = args.trackIdentifier
-
-        return UniquifyLinks(track, trackIdentifier=trackIdentifier,
-                             allowOverlap=allowOverlap)
-
-    @classmethod
-    def createTrackName(cls):
-        """
-        Track name used by GTools when saving the track i GTrackCore
-        :return: Generated track name as a string
-        """
-        return "uniqueLinks-{0}".format(int(time.time()))
+        parser.set_defaults(which='CreateRandomTrack')
 
     def printResult(self):
         """

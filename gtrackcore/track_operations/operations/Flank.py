@@ -20,6 +20,7 @@ class Flank(Operator):
     Creates a new track of flanking segments.
     """
     _trackHelpList = ['Track to create flank track from']
+    _operationHelp = "Create a flanking track from a given track"
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -90,8 +91,8 @@ class Flank(Operator):
         """
         self._resultTrackFormat = TrackFormat(startList=[], endList=[])
 
-    def _getKwArgumentInfoDict(self):
-        print("In flank getKwArgument")
+    @classmethod
+    def _getKwArgumentInfoDict(cls):
         return OrderedDict([
             ('both',
              KwArgumentInfo('both', 'b', 'Creating flank in both directions.',
@@ -101,7 +102,7 @@ class Flank(Operator):
                             'Size of the upstream flank. In number of base '
                             'pairs', float, None)),
             ('downstream',
-             KwArgumentInfo('downstream', 'd',
+             KwArgumentInfo('downstream', 'w',
                             'Size of the downstream flank. In number of base '
                             'pairs', float, None)),
             ('resultAllowOverlap',

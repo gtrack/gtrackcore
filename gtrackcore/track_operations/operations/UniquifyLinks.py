@@ -25,6 +25,8 @@ class UniquifyLinks(Operator):
         - trackIdentifier
     """
     _trackHelpList = ['Track to uniquify links on']
+    _operationHelp = "Make all ids in a track more unique by adding a extra " \
+                     "tag to all ids."
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(linked=True)]
@@ -59,6 +61,7 @@ class UniquifyLinks(Operator):
         tr = self._tracks[0].trackFormat
         self._resultTrackFormat = tr
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('debug',
