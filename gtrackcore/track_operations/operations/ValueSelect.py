@@ -16,6 +16,8 @@ class ValueSelect(Operator):
     Pics the elements of a track
     """
     _trackHelpList = ['Track to do a value select on']
+    _operationHelp = "Select the elements in a track that have a value " \
+                     "bigger then some given vale"
     _numTracks = 1
     _resultIsTrack = True
     _trackRequirements = [TrackFormatReq(dense=False)]
@@ -50,16 +52,17 @@ class ValueSelect(Operator):
         # of the input track.
         self._resultTrackFormat = self._tracks[0].trackFormat
 
+    @classmethod
     def _getKwArgumentInfoDict(self):
         return OrderedDict([
             ('debug',
              KwArgumentInfo('debug', 'd', 'Print debug info',
                             bool, False)),
-           ('limit',
-             KwArgumentInfo('useFraction', 'l',
+            ('limit',
+             KwArgumentInfo('limit', None,
                             'Value limit to select based on',
                             float, 0)),
             ('compareFunction',
-             KwArgumentInfo('useStrands', 's',
+             KwArgumentInfo('compareFunction', 's',
                             'Custom compare function',
                             None, None))])
