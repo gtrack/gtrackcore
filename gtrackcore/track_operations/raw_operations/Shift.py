@@ -44,10 +44,12 @@ def shift(starts, ends, regionSize, strands=None, shiftLength=None,
             negativeLengths = ends[negativeIndex] - starts[negativeIndex]
 
             positiveShift = positiveLengths * shiftLength
-            positiveShift = positiveShift.astype(int)
+            #positiveShift = positiveShift.astype(int)
+            positiveShift = np.around(positiveShift).astype(int)
 
             negativeShift = negativeLengths * shiftLength
-            negativeShift = negativeShift.astype(int)
+            #negativeShift = negativeShift.astype(int)
+            negativeShift = np.around(negativeShift).astype(int)
 
         else:
             positiveShift = shiftLength
@@ -68,7 +70,8 @@ def shift(starts, ends, regionSize, strands=None, shiftLength=None,
 
             lengths = ends - starts
             shiftLength = lengths * shiftLength
-            shiftLength = shiftLength.astype(int)
+            shiftLength = np.around(shiftLength).astype(int)
+            #shiftLength = shiftLength.astype(int)
             # Strand is not given or we are to ignore it.
 
         starts = starts + shiftLength
