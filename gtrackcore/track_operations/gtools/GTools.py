@@ -1,5 +1,3 @@
-__author__ = 'skh'
-
 import os
 import sys
 import logging
@@ -87,7 +85,6 @@ class GTools(object):
                 # TODO add support for custom name..
                 name = a.createTrackName()
                 logging.debug("Importing track. Name: {0}".format(name))
-                print(name)
 
                 for k,v in res.trackViews.iteritems():
                     s = v.startsAsNumpyArray()
@@ -157,10 +154,10 @@ class GTools(object):
                             help='Run in debug mode')
         subparsers = parser.add_subparsers(help='Supported commands')
 
-        subparser = subparsers.add_parser('list', help='List tracks in '
+        list = subparsers.add_parser('list', help='List tracks in '
                                                     'GTrackCore')
-        subparser.add_argument('genome', help="Name of genome")
-        subparser.set_defaults(which='list')
+        list.add_argument('genome', help="Name of genome")
+        list.set_defaults(which='list')
 
         imp = subparsers.add_parser('import', help='Import track')
         imp.add_argument('genome', help="Name of genome")
@@ -177,9 +174,83 @@ class GTools(object):
         exp.set_defaults(which='export')
 
         for operation in self._importedOperations.values():
-            operation.createSubParser(subparsers)
+
+            # Call the getKwArguments.
+            # Use the kwarguments and nr of tracks to generate
+            self._createSubparser(operation, subparsers)
 
         self._args = parser.parse_args()
+
+    def _createSubparser(self, operation, subparsers):
+
+        if operation is None:
+            return
+
+        # Get the operation info
+        info = operation.getInfoDict()
+
+        if info['operationHelp'] is None:
+            # If there is not defined a help text for the operation we
+            # ignore it.
+            print("ignoring: {}".format(operation))
+            return
+
+        name = info['name']
+        opr = subparsers.add_parser(name[0].lower() + name[1:],
+                                    help=info['operationHelp'])
+
+        assert info['numTracks'] == len(info['trackHelp'])
+
+        # Add the track inputs
+        if len(info['trackHelp']) == 1:
+            opr.add_argument('track', help=info['trackHelp'][0])
+        else:
+            for i, v in enumerate(info['trackHelp']):
+                opr.add_argument('track-{}'.format(i), help=v)
+
+        opr.add_argument('genome', help='File path of Genome definition')
+
+        # Add the options
+
+        kws = operation.getKwArgumentInfoDict()
+
+        for k, kw in kws.iteritems():
+            if kw.shortkey is None:
+                # non optional
+                if kw.contentType is bool:
+                    if kw.defaultValue:
+                        # Default is False
+                        opr.add_argument(kw.key, action='store_false',
+                                         help=kw.help)
+                    else:
+                        # Default is True
+                        opr.add_argument(kw.key, action='store_true',
+                                         help=kw.help)
+                else:
+                    print(operation)
+                    print(k)
+                    opr.add_argument(kw.key, help=kw.help)
+
+            else:
+                # optional
+                if kw.contentType is bool:
+                    if kw.defaultValue:
+                        # Default is False
+                        opr.add_argument("-{}".format(kw.shortkey),
+                                         "--{}".format(kw.key),
+                                         action='store_false',
+                                         help=kw.help, dest=k)
+                    else:
+                        # Default is True
+                        opr.add_argument("-{}".format(kw.shortkey),
+                                         "--{}".format(kw.key),
+                                         action='store_true',
+                                         help=kw.help, dest=k)
+                else:
+                    opr.add_argument("-{}".format(kw.shortkey),
+                                     "--{}".format(kw.key),
+                                     help=kw.help, dest=k)
+        opr.set_defaults(which=info['name'])
 
     # **** GTools operations ****
     def _listTracksInGTrackCore(self, genome):
