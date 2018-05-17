@@ -1,7 +1,10 @@
 GTrackCore
 ======
 
-gtrackcore: HDF5 library for genomic tracks.
+gtrackcore: A	Python	package	supporting	parsing,	conversion	and	operations
+of genomics track files. The package focuses on the GTrack file format
+(http://gtrack.no), but also supports other common formats, like BED, WIG,
+and GFF. 
 
 Copyright (C) 2007-2013 Sveinung Gundersen, Geir Kjetil Sandve, Marcin Cieslik
 
