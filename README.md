@@ -2,7 +2,7 @@ GTrackCore
 ======
 
 gtrackcore: A	Python	package	supporting	parsing,	conversion	and	operations
-of genomics track files. The package focuses on the GTrack file format
+of genomic track files. The package focuses on the GTrack file format
 (http://gtrack.no), but also supports other common formats, like BED, WIG,
 and GFF. 
 
