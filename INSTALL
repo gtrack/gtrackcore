@@ -1,0 +1,5 @@
+Note: Tested to work with NumPy v1.12.
+
+Unresolved issues appear with later versions of NumPy.master.
+These will be fixed when the library is updated with current code running in
+the Genomic HyperBrowser.
