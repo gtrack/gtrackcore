@@ -18,6 +18,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 
 from gtrackcore.core.Api import getAvailableTracks
 from gtrackcore.core.Api import importTrackFromTrackContents
+from gtrackcore.api.BTrack import BTrack
 
 class GTools(object):
 
@@ -48,7 +49,10 @@ class GTools(object):
 
         operation = self._args.which
 
-        if operation == 'list':
+        if operation == 'test':
+            t = BTrack(self._args.path, self._args.genome)
+            t.importTrackFromFile(self._args.trackPath, 'testtrack')
+        elif operation == 'list':
             self._listTracksInGTrackCore(self._args.genome)
 
         elif operation == 'import':
@@ -172,6 +176,12 @@ class GTools(object):
                          help='Name of the track')
         exp.add_argument('outName', help='File name of track')
         exp.set_defaults(which='export')
+
+        test = subparsers.add_parser('test')
+        test.add_argument('path', help="File path for BTrack")
+        test.add_argument('genome', help="Path to genome")
+        test.add_argument('trackPath', help="Path to track")
+        test.set_defaults(which='test')
 
         for operation in self._importedOperations.values():
 

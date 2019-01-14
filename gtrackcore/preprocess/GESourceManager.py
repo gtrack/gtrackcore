@@ -28,7 +28,11 @@ class GESourceManager(object):
         self._maxNumEdges = OrderedDefaultDict(int)
 
         self._hasCalculatedStats = False
+        self._btrackDir = geSource.getBtrackDir()
 #        self._calcStatisticsInExtraPass()
+
+    def getBtrackDir(self):
+        return self._btrackDir
 
     def _decorateGESource(self, geSource):
         return GEDependentAttributesHolder(geSource)

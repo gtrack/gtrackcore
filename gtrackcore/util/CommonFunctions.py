@@ -390,14 +390,22 @@ def getFileSuffix(fn):
 #    el = path.split(os.sep)
 #    return el[2], tuple(el[3:-1]), el[-1]
 #
-def extractTrackNameFromOrigPath(path):
+def extractTrackNameFromOrigPath(path, baseDir=''):
     excludeEl = None if os.path.isdir(path) else -1
-    path = path[len(Config.ORIG_DATA_PATH):]
+    if baseDir:
+        pathLength = len(baseDir)
+    else:
+        pathLength = len(Config.ORIG_DATA_PATH)
+    path = path[pathLength:]
     path = path.replace('//','/')
     if path[0]=='/':
         path = path[1:]
     if path[-1]=='/':
         path = path[:-1]
+
+    if baseDir:
+        return path.split(os.sep)
+
     return path.split(os.sep)[1:excludeEl]
 #    
 def getStringFromStrand(strand):

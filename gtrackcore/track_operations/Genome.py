@@ -106,3 +106,19 @@ class Genome(object):
             return self.__regions[region]
         else:
             return None
+
+    @classmethod
+    def createFromTabular(self, path, name):
+        chrSizes = {}
+        with open(path) as file:
+            for line in file:
+                cols = line.split('\t')
+                if not cols or len(cols) != 2:
+                    continue
+                chrSizes[cols[0]] = cols[1]
+
+        genome = Genome(name, chrSizes)
+
+        return genome
+
+
