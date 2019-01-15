@@ -24,7 +24,9 @@ class BTrack(object):
         shutil.copy(filePath, origFn)
         os.chmod(origFn, 0664)
 
-        from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
-        PreProcessAllTracksJob(self._genome.name, trackName, btrackDir=os.path.join(self._path, 'toplevel')).process()
+        from gtrackcore.preprocess.PreProcessTracksJob import PreProcessExternalTrackJob
+        #PreProcessAllTracksJob(self._genome.name, trackName, btrackDir=os.path.join(self._path, 'toplevel')).process()
+        #genome, fullFn, extTrackName, fileSuffix
+        PreProcessExternalTrackJob(self._genome.name, origFn, ['__btrack__'] + [os.path.join(self._path, 'toplevel')] + [trackName], os.path.splitext(filePath)[1][1:]).process()
         self._trackNames.append(trackName)
 

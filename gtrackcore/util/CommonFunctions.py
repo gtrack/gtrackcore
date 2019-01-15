@@ -316,12 +316,18 @@ def createDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Con
         chr = trackName[2]
         #trackName[3] is description
         trackName = trackName[4:]
+
+    if trackName[0] == '__btrack__':
+        basePath = trackName[1]
+        trackName = trackName[2:]
         
     #print [basePath, str(CompBinManager.getIndexBinSize()), ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
     #    list(trackName) + ([chr] if chr is not None else [])
+
+    path=os.sep.join( [basePath] + trackName + [('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
+        trackName + ([chr] if chr is not None else []) )
     
-    return os.sep.join( [basePath, str(CompBinManager.getIndexBinSize()), ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
-        list(trackName) + ([chr] if chr is not None else []) )
+    return path
 #
 ##def createMemoPath(trackName, genome, chr, statName):
 ##    return os.sep.join( [MEMOIZED_DATA_PATH, statName, str(COMP_BIN_SIZE), genome]+list(trackName)+[chr] )

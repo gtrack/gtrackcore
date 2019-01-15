@@ -48,7 +48,7 @@ class GenomeElementSource(object):
         geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
         return geSourceCls.__new__(geSourceCls, fn, genome=genome, trackName=trackName, *args, **kwArgs)
 
-    def __init__(self, fn, genome=None, trackName=None, external=False, printWarnings=True, strToUseInsteadOfFn='', btrackDir = '', *args, **kwArgs): #, depth=0
+    def __init__(self, fn, genome=None, trackName=None, external=False, printWarnings=True, strToUseInsteadOfFn='', *args, **kwArgs): #, depth=0
         self._fn = fn
         self._genome = genome
         self._genomeElement = GenomeElement(genome)
@@ -58,10 +58,6 @@ class GenomeElementSource(object):
         self._printWarnings = printWarnings
         self._strToUseInsteadOfFn = strToUseInsteadOfFn
         self._lastWarning = None
-        self._btrackDir = btrackDir
-
-    def getBtrackDir(self):
-        return self._btrackDir
 
     def getFileFormatName(self):
         return self.FILE_FORMAT_NAME

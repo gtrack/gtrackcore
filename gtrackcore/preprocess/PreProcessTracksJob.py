@@ -165,10 +165,16 @@ class PreProcessTracksJob(object):
         return True
 
     def _renameTrackNameIfIllegal(self, trackName):
-        legalTrackName = [replaceIllegalElementsInTrackNames(x) for x in trackName]
+        if trackName[0] == '__btrack__':
+            legalTrackName = [replaceIllegalElementsInTrackNames(x) for x in trackName[2:]]
+        else:
+            legalTrackName = [replaceIllegalElementsInTrackNames(x) for x in trackName]
 
         if legalTrackName != trackName and os.path.exists(createDirPath(trackName, self._genome)):
             renameTrack(self._genome, trackName, legalTrackName)
+
+        if trackName[0] == '__btrack__':
+            return trackName[:2] + legalTrackName
 
         return legalTrackName
 
@@ -203,25 +209,21 @@ class PreProcessTracksJob(object):
             print os.linesep + '--- END ERROR ---' + os.linesep
 
 class PreProcessAllTracksJob(PreProcessTracksJob):
-    def __init__(self, genome, trackNameFilter=[], btrackDir= '', username='', mergeChrFolders=True, **kwArgs):
+    def __init__(self, genome, trackNameFilter=[], username='', mergeChrFolders=True, **kwArgs):
         PreProcessTracksJob.__init__(self, genome, username=username, **kwArgs)
         if trackNameFilter == ['']:
             trackNameFilter = []
         self._trackNameFilter = trackNameFilter
         self._mergeChrFolders = mergeChrFolders
-        self._btrackDir = btrackDir
 
     def _allTrackNames(self):
         #avoidLiterature = len(self._trackNameFilter) == 0 or (self._trackNameFilter != GenomeInfo.getLiteratureTrackName(self._genome))
-        trackSource = OrigTrackNameSource(self._genome, self._trackNameFilter, self._btrackDir, avoidLiterature=False)
+        trackSource = OrigTrackNameSource(self._genome, self._trackNameFilter, avoidLiterature=False)
         return trackSource
         #return reorderTrackNameListFromTopDownToBottomUp(trackSource)
 
     def _allGESources(self, trackName):
-        if self._btrackDir:
-            baseDir = os.sep.join([self._btrackDir] + trackName)
-        else:
-            baseDir = createOrigPath(self._genome, trackName)
+        baseDir = createOrigPath(self._genome, trackName)
 
         self._status = 'Trying os.listdir on: ' + baseDir
         for relFn in sorted(os.listdir( baseDir )):
@@ -236,9 +238,6 @@ class PreProcessAllTracksJob(PreProcessTracksJob):
                 continue
 
             self._status = 'Trying to create geSource from fn: ' + fn
-            if self._btrackDir:
-                yield GenomeElementSource(fn, self._genome, forPreProcessor=True, btrackDir=baseDir)
-
             yield GenomeElementSource(fn, self._genome, forPreProcessor=True)
 
     def _calcAndStoreSubTrackCount(self, trackName):
