@@ -18,6 +18,8 @@ METADATA_FILES_PATH = Config.METADATA_FILES_PATH
 FieldInfo = namedtuple('FieldInfo', ['fullName', 'guiElementType'])
 
 def constructKey(genome, trackName):
+    if trackName[0] == '__btrack__':
+        trackName = trackName[2:]
     key = ':'.join([genome] + trackName)
     assert type(key) == str, 'Non-str key: ' + key + ' of type: ' + str(type(key)) + '. Specific types: ' + str([type(x) for x in [genome] + trackName])
     print key
