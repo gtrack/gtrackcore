@@ -51,7 +51,11 @@ class GTools(object):
 
         if operation == 'test':
             t = BTrack(self._args.path, self._args.genome)
-            t.importTrackFromFile(self._args.trackPath, 'testtrack:whatever')
+            trackContents = t.importTrackFromFile(self._args.trackPath, 'testtrack:whatever')
+
+            t.importTrack(trackContents, "trackFromContents")
+
+
         elif operation == 'list':
             self._listTracksInGTrackCore(self._args.genome)
 

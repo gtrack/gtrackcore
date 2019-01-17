@@ -413,7 +413,9 @@ def createTrackContentFromTrack(track, genome):
 
     for region in genome.regions:
         try:
-            trackViewList[region] = track.getTrackView(region)
+            tv = track.getTrackView(region)
+            if tv.getNumElements():
+                trackViewList[region] = tv
         except OSError:
             # There can be regions that the track does not cover..
             # This is a temp fix.. should be bare of the api

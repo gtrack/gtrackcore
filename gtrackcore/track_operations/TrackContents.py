@@ -45,7 +45,7 @@ class TrackContents(object):
         :return:
         """
         try:
-            importTrackFromTrackContents(trackContents=self, name=name)
+            importTrackFromTrackContents(self, name)
         except TrackNameExistsError, e:
             print(e)
 
@@ -110,3 +110,12 @@ class TrackContents(object):
         except IndexError:
             print("Index error!")
         return self._trackViews[self._trackViews.keys()[0]]
+
+    #returns only chrs that are included in the track...
+    def getTrackViewsList(self):
+        trackViews = []
+        for view in  self._trackViews.values():
+            trackViews.append(view)
+
+        return trackViews
+

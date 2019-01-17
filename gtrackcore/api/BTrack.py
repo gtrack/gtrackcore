@@ -42,6 +42,7 @@ class BTrack(object):
         return trackContents
 
     def importTrack(self, trackContents, trackName):
+        trackName = _convertTrackName(trackName)
         trackIdentifier = self.createTrackIdentifier(trackName)
 
         trackContents.save(trackIdentifier)
@@ -69,9 +70,8 @@ class TrackContentsWrapper(object):
     def getTrackName(self):
         trackName = self._trackIdentifier[2:]
 
+        return trackName
+
     def getTrackContents(self):
         return self._trackContents
-
-    #def exportTrackToFile(self, track, exportPath):
-
 

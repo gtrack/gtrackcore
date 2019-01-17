@@ -22,17 +22,18 @@ def importTrackFromTrackContents(trackContents, trackName):
     :param trackName:
     :return:
     """
-    genome = trackContents.genome.name
-    trackName = _convertTrackName(trackName)
+    genome = trackContents.genome
+    if type(trackName) == str:
+        trackName = _convertTrackName(trackName)
 
     logging.debug("Importing trackContent: Name: {0}, genome: {1}".format(
-                  trackName, genome))
+                  trackName, genome.name))
 
     if trackNameExists(genome, trackName):
         return
 
     geSource = TrackViewListGenomeElementSource(genome,
-                                                trackContents.trackViews,
+                                                trackContents.getTrackViewsList(),
                                                 trackName,
                                                 allowOverlaps=trackContents.allowOverlaps)
     job = PreProcessTrackGESourceJob(genome, trackName, geSource)

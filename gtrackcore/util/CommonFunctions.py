@@ -324,8 +324,8 @@ def createDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Con
     #print [basePath, str(CompBinManager.getIndexBinSize()), ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
     #    list(trackName) + ([chr] if chr is not None else [])
 
-    path=os.sep.join( [basePath] + trackName + [('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
-        trackName + ([chr] if chr is not None else []) )
+    path = os.sep.join( [basePath] + trackName + [('withOverlaps' if allowOverlaps else 'noOverlaps')] +\
+        ([chr] if chr is not None else []) )
     
     return path
 #
