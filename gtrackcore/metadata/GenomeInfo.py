@@ -173,28 +173,11 @@ class GenomeInfo(object):
     @classmethod
     def getExtendedChrList(cls, genome):
         "Returns a list of all chromosomes of the genome build file set."
-        if genome.lower() in ['testgenome']:
+        if genome.name.lower() in ['testgenome']:
             return ['chr21', 'chrM']
         else:
-            try:
-                chr_dict = GENOMES[genome.lower()]['size']
-            except KeyError:
-                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+            return genome.getChromosomeNameList()
 
-            try:
-                return chr_dict.keys()
-            except KeyError:
-                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
-
-
-#        else:
-#            from gtrackcore.util.CommonFunctions import createOrigPath
-#            seqFilesPath = createOrigPath(genome, cls.getSequenceTrackName(genome))
-#            fullChrList = sorted([fn.replace('.fa','') for fn in os.listdir(seqFilesPath) if '.fa' in fn])
-#            
-#            cls._genomeExtChrLists[genome] = fullChrList
-#            return fullChrList
-#
     @classmethod
     def getChrList(cls, genome):
         '''
@@ -202,19 +185,8 @@ class GenomeInfo(object):
         chromosomes that are usually used in analyses. (For human, this includes
         chr1-chr22, chrX, and chrY, but not chrM).
         '''
-        
-        if genome.lower() in ['testgenome']:
-            return ['chr21', 'chrM']
-        else:
-            try:
-                chr_dict = GENOMES[genome.lower()]['size']
-            except KeyError:
-                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
+        return cls.getExtendedChrList(genome)
 
-            try:
-                return chr_dict.keys()
-            except KeyError:
-                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
 
 #        else:
 #            chrListFn = cls.getChrRegsFn(genome)
@@ -247,8 +219,9 @@ class GenomeInfo(object):
         return result
 
     @classmethod
-    def isValidChr(cls, genome, chr):
-        return chr in cls.getExtendedChrList(genome)
+    def isValidChr(cls, genome, chrName):
+        return chrName in genome.getChromosomeNameList()
+
 #        # Removed this, as chromosome mismatch now only displays a warning:
 #        #
 #        #return chr in cls.getExtendedChrList(genome) or \
@@ -269,11 +242,11 @@ class GenomeInfo(object):
 #        return int(byteLen - (byteLen / lineLen)*len(os.linesep)) #subtract number of newline chars.. 
 #        
     @classmethod
-    def getChrLen(cls, genome, chr):
+    def getChrLen(cls, genome, chrName):
         assert genome is not None
         assert chr is not None
         # For the unit-tests
-        if genome.lower() == 'testgenome':
+        if genome.name.lower() == 'testgenome':
             if chr == 'chr21':
                 return 46944323
             if chr == 'chrM':
@@ -281,15 +254,9 @@ class GenomeInfo(object):
             else:
                 raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
         else:
-            try:
-                chr_dict = GENOMES[genome.lower()]['size']
-            except KeyError:
-                raise ArgumentValueError("Error: Genome '%s' is unknown." % (chr, genome))
-
-            try:
-                return chr_dict[chr]
-            except KeyError:
-                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+            for region in genome.regions:
+                if region.chr == chrName:
+                    return len(region)
 
 #        if genome in cls._chrLengths and \
 #            chr in cls._chrLengths[genome]:
@@ -565,6 +532,7 @@ class GenomeInfo(object):
 #        
 #        return inStr
 
+##TODO: this is still here because it is used in some tests - move it somewhere else later!
 GENOMES = {
     "hg18": {
         "name":"HG18",

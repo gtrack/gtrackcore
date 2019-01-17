@@ -17,7 +17,8 @@ class Track(object):
                 return VirtualMinimalTrack.__new__(VirtualMinimalTrack)
             else:
                 return object.__new__(cls)
-    
+
+    #def __init__(self, trackName, genome=None):
     def __init__(self, trackName):
         self.trackName = trackName
         self._trackSource = TrackSource()
@@ -25,9 +26,13 @@ class Track(object):
         self._trackFormatReq = NeutralTrackFormatReq()
         self.formatConverters = None
         self._trackId = None
+        #self.genome = genome
         
     def _getRawTrackView(self, region, borderHandling, allowOverlaps):
         trackData = self._trackSource.getTrackData(self.trackName, region.genome, region.chr, allowOverlaps)
+        # if self.genome is not None:
+        #     assert self.genome == region.genome
+        # trackData = self._trackSource.getTrackData(self.trackName, self.genome, region.chr, allowOverlaps)
         return self._trackViewLoader.loadTrackView(trackData, region, borderHandling, allowOverlaps, self.trackName)
     
     def getTrackView(self, region):

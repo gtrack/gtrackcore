@@ -96,7 +96,7 @@ class TrackExtractor:
     
     @classmethod
     def extract(cls, trackName, regionList, fn, fileFormatName=DEFAULT_FILE_FORMAT_NAME, globalCoords=True, \
-                addSuffix=False, asOriginal=False, allowOverlaps=False, ignoreEmpty=False):
+                addSuffix=False, asOriginal=False, allowOverlaps=False, ignoreEmpty=False, fileSuffix = ''):
         from gtrackcore.input.adapters.TrackGenomeElementSource import TrackGenomeElementSource
         from gtrackcore.extract.fileformats.FileFormatComposer import getComposerClsFromFileFormatName, getComposerClsFromFileSuffix
         
@@ -113,6 +113,10 @@ class TrackExtractor:
                                                  allowOverlaps=allowOverlaps, printWarnings=False)
         
         composerCls = None
+
+        if fileSuffix:
+            composerCls = getComposerClsFromFileSuffix(fileSuffix)
+
         if asOriginal:
             ti = TrackInfo(genome, trackName)
             if ti.fileType != '':

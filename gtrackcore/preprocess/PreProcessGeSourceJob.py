@@ -22,7 +22,7 @@ class PreProcessGeSourceJob(object):
         geSource = self._geSourceManager.getGESource()
         genome = geSource.genome
         
-        collector = PreProcMetaDataCollector(genome, self._trackName)
+        collector = PreProcMetaDataCollector(genome.name, self._trackName)
         
         collector.updateMetaDataForFinalization(geSource.getFileSuffix(), geSource.getPrefixList(), \
                                                 geSource.getValDataType(), geSource.getValDim(), \

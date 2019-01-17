@@ -26,7 +26,7 @@ class TrackSource:
         if not forceChrFolders and brShelve.fileExists():
             chr = None
         
-        dir = createDirPath(trackName, genome, chr, allowOverlaps)
+        dir = createDirPath(trackName, genome.name, chr, allowOverlaps)
 
         for fn in os.listdir(dir):
             fullFn = dir + os.sep + fn

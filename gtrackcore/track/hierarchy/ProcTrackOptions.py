@@ -32,7 +32,7 @@ class ProcTrackOptions:
     
     @staticmethod
     def isValidTrack(genome, trackName, fullAccess=False):
-        if not TrackInfo(genome, trackName).isValid(fullAccess):
+        if not TrackInfo(genome.name, trackName).isValid(fullAccess):
             return False
         
         for fn in ProcTrackOptions._getDirContents(genome, trackName):

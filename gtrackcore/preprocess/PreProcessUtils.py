@@ -20,7 +20,7 @@ class PreProcessUtils(object):
     @staticmethod
     def shouldPreProcessGESource(trackName, geSource, allowOverlaps):
         genome = geSource.getGenome()
-        storedInfo = TrackInfo(genome, trackName)
+        storedInfo = TrackInfo(genome.name, trackName)
         
         validFilesExist = PreProcessUtils.preProcFilesExist(genome, trackName, allowOverlaps) and \
             storedInfo.isValid()
@@ -45,7 +45,7 @@ class PreProcessUtils(object):
     
     @staticmethod
     def preProcFilesExist(genome, trackName, allowOverlaps):
-        collector = PreProcMetaDataCollector(genome, trackName)
+        collector = PreProcMetaDataCollector(genome.name, trackName)
         preProcFilesExist = collector.preProcFilesExist(allowOverlaps)
         if preProcFilesExist is None:
             dirPath = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
@@ -90,14 +90,14 @@ class PreProcessUtils(object):
         
     @staticmethod
     def removeOutdatedPreProcessedFiles(genome, trackName, allowOverlaps, mode):
-        collector = PreProcMetaDataCollector(genome, trackName)
+        collector = PreProcMetaDataCollector(genome.name, trackName)
         if PreProcessUtils.preProcFilesExist(genome, trackName, allowOverlaps) and not \
             collector.hasRemovedPreProcFiles(allowOverlaps):
-                dirPath = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+                dirPath = createDirPath(trackName, genome.name, allowOverlaps=allowOverlaps)
                 
-                assert dirPath.startswith(Config.PROCESSED_DATA_PATH), \
-                    "Processed data path '%s' does not start with '%s'" % \
-                    (dirPath, Config.PROCESSED_DATA_PATH)
+                #assert dirPath.startswith(Config.PROCESSED_DATA_PATH), \
+                   # "Processed data path '%s' does not start with '%s'" % \
+                    #"(dirPath, Config.PROCESSED_DATA_PATH)
                 if mode == 'Real':
                     print 'Removing outdated preprocessed data: ', dirPath
                     for fn in os.listdir(dirPath):
@@ -113,12 +113,12 @@ class PreProcessUtils(object):
                 collector.updateRemovedPreProcFilesFlag(allowOverlaps, True)
         
         if mode == 'Real':
-            ti = TrackInfo(genome, trackName)
+            ti = TrackInfo(genome.name, trackName)
             ti.resetTimeOfPreProcessing()
                 
     @staticmethod
     def createBoundingRegionShelve(genome, trackName, allowOverlaps):
-        collector = PreProcMetaDataCollector(genome, trackName)
+        collector = PreProcMetaDataCollector(genome.name, trackName)
         boundingRegionTuples = collector.getBoundingRegionTuples(allowOverlaps)
         if not collector.getTrackFormat().reprIsDense():
             boundingRegionTuples = sorted(boundingRegionTuples)
@@ -143,7 +143,7 @@ class PreProcessUtils(object):
 
     @staticmethod
     def checkIfEdgeIdsExist(genome, trackName, allowOverlaps):
-        collector = PreProcMetaDataCollector(genome, trackName)
+        collector = PreProcMetaDataCollector(genome.name, trackName)
         if not collector.getTrackFormat().isLinked():
             return
         
@@ -165,7 +165,7 @@ class PreProcessUtils(object):
     
     @staticmethod
     def checkUndirectedEdges(genome, trackName, allowOverlaps):
-        collector = PreProcMetaDataCollector(genome, trackName)
+        collector = PreProcMetaDataCollector(genome.name, trackName)
         if not (collector.getTrackFormat().isLinked() and collector.hasUndirectedEdges()):
             return
         

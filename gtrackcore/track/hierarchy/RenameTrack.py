@@ -69,7 +69,7 @@ def renameTrackInfo(genome, oldBaseTn, newBaseTn, verbose=True):
                 print '(Changed 1k TNs..)'
     
 def modifyTnRecord(genome, oldTn, newTn, verbose):
-    trackInfo = TrackInfo(genome, oldTn)
+    trackInfo = TrackInfo(genome.name, oldTn)
     assert trackInfo.trackName == oldTn
     assert trackInfo.timeOfPreProcessing is not None, 'ERROR: trackInfo-object not complete for TN (is this track preprocessed?): ' + str(oldTn)
     #if trackInfo.timeOfPreProcessing is None:

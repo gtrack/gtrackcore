@@ -65,9 +65,9 @@ class ChrMemmapFolderMerger(object):
     
     @staticmethod
     def merge(genome, trackName, allowOverlaps):
-        path = createDirPath(trackName, genome, allowOverlaps=allowOverlaps)
+        path = createDirPath(trackName, genome.name, allowOverlaps=allowOverlaps)
 
-        collector = PreProcMetaDataCollector(genome, trackName)
+        collector = PreProcMetaDataCollector(genome.name, trackName)
         chrList = collector.getPreProcessedChrs(allowOverlaps)
         if not collector.getTrackFormat().reprIsDense():
             chrList = sorted(chrList)

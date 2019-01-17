@@ -384,23 +384,14 @@ def extractTrackFromGTrackCore(genome, trackName):
     :param trackName:
     :return:
     """
-    trackName = trackName.split('.')[0]
-    track = Track(trackName.split(':'))
-    trackViewList = OrderedDict()
+    #trackName = trackName.split('.')[0]
+    track = Track(trackName)
+    track.addFormatReq(TrackFormatReq(allowOverlaps=False, borderHandling='crop'))
 
-    for region in genome.regions:
-
-        try:
-            trackViewList[region] = track.getTrackView(region)
-        except OSError:
-            # There can be regions that the track does not cover..
-            # This is a temp fix.. should be bare of the api
-            pass
-
-    return TrackContents(genome, trackViewList)
+    return createTrackContentFromTrack(track, genome)
 
 
-def createTrackContentFromFile(genome, path, allowOverlaps):
+def createTrackContentFromFile(genome, path, allowOverlaps=False):
     # TODO fix
 
     #trackName = trackName.split(':')
@@ -413,20 +404,9 @@ def createTrackContentFromFile(genome, path, allowOverlaps):
     track = Track(trackName.split(':'))
 
     # We do not want to set this..
-    track.addFormatReq(TrackFormatReq(allowOverlaps=False,
-                                      borderHandling='crop'))
-    trackViewList = OrderedDict()
+    track.addFormatReq(TrackFormatReq(allowOverlaps=allowOverlaps, borderHandling='crop'))
 
-    for region in genome.regions:
-
-        try:
-            trackViewList[region] = track.getTrackView(region)
-        except OSError:
-            # There can be regions that the track does not cover..
-            # This is a temp fix.. should be bare of the api
-            pass
-
-    return TrackContents(genome, trackViewList)
+    return createTrackContentFromTrack(track, genome)
 
 def createTrackContentFromTrack(track, genome):
     trackViewList = OrderedDict()

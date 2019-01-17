@@ -12,7 +12,7 @@ class Genome(object):
     """
     def __init__(self, name, regionDefinition):
         self.__name = name
-        self.__regions = self.generateGenomeRegions(name, regionDefinition)
+        self.__regions = self.generateGenomeRegions(self, regionDefinition)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -41,6 +41,13 @@ class Genome(object):
             self.__regions = self._generateGenomeRegions(regions)
         else:
             raise TypeError("Regions needs to be a dict")
+
+    def getChromosomeNameList(self):
+        chrs = []
+        for reg in self.regions:
+            chrs.append(reg.chr)
+
+        return chrs
 
     def getTrackViewList(self):
         pass
@@ -115,7 +122,7 @@ class Genome(object):
                 cols = line.split('\t')
                 if not cols or len(cols) != 2:
                     continue
-                chrSizes[cols[0]] = cols[1]
+                chrSizes[cols[0]] = int(cols[1])
 
         genome = Genome(name, chrSizes)
 
