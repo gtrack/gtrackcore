@@ -113,9 +113,5 @@ class TrackContents(object):
 
     #returns only chrs that are included in the track...
     def getTrackViewsList(self):
-        trackViews = []
-        for view in  self._trackViews.values():
-            trackViews.append(view)
-
-        return trackViews
+        return self._trackViews.values()
 

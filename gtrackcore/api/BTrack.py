@@ -50,13 +50,13 @@ class BTrack(object):
 
     def exportTrackToFile(self, trackContents, path):
         for tc in self._trackContents:
-            if tc.getTrackContents == trackContents:
-                trackIdentifier = tc.getTrackId
+            if tc.getTrackContents() == trackContents:
+                trackIdentifier = tc.getTrackId()
 
-        fileFormat = os.path.splitext(path)[1][1:]
+        fileSuffix = os.path.splitext(path)[1][1:]
 
         TrackExtractor.extractOneTrackManyRegsToOneFile(trackIdentifier, trackContents.regions, path,
-                                                        fileSuffix=fileFormat, globalCoords=True)
+                                                        fileSuffix=fileSuffix, globalCoords=True)
 
 
 class TrackContentsWrapper(object):

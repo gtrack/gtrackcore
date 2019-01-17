@@ -50,10 +50,12 @@ class GTools(object):
         operation = self._args.which
 
         if operation == 'test':
-            t = BTrack(self._args.path, self._args.genome)
-            trackContents = t.importTrackFromFile(self._args.trackPath, 'testtrack:whatever')
+            btrack = BTrack(self._args.path, self._args.genome)
+            trackContents = btrack.importTrackFromFile(self._args.trackPath, 'testtrack:whatever')
 
-            t.importTrack(trackContents, "trackFromContents")
+            btrack.importTrack(trackContents, "trackFromContents")
+
+            btrack.exportTrackToFile(trackContents, '/Users/radmilko/PycharmProjects/gtools/gtrackcore/data/gtrack/exportedTrack.bed')
 
 
         elif operation == 'list':

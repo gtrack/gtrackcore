@@ -96,7 +96,7 @@ class TrackExtractor:
     
     @classmethod
     def extract(cls, trackName, regionList, fn, fileFormatName=DEFAULT_FILE_FORMAT_NAME, globalCoords=True, \
-                addSuffix=False, asOriginal=False, allowOverlaps=False, ignoreEmpty=False, fileSuffix = ''):
+                addSuffix=False, asOriginal=False, allowOverlaps=False, ignoreEmpty=False, fileSuffix=''):
         from gtrackcore.input.adapters.TrackGenomeElementSource import TrackGenomeElementSource
         from gtrackcore.extract.fileformats.FileFormatComposer import getComposerClsFromFileFormatName, getComposerClsFromFileSuffix
         
@@ -170,9 +170,9 @@ class TrackExtractor:
 
     @classmethod
     def extractOneTrackManyRegsToOneFile(cls, trackName, regionList, fn, fileFormatName=DEFAULT_FILE_FORMAT_NAME, \
-                                         globalCoords=False, asOriginal=False, allowOverlaps=False):
+                                         globalCoords=False, asOriginal=False, allowOverlaps=False, fileSuffix=''):
         cls.extract(trackName, regionList, fn, fileFormatName=fileFormatName, globalCoords=globalCoords, \
-                    addSuffix=False, asOriginal=asOriginal, allowOverlaps=allowOverlaps)
+                    addSuffix=False, asOriginal=asOriginal, allowOverlaps=allowOverlaps, fileSuffix=fileSuffix)
         
     @classmethod
     def extractManyToOneDir(cls, trackNameList, regionList, baseDir, fileFormatName=DEFAULT_FILE_FORMAT_NAME, \
