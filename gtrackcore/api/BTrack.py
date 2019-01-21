@@ -10,27 +10,54 @@ from gtrackcore.preprocess.PreProcessTracksJob import PreProcessExternalTrackJob
 
 
 class BTrack(object):
-    def __init__(self, path, genomePath = ''):
+    def __init__(self, path, genomePath=''):
         self._path = os.path.abspath(path)
 
-        self._genome = Genome.createFromTabular(genomePath, os.path.basename(genomePath))
-        self._trackContents = []
+        if not genomePath:
+            genomeCheckPath = os.path.join(self._path, 'genomes')
+            if os.path.isdir(genomeCheckPath) and os.listdir(genomeCheckPath):
+                print 'genome found'
+                genomePath = os.listdir(genomeCheckPath)[0]
+            else:
+                raise ValueError('Genome has to be provided')
 
-        newGenomePath = os.path.join(self._path, 'genomes', os.path.basename(genomePath))
-        ensurePathExists(newGenomePath)
-        shutil.copy(genomePath, newGenomePath)
+        else:
+            newGenomePath = os.path.join(self._path, 'genomes', os.path.basename(genomePath))
+            ensurePathExists(newGenomePath)
+            shutil.copy(genomePath, newGenomePath)
+            self._trackContents = []
+
+        self._genome = Genome.createFromTabular(genomePath, os.path.basename(genomePath))
+
+        self._load()
+
+    def _load(self):
+        trackDirPath = os.path.join(self._path, 'tracks', self._genome.name)
+        if os.path.isdir(trackDirPath) and os.listdir(trackDirPath):
+            self._loadTracks(trackDirPath)
+
+    def _loadTracks(self, trackDirPath):
+        trackNames = []
+        for root, dirs, files in os.walk(trackDirPath, topdown=False):
+            if 'noOverlaps' in dirs or 'withOverlaps' in dirs:
+                trackNames.append(root[(len(trackDirPath) + 1):].replace(os.sep, ':'))
+
+        for trackName in trackNames:
+            trackIdentifier = self.createTrackIdentifier(_convertTrackName(trackName))
+            trackContents = extractTrackFromGTrackCore(self._genome, trackIdentifier)
+            self._trackContents.append(TrackContentsWrapper(trackIdentifier, trackContents))
+
+        self.listTracks()
 
     def createTrackIdentifier(self, trackName):
         trackIdentifier = ['__btrack__'] + [os.path.join(self._path, 'tracks', self._genome.name)] + trackName
 
         return trackIdentifier
 
-
     def importTrackFromFile(self, filePath, trackName=''):
         if not trackName:
             trackName = os.path.basename(filePath)
         trackName = _convertTrackName(trackName)
-        print trackName
 
         trackIdentifier = self.createTrackIdentifier(trackName)
         PreProcessExternalTrackJob(self._genome, filePath, trackIdentifier, os.path.splitext(filePath)[1][1:]).process()
@@ -58,6 +85,9 @@ class BTrack(object):
         TrackExtractor.extractOneTrackManyRegsToOneFile(trackIdentifier, trackContents.regions, path,
                                                         fileSuffix=fileSuffix, globalCoords=True)
 
+    def listTracks(self):
+        for tc in self._trackContents:
+            print tc
 
 class TrackContentsWrapper(object):
     def __init__(self, trackIdentifier, trackContents):
@@ -75,3 +105,5 @@ class TrackContentsWrapper(object):
     def getTrackContents(self):
         return self._trackContents
 
+    def __str__(self):
+        return 'Track name: ' + str(self.getTrackName()) + '\n'

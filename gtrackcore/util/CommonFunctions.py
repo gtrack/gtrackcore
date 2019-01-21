@@ -319,7 +319,10 @@ def createDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Con
 
     if trackName[0] == '__btrack__':
         basePath = trackName[1]
-        trackName = trackName[2:]
+        if len(basePath) > 2:
+            trackName = trackName[2:]
+        else:
+            trackName = []
         
     #print [basePath, str(CompBinManager.getIndexBinSize()), ('withOverlaps' if allowOverlaps else 'noOverlaps'), genome] +\
     #    list(trackName) + ([chr] if chr is not None else [])
