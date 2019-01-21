@@ -12,12 +12,14 @@ from gtrackcore.preprocess.PreProcessTracksJob import PreProcessExternalTrackJob
 class BTrack(object):
     def __init__(self, path, genomePath=''):
         self._path = os.path.abspath(path)
+        self._trackContents = []
 
         if not genomePath:
-            genomeCheckPath = os.path.join(self._path, 'genomes')
-            if os.path.isdir(genomeCheckPath) and os.listdir(genomeCheckPath):
+            genomesPath = os.path.join(self._path, 'genomes')
+            if os.path.isdir(genomesPath) and os.listdir(genomesPath):
                 print 'genome found'
-                genomePath = os.listdir(genomeCheckPath)[0]
+                print os.listdir(genomesPath)
+                genomePath = os.path.join(genomesPath, os.listdir(genomesPath)[0])
             else:
                 raise ValueError('Genome has to be provided')
 
@@ -25,7 +27,6 @@ class BTrack(object):
             newGenomePath = os.path.join(self._path, 'genomes', os.path.basename(genomePath))
             ensurePathExists(newGenomePath)
             shutil.copy(genomePath, newGenomePath)
-            self._trackContents = []
 
         self._genome = Genome.createFromTabular(genomePath, os.path.basename(genomePath))
 
@@ -106,4 +107,4 @@ class TrackContentsWrapper(object):
         return self._trackContents
 
     def __str__(self):
-        return 'Track name: ' + str(self.getTrackName()) + '\n'
+        return 'Track name: ' + str(self.getTrackName())
