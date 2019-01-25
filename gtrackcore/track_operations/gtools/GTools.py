@@ -1,24 +1,15 @@
-import os
-import sys
-import logging
-
 import argparse
 import importlib
+import logging
+import sys
 
-from gtrackcore.track_operations.operations.Operator import getOperation
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.utils.TrackHandling import importTrackIntoGTrack
-from gtrackcore.track_operations.Genome import Genome
-
-from gtrackcore.core.Api import importFile
-from gtrackcore.core.Api import exportFile
-
-from gtrackcore.metadata import GenomeInfo
-from gtrackcore.track.core.GenomeRegion import GenomeRegion
-
-from gtrackcore.core.Api import getAvailableTracks
-from gtrackcore.core.Api import importTrackFromTrackContents
 from gtrackcore.api.BTrack import BTrack
+from gtrackcore.core.Api import getAvailableTracks
+from gtrackcore.core.Api import importFile
+from gtrackcore.core.Api import importTrackFromTrackContents
+from gtrackcore.track_operations.TrackContents import TrackContents
+from gtrackcore.track_operations.operations.Operator import getOperation
+
 
 class GTools(object):
 
@@ -55,26 +46,21 @@ class GTools(object):
 
             btrack.importTrack(t1, "trackFromContents")
 
-            btrack.exportTrackToFile(t1, '/Users/radmilko/PycharmProjects/gtools/gtrackcore/data/gtrack/exportedTrack.bed')
+            btrack.exportTrackToFile('/Users/radmilko/PycharmProjects/gtools/gtrackcore/data/gtrack/exportedTrack.bed', trackContents=t1)
+
+        elif operation == 'create':
+            btrack = BTrack(self._args.btrackPath, self._args.genomePath)
 
         elif operation == 'list':
             self._listTracksInGTrackCore(self._args.genome)
 
         elif operation == 'import':
-            genome = Genome.createFromJson(self._args.genome)
-            importTrackIntoGTrack(self._args.name, genome, self._args.path)
+            btrack = BTrack(self._args.btrackPath)
+            t1 = btrack.importTrackFromFile(self._args.trackPath, self._args.trackName)
 
         elif operation == 'export':
-
-            #genome = Genome.createFromJson(self._args.genome)
-
-            # fileFormatName = GTrack
-
-            exportFile(outFileName=self._args.outName,
-                       genome=self._args.genome,
-                       trackName=self._args.name,
-                       fileFormatName='GTrack',
-                       allowOverlaps=self._args.allowOverlaps)
+            btrack = BTrack(self._args.btrackPath)
+            btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName)
 
         else:
             assert operation in self._importedOperations.keys()
@@ -163,23 +149,21 @@ class GTools(object):
                             help='Run in debug mode')
         subparsers = parser.add_subparsers(help='Supported commands')
 
-        list = subparsers.add_parser('list', help='List tracks in '
-                                                    'GTrackCore')
+        list = subparsers.add_parser('list', help='List tracks in GTrackCore')
         list.add_argument('genome', help="Name of genome")
         list.set_defaults(which='list')
 
         imp = subparsers.add_parser('import', help='Import track')
-        imp.add_argument('genome', help="Name of genome")
-        imp.add_argument('path', help="File path of track")
-        imp.add_argument('name', help="Name of the track")
+        imp.add_argument('trackPath', help="File path of the track")
+        imp.add_argument('trackName', help="Name of the track")
+        imp.add_argument('btrackPath', help="Btrack path")
         imp.set_defaults(which='import')
 
         exp = subparsers.add_parser('export', help='Export track to disk')
-        exp.add_argument('genome', help='Name of genome')
-        exp.add_argument('name', help='Name of the track')
-        exp.add_argument('allowOverlaps', action='store_true',
-                         help='Name of the track')
-        exp.add_argument('outName', help='File name of track')
+        exp.add_argument('trackName', help='Name of the track')
+        #exp.add_argument('allowOverlaps', action='store_true', help='Name of the track')
+        exp.add_argument('trackPath', help='File path of track')
+        exp.add_argument('btrackPath', help="Btrack path")
         exp.set_defaults(which='export')
 
         test = subparsers.add_parser('test')
@@ -187,6 +171,12 @@ class GTools(object):
         test.add_argument('genome', help="Path to genome")
         test.add_argument('trackPath', help="Path to track")
         test.set_defaults(which='test')
+
+        create = subparsers.add_parser('create')
+        create.add_argument('btrackPath', help='File path for btrack')
+        create.add_argument('genomePath', help='File path for genome')
+        create.set_defaults(which='create')
+
 
         for operation in self._importedOperations.values():
 

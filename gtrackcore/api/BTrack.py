@@ -3,6 +3,7 @@ from gtrackcore.track_operations.Genome import Genome
 from gtrackcore.core.Api import _convertTrackName
 import os
 
+from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track_operations.utils.TrackHandling import extractTrackFromGTrackCore
 from gtrackcore.util.CommonFunctions import ensurePathExists
 import shutil
@@ -17,8 +18,6 @@ class BTrack(object):
         if not genomePath:
             genomesPath = os.path.join(self._path, 'genomes')
             if os.path.isdir(genomesPath) and os.listdir(genomesPath):
-                print 'genome found'
-                print os.listdir(genomesPath)
                 genomePath = os.path.join(genomesPath, os.listdir(genomesPath)[0])
             else:
                 raise ValueError('Genome has to be provided')
@@ -76,10 +75,21 @@ class BTrack(object):
         trackContents.save(trackIdentifier)
         self._trackContents.append(TrackContentsWrapper(trackIdentifier, trackContents))
 
-    def exportTrackToFile(self, trackContents, path):
-        for tc in self._trackContents:
-            if tc.getTrackContents() == trackContents:
-                trackIdentifier = tc.getTrackId()
+    def exportTrackToFile(self, path, trackName=None, trackContents=None):
+        if isinstance(trackName, str):
+            for tc in self._trackContents:
+                trackName = _convertTrackName(trackName)
+                if tc.getTrackName() == trackName:
+                    trackContents = tc.getTrackContents()
+                    trackIdentifier = tc.getTrackId()
+                    break
+        elif isinstance(trackContents, TrackContents):
+            for tc in self._trackContents:
+                if tc.getTrackContents() == trackContents:
+                    trackIdentifier = tc.getTrackId()
+        else:
+            'Track name or TrackContes have to be provided for export'
+            return
 
         fileSuffix = os.path.splitext(path)[1][1:]
 
