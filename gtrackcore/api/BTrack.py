@@ -28,7 +28,6 @@ class BTrack(object):
             shutil.copy(genomePath, newGenomePath)
 
         self._genome = Genome.createFromTabular(genomePath, os.path.basename(genomePath))
-
         self._load()
 
     def _load(self):
@@ -80,7 +79,7 @@ class BTrack(object):
             for tc in self._trackContents:
                 trackName = _convertTrackName(trackName)
                 if tc.getTrackName() == trackName:
-                    trackContents = tc.getTrackContents()
+                    trackContents = self.getTrackContentsByTrackNameAsString(trackName)
                     trackIdentifier = tc.getTrackId()
                     break
         elif isinstance(trackContents, TrackContents):
@@ -99,6 +98,12 @@ class BTrack(object):
     def listTracks(self):
         for tc in self._trackContents:
             print tc
+
+    def getTrackContentsByTrackNameAsString(self, trackNameAsString):
+        for tc in self._trackContents:
+            if tc.getTrackNameAsString() == trackNameAsString:
+                return tc.getTrackContents()
+
 
 class TrackContentsWrapper(object):
     def __init__(self, trackIdentifier, trackContents):

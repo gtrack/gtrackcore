@@ -1,91 +1,89 @@
 from pyparsing import Forward, Word, alphas, alphanums, Literal, delimitedList, \
-    Group, quotedString, pyparsing_common, Optional
+    Group, quotedString, pyparsing_common, Optional, ZeroOrMore
 
 
-def parse():
-    lparen = Literal("(").suppress()
-    rparen = Literal(")").suppress()
+class CommandParser():
+    def __init__(self, operations, btrack):
+        self._operations = operations
+        self._btrack = btrack
 
-    identifier = Word(alphas, alphanums + "_").setName('identifier')
+    def parseFunctionCall(self, expr):
+        lPar = Literal("(").suppress()
+        rPar = Literal(")").suppress()
 
-    literal = quotedString ^ pyparsing_common.number
+        identifier = Word(alphas, alphanums + "_").setName('identifier')
+        literal = quotedString ^ pyparsing_common.number
 
-    function_call = Forward()
-    trackName = Group(identifier + Literal(':') + identifier)
-    trackName = trackName.setParseAction(trackNameAction)
+        functionCall = Forward()
+        trackName = Group(identifier + ZeroOrMore(Literal(':') + identifier))
+        trackName = trackName.setParseAction(self.trackNameAction)
 
-    expression = (trackName ^ literal ^ function_call).setName('expression')
+        expression = (trackName ^ literal ^ functionCall).setName('expression')
+        #assignment = trackName + Literal('=') + expression
+        kwarg = Group(identifier + Literal('=') + expression)
+        kwarg.setParseAction(self.kwArgAction)
 
-    assignment = trackName + Literal('=') + expression
+        func_arg = kwarg | expression
+        functionCall << Group(identifier + lPar + Optional(delimitedList(func_arg)) + rPar)
+        functionCall = functionCall.setParseAction(self.functionCallAction)
 
-    kwarg = Group(identifier + Literal('=') + expression)
-    kwarg.setParseAction(kwArgAction)
+        #statement = assignment ^ function_call
+        expr = functionCall.parseString(expr)
 
-    func_arg =  kwarg | expression
+        funcCallObj = self._evalExpression(expr[0])
 
-    function_call << Group(identifier + lparen + Optional(delimitedList(func_arg)) + rparen)
-    function_call = function_call.setParseAction(functionCallAction)
+        return funcCallObj
 
-    statement = assignment ^ function_call
+    def _evalExpression(self, expr):
+        if isinstance(expr, str):
+            if expr[0] in '"\'':  # string literal
+                return expr[1:-1]  # remove quotes
+            else:
+                "unrecognized"
+        elif isinstance(expr, FunctionCall):
+            a = []
+            kw = {}
+            for arg in expr.args:
+                if isinstance(arg, TrackName):
+                    trackContents = self._btrack.getTrackContentsByTrackNameAsString(arg.name)
+                    a.append(trackContents)
+                elif isinstance(arg, KwArg):  # kw arg
+                    kw[arg.name] = arg.value
+                else:  # func or literal
+                    a.append(self._evalExpression(arg))
+            return self._operations[expr.name](*a, **kw)
+        else:  # number
+            return expr
 
-    stm = statement.parseString("output:t4=complement(intersect(union(input:t1, input:t2)), input:t3, set=123)")
-    #print stm
-    name, _, value = stm
-    evalExpression(value)
+    def kwArgAction(self, tokens):
+        kwArg = KwArg(tokens[0][0], tokens[0][2])
+
+        return kwArg
+
+    def functionCallAction(self, tokens):
+        functionCall = FunctionCall(tokens[0][0], tokens[0][1:])
+
+        return functionCall
+
+    def trackNameAction(self, tokens):
+        trackName = TrackName(''.join(tokens[0]))
+
+        return trackName
+
 
 class KwArg():
-    pass
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
 
-def kwArgAction(tokens):
-    kwArg = KwArg()
-    kwArg.name = tokens[0][0]
-    kwArg.value = tokens[0][2]
-
-    return kwArg
 
 class FunctionCall():
-    pass
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
 
-def functionCallAction(tokens):
-    functionCall = FunctionCall()
-    functionCall.name = tokens[0][0]
-    functionCall.args = tokens[0][1:]
-
-    return functionCall
 
 class TrackName():
-    pass
-
-def trackNameAction(tokens):
-    trackName = TrackName()
-    trackName.name = ''.join(tokens[0])
-    return trackName
-
-
-def evalExpression(expr):
-    if isinstance(expr, str):
-        if expr[0] in '"\'':  # string literal
-            return expr[1:-1]  # remove quotes
-        else:
-            "unrecognized"
-    elif isinstance(expr, FunctionCall):
-        a = []
-        kw = {}
-        for arg in expr.args:
-            if isinstance(arg, TrackName):
-                a.append(arg.name)
-            elif isinstance(arg, KwArg): #kw arg
-                kw[arg.name] = arg.value
-            else: #func or literal
-                a.append(evalExpression(arg))
-        # funcs[expr.name](*a, **kw)
-        print "method call: args: " + str(a) + ' kwarg: ' + str(kw)
-        return 'call method here'
-
-    else: # number
-        return expr
-
-
-if __name__ == '__main__':
-    parse()
+    def __init__(self, name):
+        self.name = name
 

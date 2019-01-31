@@ -9,7 +9,7 @@ from gtrackcore.core.Api import importFile
 from gtrackcore.core.Api import importTrackFromTrackContents
 from gtrackcore.track_operations.TrackContents import TrackContents
 from gtrackcore.track_operations.operations.Operator import getOperation
-
+from gtrackcore.api.CommandParser import CommandParser
 
 class GTools(object):
 
@@ -62,9 +62,21 @@ class GTools(object):
             btrack = BTrack(self._args.btrackPath)
             btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName)
         elif operation == 'execute':
+            print self._args.btrackPath
             btrack = BTrack(self._args.btrackPath)
-            command = self._args.command.split('=', 1)[1]
-            tracksInBtrack = [track.getTrackNameAsString() for track in btrack.listTracks()]
+            outputTrackName = self._args.command.split('=', 1)[0]
+            expr = self._args.command.split('=', 1)[1]
+            parser = CommandParser(self._importedOperations, btrack)
+            obj = parser.parseFunctionCall(expr)
+
+            res = obj.calculate()
+
+            if not res:
+                print "did not get any result"
+                return
+
+            if isinstance(res, TrackContents):
+                btrack.importTrack(res, outputTrackName)
 
         else:
             assert operation in self._importedOperations.keys()
