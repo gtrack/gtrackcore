@@ -113,6 +113,11 @@ class TrackContentsWrapper(object):
 
         return trackName
 
+    def getTrackNameAsString(self):
+        trackName = ':'.join(self._trackIdentifier[2:])
+
+        return trackName
+
     def getTrackContents(self):
         return self._trackContents
 

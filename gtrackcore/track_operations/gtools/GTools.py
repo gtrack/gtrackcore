@@ -61,6 +61,10 @@ class GTools(object):
         elif operation == 'export':
             btrack = BTrack(self._args.btrackPath)
             btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName)
+        elif operation == 'execute':
+            btrack = BTrack(self._args.btrackPath)
+            command = self._args.command.split('=', 1)[1]
+            tracksInBtrack = [track.getTrackNameAsString() for track in btrack.listTracks()]
 
         else:
             assert operation in self._importedOperations.keys()
@@ -177,6 +181,10 @@ class GTools(object):
         create.add_argument('genomePath', help='File path for genome')
         create.set_defaults(which='create')
 
+        execute = subparsers.add_parser('execute')
+        execute.add_argument('command', help='command as a string')
+        execute.add_argument('btrackPath', help='File path for btrack')
+        execute.set_defaults(which='execute')
 
         for operation in self._importedOperations.values():
 
