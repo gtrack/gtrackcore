@@ -46,7 +46,7 @@ class BTrack(object):
             trackContents = extractTrackFromGTrackCore(self._genome, trackIdentifier)
             self._trackContents.append(TrackContentsWrapper(trackIdentifier, trackContents))
 
-        self.listTracks()
+        #self.listTracks()
 
     def createTrackIdentifier(self, trackName):
         trackIdentifier = ['__btrack__'] + [os.path.join(self._path, 'tracks', self._genome.name)] + trackName
@@ -67,19 +67,20 @@ class BTrack(object):
 
         return trackContents
 
-    def importTrack(self, trackContents, trackName):
+    def importTrack(self, trackContents, trackName, allowOverlaps=True):
         trackName = _convertTrackName(trackName)
         trackIdentifier = self.createTrackIdentifier(trackName)
 
+        trackContents,allowOverlaps = allowOverlaps
         trackContents.save(trackIdentifier)
         self._trackContents.append(TrackContentsWrapper(trackIdentifier, trackContents))
 
-    def exportTrackToFile(self, path, trackName=None, trackContents=None):
+    def exportTrackToFile(self, path, trackName=None, trackContents=None, allowOverlaps=True):
         if isinstance(trackName, str):
+            trackName = _convertTrackName(trackName)
             for tc in self._trackContents:
-                trackName = _convertTrackName(trackName)
                 if tc.getTrackName() == trackName:
-                    trackContents = self.getTrackContentsByTrackNameAsString(trackName)
+                    trackContents = tc.getTrackContents()
                     trackIdentifier = tc.getTrackId()
                     break
         elif isinstance(trackContents, TrackContents):
@@ -93,7 +94,8 @@ class BTrack(object):
         fileSuffix = os.path.splitext(path)[1][1:]
 
         TrackExtractor.extractOneTrackManyRegsToOneFile(trackIdentifier, trackContents.regions, path,
-                                                        fileSuffix=fileSuffix, globalCoords=True)
+                                                        fileSuffix=fileSuffix, globalCoords=True,
+                                                        allowOverlaps=allowOverlaps)
 
     def listTracks(self):
         for tc in self._trackContents:

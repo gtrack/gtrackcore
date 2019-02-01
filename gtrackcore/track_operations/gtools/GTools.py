@@ -8,7 +8,7 @@ from gtrackcore.core.Api import getAvailableTracks
 from gtrackcore.core.Api import importFile
 from gtrackcore.core.Api import importTrackFromTrackContents
 from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.operations.Operator import getOperation
+from gtrackcore.track_operations.operations.Operator import getOperation, Operator
 from gtrackcore.api.CommandParser import CommandParser
 
 class GTools(object):
@@ -60,23 +60,30 @@ class GTools(object):
 
         elif operation == 'export':
             btrack = BTrack(self._args.btrackPath)
-            btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName)
+            btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName, allowOverlaps=self._args.allowOverlaps)
         elif operation == 'execute':
-            print self._args.btrackPath
             btrack = BTrack(self._args.btrackPath)
-            outputTrackName = self._args.command.split('=', 1)[0]
-            expr = self._args.command.split('=', 1)[1]
             parser = CommandParser(self._importedOperations, btrack)
-            obj = parser.parseFunctionCall(expr)
+            obj = parser.parse(self._args.command)
 
-            res = obj.calculate()
+            if isinstance(obj, Operator):
+                res = obj.calculate()
+            elif isinstance(obj, tuple):
+                outputTrackName = obj[0]
+                res = obj[1].calculate()
 
             if not res:
                 print "did not get any result"
                 return
 
             if isinstance(res, TrackContents):
-                btrack.importTrack(res, outputTrackName)
+                if outputTrackName:
+                    btrack.importTrack(res, outputTrackName)
+                else:
+                    print 'Missing result track name!'
+            else:
+                print "Result:"
+                print res
 
         else:
             assert operation in self._importedOperations.keys()
@@ -177,9 +184,9 @@ class GTools(object):
 
         exp = subparsers.add_parser('export', help='Export track to disk')
         exp.add_argument('trackName', help='Name of the track')
-        #exp.add_argument('allowOverlaps', action='store_true', help='Name of the track')
         exp.add_argument('trackPath', help='File path of track')
         exp.add_argument('btrackPath', help="Btrack path")
+        exp.add_argument('--allowOverlaps', action='store_true', help='Name of the track')
         exp.set_defaults(which='export')
 
         test = subparsers.add_parser('test')

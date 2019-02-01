@@ -7,7 +7,7 @@ class CommandParser():
         self._operations = operations
         self._btrack = btrack
 
-    def parseFunctionCall(self, expr):
+    def parse(self, expr):
         lPar = Literal("(").suppress()
         rPar = Literal(")").suppress()
 
@@ -19,7 +19,9 @@ class CommandParser():
         trackName = trackName.setParseAction(self.trackNameAction)
 
         expression = (trackName ^ literal ^ functionCall).setName('expression')
-        #assignment = trackName + Literal('=') + expression
+        assignment = Group(trackName + Literal('=') + functionCall)
+        assignment = assignment.setParseAction(self.assignmentAction)
+
         kwarg = Group(identifier + Literal('=') + expression)
         kwarg.setParseAction(self.kwArgAction)
 
@@ -27,12 +29,18 @@ class CommandParser():
         functionCall << Group(identifier + lPar + Optional(delimitedList(func_arg)) + rPar)
         functionCall = functionCall.setParseAction(self.functionCallAction)
 
-        #statement = assignment ^ function_call
-        expr = functionCall.parseString(expr)
+        statement = assignment ^ functionCall
 
-        funcCallObj = self._evalExpression(expr[0])
+        parsedStatement = statement.parseString(expr)
+        if isinstance(parsedStatement[0], FunctionCall):
+            funcCallObj = self._evalExpression(parsedStatement[0])
 
-        return funcCallObj
+            return funcCallObj
+        elif isinstance(parsedStatement[0], Assignment):
+            assignment = (parsedStatement[0].name, self._evalExpression(parsedStatement[0].value))
+
+            return assignment
+
 
     def _evalExpression(self, expr):
         if isinstance(expr, str):
@@ -70,6 +78,15 @@ class CommandParser():
 
         return trackName
 
+    def assignmentAction(self, tokens):
+        if isinstance(tokens[0][0], TrackName):
+            name = tokens[0][0].name
+        else:
+            name = tokens[0][0]
+        assignment = Assignment(name, tokens[0][2])
+
+        return assignment
+
 
 class KwArg():
     def __init__(self, name, value):
@@ -87,3 +104,8 @@ class TrackName():
     def __init__(self, name):
         self.name = name
 
+
+class Assignment():
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
