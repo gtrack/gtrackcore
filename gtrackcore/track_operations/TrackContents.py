@@ -38,14 +38,14 @@ class TrackContents(object):
         # TODO remove. Check if used and change to the property
         return self._trackViews
 
-    def save(self, name):
+    def save(self, name, allowOverlaps=True):
         """
         Save this track into GTrackCore
         :param name: Name of track
         :return:
         """
         try:
-            importTrackFromTrackContents(self, name)
+            importTrackFromTrackContents(self, name, allowOverlaps)
         except TrackNameExistsError, e:
             print(e)
 

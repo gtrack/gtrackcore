@@ -71,8 +71,7 @@ class BTrack(object):
         trackName = _convertTrackName(trackName)
         trackIdentifier = self.createTrackIdentifier(trackName)
 
-        trackContents,allowOverlaps = allowOverlaps
-        trackContents.save(trackIdentifier)
+        trackContents.save(trackIdentifier, allowOverlaps=allowOverlaps)
         self._trackContents.append(TrackContentsWrapper(trackIdentifier, trackContents))
 
     def exportTrackToFile(self, path, trackName=None, trackContents=None, allowOverlaps=True):
@@ -129,4 +128,4 @@ class TrackContentsWrapper(object):
         return self._trackContents
 
     def __str__(self):
-        return 'Track name: ' + str(self.getTrackName())
+        return 'Track name: ' + self.getTrackNameAsString() + ' genome: ' + self._trackContents.genome.name

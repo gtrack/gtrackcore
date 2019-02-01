@@ -15,7 +15,7 @@ def trackNameExists(genome, trackName):
     """
     return ProcTrackOptions.isValidTrack(genome, trackName)
 
-def importTrackFromTrackContents(trackContents, trackName):
+def importTrackFromTrackContents(trackContents, trackName, allowOverlaps=True):
     """
 
     :param trackContents:
@@ -35,7 +35,7 @@ def importTrackFromTrackContents(trackContents, trackName):
     geSource = TrackViewListGenomeElementSource(genome,
                                                 trackContents.getTrackViewsList(),
                                                 trackName,
-                                                allowOverlaps=trackContents.allowOverlaps)
+                                                allowOverlaps=allowOverlaps)
     job = PreProcessTrackGESourceJob(genome, trackName, geSource)
     job.process()
 

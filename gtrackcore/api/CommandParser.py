@@ -1,3 +1,4 @@
+import pyparsing
 from pyparsing import Forward, Word, alphas, alphanums, Literal, delimitedList, \
     Group, quotedString, pyparsing_common, Optional, ZeroOrMore
 
@@ -12,7 +13,14 @@ class CommandParser():
         rPar = Literal(")").suppress()
 
         identifier = Word(alphas, alphanums + "_").setName('identifier')
-        literal = quotedString ^ pyparsing_common.number
+
+        literalTrue = pyparsing.Keyword('true', caseless=True)
+        literalTrue.setParseAction(pyparsing.replaceWith(True))
+        literalFalse = pyparsing.Keyword('false', caseless=True)
+        literalFalse.setParseAction(pyparsing.replaceWith(False))
+        booleanLiteral = literalTrue | literalFalse
+
+        literal = quotedString ^ pyparsing_common.number ^ booleanLiteral
 
         functionCall = Forward()
         trackName = Group(identifier + ZeroOrMore(Literal(':') + identifier))
@@ -22,7 +30,8 @@ class CommandParser():
         assignment = Group(trackName + Literal('=') + functionCall)
         assignment = assignment.setParseAction(self.assignmentAction)
 
-        kwarg = Group(identifier + Literal('=') + expression)
+        kwargValue = functionCall | literal
+        kwarg = Group(identifier + Literal('=') + kwargValue)
         kwarg.setParseAction(self.kwArgAction)
 
         func_arg = kwarg | expression
