@@ -1,12 +1,11 @@
 __author__ = 'skh'
 
-from collections import OrderedDict
-from gtrackcore.track.core.TrackView import TrackView
-from gtrackcore.track_operations.exeptions.Track import TrackContentsEmptyError
-from gtrackcore.track_operations.Genome import Genome
 from gtrackcore.core.Api import importTrackFromTrackContents
-from gtrackcore.track_operations.exeptions.Track import TrackNameExistsError
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.track_operations.Genome import Genome
+from gtrackcore.track_operations.exeptions.Track import TrackContentsEmptyError
+from gtrackcore.track_operations.exeptions.Track import TrackNameExistsError
+
 
 class TrackContents(object):
 

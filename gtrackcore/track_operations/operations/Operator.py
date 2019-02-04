@@ -1,20 +1,13 @@
 
 import abc
 import glob
-import time
-
 from collections import OrderedDict
 from collections import namedtuple
 from os.path import dirname, basename, isfile
 
-from gtrackcore.track_operations.TrackContents import TrackContents
-from gtrackcore.track_operations.Genome import Genome
-from gtrackcore.track_operations.utils.TrackHandling import \
-    createTrackContentFromFile
-
 from gtrackcore.track.core.TrackView import TrackView
-from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
+from gtrackcore.track_operations.TrackContents import TrackContents
 
 
 class InvalidArgumentError(Exception):
@@ -257,74 +250,6 @@ class Operator(object):
         """
         pass
 
-    @classmethod
-    def factory(cls, args):
-        """
-        We get the args dict from argparse
-
-        From this dict we need to pop the track names and create the
-        trackContent objects. The rest we give to the object as the kwargs.
-
-        Any arg starting with track is interpreted as a track.
-
-        Track* is reserved for tracks only.
-
-        :param args:
-        :return:
-        """
-
-        # args is a namespace. Get it's dict
-        args = vars(args)
-
-        # Get the genome
-        assert 'genome' in args.keys()
-        genome = Genome.createFromJson(args['genome'])
-        del args['genome']
-
-        # Any key matching 'track*' is assumed to be a track.
-        trackKeys = [key for key in args.keys()
-                     if key.startswith('track')]
-        assert len(trackKeys) > 0
-
-        # TODO: Add support for different allowOverlap on each track.
-        allowOverlap = False
-        if 'allowOverlap' in args:
-            allowOverlap = args['allowOverlap']
-        else:
-            # Assume False if not set.
-            allowOverlap = False
-
-        # Sort the keys
-        # The tracks will be given to the operation in alphabetical order.
-        trackKeys = sorted(trackKeys)
-
-        tracks = [createTrackContentFromFile(genome, args[key], allowOverlap)
-                  for key in trackKeys]
-
-        # Delete the tracks from args
-        for key in trackKeys:
-            del args[key]
-
-        return cls(*tracks, **args)
-
-    def getKwArguments(self):
-        """
-        TODO: List all KwArguments recursively down the operations
-        :return:
-        """
-
-        pass
-
-    def setKwArguments(self, **kwargs):
-        """
-        Set a given keyword argument.
-
-        How do we
-        :param kwargs:
-        :return:
-        """
-        pass
-
     def _updateTrackFormatRequirements(self):
         """
         Remove?
@@ -372,23 +297,6 @@ class Operator(object):
                 print(self._out)
             else:
                 print("ERROR! Calculation not run!")
-
-    def createTrackName(self):
-        """
-        Used by GTools.
-        Creates a track name that GTools uses when saving the track in
-        GTrackCore.
-
-        >>> operation.createTrackName()
-        union-<date-stamp>
-
-        :return: String. Generated track name for the result of a track
-        operation.
-        """
-        if self.resultIsTrack:
-            return "{}-{}".format(self.__class__.__name__, int(time.time()))
-        else:
-            return None
 
     # **** Common properties ***
     # Properties common to all operation

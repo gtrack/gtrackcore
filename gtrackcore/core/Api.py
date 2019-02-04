@@ -1,10 +1,12 @@
-import shutil, os, sys
 import logging
+import os
+import shutil
 
 from gtrackcore.input.adapters.TrackGenomeElementSource import TrackViewListGenomeElementSource
 from gtrackcore.preprocess.PreProcessTracksJob import PreProcessTrackGESourceJob
 from gtrackcore.track.hierarchy.ProcTrackNameSource import ProcTrackNameSource
 from gtrackcore.track.hierarchy.ProcTrackOptions import ProcTrackOptions
+
 
 def trackNameExists(genome, trackName):
     """
@@ -24,7 +26,7 @@ def importTrackFromTrackContents(trackContents, trackName, allowOverlaps=True):
     """
     genome = trackContents.genome
     if type(trackName) == str:
-        trackName = _convertTrackName(trackName)
+        trackName = convertTrackName(trackName)
 
     logging.debug("Importing trackContent: Name: {0}, genome: {1}".format(
                   trackName, genome.name))
@@ -56,16 +58,12 @@ def getAvailableTracks(genome):
     _getDirPath(genome)
     return ProcTrackNameSource(genome)
 
-def deleteTrack(genome, trackname):
-    # TODO. Remove a track from GTrackCore
-    raise NotImplementedError
-
 # *** Old API ****
 
 def importFile(fileName, genome, trackName):
     """fileName genome trackName"""
 
-    trackName = _convertTrackName(trackName)
+    trackName = convertTrackName(trackName)
     
     from gtrackcore.util.CommonFunctions import createOrigPath, ensurePathExists
     origFn = createOrigPath(genome, trackName, os.path.basename(fileName))
@@ -78,7 +76,7 @@ def importFile(fileName, genome, trackName):
     from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
     PreProcessAllTracksJob(genome, trackName).process()
 
-def _convertTrackName(trackName):
+def convertTrackName(trackName):
     from gtrackcore.util.CommonFunctions import convertTNstrToTNListFormat
     return convertTNstrToTNListFormat(trackName, doUnquoting=True)
 
@@ -116,7 +114,7 @@ def listAvailableTracks(genome):
 def getExtractionOptions(genome, trackName):
     """genome trackName"""
     
-    trackName = _convertTrackName(trackName)
+    trackName = convertTrackName(trackName)
     if not _trackNameExists(genome, trackName):
         return
     
@@ -132,7 +130,7 @@ def getExtractionOptions(genome, trackName):
         print '{:<19}'.format(fileFormatName) + '{:<17}'.format(str(allowOverlaps)) + text
 
 def _commonExportFile(outFileName, genome, trackName, fileFormatName, allowOverlaps, bins):
-    trackName = _convertTrackName(trackName)
+    trackName = convertTrackName(trackName)
     if not _trackNameExists(genome, trackName):
         return
         

@@ -39,6 +39,7 @@ class GTools(object):
             self._importedOperations.keys()))
 
         operation = self._args.which
+        allowOverlaps = not self._args.noOverlaps
         if operation == 'create':
             BTrack(self._args.btrackPath, self._args.genomePath)
 
@@ -52,7 +53,7 @@ class GTools(object):
 
         elif operation == 'export':
             btrack = BTrack(self._args.btrackPath)
-            btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName, allowOverlaps=self._args.allowOverlaps)
+            btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName, allowOverlaps=allowOverlaps)
         elif operation == 'execute':
             tmpDirPath = None
             if self._args.btrackPath:
@@ -85,11 +86,10 @@ class GTools(object):
                 if self._args.btrackPath or self._args.outputPath:
                     if not outputTrackName:
                         outputTrackName = self.generateTrackName('outputTrack')
-                    btrack.importTrack(res, outputTrackName, allowOverlaps=self._args.allowOverlaps)
+                    btrack.importTrack(res, outputTrackName, allowOverlaps=allowOverlaps)
                     if self._args.outputPath:
-                        btrack.exportTrackToFile(self._args.outputPath,
-                                                 trackName=outputTrackName,
-                                                 allowOverlaps=self._args.allowOverlaps)
+                        btrack.exportTrackToFile(self._args.outputPath, trackName=outputTrackName,
+                                                 allowOverlaps=allowOverlaps)
                 else:
                     print 'No btrack or output path'
             elif res:
@@ -166,7 +166,7 @@ class GTools(object):
         execute.add_argument('command', help='command as a string')
         execute.add_argument('tracks', nargs='*', help='variables with path to tracks')
         execute.add_argument('-b', help='File path for btrack', dest='btrackPath')
-        execute.add_argument('--allowOverlaps', action='store_true', help='Allow overlaps')
+        execute.add_argument('--noOverlaps', action='store_true', help='Do not allow overlaps')
         execute.add_argument('-o', help='File path for output', dest='outputPath')
         execute.add_argument('-g', help='Genome path', dest='genomePath')
         execute.set_defaults(which='execute')

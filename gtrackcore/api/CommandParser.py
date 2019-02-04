@@ -1,6 +1,4 @@
-import pyparsing
-from pyparsing import Forward, Word, alphas, alphanums, Literal, delimitedList, \
-    Group, quotedString, pyparsing_common, Optional, ZeroOrMore
+import pyparsing as pp
 
 
 class CommandParser():
@@ -9,35 +7,32 @@ class CommandParser():
         self._btrack = btrack
 
     def parse(self, expr):
-        lPar = Literal("(").suppress()
-        rPar = Literal(")").suppress()
+        lPar = pp.Literal("(").suppress()
+        rPar = pp.Literal(")").suppress()
 
-        identifier = Word(alphas, alphanums + "_").setName('identifier')
-
-        literalTrue = pyparsing.Keyword('true', caseless=True)
-        literalTrue.setParseAction(pyparsing.replaceWith(True))
-        literalFalse = pyparsing.Keyword('false', caseless=True)
-        literalFalse.setParseAction(pyparsing.replaceWith(False))
+        literalTrue = pp.Keyword('true', caseless=True)
+        literalTrue.setParseAction(pp.replaceWith(True))
+        literalFalse = pp.Keyword('false', caseless=True)
+        literalFalse.setParseAction(pp.replaceWith(False))
         booleanLiteral = literalTrue | literalFalse
+        literal = pp.quotedString ^ pp.pyparsing_common.number ^ booleanLiteral
 
-        literal = quotedString ^ pyparsing_common.number ^ booleanLiteral
-
-        functionCall = Forward()
-        trackName = Group(identifier + ZeroOrMore(Literal(':') + identifier))
+        identifier = pp.Word(pp.alphas, pp.alphanums + "_").setName('identifier')
+        trackName = pp.Group(identifier + pp.ZeroOrMore(pp.Literal(':') + identifier))
         trackName = trackName.setParseAction(self.trackNameAction)
 
+        functionCall = pp.Forward()
         expression = (trackName ^ literal ^ functionCall).setName('expression')
-        assignment = Group(trackName + Literal('=') + functionCall)
+        assignment = pp.Group(trackName + pp.Literal('=') + functionCall)
         assignment = assignment.setParseAction(self.assignmentAction)
 
         kwargValue = functionCall | literal
-        kwarg = Group(identifier + Literal('=') + kwargValue)
+        kwarg = pp.Group(identifier + pp.Literal('=') + kwargValue)
         kwarg.setParseAction(self.kwArgAction)
 
         func_arg = kwarg | expression
-        functionCall << Group(identifier + lPar + Optional(delimitedList(func_arg)) + rPar)
+        functionCall << pp.Group(identifier + lPar + pp.Optional(pp.delimitedList(func_arg)) + rPar)
         functionCall = functionCall.setParseAction(self.functionCallAction)
-
         statement = assignment ^ functionCall
 
         parsedStatement = statement.parseString(expr)
@@ -50,19 +45,18 @@ class CommandParser():
 
             return assignment
 
-
     def _evalExpression(self, expr):
         if isinstance(expr, str):
             if expr[0] in '"\'':  # string literal
                 return expr[1:-1]  # remove quotes
             else:
-                "unrecognized"
+                "Unrecognized element - can't evaluate"
         elif isinstance(expr, FunctionCall):
             a = []
             kw = {}
             for arg in expr.args:
                 if isinstance(arg, TrackName):
-                    trackContents = self._btrack.getTrackContentsByTrackNameAsString(arg.name)
+                    trackContents = self._btrack.getTrackContentsByTrackNameAsString(arg.name).getTrackContents()
                     a.append(trackContents)
                 elif isinstance(arg, KwArg):  # kw arg
                     kw[arg.name] = arg.value
