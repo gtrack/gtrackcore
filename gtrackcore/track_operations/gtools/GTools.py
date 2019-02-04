@@ -1,6 +1,9 @@
 import argparse
 import importlib
 import logging
+import tempfile
+from datetime import datetime
+import shutil
 
 from gtrackcore.api.BTrack import BTrack
 from gtrackcore.api.CommandParser import CommandParser
@@ -36,17 +39,8 @@ class GTools(object):
             self._importedOperations.keys()))
 
         operation = self._args.which
-
-        if operation == 'test':
-            btrack = BTrack(self._args.path, self._args.genome)
-            t1 = btrack.importTrackFromFile(self._args.trackPath, 'testtrack:whatever')
-
-            btrack.importTrack(t1, "trackFromContents")
-
-            btrack.exportTrackToFile('/Users/radmilko/PycharmProjects/gtools/gtrackcore/data/gtrack/exportedTrack.bed', trackContents=t1)
-
-        elif operation == 'create':
-            btrack = BTrack(self._args.btrackPath, self._args.genomePath)
+        if operation == 'create':
+            BTrack(self._args.btrackPath, self._args.genomePath)
 
         elif operation == 'list':
             btrack = BTrack(self._args.btrackPath)
@@ -54,34 +48,60 @@ class GTools(object):
 
         elif operation == 'import':
             btrack = BTrack(self._args.btrackPath)
-            t1 = btrack.importTrackFromFile(self._args.trackPath, self._args.trackName)
+            btrack.importTrackFromFile(self._args.trackPath, self._args.trackName)
 
         elif operation == 'export':
             btrack = BTrack(self._args.btrackPath)
             btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName, allowOverlaps=self._args.allowOverlaps)
         elif operation == 'execute':
-            btrack = BTrack(self._args.btrackPath)
+            tmpDirPath = None
+            if self._args.btrackPath:
+                btrack = BTrack(self._args.btrackPath)
+            elif self._args.tracks and self._args.outputPath:
+                print 'outputPath: ' + self._args.outputPath
+                if not self._args.genomePath:
+                    print 'Genome path missing'
+                    return
+                tmpDirPath = tempfile.mkdtemp()
+                btrack = BTrack(tmpDirPath, self._args.genomePath)
+                for trackPath in self._args.tracks:
+                    variable, path = trackPath.split('=')
+                    btrack.importTrackFromFile(path, variable)
+            else:
+                print 'BTrack path or track paths and output path have to be provided'
+                return
+
             parser = CommandParser(self._importedOperations, btrack)
             obj = parser.parse(self._args.command)
 
+            outputTrackName = None
             if isinstance(obj, Operator):
                 res = obj.calculate()
             elif isinstance(obj, tuple):
                 outputTrackName = obj[0]
                 res = obj[1].calculate()
 
-            if not res:
-                print "did not get any result"
-                return
-
             if isinstance(res, TrackContents):
-                if outputTrackName:
+                if self._args.btrackPath or self._args.outputPath:
+                    if not outputTrackName:
+                        outputTrackName = self.generateTrackName('outputTrack')
                     btrack.importTrack(res, outputTrackName, allowOverlaps=self._args.allowOverlaps)
+                    if self._args.outputPath:
+                        btrack.exportTrackToFile(self._args.outputPath,
+                                                 trackName=outputTrackName,
+                                                 allowOverlaps=self._args.allowOverlaps)
                 else:
-                    print 'Missing result track name!'
-            else:
+                    print 'No btrack or output path'
+            elif res:
                 print "Result:"
                 print res
+            else:
+                print "Did not get any result"
+            if tmpDirPath:
+                shutil.rmtree(tmpDirPath)
+
+    def generateTrackName(self, prefix):
+        return prefix + '_' + str(datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     def _importOperations(self):
         """
@@ -144,8 +164,11 @@ class GTools(object):
 
         execute = subparsers.add_parser('execute')
         execute.add_argument('command', help='command as a string')
-        execute.add_argument('btrackPath', help='File path for btrack')
+        execute.add_argument('tracks', nargs='*', help='variables with path to tracks')
+        execute.add_argument('-b', help='File path for btrack', dest='btrackPath')
         execute.add_argument('--allowOverlaps', action='store_true', help='Allow overlaps')
+        execute.add_argument('-o', help='File path for output', dest='outputPath')
+        execute.add_argument('-g', help='Genome path', dest='genomePath')
         execute.set_defaults(which='execute')
 
         self._args = parser.parse_args()
