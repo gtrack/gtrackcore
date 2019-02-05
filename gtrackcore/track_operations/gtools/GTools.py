@@ -39,6 +39,9 @@ class GTools(object):
             self._importedOperations.keys()))
 
         operation = self._args.which
+        if not operation:
+            return
+
         allowOverlaps = not self._args.noOverlaps
         if operation == 'create':
             BTrack(self._args.btrackPath, self._args.genomePath)
@@ -134,7 +137,7 @@ class GTools(object):
                             help='Run in debug mode')
         subparsers = parser.add_subparsers(help='Supported commands')
 
-        list = subparsers.add_parser('list', help='List tracks in GTrackCore')
+        list = subparsers.add_parser('list', help='List tracks in provided BTrack')
         list.add_argument('btrackPath', help="Btrack path")
         list.set_defaults(which='list')
 
@@ -145,24 +148,18 @@ class GTools(object):
         imp.set_defaults(which='import')
 
         exp = subparsers.add_parser('export', help='Export track to disk')
-        exp.add_argument('trackName', help='Name of the track')
         exp.add_argument('trackPath', help='File path of track')
+        exp.add_argument('trackName', help='Name of the track')
         exp.add_argument('btrackPath', help="Btrack path")
-        exp.add_argument('--allowOverlaps', action='store_true', help='Allow overlaps')
+        exp.add_argument('--noOverlaps', action='store_true', help='Do not allow overlaps')
         exp.set_defaults(which='export')
 
-        test = subparsers.add_parser('test')
-        test.add_argument('path', help="File path for BTrack")
-        test.add_argument('genome', help="Path to genome")
-        test.add_argument('trackPath', help="Path to track")
-        test.set_defaults(which='test')
-
-        create = subparsers.add_parser('create')
+        create = subparsers.add_parser('create', help='Create new BTrack')
         create.add_argument('btrackPath', help='File path for btrack')
         create.add_argument('genomePath', help='File path for genome')
         create.set_defaults(which='create')
 
-        execute = subparsers.add_parser('execute')
+        execute = subparsers.add_parser('execute', help='Execute command (track operations)')
         execute.add_argument('command', help='command as a string')
         execute.add_argument('tracks', nargs='*', help='variables with path to tracks')
         execute.add_argument('-b', help='File path for btrack', dest='btrackPath')
