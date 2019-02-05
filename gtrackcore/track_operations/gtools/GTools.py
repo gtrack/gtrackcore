@@ -42,10 +42,8 @@ class GTools(object):
         if not operation:
             return
 
-        allowOverlaps = not self._args.noOverlaps
         if operation == 'create':
             BTrack(self._args.btrackPath, self._args.genomePath)
-
         elif operation == 'list':
             btrack = BTrack(self._args.btrackPath)
             btrack.listTracks()
@@ -55,24 +53,28 @@ class GTools(object):
             btrack.importTrackFromFile(self._args.trackPath, self._args.trackName)
 
         elif operation == 'export':
+            allowOverlaps = not self._args.noOverlaps
             btrack = BTrack(self._args.btrackPath)
             btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName, allowOverlaps=allowOverlaps)
         elif operation == 'execute':
+            allowOverlaps = not self._args.noOverlaps
             tmpDirPath = None
+            btrack= None
             if self._args.btrackPath:
                 btrack = BTrack(self._args.btrackPath)
-            elif self._args.tracks and self._args.outputPath:
-                print 'outputPath: ' + self._args.outputPath
+            if self._args.tracks:
                 if not self._args.genomePath:
                     print 'Genome path missing'
                     return
-                tmpDirPath = tempfile.mkdtemp()
-                btrack = BTrack(tmpDirPath, self._args.genomePath)
+                if not btrack:
+                    tmpDirPath = tempfile.mkdtemp()
+                    btrack = BTrack(tmpDirPath, self._args.genomePath)
                 for trackPath in self._args.tracks:
                     variable, path = trackPath.split('=')
                     btrack.importTrackFromFile(path, variable)
-            else:
-                print 'BTrack path or track paths and output path have to be provided'
+
+            if not btrack or not btrack.hasTracks():
+                print 'Could not load tracks'
                 return
 
             parser = CommandParser(self._importedOperations, btrack)
@@ -86,20 +88,20 @@ class GTools(object):
                 res = obj[1].calculate()
 
             if isinstance(res, TrackContents):
-                if self._args.btrackPath or self._args.outputPath:
-                    if not outputTrackName:
-                        outputTrackName = self.generateTrackName('outputTrack')
-                    btrack.importTrack(res, outputTrackName, allowOverlaps=allowOverlaps)
-                    if self._args.outputPath:
-                        btrack.exportTrackToFile(self._args.outputPath, trackName=outputTrackName,
-                                                 allowOverlaps=allowOverlaps)
-                else:
+                if not outputTrackName:
+                    outputTrackName = self.generateTrackName('outputTrack')
+                btrack.importTrack(res, outputTrackName, allowOverlaps=allowOverlaps)
+                if self._args.outputPath:
+                    btrack.exportTrackToFile(self._args.outputPath, trackName=outputTrackName,
+                                             allowOverlaps=allowOverlaps)
+                elif tmpDirPath:
                     print 'No btrack or output path'
             elif res:
                 print "Result:"
                 print res
             else:
                 print "Did not get any result"
+
             if tmpDirPath:
                 shutil.rmtree(tmpDirPath)
 
@@ -161,7 +163,7 @@ class GTools(object):
 
         execute = subparsers.add_parser('execute', help='Execute command (track operations)')
         execute.add_argument('command', help='command as a string')
-        execute.add_argument('tracks', nargs='*', help='variables with path to tracks')
+        execute.add_argument('tracks', nargs='*', help='Variables with path to tracks')
         execute.add_argument('-b', help='File path for btrack', dest='btrackPath')
         execute.add_argument('--noOverlaps', action='store_true', help='Do not allow overlaps')
         execute.add_argument('-o', help='File path for output', dest='outputPath')

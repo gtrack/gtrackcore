@@ -100,6 +100,12 @@ class BTrack(object):
             if tcWrapper.getTrackNameAsString() == trackNameAsString:
                 return tcWrapper
 
+    def hasTracks(self):
+        if self._trackContentsWrapped:
+            return True
+
+        return False
+
 
 class TrackContentsWrapper(object):
     def __init__(self, trackIdentifier, trackContents):

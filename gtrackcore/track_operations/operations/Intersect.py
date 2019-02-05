@@ -81,7 +81,6 @@ class Intersect(Operator):
 
     @classmethod
     def _getKwArgumentInfoDict(self):
-        print("In flank getKwArgument")
         return OrderedDict([
             ('debug',
              KwArgumentInfo('debug', 'd', 'Print debug info', bool, False)),
