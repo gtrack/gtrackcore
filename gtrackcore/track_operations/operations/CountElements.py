@@ -11,6 +11,7 @@ from gtrackcore.track_operations.operations.Operator import KwArgumentInfo
 class CountElements(Operator):
 
     _trackHelpList = ['Track to be count elements on']
+    _operationHelp = "Count number of elements in each region of a track"
     _numTracks = 1
     _resultIsTrack = False
     _trackRequirements = [TrackFormatReq(dense=False)]

@@ -170,7 +170,85 @@ class GTools(object):
         execute.add_argument('-g', help='Genome path', dest='genomePath')
         execute.set_defaults(which='execute')
 
+        for name, operation in self._importedOperations.iteritems():
+
+            # Call the getKwArguments.
+            # Use the kwarguments and nr of tracks to generate
+            self._createSubparser(operation, subparsers)
+
+
         self._args = parser.parse_args()
+
+    def _createSubparser(self, operation, subparsers):
+
+        if operation is None:
+            return
+
+        # Get the operation info
+        info = operation.getInfoDict()
+
+        if info['operationHelp'] is None:
+            # If there is not defined a help text for the operation we
+            # ignore it.
+            #print("ignoring: {}".format(operation))
+            return
+
+        name = info['name']
+        opr = subparsers.add_parser(name,
+                                    help=info['operationHelp'],  usage=name + '(args, keywordArgs)')
+        opr._positionals.title = 'args - arguments (required)'
+        opr._optionals.title = 'keywordArgs - keyword arguments (optional)'
+
+        assert info['numTracks'] == len(info['trackHelp'])
+
+        # Add the track inputs
+        if len(info['trackHelp']) == 1:
+            opr.add_argument('track', help=info['trackHelp'][0])
+        else:
+            for i, v in enumerate(info['trackHelp']):
+                opr.add_argument('track-{}'.format(i), help=v)
+
+        #opr.add_argument('genome', help='File path of Genome definition')
+
+        # Add the options
+
+        kws = operation.getKwArgumentInfoDict()
+
+        for k, kw in kws.iteritems():
+            if kw.shortkey is None:
+                # non optional
+                if kw.contentType is bool:
+                    if kw.defaultValue:
+                        # Default is False
+                        opr.add_argument(kw.key, action='store_false',
+                                         help=kw.help)
+                    else:
+                        # Default is True
+                        opr.add_argument(kw.key, action='store_true',
+                                         help=kw.help)
+                else:
+                    opr.add_argument(kw.key, help=kw.help)
+
+            else:
+                # optional
+                if kw.contentType is bool:
+                    if kw.defaultValue:
+                        # Default is False
+                        opr.add_argument("-{}".format(kw.shortkey),
+                                         "--{}".format(kw.key),
+                                         action='store_false',
+                                         help=kw.help, dest=k)
+                    else:
+                        # Default is True
+                        opr.add_argument("-{}".format(kw.shortkey),
+                                         "--{}".format(kw.key),
+                                         action='store_true',
+                                         help=kw.help, dest=k)
+                else:
+                    opr.add_argument("-{}".format(kw.shortkey),
+                                     "--{}".format(kw.key),
+                                     help=kw.help, dest=k)
+        opr.set_defaults(which=info['name'])
 
 if __name__ == '__main__':
     GTools()
