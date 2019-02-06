@@ -23,6 +23,9 @@ class Genome(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __str__(self):
+        return self.__name
+
     @property
     def name(self):
         return self.__name

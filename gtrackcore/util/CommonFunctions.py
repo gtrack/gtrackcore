@@ -331,6 +331,15 @@ def createDirPath(trackName, genome, chr=None, allowOverlaps=False, basePath=Con
         ([chr] if chr is not None else []) )
     
     return path
+
+def getTrackNameFromTrackId(trackName):
+    basePath = trackName[1]
+    if len(basePath) > 2:
+        trackName = trackName[2:]
+    else:
+        trackName = []
+
+    return trackName
 #
 ##def createMemoPath(trackName, genome, chr, statName):
 ##    return os.sep.join( [MEMOIZED_DATA_PATH, statName, str(COMP_BIN_SIZE), genome]+list(trackName)+[chr] )

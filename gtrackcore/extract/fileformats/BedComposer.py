@@ -2,7 +2,7 @@ from collections import OrderedDict, namedtuple
 
 from gtrackcore.extract.fileformats.FileFormatComposer import FileFormatComposer, MatchResult
 from gtrackcore.track.format.TrackFormat import TrackFormat
-from gtrackcore.util.CommonFunctions import getStringFromStrand
+from gtrackcore.util.CommonFunctions import getStringFromStrand, getTrackNameFromTrackId
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 
 ColumnInfo = namedtuple('ColumnInfo', ['colIdx', 'defaultVal', 'checkExtra'])
@@ -53,7 +53,9 @@ class BedComposer(FileFormatComposer):
     def _compose(self, out):
         trackName = self._geSource.getTrackName()
         if trackName is not None:
-            name = ':'.join(self._geSource.getTrackName()).replace(' ','_')
+            if trackName[0] == '__btrack__':
+                trackName = getTrackNameFromTrackId(trackName)
+            name = ':'.join(trackName).replace(' ','_')
             print >>out, 'track' + ' name=' + name
 
         numCols = self._findNumCols()

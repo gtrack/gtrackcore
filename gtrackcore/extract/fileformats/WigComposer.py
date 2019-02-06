@@ -1,6 +1,7 @@
 from gtrackcore.extract.fileformats.FileFormatComposer import FileFormatComposer, MatchResult
 from gtrackcore.input.wrappers.GEDependentAttributesHolder import iterateOverBRTuplesWithContainedGEs
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.util.CommonFunctions import getTrackNameFromTrackId
 
 class WigComposer(FileFormatComposer):
     FILE_SUFFIXES = ['wig']
@@ -16,7 +17,9 @@ class WigComposer(FileFormatComposer):
     def _compose(self, out):
         trackName = self._geSource.getTrackName()
         if trackName is not None:
-            name = ':'.join(self._geSource.getTrackName()).replace(' ','_')
+            if trackName[0] == '__btrack__':
+                trackName = getTrackNameFromTrackId(trackName)
+            name = ':'.join(trackName).replace(' ','_')
         else:
             name = None
         
