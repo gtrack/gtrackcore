@@ -73,15 +73,19 @@ class BTrack(object):
         trackContents.save(trackIdentifier, allowOverlaps=allowOverlaps)
         self._trackContentsWrapped.append(TrackContentsWrapper(trackIdentifier, trackContents))
 
-    def exportTrackToFile(self, path, trackName=None, trackContents=None, allowOverlaps=True):
-        if isinstance(trackName, str):
-            tcWrapper = self.getTrackContentsByTrackNameAsString(trackName)
+    def exportTrackToFile(self, path, track, allowOverlaps=True):
+        if isinstance(track, str):
+            tcWrapper = self.getTrackContentsByTrackNameAsString(track)
+            if not tcWrapper:
+                print 'Track with name ' + track + ' not found'
+                return
             trackContents = tcWrapper.getTrackContents()
             trackIdentifier = tcWrapper.getTrackId()
-        elif isinstance(trackContents, TrackContents):
+        elif isinstance(track, TrackContents):
             for tcWrapper in self._trackContentsWrapped:
-                if tcWrapper.getTrackContents() == trackContents:
+                if tcWrapper.getTrackContents() == track:
                     trackIdentifier = tcWrapper.getTrackId()
+                    trackContents = track
         else:
             'Track name or TrackContents have to be provided for export'
             return
@@ -91,9 +95,11 @@ class BTrack(object):
                                                         fileSuffix=fileSuffix, globalCoords=True,
                                                         allowOverlaps=allowOverlaps)
 
+        print 'Track exported to ' + path
+
     def listTracks(self):
         for tcWrapper in self._trackContentsWrapped:
-            print tcWrapper
+            print '-- ' + str(tcWrapper)
 
     def getTrackContentsByTrackNameAsString(self, trackNameAsString):
         for tcWrapper in self._trackContentsWrapped:

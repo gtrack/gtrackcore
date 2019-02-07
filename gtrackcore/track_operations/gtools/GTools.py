@@ -55,7 +55,7 @@ class GTools(object):
         elif operation == 'export':
             allowOverlaps = not self._args.noOverlaps
             btrack = BTrack(self._args.btrackPath)
-            btrack.exportTrackToFile(self._args.trackPath, trackName=self._args.trackName, allowOverlaps=allowOverlaps)
+            btrack.exportTrackToFile(self._args.trackPath, self._args.trackName, allowOverlaps=allowOverlaps)
         elif operation == 'execute':
             allowOverlaps = not self._args.noOverlaps
             tmpDirPath = None
@@ -86,13 +86,16 @@ class GTools(object):
             elif isinstance(obj, tuple):
                 outputTrackName = obj[0]
                 res = obj[1].calculate()
+            else:
+                print 'Could not evaluate operation'
+                return
 
             if isinstance(res, TrackContents):
                 if not outputTrackName:
                     outputTrackName = self.generateTrackName('outputTrack')
                 btrack.importTrack(res, outputTrackName, allowOverlaps=allowOverlaps)
                 if self._args.outputPath:
-                    btrack.exportTrackToFile(self._args.outputPath, trackName=outputTrackName,
+                    btrack.exportTrackToFile(self._args.outputPath, outputTrackName,
                                              allowOverlaps=allowOverlaps)
                 elif tmpDirPath:
                     print 'No btrack or output path'

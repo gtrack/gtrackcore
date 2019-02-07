@@ -41,7 +41,10 @@ class CommandParser():
 
             return funcCallObj
         elif isinstance(parsedStatement[0], Assignment):
-            assignment = (parsedStatement[0].name, self._evalExpression(parsedStatement[0].value))
+            funcCallObj = self._evalExpression(parsedStatement[0].value)
+            if not funcCallObj:
+                return
+            assignment = (parsedStatement[0].name, funcCallObj)
 
             return assignment
 
@@ -56,7 +59,11 @@ class CommandParser():
             kw = {}
             for arg in expr.args:
                 if isinstance(arg, TrackName):
-                    trackContents = self._btrack.getTrackContentsByTrackNameAsString(arg.name).getTrackContents()
+                    tcWrapper = self._btrack.getTrackContentsByTrackNameAsString(arg.name)
+                    if not tcWrapper:
+                        print 'Track with name ' + arg.name + ' not found'
+                        return
+                    trackContents = tcWrapper.getTrackContents()
                     a.append(trackContents)
                 elif isinstance(arg, KwArg):  # kw arg
                     kw[arg.name] = arg.value
