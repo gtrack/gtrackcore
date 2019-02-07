@@ -22,6 +22,8 @@ class BTrack(object):
             else:
                 raise ValueError('Genome has to be provided')
         else:
+            if genomePath.endswith('.len'):
+                genomePath = os.path.splitext(genomePath)[0]
             newGenomePath = os.path.join(self._path, 'genomes', os.path.basename(genomePath))
             ensurePathExists(newGenomePath)
             shutil.copy(genomePath, newGenomePath)

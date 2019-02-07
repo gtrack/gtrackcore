@@ -14,25 +14,34 @@ class CommandParser():
         literalTrue.setParseAction(pp.replaceWith(True))
         literalFalse = pp.Keyword('false', caseless=True)
         literalFalse.setParseAction(pp.replaceWith(False))
-        booleanLiteral = literalTrue | literalFalse
+        booleanLiteral = literalTrue ^ literalFalse
+        # literal is a quoted string, a number or a boolean value
         literal = pp.quotedString ^ pp.pyparsing_common.number ^ booleanLiteral
 
+        # identifier consists of alphanumeric chars or _
         identifier = pp.Word(pp.alphas, pp.alphanums + "_").setName('identifier')
+        # track name is one or more identifiers connected by :
         trackName = pp.Group(identifier + pp.ZeroOrMore(pp.Literal(':') + identifier))
         trackName = trackName.setParseAction(self.trackNameAction)
 
         functionCall = pp.Forward()
+        # expression is a trackname, a literal or a function call
         expression = (trackName ^ literal ^ functionCall).setName('expression')
+        # assignment is a trackname followed by = and a function call
         assignment = pp.Group(trackName + pp.Literal('=') + functionCall)
         assignment = assignment.setParseAction(self.assignmentAction)
-
-        kwargValue = functionCall | literal
+        # function keyword argument value is a literal
+        kwargValue = literal
+        # function keyword argument is and identifier followed by = and keyword argument value
         kwarg = pp.Group(identifier + pp.Literal('=') + kwargValue)
         kwarg.setParseAction(self.kwArgAction)
 
+        # function argument can be either a keyword argument or an expression
         func_arg = kwarg | expression
+        # function call consistes of en identifier and ([optionally arguments])
         functionCall << pp.Group(identifier + lPar + pp.Optional(pp.delimitedList(func_arg)) + rPar)
         functionCall = functionCall.setParseAction(self.functionCallAction)
+        # a statement if either assignment or a function call
         statement = assignment ^ functionCall
 
         parsedStatement = statement.parseString(expr)
@@ -49,15 +58,18 @@ class CommandParser():
             return assignment
 
     def _evalExpression(self, expr):
+        # evaluating string literal
         if isinstance(expr, str):
             if expr[0] in '"\'':  # string literal
                 return expr[1:-1]  # remove quotes
             else:
                 "Unrecognized element - can't evaluate"
+        # evaluating function call
         elif isinstance(expr, FunctionCall):
             a = []
             kw = {}
             for arg in expr.args:
+                # track name
                 if isinstance(arg, TrackName):
                     tcWrapper = self._btrack.getTrackContentsByTrackNameAsString(arg.name)
                     if not tcWrapper:
@@ -65,12 +77,15 @@ class CommandParser():
                         return
                     trackContents = tcWrapper.getTrackContents()
                     a.append(trackContents)
-                elif isinstance(arg, KwArg):  # kw arg
+                # keyword argument
+                elif isinstance(arg, KwArg):
                     kw[arg.name] = arg.value
-                else:  # func or literal
+                # function call or literal
+                else:
                     a.append(self._evalExpression(arg))
             return self._operations[expr.name](*a, **kw)
-        else:  # number
+        # evaluating number or boolean literal
+        else:
             return expr
 
     def kwArgAction(self, tokens):
