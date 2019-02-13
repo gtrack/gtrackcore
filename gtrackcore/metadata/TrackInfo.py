@@ -8,7 +8,7 @@ import gtrackcore.third_party.safeshelve as safeshelve
 
 from gtrackcore.core.Config import Config
 from gtrackcore.track.format.TrackFormat import TrackFormatReq
-from gtrackcore.util.CommonFunctions import strWithStdFormatting, ensurePathExists
+from gtrackcore.util.CommonFunctions import strWithStdFormatting, ensurePathExists, getBTrackPathFromTrackId
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
 from gtrackcore.util.HtmlCore import HtmlCore
 from gtrackcore.util.TextCore import TextCore
@@ -61,9 +61,14 @@ class TrackInfo(object):
         #Temporary hack
         if genome in ['hg18','NCBI36']:
             genome = 'NCBI36'
+
+        path = cls.SHELVE_FN
+        if trackName[0] == '__btrack__':
+            trackInfoPath = getBTrackPathFromTrackId(trackName)
+            path = os.path.join(trackInfoPath, 'metadata', 'TrackInfo.shelve')
         
-        ensurePathExists(cls.SHELVE_FN)
-        trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'c', protocol=cls.PROTOCOL)
+        ensurePathExists(path)
+        trackInfoShelve = safeshelve.open(path, 'c', protocol=cls.PROTOCOL)
         stored = trackInfoShelve.get( constructKey(genome, trackName) )
         trackInfoShelve.close()
         if stored is not None:
@@ -81,7 +86,16 @@ class TrackInfo(object):
         assert existingAttrs.get('genome') in [None, genome], '%s not in [None, %s]' % (existingAttrs.get('genome'), genome)
         self.trackName = trackName
         self.genome = genome
-        
+        if trackName[0] == '__btrack__':
+            trackInfoPath = os.path.join(getBTrackPathFromTrackId(trackName), 'metadata')
+            self.path = os.path.join(trackInfoPath, 'TrackInfo.shelve')
+            self.errorPath = os.path.join(trackInfoPath, 'TrackInfo.shelve.errors')
+            self.copyPath = os.path.join(trackInfoPath, 'TrackInfo.shelve.copy')
+        else:
+            self.path = self.SHELVE_FN
+            self.errorPath = self.SHELVE_ERRORS_FN
+            self.copyPath = self.SHELVE_COPY_FN
+
         self.id = None
         
         self.description = ''
@@ -146,12 +160,12 @@ class TrackInfo(object):
         self.store()
     
     def store(self):
-        trackInfoShelve = safeshelve.open(self.SHELVE_FN, protocol=self.PROTOCOL)
+        trackInfoShelve = safeshelve.open(self.path, protocol=self.PROTOCOL)
         trackInfoShelve[ constructKey(self.genome, self.trackName) ] = self
         trackInfoShelve.close()
         
     def removeEntryFromShelve(self):
-        trackInfoShelve = safeshelve.open(self.SHELVE_FN, protocol=self.PROTOCOL)
+        trackInfoShelve = safeshelve.open(self.path, protocol=self.PROTOCOL)
         key = constructKey(self.genome, self.trackName)
         if key in trackInfoShelve:
             del trackInfoShelve[key]
@@ -270,31 +284,28 @@ class TrackInfo(object):
     def constructIdByTimeStamp():
         return hash(datetime.datetime.now())
     
-    @classmethod
-    def getFilteredEntriesFromShelve(cls, genome, trackNameFilter):
+    def getFilteredEntriesFromShelve(self, genome, trackNameFilter):
         filterKey = constructKey(genome, trackNameFilter)
-        trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'r', protocol=cls.PROTOCOL)
+        trackInfoShelve = safeshelve.open(self.path, 'r', protocol=self.PROTOCOL)
         filteredKeys = [x for x in trackInfoShelve.keys() if x.startswith(filterKey)]
         trackInfoShelve.close()
         return filteredKeys
 
-    @classmethod
-    def removeFilteredEntriesFromShelve(cls, genome, trackNameFilter):
+    def removeFilteredEntriesFromShelve(self, genome, trackNameFilter):
         filteredKeys = TrackInfo.getFilteredEntriesFromShelve(genome, trackNameFilter)
-        trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'w', protocol=cls.PROTOCOL)
+        trackInfoShelve = safeshelve.open(self.path, 'w', protocol=self.PROTOCOL)
         for key in filteredKeys:
             del trackInfoShelve[key]
         trackInfoShelve.close()
         
-    @classmethod
-    def updateShelveItemsAndCopyToNewFile(cls):
-        assert not os.path.exists(cls.SHELVE_COPY_FN)
-        assert not os.path.exists(cls.SHELVE_ERRORS_FN)
+    def updateShelveItemsAndCopyToNewFile(self):
+        assert not os.path.exists(self.copyPath)
+        assert not os.path.exists(self.errorPath)
         
-        trackInfoShelveCopy = safeshelve.open(cls.SHELVE_COPY_FN, 'c', protocol=cls.PROTOCOL)
-        trackInfoShelveErrors = safeshelve.open(cls.SHELVE_ERRORS_FN, 'c', protocol=cls.PROTOCOL)
+        trackInfoShelveCopy = safeshelve.open(self.copyPath, 'c', protocol=self.PROTOCOL)
+        trackInfoShelveErrors = safeshelve.open(self.errorPath, 'c', protocol=self.PROTOCOL)
         
-        trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'r', protocol=cls.PROTOCOL)
+        trackInfoShelve = safeshelve.open(self.path, 'r', protocol=self.PROTOCOL)
         keys = trackInfoShelve.keys()
         trackInfoShelve.close()
 
@@ -302,7 +313,7 @@ class TrackInfo(object):
             try:
                 ti = TrackInfo.createInstanceFromKey(key)
             except:
-                trackInfoShelve = safeshelve.open(cls.SHELVE_FN, 'r', protocol=cls.PROTOCOL)
+                trackInfoShelve = safeshelve.open(self.path, 'r', protocol=self.PROTOCOL)
                 trackInfoShelveErrors[key] = trackInfoShelve[key]
                 trackInfoShelve.close()
             
