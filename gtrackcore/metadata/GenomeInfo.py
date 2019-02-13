@@ -173,8 +173,9 @@ class GenomeInfo(object):
     @classmethod
     def getExtendedChrList(cls, genome):
         "Returns a list of all chromosomes of the genome build file set."
-        if genome.name.lower() in ['testgenome']:
-            return ['chr21', 'chrM']
+        if isinstance(genome, str):
+            if genome.lower() in ['testgenome']:
+                return ['chr21', 'chrM']
         else:
             return genome.getChromosomeNameList()
 
@@ -244,15 +245,16 @@ class GenomeInfo(object):
     @classmethod
     def getChrLen(cls, genome, chrName):
         assert genome is not None
-        assert chr is not None
+        assert chrName is not None
         # For the unit-tests
-        if genome.name.lower() == 'testgenome':
-            if chr == 'chr21':
-                return 46944323
-            if chr == 'chrM':
-                return 16571
-            else:
-                raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
+        if isinstance(genome, str):
+            if genome.lower() == 'testgenome':
+                if chrName == 'chr21':
+                    return 46944323
+                if chrName == 'chrM':
+                    return 16571
+                else:
+                    raise ArgumentValueError("Error: chromosome '%s' is not part of genome '%s'." % (chr, genome))
         else:
             for region in genome.regions:
                 if region.chr == chrName:
