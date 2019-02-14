@@ -42,7 +42,11 @@ class PreProcessTracksJob(object):
         for trackName in self._allTrackNames():
             assert trackName != ['']
             overlapRulesProcessedForTrackName = []
-            collector = PreProcMetaDataCollector(self._genome.name, trackName)
+            if isinstance(self._genome, str):
+                genomeName = self._genome
+            else:
+                genomeName = self._genome.name
+            collector = PreProcMetaDataCollector(genomeName, trackName)
 
             try:
                 trackName = self._renameTrackNameIfIllegal(trackName)
@@ -78,7 +82,11 @@ class PreProcessTracksJob(object):
                             ChrMemmapFolderMerger.merge(self._genome, trackName, allowOverlaps)
 
                             self._status = 'Trying to remove chromosome folders'
-                            PreProcessUtils.removeChrMemmapFolders(self._genome.name, trackName, allowOverlaps)
+                            if isinstance(self._genome, str):
+                                genomeName = self._genome
+                            else:
+                                genomeName = self._genome.name
+                            PreProcessUtils.removeChrMemmapFolders(genomeName, trackName, allowOverlaps)
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)
@@ -120,7 +128,11 @@ class PreProcessTracksJob(object):
         raise AbstractClassError
 
     def _allGESourceManagers(self, trackName, allowOverlaps):
-        collector = PreProcMetaDataCollector(self._genome.name, trackName)
+        if isinstance(self._genome, str):
+            genomeName = self._genome
+        else:
+            genomeName = self._genome.name
+        collector = PreProcMetaDataCollector(genomeName, trackName)
         if allowOverlaps == False and collector.overlapRuleHasBeenFinalized(True):
             for i in range(1):
                 self._status = 'Trying to prepare preprocessing for track "%s"' % ':'.join(trackName) + \
@@ -146,7 +158,11 @@ class PreProcessTracksJob(object):
         return GESourceManager(geSource)
 
     def _getGESourceManagerFromTrack(self, trackName):
-        origBrTuples = PreProcMetaDataCollector(self._genome.name, trackName).\
+        if isinstance(self._genome, str):
+            genomeName = self._genome
+        else:
+            genomeName = self._genome.name
+        origBrTuples = PreProcMetaDataCollector(genomeName, trackName).\
                         getBoundingRegionTuples(allowOverlaps=True)
         return OverlapClusteringGESourceManager(self._genome, trackName, origBrTuples)
 
@@ -184,7 +200,11 @@ class PreProcessTracksJob(object):
         allChrs[allowOverlaps].update(set(chrList))
 
     def _calcAndStoreSubTrackCount(self, trackName):
-        ti = TrackInfo(self._genome.name, trackName)
+        if isinstance(self._genome, str):
+            genomeName = self._genome
+        else:
+            genomeName = self._genome.name
+        ti = TrackInfo(genomeName, trackName)
         if ti.isValid():
             ti.subTrackCount = 1
             ti.store()
@@ -216,12 +236,20 @@ class PreProcessAllTracksJob(PreProcessTracksJob):
 
     def _allTrackNames(self):
         #avoidLiterature = len(self._trackNameFilter) == 0 or (self._trackNameFilter != GenomeInfo.getLiteratureTrackName(self._genome))
-        trackSource = OrigTrackNameSource(self._genome.name, self._trackNameFilter, avoidLiterature=False)
+        if isinstance(self._genome, str):
+            genomeName = self._genome
+        else:
+            genomeName = self._genome.name
+        trackSource = OrigTrackNameSource(genomeName, self._trackNameFilter, avoidLiterature=False)
         return trackSource
         #return reorderTrackNameListFromTopDownToBottomUp(trackSource)
 
     def _allGESources(self, trackName):
-        baseDir = createOrigPath(self._genome.name, trackName)
+        if isinstance(self._genome, str):
+            genomeName = self._genome
+        else:
+            genomeName = self._genome.name
+        baseDir = createOrigPath(genomeName, trackName)
 
         self._status = 'Trying os.listdir on: ' + baseDir
         for relFn in sorted(os.listdir( baseDir )):
@@ -239,7 +267,11 @@ class PreProcessAllTracksJob(PreProcessTracksJob):
             yield GenomeElementSource(fn, self._genome, forPreProcessor=True)
 
     def _calcAndStoreSubTrackCount(self, trackName):
-        ti = TrackInfo(self._genome.name, trackName)
+        if isinstance(self._genome, str):
+            genomeName = self._genome
+        else:
+            genomeName = self._genome.name
+        ti = TrackInfo(genomeName, trackName)
         trackCount = 0
         for subTrackName in ProcTrackOptions.getSubtypes(self._genome, trackName, True):
             subTrackCount = TrackInfo(self._genome.name, trackName + [subTrackName]).subTrackCount

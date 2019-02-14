@@ -213,15 +213,19 @@ class TrackGenomeElementSource(GenomeElementSource):
         return self._edgeWeightDim
 
     def _findTrackInfoBasedMetaData(self):
+        if isinstance(self._genome, str):
+            genomeName = self._genome
+        else:
+            genomeName = self._genome.name
         if not self._foundTrackInfoBasedMetaData:
-            if PreProcMetaDataCollector.hasKey(self._genome.name, self._trackName):
-                collector = PreProcMetaDataCollector(self._genome.name, self._trackName)
+            if PreProcMetaDataCollector.hasKey(genomeName, self._trackName):
+                collector = PreProcMetaDataCollector(genomeName, self._trackName)
                 self._fileSuffix = collector.getFileSuffix()
                 self._preProcVersion = collector.getPreProcVersion()
                 self._id = collector.getId()
                 self._undirectedEdges = True if collector.hasUndirectedEdges() else False
             else:
-                ti = TrackInfo(self._genome.name, self._trackName)
+                ti = TrackInfo(genomeName, self._trackName)
                 self._fileSuffix = ti.fileType
                 self._preProcVersion = ti.preProcVersion
                 self._id = ti.id

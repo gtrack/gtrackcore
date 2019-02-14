@@ -22,7 +22,6 @@ class OrigTrackNameSource(object):
                 dirsToRemove.append('Trash')
                 dirsToRemove.append('Trashcan')
                 trackName = extractTrackNameFromOrigPath(root)
-                print "tn " + trackName
             #if self._avoidLiterature and trackName == literatureTNBase:
                     #dirsToRemove.append(literatureTN[-1])
 

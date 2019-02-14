@@ -25,8 +25,12 @@ class TrackSource:
         brShelve = BoundingRegionShelve(genome, trackName, allowOverlaps)        
         if not forceChrFolders and brShelve.fileExists():
             chr = None
-        
-        dir = createDirPath(trackName, genome.name, chr, allowOverlaps)
+
+        if isinstance(genome, str):
+            genomeName = genome
+        else:
+            genomeName = genome.name
+        dir = createDirPath(trackName, genomeName, chr, allowOverlaps)
 
         for fn in os.listdir(dir):
             fullFn = dir + os.sep + fn

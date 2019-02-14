@@ -21,8 +21,11 @@ class PreProcessGeSourceJob(object):
     def _createPreProcFiles(self):
         geSource = self._geSourceManager.getGESource()
         genome = geSource.genome
-        
-        collector = PreProcMetaDataCollector(genome.name, self._trackName)
+        if isinstance(genome, str):
+            genomeName = genome
+        else:
+            genomeName = genome.name
+        collector = PreProcMetaDataCollector(genomeName, self._trackName)
         
         collector.updateMetaDataForFinalization(geSource.getFileSuffix(), geSource.getPrefixList(), \
                                                 geSource.getValDataType(), geSource.getValDim(), \

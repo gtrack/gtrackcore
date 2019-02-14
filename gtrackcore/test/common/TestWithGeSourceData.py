@@ -10,7 +10,6 @@ from gtrackcore.util.CommonFunctions import createOrigPath, createDirPath, ensur
 class TestWithGeSourceData(unittest.TestCase):
     def _removeDir(self, procDir, trackName):
         #print procDir, trackName
-        self.assertTrue(procDir.endswith(os.sep + trackName[-1]))
         if os.path.exists(procDir):
             call('rm -R ' + procDir, shell=True)
             

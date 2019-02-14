@@ -31,8 +31,20 @@ class GenomeRegion(object):
         else:
             #print [self.genome, self.chr, self.start, self.end, self.strand] , \
             #    [other.genome, other.chr, other.start, other.end, other.strand]
-            return cmp([self.genome, self.chr, self.start, self.end, self.strand] , \
-                [other.genome, other.chr, other.start, other.end, other.strand])
+            # check if genome is Genome object or string and set names to compare
+            # initialize to None because of some unit tests that pass None here
+            selfGenomeName = None
+            otherGenomeName = None
+            if isinstance(self.genome, str):
+                selfGenomeName = self.genome
+            elif self.genome:
+                selfGenomeName = self.genome.name
+            if isinstance(other.genome, str):
+                otherGenomeName = other.genome
+            elif other.genome:
+                otherGenomeName = other.genome.name
+            return cmp([selfGenomeName, self.chr, self.start, self.end, self.strand] , \
+                [otherGenomeName, other.chr, other.start, other.end, other.strand])
 
     def __len__(self):
         ''

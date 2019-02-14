@@ -221,7 +221,10 @@ class GenomeInfo(object):
 
     @classmethod
     def isValidChr(cls, genome, chrName):
-        return chrName in genome.getChromosomeNameList()
+        if isinstance(genome, str):
+            return chrName in cls.getExtendedChrList(genome)
+        else:
+            return chrName in genome.getChromosomeNameList()
 
 #        # Removed this, as chromosome mismatch now only displays a warning:
 #        #
