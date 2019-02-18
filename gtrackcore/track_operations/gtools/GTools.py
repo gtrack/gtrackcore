@@ -101,7 +101,9 @@ class GTools(object):
                     print 'No btrack or output path'
             elif res:
                 print "Result:"
-                print res
+                if isinstance(res, dict):
+                    for k,v in res.iteritems():
+                        print str(k) + ' : ' + str(v)
             else:
                 print "Did not get any result"
 
