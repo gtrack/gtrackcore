@@ -343,10 +343,14 @@ def getAllGenomeElementSourceClasses(forPreProcessor):
     if forPreProcessor:
         from gtrackcore.input.fileformats.WigGenomeElementSource import HbWigGenomeElementSource
         from gtrackcore.input.fileformats.GtrackGenomeElementSource import HbGzipGtrackGenomeElementSource, HbGtrackGenomeElementSource
-        allGESourceClasses += [HbWigGenomeElementSource, HbGzipGtrackGenomeElementSource, HbGtrackGenomeElementSource]
+        from gtrackcore.input.fileformats.BigWigGenomeElementSource import BigWigGenomeElementSourceForPreproc
+        allGESourceClasses += [HbWigGenomeElementSource, HbGzipGtrackGenomeElementSource,
+                               HbGtrackGenomeElementSource, BigWigGenomeElementSourceForPreproc]
     else:
         from gtrackcore.input.fileformats.WigGenomeElementSource import WigGenomeElementSource
         from gtrackcore.input.fileformats.GtrackGenomeElementSource import GzipGtrackGenomeElementSource, GtrackGenomeElementSource
-        allGESourceClasses += [WigGenomeElementSource, GzipGtrackGenomeElementSource, GtrackGenomeElementSource]
+        from gtrackcore.input.fileformats.BigWigGenomeElementSource import BigWigGenomeElementSource
+        allGESourceClasses += [WigGenomeElementSource, GzipGtrackGenomeElementSource,
+                               GtrackGenomeElementSource, BigWigGenomeElementSource]
 
     return allGESourceClasses
