@@ -89,6 +89,8 @@ class ExceptionCase(BaseCase):
 
 class TestGenomeElementSource(TestCaseWithImprovedAsserts):
     def setUp(self):
+        self._verbose = os.environ.get('TEST_VERBOSE').lower() == 'true'
+
         self.cases = OrderedDict()
 
         # Testing:
@@ -3568,7 +3570,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testIterator'
         for case in self.cases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             geSource = self._getGeSource(case)
             for i in range(2):
                 self._testIterator(case, geSource)
@@ -3598,7 +3601,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testExceptions'
         for case in self.exceptionCases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             self._assertException(case)
             case.close()
 
@@ -3611,7 +3615,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testNew'
         for case in self.cases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             self._assertNew(case)
             case.close()
 
@@ -3622,6 +3627,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         except Exception, e:
             #import traceback
             #traceback.print_exc(e)
+            if self._verbose:
+                print e
             self.assertEqual(Warning, e.__class__)
 
     def testGetPrefixList(self):
@@ -3629,7 +3636,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testGetPrefixList'
         for case in self.cases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             self._assertPrefixList(case)
             case.close()
 
@@ -3642,7 +3650,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testGetValDataType'
         for case in self.cases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             self._assertValDataType(case)
             case.close()
 
@@ -3656,7 +3665,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testGetValDim'
         for case in self.cases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             self._assertValDim(case)
             case.close()
 
@@ -3669,7 +3679,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testGetEdgeWeightDataType'
         for case in self.cases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             self._assertEdgeWeightDataType(case)
             case.close()
 
@@ -3683,7 +3694,8 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
         #print 'testGetEdgeWeightDim'
         for case in self.cases.values():
             case.open()
-            #print case.trackName
+            if self._verbose:
+                print case.trackName
             self._assertEdgeWeightDim(case)
             case.close()
 
