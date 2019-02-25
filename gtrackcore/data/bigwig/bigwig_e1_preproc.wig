@@ -1,0 +1,7 @@
+fixedStep chrom=chrM start=11 step=10 span=5
+4.5
+-3.7
+fixedStep chrom=chrM start=26 step=10 span=5
+2.5
+1.7
+

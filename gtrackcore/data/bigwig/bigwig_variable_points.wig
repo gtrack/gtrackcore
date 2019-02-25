@@ -1,0 +1,6 @@
+variableStep chrom=chr21 span=1
+1	4.5
+variableStep chrom=chrM span=1
+21	nan
+151	3.7
+351	2.7
