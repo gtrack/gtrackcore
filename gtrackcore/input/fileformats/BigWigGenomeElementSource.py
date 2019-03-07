@@ -18,6 +18,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
     _isSorted = True
     _inputIsOneIndexed = True
     _inputIsEndInclusive = True
+    _addsStartElementToDenseIntervals = False
 
     Header = namedtuple('Header', ['start', 'end', 'step', 'span', 'stepType', 'numOfVals'])
 
@@ -36,6 +37,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
         bxpythonTmp = open(self._fn, 'rb')
         self._bxpythonFile = BigWigFile(file=bxpythonTmp)
         self._headers = iter([])
+        self._prevHeader = None
 
 
     def _iter(self):
@@ -71,8 +73,6 @@ class BigWigGenomeElementSource(GenomeElementSource):
         chr = self._currentChrom[0]
         span = header.span
         step = header.step
-        start = np.array([header.start])
-
         isPoints = span == 1
         isStepFunction = None
 
@@ -86,14 +86,6 @@ class BigWigGenomeElementSource(GenomeElementSource):
             # if not self._shouldExpandBoundingRegion(chr, start):
             #     if chr is not None:  # self._chr is still the chromosome of the previous decl. line
             #         self._appendBoundingRegionTuple()
-
-                if isStepFunction:
-                    returnGE = GenomeElement(genome=self._genome, chr=chr, end=start, \
-                                             val=np.nan, isBlankElement=True)
-
-                    print returnGE
-
-                    return returnGE
 
             val = self._values[:header.numOfVals]
             self._values = self._values[header.numOfVals:]
@@ -117,6 +109,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
         if not isPoints:
             end = self.getEndPositions(header, start)
         if isStepFunction:
+            val, end = self.handleStepFunction(val, start, end)
             start = None
 
         ge = GenomeElement(genome=self._genome, chr=chr, start=start, end=end, val=val)
@@ -146,6 +139,9 @@ class BigWigGenomeElementSource(GenomeElementSource):
 
     def _handleEndOfFile(self):
         pass
+
+    def handleStepFunction(self, val, start, end):
+        return val, end
 
     def _getFile(self):
         return open(self._fn, 'r')
@@ -228,4 +224,10 @@ class BigWigGenomeElementSource(GenomeElementSource):
 
 
 class BigWigGenomeElementSourceForPreproc(BigWigGenomeElementSource):
-    _addsStartElementToDenseIntervals = False
+    _addsStartElementToDenseIntervals = True
+
+    def handleStepFunction(self, val, start, end):
+        val = np.insert(val, 0, np.nan)
+        end = np.insert(end, 0, start[0])
+
+        return val, end
