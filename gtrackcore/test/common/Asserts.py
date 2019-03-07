@@ -50,7 +50,11 @@ class TestCaseWithImprovedAsserts(unittest.TestCase):
         self.assertListsOrDicts(a.val, b.val)
         self.assertListsOrDicts(a.edges, b.edges)
         self.assertListsOrDicts(a.weights, b.weights)
+        self.assertListsOrDicts(a.start, b.start)
+        self.assertListsOrDicts(a.end, b.end)
         a.val = b.val = None
+        a.start = b.start = None
+        a.end = b.end = None
         a.edges = b.edges = None
         a.weights = b.weights = None
         
