@@ -1,13 +1,13 @@
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
-
-import numpy as np
-import bbi
-from bx.bbi.bigwig_file import BigWigFile
+from collections import namedtuple
 from copy import copy
 
-from input.core.GenomeElement import GenomeElement
-from collections import namedtuple
+import bbi
+import numpy as np
+from bx.bbi.bigwig_file import BigWigFile
+import pyBigWig
 
+from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
+from input.core.GenomeElement import GenomeElement
 from track.core.GenomeRegion import GenomeRegion
 
 
@@ -38,7 +38,13 @@ class BigWigGenomeElementSource(GenomeElementSource):
         self._locations = None
         self._lengths = None
         self._values = None
-        self._bxpythonFile = BigWigFile(file=open(self._fn, 'rb'))
+        self._bxpythonFile = BigWigFile(file=self._getFile())
+        self._fixedStep = False
+        self._span = 1
+        self._step = None
+        self._isPoints = None
+        self._isFunction = False
+        self._isStepFunction = False
 
     def __iter__(self):
         geIter = copy(self)
@@ -60,7 +66,8 @@ class BigWigGenomeElementSource(GenomeElementSource):
             self._headers = iter(self._getHeaderForChrom(self._currentChrom))
             header = next(self._headers, None)
 
-            if self._isFixedStep(header):
+            self._fixedStep = self._isFixedStep(header)
+            if self._fixedStep:
                 self._valuesArray = self._getValsForChrom(self._currentChrom)
                 self._values, self._locations, self._lengths = self._getIntervals(self._valuesArray)
             else:
@@ -77,27 +84,24 @@ class BigWigGenomeElementSource(GenomeElementSource):
                 # print 'locations'
                 # print self._locations
 
-        fixedStep = self._isFixedStep(header)
-        chr = str(self._currentChrom[0])
-        span = header.span
-        step = header.step
-        isPoints = span == 1
-        isStepFunction = None
+        self._span = header.span
+        self._step = header.step
+        self._isPoints = (self._span == 1)
+        chrName = str(self._currentChrom[0])
 
-        if fixedStep:
-            br = self.createBoundingRegion(header, chr)
+        if self._fixedStep:
+            br = self.createBoundingRegion(header, chrName)
             print br
             self._boundingRegionTuples.append(br)
 
-            isStepFunction = (step == span and step > 1)
-            isFunction = (step == span and step == 1)
+            self._isStepFunction = (self._step == self._span and self._step > 1)
+            self._isFunction = (self._step == self._span and self._step == 1)
 
             val = self._values[:header.numOfVals]
             self._values = self._values[header.numOfVals:]
 
-            if isFunction:
-                ge = GenomeElement(genome=self._genome, chr=chr,  val=val)
-
+            if self._isFunction:
+                ge = GenomeElement(genome=self._genome, chr=chrName,  val=val)
                 print ge
 
                 return ge
@@ -109,15 +113,19 @@ class BigWigGenomeElementSource(GenomeElementSource):
             self._values = self._values[header.numOfVals:]
             start = self._locations[:header.numOfVals]
             self._locations = self._locations[header.numOfVals:]
+            if self._isBedGraph(header):
+                br = self.createBoundingRegion(header, chrName)
+                print br
+                self._boundingRegionTuples.append(br)
 
         end = None
-        if not isPoints:
+        if not self._isPoints:
             end = self.getEndPositions(header, start)
-        if isStepFunction:
+        if self._isStepFunction:
             val, end = self.handleStepFunction(val, start, end)
             start = None
 
-        ge = GenomeElement(genome=self._genome, chr=chr, start=start, end=end, val=val)
+        ge = GenomeElement(genome=self._genome, chr=chrName, start=start, end=end, val=val)
         print ge
 
         return ge
@@ -143,7 +151,6 @@ class BigWigGenomeElementSource(GenomeElementSource):
             positions.append(pos + header.span)
 
         return np.array(positions)
-
 
     def _shouldExpandBoundingRegion(self, chr, start):
         return (self._isFunction or self._isStepFunction) and \
@@ -175,13 +182,13 @@ class BigWigGenomeElementSource(GenomeElementSource):
     # these headers are set correctly.
 
     def getFixedLength(self):
-        return False
+        return self._span if self._fixedStep else 1
 
     def getFixedGapSize(self):
-        return False
+        return self._step - self._span if self._fixedStep else 0
 
     def hasNoOverlappingElements(self):
-        return False
+        return True if self._fixedGapSize else False
 
     def _getValsForChrom(self, chrom):
         vals = self._getRawValsForChrom(chrom)
@@ -219,21 +226,6 @@ class BigWigGenomeElementSource(GenomeElementSource):
 
         return values, loc, np.diff(loc0)
 
-    def _isDense(self, v):
-        if np.inf in v:
-            return False
-
-        return True
-
-    def getStepType(self, stepNum):
-        if stepNum == 1:
-            return 'bedGraph'
-        elif stepNum == 2:
-            return 'variableStep'
-        elif stepNum == 3:
-            return 'fixedStep'
-
-
 
 class BigWigGenomeElementSourceForPreproc(BigWigGenomeElementSource):
     _addsStartElementToDenseIntervals = True
@@ -244,8 +236,8 @@ class BigWigGenomeElementSourceForPreproc(BigWigGenomeElementSource):
 
         return val, end
 
-    def createBoundingRegion(self, header, chr):
-        boundingRegion = GenomeRegion(genome=self._genome, chr=chr, start=header.start,
+    def createBoundingRegion(self, header, chrName):
+        boundingRegion = GenomeRegion(genome=self._genome, chr=chrName, start=header.start,
                                       end=header.end)
         br = BoundingRegionTuple(boundingRegion, header.numOfVals + 1)
 
