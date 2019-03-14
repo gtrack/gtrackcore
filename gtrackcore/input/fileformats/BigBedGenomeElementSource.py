@@ -1,22 +1,16 @@
 from copy import copy
 
-import bbi
 import numpy as np
-#from bx.bbi.bigwig_file import BigWigFile
 import pyBigWig
 
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
+from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from input.core.GenomeElement import GenomeElement
-from track.core.GenomeRegion import GenomeRegion
 
 
 class BigBedGenomeElementSource(GenomeElementSource):
     _VERSION = '1.0'
     FILE_SUFFIXES = ['bb', 'bigbed']
     FILE_FORMAT_NAME = 'BigBed'
-
-    MIN_NUM_COLS = 3
-    MAX_NUM_COLS = 12
 
     BED_COLUMNS = ['chrom', 'start', 'end', 'name', 'score', 'strand', 'thickstart', 'thickend',
                    'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
@@ -62,41 +56,35 @@ class BigBedGenomeElementSource(GenomeElementSource):
             raise StopIteration
 
         entries = self._bigBedFile.entries(str(self._currentChrom[0]), 0, self._currentChrom[1])
-
-        print self._bigBedFile.SQL()
-
-        from plastid.readers.autosql import AutoSqlDeclaration
-        autoSqlParser = AutoSqlDeclaration(self._bigBedFile.SQL())
-
-        print autoSqlParser.field_formatters
-
-
-        # there are more values than just start and end
         tupleVals = [(x[0], x[1]) for x in entries]
         intervals = np.array(tupleVals, dtype=np.dtype([('start', 'int'), ('end', 'int')]))
         intervals.dtype.names =['start', 'end']
+
+        ge = GenomeElement(genome=self._genome, chr=self._currentChrom[0],
+                           start=intervals['start'], end=intervals['end'])
+
         numOfCols = len(entries[0])
-        if numOfCols >= 2:
-            cols = entries[0][2].split('\t')
-            dataTypes = self.COL_TYPES[:len(cols)]
+        if numOfCols >= 2 and entries[0][2]:
+            extraCols = entries[0][2].split('\t')
+            autoSql = self._bigBedFile.SQL()
+            if autoSql:
+                from plastid.readers.autosql import AutoSqlDeclaration
+                autoSqlParser = AutoSqlDeclaration(self._bigBedFile.SQL())
+                colNames = autoSqlParser.field_formatters.keys()
+                colNames = colNames[3:]
+            else:
+                colNames = self.BED_EXTRA_COLUMNS[:len(extraCols)]
+
             strVals = [x[2] for x in entries]
-            #print dataTypes
-            values = np.genfromtxt(strVals, dtype=None, names=self.BED_EXTRA_COLUMNS[:len(cols)], delimiter='\t')
-            print values
-            #print values.dtype
+            values = np.genfromtxt(strVals, dtype=None, names=colNames, delimiter='\t')
+            #print values
 
-        ge = GenomeElement(genome=self._genome, chr=self._currentChrom[0], start=intervals['start'], end=intervals['end'])
-
-
-
+            if 'score' in colNames:
+                ge.val = values['score']
+                colNames.remove('score')
+            for colName in colNames:
+                setattr(ge, colName, values[colName])
 
         print ge
 
         return ge
-
-    def createBoundingRegion(self, header, chr):
-        boundingRegion = GenomeRegion(genome=self._genome, chr=chr, start=header.start,
-                                      end=header.end)
-        br = BoundingRegionTuple(boundingRegion, header.numOfVals)
-
-        return br
