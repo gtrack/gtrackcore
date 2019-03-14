@@ -30,15 +30,12 @@ class BigWigGenomeElementSource(GenomeElementSource):
 
     def __init__(self, *args, **kwArgs):
         GenomeElementSource.__init__(self, *args, **kwArgs)
-        self._boundingRegionTuples = []
-        self._chrIter = iter(bbi.chromsizes(self._fn).items())
         self._headers = iter([])
         self._currentChrom = None
         self._valuesArray = None
         self._locations = None
         self._lengths = None
         self._values = None
-        self._bxpythonFile = BigWigFile(file=self._getFile())
         self._fixedStep = False
         self._span = 1
         self._step = None
@@ -51,6 +48,8 @@ class BigWigGenomeElementSource(GenomeElementSource):
         geIter._chrIter = iter(bbi.chromsizes(self._fn).items())
         geIter._headers = iter([])
         geIter._boundingRegionTuples = []
+        self._file = open(self._fn, 'r')
+        self._bxpythonFile = BigWigFile(file=self._file)
 
         return geIter
 
@@ -62,6 +61,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
         if not header:
             self._currentChrom = next(self._chrIter, None)
             if not self._currentChrom:
+                self._file.close()
                 raise StopIteration
             self._headers = iter(self._getHeaderForChrom(self._currentChrom))
             header = next(self._headers, None)
@@ -163,7 +163,8 @@ class BigWigGenomeElementSource(GenomeElementSource):
         return val, end
 
     def _getFile(self):
-        return open(self._fn, 'r')
+        self._file = open(self._fn, 'r')
+        return self._file
 
     def getBoundingRegionTuples(self):
         return self._boundingRegionTuples
