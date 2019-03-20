@@ -1,6 +1,8 @@
 from gtrackcore.input.wrappers.GESourceWrapper import GESourceWrapper, PausedAtCountsGESourceWrapper
 from gtrackcore.util.CustomExceptions import InvalidFormatError, NotIteratedYetError
 
+import numpy as np
+
 class GEDependentAttributesHolder(GESourceWrapper):    
     def __init__(self, geSource):
         GESourceWrapper.__init__(self, geSource)
@@ -81,17 +83,25 @@ def iterateOverBRTuplesWithContainedGEs(geSource, onlyYieldTwoGEs=False, returnI
                 yield br, pausingIterator
     else:
         geList = []
+        geElCount = 0
 
         for i, ge in enumerate(geSource):
-            if len(brTuples) > curBrIndex + 1 \
-                and len(geList) == brTuples[curBrIndex].elCount:
+            if isinstance(ge.val, np.ndarray):
+                geElCount += ge.val.size
+            elif isinstance(ge.start, np.ndarray):
+                geElCount += ge.start.size
+            else:
+                geElCount = len(geList)
+
+            geList.append(ge.getCopy())
+
+            if len(brTuples) > curBrIndex + 1 and geElCount == brTuples[curBrIndex].elCount:
                     yield brTuples[curBrIndex], geList
                     curBrIndex += 1
                     geList = []
+                    geElCount = 0
             
-            geList.append(ge.getCopy())
-            
-            if onlyYieldTwoGEs and i==1:
+            if onlyYieldTwoGEs and i == 1:
                 break
 
         yield (brTuples[curBrIndex] if len(brTuples) > 0 else None), geList
