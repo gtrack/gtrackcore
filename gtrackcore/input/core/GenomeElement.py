@@ -2,6 +2,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import isNan
 from gtrackcore.util.CustomExceptions import NotSupportedError
+import numpy as np
 
 class GenomeElement(GenomeRegion):
     @staticmethod
@@ -82,13 +83,25 @@ class GenomeElement(GenomeRegion):
 
     def __str__(self):
         #return self.toStr()
-
         #self.start+1 because we want to show 1-indexed, end inclusive output
-        return (str(self.chr) + ':' if not self.chr is None else '')\
-            + (str(self.start+1) if not self.start is None else '')\
-            + ('-' + str(self.end) if not self.end is None else '')\
-            + ((' (Pos)' if self.strand else ' (Neg)') if not self.strand in [None, BINARY_MISSING_VAL] else '')\
-            + ((' [' + str(self.val) + ']') if self.val is not None else '')
+        if isinstance(self.strand, np.ndarray):
+            abc = (str(self.chr) + ':' if self.chr is not None else '')
+            deff = (str(self.start + 1) if not self.start is None else '')
+            ghi = ('-' + str(self.end) if not self.end is None else '')
+            jkl = (str(self.strand.astype(int)) if self.strand is not None else '')
+            mno = ((' [' + str(self.val) + ']') if self.val is not None else '')
+
+            return (str(self.chr) + ':' if self.chr is not None else '') \
+                   + (str(self.start + 1) if not self.start is None else '') \
+                   + ('-' + str(self.end) if not self.end is None else '') \
+                   + (str(self.strand.astype(int)) if self.strand is not None else '') \
+                   + ((' [' + str(self.val) + ']') if self.val is not None else '')
+        else:
+            return (str(self.chr) + ':' if not self.chr is None else '')\
+                + (str(self.start+1) if not self.start is None else '')\
+                + ('-' + str(self.end) if not self.end is None else '')\
+                + ((' (Pos)' if self.strand else ' (Neg)') if not self.strand in [None, BINARY_MISSING_VAL] else '')\
+                + ((' [' + str(self.val) + ']') if self.val is not None else '')
 
     def __repr__(self):
         return str(self)

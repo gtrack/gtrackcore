@@ -1,4 +1,4 @@
-from extract.fileformats.FileFormatComposer import FileFormatComposer
+from extract.fileformats.FileFormatComposer import FileFormatComposer, MatchResult
 from input.wrappers.GEDependentAttributesHolder import iterateOverBRTuplesWithContainedGEs
 from gtrackcore.track.format.TrackFormat import TrackFormat
 import pyBigWig
@@ -8,6 +8,12 @@ import numpy as np
 
 
 class BigWigComposer(FileFormatComposer):
+
+    @staticmethod
+    def matchesTrackFormat(trackFormat):
+        return MatchResult(match=trackFormat.getValTypeName() in ['Number', 'Number (integer)'], \
+                           trackFormatName=trackFormat.getFormatName().lower().replace('linked ',
+                                                                                       ''))
 
     def composeToFile(self, fn, ignoreEmpty=False, **kwArgs):
         ensurePathExists(fn)
