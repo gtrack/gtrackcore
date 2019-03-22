@@ -334,11 +334,13 @@ def getAllGenomeElementSourceClasses(forPreProcessor):
     from gtrackcore.input.fileformats.HBFunctionGenomeElementSource import HBFunctionGenomeElementSource
     from gtrackcore.input.fileformats.BedGraphGenomeElementSource import BedGraphTargetControlGenomeElementSource, BedGraphGenomeElementSource
     from gtrackcore.input.fileformats.MicroarrayGenomeElementSource import MicroarrayGenomeElementSource
+    from gtrackcore.input.fileformats.BigBedGenomeElementSource import BigBedGenomeElementSource
 
     allGESourceClasses = [PointBedGenomeElementSource, BedValuedGenomeElementSource, BedCategoryGenomeElementSource, \
                           BedGenomeElementSource, GffCategoryGenomeElementSource, GffGenomeElementSource, \
                           FastaGenomeElementSource, HBFunctionGenomeElementSource, \
-                          BedGraphTargetControlGenomeElementSource, BedGraphGenomeElementSource, MicroarrayGenomeElementSource]
+                          BedGraphTargetControlGenomeElementSource, BedGraphGenomeElementSource, MicroarrayGenomeElementSource,
+                          BigBedGenomeElementSource]
 
     if forPreProcessor:
         from gtrackcore.input.fileformats.WigGenomeElementSource import HbWigGenomeElementSource
@@ -350,6 +352,8 @@ def getAllGenomeElementSourceClasses(forPreProcessor):
         from gtrackcore.input.fileformats.WigGenomeElementSource import WigGenomeElementSource
         from gtrackcore.input.fileformats.GtrackGenomeElementSource import GzipGtrackGenomeElementSource, GtrackGenomeElementSource
         from gtrackcore.input.fileformats.BigWigGenomeElementSource import BigWigGenomeElementSource
+
+
         allGESourceClasses += [WigGenomeElementSource, GzipGtrackGenomeElementSource,
                                GtrackGenomeElementSource, BigWigGenomeElementSource]
 

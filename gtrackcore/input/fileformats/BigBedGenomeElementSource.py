@@ -29,7 +29,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
         GenomeElementSource.__init__(self, *args, **kwArgs)
         self._boundingRegionTuples = []
         self._bigBedFile = pyBigWig.open(self._fn)
-        self._chrIter = iter(self._bigBedFile.chroms().items())
+        self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
         self._currentChrom = None
         self._values = iter([])
         self._parseValVec = np.vectorize(self._parseVal)
@@ -41,7 +41,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
 
     def __iter__(self):
         self._bigBedFile = pyBigWig.open(self._fn)
-        self._chrIter = iter(self._bigBedFile.chroms().items())
+        self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
         self._boundingRegionTuples = []
         self._values = iter([])
         geIter = copy(self)
