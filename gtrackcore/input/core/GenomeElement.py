@@ -85,12 +85,6 @@ class GenomeElement(GenomeRegion):
         #return self.toStr()
         #self.start+1 because we want to show 1-indexed, end inclusive output
         if isinstance(self.strand, np.ndarray):
-            abc = (str(self.chr) + ':' if self.chr is not None else '')
-            deff = (str(self.start + 1) if not self.start is None else '')
-            ghi = ('-' + str(self.end) if not self.end is None else '')
-            jkl = (str(self.strand.astype(int)) if self.strand is not None else '')
-            mno = ((' [' + str(self.val) + ']') if self.val is not None else '')
-
             return (str(self.chr) + ':' if self.chr is not None else '') \
                    + (str(self.start + 1) if not self.start is None else '') \
                    + ('-' + str(self.end) if not self.end is None else '') \
@@ -108,7 +102,18 @@ class GenomeElement(GenomeRegion):
 
     def toStr(self):
         #self.start+1 because we want to show 1-indexed, end inclusive output
-        return (str(self.genome) + ':' if not self.genome is None else '')\
+        if isinstance(self.strand, np.ndarray):
+            return (str(self.chr) + ':' if self.chr is not None else '') \
+                   + (str(self.start + 1) if not self.start is None else '') \
+                   + ('-' + str(self.end) if not self.end is None else '') \
+                   + (str(self.strand.astype(int)) if self.strand is not None else '') \
+                   + ((' [' + str(self.val) + ']') if self.val is not None else '') \
+                   + ((' id="%s"' % self.id) if self.id is not None else '') \
+                   + ((' edges="%s"' % str(self.edges)) if self.edges is not None else '') \
+                   + ((' weights="%s"' % str(self.weights)) if self.weights is not None else '') \
+                   + ((' extra="%s"' % str(self.extra)) if self.extra != {} else '')
+        else:
+            return (str(self.genome) + ':' if not self.genome is None else '')\
             + (str(self.chr) + ':' if not self.chr is None else '')\
             + (str(self.start+1) if not self.start is None else '')\
             + ('-' + str(self.end) if not self.end is None else '')\

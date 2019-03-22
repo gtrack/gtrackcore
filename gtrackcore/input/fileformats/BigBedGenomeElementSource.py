@@ -53,7 +53,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
         if autoSql:
             from plastid.readers.autosql import AutoSqlDeclaration
             autoSqlParser = AutoSqlDeclaration(self._bigBedFile.SQL())
-            colNames = autoSqlParser.field_formatters.keys()
+            colNames = [c.lower() for c in autoSqlParser.field_formatters.keys()]
             return colNames[3:]
 
     def _iter(self):
@@ -85,12 +85,14 @@ class BigBedGenomeElementSource(GenomeElementSource):
         if self._numOfExtraCols != 0:
             strVals = [x[2] for x in entries]
             values = np.genfromtxt(strVals, dtype=None, names=self._extraColNames, delimiter='\t')
+            if values.size == 1:
+                values = values.reshape((1,))
             tmpColNames = self._extraColNames[:]
             if 'score' in self._extraColNames:
                 ge.val = self._parseValVec(values['score'])
                 tmpColNames.remove('score')
             if 'strand' in self._extraColNames:
-                ge.strand = self._getStrandFromStringVec(values['strand'])
+                ge.strand = np.array(self._getStrandFromStringVec(values['strand']))
                 tmpColNames.remove('strand')
             for colName in tmpColNames:
                 setattr(ge, colName, values[colName].astype(str))

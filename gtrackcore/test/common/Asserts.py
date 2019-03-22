@@ -52,11 +52,19 @@ class TestCaseWithImprovedAsserts(unittest.TestCase):
         self.assertListsOrDicts(a.weights, b.weights)
         self.assertListsOrDicts(a.start, b.start)
         self.assertListsOrDicts(a.end, b.end)
+        self.assertListsOrDicts(a.strand, b.strand)
         a.val = b.val = None
         a.start = b.start = None
         a.end = b.end = None
         a.edges = b.edges = None
         a.weights = b.weights = None
+        a.strand = b.strand = None
+
+        if a.extra:
+            for e in a.orderedExtraKeys:
+                self.assertListsOrDicts(a.extra[e], b.extra[e])
+                a.extra.pop(e, None)
+                b.extra.pop(e, None)
         
         return unittest.TestCase.assertEqual(self, a, b)
         
