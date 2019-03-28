@@ -161,6 +161,9 @@ class TrackFormat(object):
         
     def isLinked(self):
         return self._linked
+
+    def isPoints(self):
+        return not self.isDense() and not self.isInterval()
         
     def reprIsDense(self):
         return self._reprDense

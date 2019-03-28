@@ -5,6 +5,7 @@ import pyBigWig
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.util.CommonFunctions import ensurePathExists
 import numpy as np
+import tempfile
 
 
 class BigWigComposer(FileFormatComposer):
@@ -21,6 +22,18 @@ class BigWigComposer(FileFormatComposer):
         ok = self._composeCommon(f, ignoreEmpty, **kwArgs)
         f.close()
         return ok
+
+    def returnComposed(self, ignoreEmpty=False, **kwArgs):
+        tmpFile = tempfile.NamedTemporaryFile(suffix='bw')
+        tmpFile.close()
+        f = pyBigWig.open(tmpFile.name, 'w')
+        self._composeCommon(f, ignoreEmpty, **kwArgs)
+        f.close()
+        tmpFile = open(tmpFile.name, 'rb')
+        composedStr = tmpFile.read()
+        tmpFile.close()
+
+        return composedStr
 
     def _compose(self, out):
         tf = TrackFormat.createInstanceFromGeSource(self._geSource)
@@ -62,20 +75,22 @@ class BigWigComposer(FileFormatComposer):
 
                 out.addEntries(ge.chr, br.region.start, values=vals, span=span, step=step)
             else:
-                vals = np.array([])
-                starts = np.array([], dtype=np.int64)
-                ends = np.array([], dtype=np.int64)
-                chrs = np.array([])
                 for ge in geList:
+                    vals = np.array([])
+                    starts = np.array([], dtype=np.int64)
+                    chrs = np.array([])
+                    ends = np.array([], dtype=np.int64)
                     starts = np.append(starts, ge.start)
-                    end = ge.end
-                    if not end:
-                        end = ge.start + 1
-                    ends = np.append(ends, end)
                     vals = np.append(vals, ge.val)
-                    ch = ge.chr
-                    if isinstance(ge.val, np.ndarray):
-                        ch = [ge.chr] * ge.val.size
-                    chrs = np.append(chrs, ch)
-
-                out.addEntries(chrs, starts, ends=ends, values=vals)
+                    if tf.isPoints():
+                        out.addEntries(ge.chr, starts, values=vals, span=1)
+                    else:
+                        end = ge.end
+                        if end is None:
+                            end = ge.start + 1
+                        ends = np.append(ends, end)
+                        ch = ge.chr
+                        if isinstance(ge.val, np.ndarray):
+                            ch = [ge.chr] * ge.val.size
+                        chrs = np.append(chrs, ch)
+                        out.addEntries(chrs, starts, ends=ends, values=vals)

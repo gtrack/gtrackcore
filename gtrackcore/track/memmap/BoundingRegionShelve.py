@@ -119,7 +119,7 @@ class BoundingRegionShelve(object):
         brShelve.close()
         
         while not self.fileExists():
-            from gtrackcore.application.LogSetup import logMessage
+            from gtrackcore.core.LogSetup import logMessage
             logMessage("Bounding region shelve file '%s' has yet to be created" % self._fn)
             import time
             time.sleep(0.2)

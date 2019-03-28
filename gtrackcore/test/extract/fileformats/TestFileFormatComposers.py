@@ -11,6 +11,7 @@ from gtrackcore.extract.fileformats.BedGraphComposer import BedGraphComposer
 from gtrackcore.extract.fileformats.WigComposer import WigComposer
 from gtrackcore.extract.fileformats.GffComposer import GffComposer
 from gtrackcore.extract.fileformats.FastaComposer import FastaComposer
+from gtrackcore.extract.fileformats.BigWigComposer import BigWigComposer
 from gtrackcore.input.adapters.TrackGenomeElementSource import TrackGenomeElementSource
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.input.userbins.UserBinSource import GlobalBinSource
@@ -28,7 +29,7 @@ class TestFileFormatComposers(TestWithGeSourceData, TestCaseWithImprovedAsserts)
 
     def setUp(self):
         self.stdout = sys.stdout
-        sys.stdout = open('/dev/null', 'w')
+        #sys.stdout = open('/dev/null', 'w')
 
     def tearDown(self):
         sys.stdout = self.stdout
@@ -97,6 +98,12 @@ class TestFileFormatComposers(TestWithGeSourceData, TestCaseWithImprovedAsserts)
 
     def testFastaFromTrackComposer(self):
         self._commonTestComposer(withTrackGESource=True, composerCls=FastaComposer, suffix='fasta')
+
+    def testBigWigComposer(self):
+        self._commonTestComposer(withTrackGESource=False, composerCls=BigWigComposer, suffix='bigwig')
+
+    def testBigWigFromTrackComposer(self):
+        self._commonTestComposer(withTrackGESource=True, composerCls=BigWigComposer, suffix='bigwig')
 
     def _commonTestComposer(self, withTrackGESource, composerCls, suffix):
         geSourceTest = self._commonSetup()

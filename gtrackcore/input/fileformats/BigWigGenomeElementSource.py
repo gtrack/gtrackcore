@@ -45,6 +45,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
         self._chrs = sorted(self._bw.chroms().items())
         header = self._getHeaderForChrom(self._chrs[0])[0]
         self._initFileVariables(header)
+        self._headers = iter([])
 
     def _initFileVariables(self, header):
         self._span = header.span
@@ -92,7 +93,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
             self._boundingRegionTuples.append(br)
 
             if self._isFunction:
-                values = self._bw.values(chrName, header.start, header.end, numpy=True)
+                values = self._bw.values(chrName, header.start, header.start + header.numOfVals, numpy=True)
                 ge = GenomeElement(genome=self._genome, chr=chrName, val=values)
                 print ge
 
