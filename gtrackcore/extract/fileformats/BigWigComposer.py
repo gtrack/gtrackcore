@@ -66,7 +66,7 @@ class BigWigComposer(FileFormatComposer):
 
             geList = sorted(geList)
             if isFixedStep:
-                vals = np.array([])
+                vals = np.array([], dtype=np.float64)
                 for ge in geList:
                     vals = np.append(vals, ge.val)
 
@@ -76,10 +76,10 @@ class BigWigComposer(FileFormatComposer):
                 out.addEntries(ge.chr, br.region.start, values=vals, span=span, step=step)
             else:
                 for ge in geList:
-                    vals = np.array([])
-                    starts = np.array([], dtype=np.int64)
+                    vals = np.array([], dtype=np.float64)
+                    starts = np.array([], dtype=np.int32)
                     chrs = np.array([])
-                    ends = np.array([], dtype=np.int64)
+                    ends = np.array([], dtype=np.int32)
                     starts = np.append(starts, ge.start)
                     vals = np.append(vals, ge.val)
                     if tf.isPoints():

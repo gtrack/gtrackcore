@@ -105,7 +105,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
                 'Mismatch between number of values in header and number of values got: %s != %s.' % (
                     len(intervals), header.numOfVals))
 
-        intervalsArray = np.array(intervals, dtype=np.dtype([('start', 'int'), ('end', 'int'), ('val', 'float')]))
+        intervalsArray = np.array(intervals, dtype=np.dtype([('start', 'int32'), ('end', 'int32'), ('val', 'float64')]))
 
         val = intervalsArray['val']
         start = intervalsArray['start']
