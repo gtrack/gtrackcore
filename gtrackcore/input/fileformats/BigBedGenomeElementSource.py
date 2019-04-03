@@ -12,8 +12,8 @@ class BigBedGenomeElementSource(GenomeElementSource):
     _VERSION = '1.0'
     FILE_SUFFIXES = ['bb', 'bigbed']
     FILE_FORMAT_NAME = 'BigBed'
-    BED_EXTRA_COLUMNS = ['name', 'score', 'strand', 'thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes',
-                         'blockstarts']
+    BED_EXTRA_COLUMNS = ['name', 'score', 'strand', 'thickStart', 'thickEnd', 'reserved', 'blockCount', 'blockSizes',
+                         'blockStarts']
 
     _numHeaderLines = 0
     _isSliceSource = True
@@ -53,7 +53,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
         if autoSql:
             from plastid.readers.autosql import AutoSqlDeclaration
             autoSqlParser = AutoSqlDeclaration(self._bigBedFile.SQL())
-            colNames = [c.lower() for c in autoSqlParser.field_formatters.keys()]
+            colNames = autoSqlParser.field_formatters.keys()
             return colNames[3:]
 
     def _iter(self):
@@ -77,7 +77,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
                 self._extraColNames = []
 
         tupleVals = [(x[0], x[1]) for x in entries]
-        intervals = np.array(tupleVals, dtype=np.dtype([('start', 'int'), ('end', 'int')]))
+        intervals = np.array(tupleVals, dtype=np.dtype([('start', 'int32'), ('end', 'int32')]))
 
         ge = GenomeElement(genome=self._genome, chr=self._currentChrom[0],
                            start=intervals['start'], end=intervals['end'])
@@ -107,6 +107,5 @@ class BigBedGenomeElementSource(GenomeElementSource):
         else:
             val = int(strVal)
         if val < 0 or val > 1000:
-            raise InvalidFormatError("Error: BED score column must be an integer between 0 and 1000: %s. Perhaps you instead " + \
-                                     "should use the file formats 'valued.bed' or 'gtrack'?")
+            raise InvalidFormatError("Error: BigBed score column must be an integer between 0 and 1000")
         return val
