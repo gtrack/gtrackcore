@@ -84,8 +84,8 @@ class BigWigGenomeElementSource(GenomeElementSource):
 
             self._headers = iter(self._getHeaderForChrom(self._currentChrom))
             header = next(self._headers, None)
-            self._checkHeader(header)
 
+        self._checkHeader(header)
         chrName = str(self._currentChrom[0])
         if self._fixedStep:
             br = self.createBoundingRegion(header, chrName)
@@ -176,6 +176,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
         headersNamed = [self.Header(*h) for h in headers]
 
         return headersNamed
+
 
 class BigWigGenomeElementSourceForPreproc(BigWigGenomeElementSource):
     _addsStartElementToDenseIntervals = True

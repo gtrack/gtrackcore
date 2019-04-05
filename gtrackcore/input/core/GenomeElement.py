@@ -88,7 +88,7 @@ class GenomeElement(GenomeRegion):
             return (str(self.chr) + ':' if self.chr is not None else '') \
                    + (str(self.start + 1) if not self.start is None else '') \
                    + ('-' + str(self.end) if not self.end is None else '') \
-                   + (str(self.strand.astype(int)) if self.strand is not None else '') \
+                   + (' ' + (str(self.strand.astype(int))) if self.strand is not None else '') \
                    + ((' [' + str(self.val) + ']') if self.val is not None else '')
         else:
             return (str(self.chr) + ':' if not self.chr is None else '')\
@@ -106,7 +106,7 @@ class GenomeElement(GenomeRegion):
             return (str(self.chr) + ':' if self.chr is not None else '') \
                    + (str(self.start + 1) if not self.start is None else '') \
                    + ('-' + str(self.end) if not self.end is None else '') \
-                   + (str(self.strand.astype(int)) if self.strand is not None else '') \
+                   + (' ' + (str(self.strand.astype(int))) if self.strand is not None else '') \
                    + ((' [' + str(self.val) + ']') if self.val is not None else '') \
                    + ((' id="%s"' % self.id) if self.id is not None else '') \
                    + ((' edges="%s"' % str(self.edges)) if self.edges is not None else '') \

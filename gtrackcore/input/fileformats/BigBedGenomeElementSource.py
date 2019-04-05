@@ -5,6 +5,7 @@ import pyBigWig
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from input.core.GenomeElement import GenomeElement
+from util.CommonConstants import BINARY_MISSING_VAL
 from util.CustomExceptions import InvalidFormatError
 
 
@@ -92,7 +93,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
                 ge.val = self._parseValVec(values['score'])
                 tmpColNames.remove('score')
             if 'strand' in self._extraColNames:
-                ge.strand = np.array(self._getStrandFromStringVec(values['strand']))
+                ge.strand = np.array(self._getStrandFromStringVec(values['strand']), dtype=np.int32)
                 tmpColNames.remove('strand')
             for colName in tmpColNames:
                 setattr(ge, colName, values[colName].astype(str))
@@ -109,3 +110,16 @@ class BigBedGenomeElementSource(GenomeElementSource):
         if val < 0 or val > 1000:
             raise InvalidFormatError("Error: BigBed score column must be an integer between 0 and 1000")
         return val
+
+    @classmethod
+    def _getStrandFromString(cls, val):
+        if val == '+':
+            return 1
+        elif val == '-':
+            return 0
+        elif val == '.':
+            return BINARY_MISSING_VAL
+        # val == ''?
+        else:
+            raise InvalidFormatError(
+                "Error: strand must be either '+', '-' or '.'. Value: %s" % val)

@@ -1,6 +1,10 @@
+import subprocess
+import tempfile
 from collections import OrderedDict
 
 from extract.fileformats.BedComposer import BedComposer, ColumnInfo
+from input.wrappers.GENumpyArrayConverter import GENumpyArrayConverter
+from metadata.GenomeInfo import GenomeInfo
 
 
 class BigBedComposer(BedComposer):
@@ -21,8 +25,12 @@ class BigBedComposer(BedComposer):
                          ('blockstarts', 11, '.', ('blockcount', 'blocksizes'))]
 
     def __init__(self, geSource):
-        BedComposer.__init__(self, geSource)
-        self._prefixSet = self._geSource.getPrefixList()
+        if geSource.isSliceSource():
+            newGESource = GENumpyArrayConverter(geSource)
+            BedComposer.__init__(self, newGESource)
+        else:
+            BedComposer.__init__(self, geSource)
+        self._prefixSet = list(self._prefixSet)
         self._bedColumnsDict = self._createColumnsDict(self._prefixSet[:])
         self._init()
 
@@ -52,6 +60,34 @@ class BigBedComposer(BedComposer):
                                             colName, colIdx, defaultVal, checkExtra in cols])
 
         return columnsDict
+
+    def _compose(self, out):
+        tmpFile = tempfile.NamedTemporaryFile(suffix='.bed')
+        BedComposer._compose(self, tmpFile)
+        tmpFile.flush()
+
+        genome = self._geSource.getGenome()
+        chromSizes = GenomeInfo.getStdChrLengthDict(genome)
+        tmpChromSizes = tempfile.NamedTemporaryFile(suffix='.sizes')
+        for chr, size in chromSizes.iteritems():
+            tmpChromSizes.write(chr + '\t' + str(size) + '\n')
+
+        tmpChromSizes.flush()
+
+        bedtype = 'bed%s' % len(self._bedColumnsDict)
+        cmds = [
+            'bedToBigBed',
+            tmpFile.name,
+            tmpChromSizes.name,
+            out.name,
+            '-type=%s' % bedtype
+        ]
+        # if _as:
+        #     cmds.append('-as=%s' % _as)
+        p = subprocess.call(cmds)
+
+        tmpFile.close()
+        tmpChromSizes.close()
 
     def _findNumCols(self):
         return len(self._bedColumnsDict)
