@@ -123,3 +123,6 @@ class BigBedGenomeElementSource(GenomeElementSource):
         else:
             raise InvalidFormatError(
                 "Error: strand must be either '+', '-' or '.'. Value: %s" % val)
+
+    def getValDataType(self):
+        return 'int32'

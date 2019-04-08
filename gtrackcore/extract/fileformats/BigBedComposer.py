@@ -24,13 +24,29 @@ class BigBedComposer(BedComposer):
                          ('blocksizes', 10, '.', ('blockcount', 'blockstarts')), \
                          ('blockstarts', 11, '.', ('blockcount', 'blocksizes'))]
 
+    _BED_COLUMNS_AUTOSQL_STR = 'string chrom;       "Reference sequence chromosome or scaffold"\n \
+   uint   chromStart;  "Start position in chromosome"\n \
+   uint   chromEnd;    "End position in chromosome"\n \
+   string name;        "Name of item."\n \
+   uint score;          "Score (0-1000)"\n \
+   char[1] strand;     "+ or - for strand"\n \
+   uint thickStart;   "Start of where display should be thick (start codon)"\n \
+   uint thickEnd;     "End of where display should be thick (stop codon)"\n \
+   uint reserved;     "Used as itemRgb as of 2004-11-22"\n \
+   int blockCount;    "Number of blocks"\n \
+   int[blockCount] blockSizes; "Comma separated list of block sizes"\n \
+   int[blockCount] chromStarts; "Start positions relative to chromStart"\n'
+
+    _BED_COLUMNS_AUTOSQL = _BED_COLUMNS_AUTOSQL_STR.splitlines(True)
+
     def __init__(self, geSource):
         if geSource.isSliceSource():
             newGESource = GENumpyArrayConverter(geSource)
             BedComposer.__init__(self, newGESource)
         else:
             BedComposer.__init__(self, geSource)
-        self._prefixSet = list(self._prefixSet)
+        self._prefixSet = self._geSource.getPrefixList()
+        self._extraCols = []
         self._bedColumnsDict = self._createColumnsDict(self._prefixSet[:])
         self._init()
 
@@ -56,7 +72,9 @@ class BigBedComposer(BedComposer):
             lastIndex += 1
             cols.append((extraCol, lastIndex, '.', ()))
 
-        columnsDict = OrderedDict([(colName, ColumnInfo(colIdx, defaultVal, checkExtra)) for \
+        self._extraCols = geCols
+
+        columnsDict = OrderedDict([(colName, ColumnInfo(colIdx, defaultVal, checkExtra)) for
                                             colName, colIdx, defaultVal, checkExtra in cols])
 
         return columnsDict
@@ -69,26 +87,44 @@ class BigBedComposer(BedComposer):
         genome = self._geSource.getGenome()
         chromSizes = GenomeInfo.getStdChrLengthDict(genome)
         tmpChromSizes = tempfile.NamedTemporaryFile(suffix='.sizes')
-        for chr, size in chromSizes.iteritems():
-            tmpChromSizes.write(chr + '\t' + str(size) + '\n')
+        for chrom, size in chromSizes.iteritems():
+            tmpChromSizes.write(chrom + '\t' + str(size) + '\n')
 
         tmpChromSizes.flush()
-
-        bedtype = 'bed%s' % len(self._bedColumnsDict)
         cmds = [
             'bedToBigBed',
             tmpFile.name,
             tmpChromSizes.name,
-            out.name,
-            '-type=%s' % bedtype
+            out.name
         ]
-        # if _as:
-        #     cmds.append('-as=%s' % _as)
-        p = subprocess.call(cmds)
+        bedtype = 'bed%s' % (self._findNumCols() - len(self._extraCols))
+        tmpAutoSql = None
+        if self._extraCols:
+            bedtype += '+%s' % len(self._extraCols)
+            autoSql = self._createAutoSql()
+            tmpAutoSql = tempfile.NamedTemporaryFile(suffix='.as')
+            tmpAutoSql.write(autoSql)
+            tmpAutoSql.flush()
+            cmds.append('-as=%s' % tmpAutoSql.name)
+        cmds.append('-type=%s' % bedtype)
+
+        subprocess.call(cmds)
 
         tmpFile.close()
         tmpChromSizes.close()
+        if tmpAutoSql:
+            tmpAutoSql.close()
 
     def _findNumCols(self):
         return len(self._bedColumnsDict)
 
+    def _createAutoSql(self):
+        autoSqlStr = 'table FromBigBedComposer\n'
+        autoSqlStr += '"Automatically genearated"\n(\n'
+        autoSqlStr += ''.join(self._BED_COLUMNS_AUTOSQL[:self._findNumCols() - len(self._extraCols)])
+        for extraCol in self._extraCols:
+            autoSqlStr += 'string ' + extraCol + '; " extra field"\n'
+
+        autoSqlStr += ')'
+
+        return autoSqlStr
