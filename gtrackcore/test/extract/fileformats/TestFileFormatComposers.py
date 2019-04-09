@@ -4,7 +4,7 @@ import unittest
 from tempfile import NamedTemporaryFile
 
 import gtrackcore.test
-
+from gtrackcore.extract.fileformats.BigBedComposer import BigBedComposer
 from gtrackcore.extract.fileformats.GtrackComposer import StdGtrackComposer, ExtendedGtrackComposer
 from gtrackcore.extract.fileformats.BedComposer import BedComposer, PointBedComposer, CategoryBedComposer, ValuedBedComposer
 from gtrackcore.extract.fileformats.BedGraphComposer import BedGraphComposer
@@ -104,6 +104,12 @@ class TestFileFormatComposers(TestWithGeSourceData, TestCaseWithImprovedAsserts)
 
     def testBigWigFromTrackComposer(self):
         self._commonTestComposer(withTrackGESource=True, composerCls=BigWigComposer, suffix='bigwig')
+
+    def testBigBedComposer(self):
+        self._commonTestComposer(withTrackGESource=False, composerCls=BigBedComposer, suffix='bigbed')
+
+    def testBigBedFromTrackComposer(self):
+        self._commonTestComposer(withTrackGESource=True, composerCls=BigBedComposer, suffix='bigbed')
 
     def _commonTestComposer(self, withTrackGESource, composerCls, suffix):
         geSourceTest = self._commonSetup()

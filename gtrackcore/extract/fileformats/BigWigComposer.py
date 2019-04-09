@@ -24,7 +24,7 @@ class BigWigComposer(FileFormatComposer):
         return ok
 
     def returnComposed(self, ignoreEmpty=False, **kwArgs):
-        tmpFile = tempfile.NamedTemporaryFile(suffix='bw')
+        tmpFile = tempfile.NamedTemporaryFile(suffix='.bw')
         tmpFile.close()
         f = pyBigWig.open(tmpFile.name, 'w')
         self._composeCommon(f, ignoreEmpty, **kwArgs)

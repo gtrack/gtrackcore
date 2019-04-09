@@ -22,7 +22,7 @@ class BigBedComposer(BedComposer):
                          (('itemrgb', 'reserved'), 8, '0', ()), \
                          ('blockcount', 9, '0', ('blocksizes', 'blockstarts')), \
                          ('blocksizes', 10, '.', ('blockcount', 'blockstarts')), \
-                         ('blockstarts', 11, '.', ('blockcount', 'blocksizes'))]
+                         (('blockstarts', 'chromstarts'), 11, '.', ('blockcount', 'blocksizes'))]
 
     _BED_COLUMNS_AUTOSQL_STR = 'string chrom;       "Reference sequence chromosome or scaffold"\n \
    uint   chromStart;  "Start position in chromosome"\n \
@@ -64,7 +64,7 @@ class BigBedComposer(BedComposer):
             elif isinstance(colDefTuple[0], tuple):
                 for item in colDefTuple[0]:
                     if item in lowercasePrefixMap:
-                        cols.append((item,) + colDefTuple[1:])
+                        cols.append((lowercasePrefixMap[item],) + colDefTuple[1:])
                         geCols.remove(lowercasePrefixMap[item])
 
         lastIndex = cols[-1][1]
@@ -114,6 +114,15 @@ class BigBedComposer(BedComposer):
         tmpChromSizes.close()
         if tmpAutoSql:
             tmpAutoSql.close()
+
+    def returnComposed(self, ignoreEmpty=False, **kwArgs):
+        tmpOut = tempfile.NamedTemporaryFile(suffix='.bb')
+        self._composeCommon(tmpOut, ignoreEmpty, **kwArgs)
+
+        composedStr = tmpOut.read()
+        tmpOut.close()
+
+        return composedStr
 
     def _findNumCols(self):
         return len(self._bedColumnsDict)
