@@ -3,7 +3,6 @@ import tempfile
 from collections import OrderedDict
 
 from extract.fileformats.BedComposer import BedComposer, ColumnInfo
-from input.wrappers.GENumpyArrayConverter import GENumpyArrayConverter
 from metadata.GenomeInfo import GenomeInfo
 
 
@@ -40,11 +39,7 @@ class BigBedComposer(BedComposer):
     _BED_COLUMNS_AUTOSQL = _BED_COLUMNS_AUTOSQL_STR.splitlines(True)
 
     def __init__(self, geSource):
-        if geSource.isSliceSource():
-            newGESource = GENumpyArrayConverter(geSource)
-            BedComposer.__init__(self, newGESource)
-        else:
-            BedComposer.__init__(self, geSource)
+        BedComposer.__init__(self, geSource)
         self._prefixSet = self._geSource.getPrefixList()
         self._extraCols = []
         self._bedColumnsDict = self._createColumnsDict(self._prefixSet[:])

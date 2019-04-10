@@ -19,7 +19,8 @@ BrInfoHolder = namedtuple('BrInfoHolder', ['brStarts', 'brInfos'])
 BR_SHELVE_FILE_NAME = 'boundingRegions.shelve'
 
 def isBoundingRegionFileName(fn):
-    return fn == BR_SHELVE_FILE_NAME
+    # checking like this because shelve can potentialy have a .db extension
+    return BR_SHELVE_FILE_NAME in fn
     
 class BoundingRegionShelve(object):
     def __init__(self, genome, trackName, allowOverlaps):
@@ -37,7 +38,12 @@ class BoundingRegionShelve(object):
         self._minimalRegion = minimalBinList[0] if minimalBinList is not None else None
         
     def fileExists(self):
-        return os.path.exists(self._fn)
+        try:
+            safeshelve.open(self._fn, 'r')
+        except:
+            return False
+        return True
+        # return os.path.exists(self._fn)
 
     def storeBoundingRegions(self, boundingRegionTuples, genomeElementChrList, sparse):
         assert sparse in [False, True]

@@ -9,6 +9,9 @@ import tempfile
 
 
 class BigWigComposer(FileFormatComposer):
+    FILE_SUFFIXES = ['bw', 'bigwig']
+    FILE_FORMAT_NAME = 'BigWig'
+    _supportsSliceSources = True
 
     @staticmethod
     def matchesTrackFormat(trackFormat):

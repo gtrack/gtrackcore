@@ -25,7 +25,6 @@ class GENumpyArrayConverter(GESourceWrapper):
         vals = next(self._npIter, None)
         if not vals:
             self._origGE = self._geIter.next()
-            print 'change ' + self._origGE.chr
 
             self._npIter = np.nditer([getattr(self._origGE, col) for col in self._colNames])
             vals = next(self._npIter, None)
@@ -33,7 +32,5 @@ class GENumpyArrayConverter(GESourceWrapper):
         ge = GenomeElement(genome=self._origGE.genome, chr=self._origGE.chr)
         for val, col in zip(vals, self._colNames):
             setattr(ge, col, val.item())
-
-        print ge
 
         return ge

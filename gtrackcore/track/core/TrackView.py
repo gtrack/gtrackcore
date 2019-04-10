@@ -149,7 +149,7 @@ class TrackView(object):
 
     def __init__(self, genomeAnchor, startList, endList, valList, strandList, idList, edgesList, \
                  weightsList, borderHandling, allowOverlaps, extraLists=OrderedDict()):
-        assert startList!=None or endList!=None or valList!=None or edgesList!=None
+        assert startList is not None or endList is not None or valList is not None or edgesList is not None
         assert borderHandling in ['crop']
 
         self.genomeAnchor = genomeAnchor.getCopy()
@@ -271,15 +271,15 @@ class TrackView(object):
         self._startList = self._startList[leftIndex:rightIndex]
         self._endList = self._endList[leftIndex:rightIndex]
 
-        if self._valList != None:
+        if self._valList is not None:
             self._valList = self._valList[leftIndex:rightIndex]
-        if self._strandList != None:
+        if self._strandList is not None:
             self._strandList = self._strandList[leftIndex:rightIndex]
-        if self._idList != None:
+        if self._idList is not None:
             self._idList = self._idList[leftIndex:rightIndex]
-        if self._edgesList != None:
+        if self._edgesList is not None:
             self._edgesList = self._edgesList[leftIndex:rightIndex]
-        if self._weightsList != None:
+        if self._weightsList is not None:
             self._weightsList = self._weightsList[leftIndex:rightIndex]
         for key, extraList in self._extraLists.items():
             self._extraLists[key] = extraList[leftIndex:rightIndex]
