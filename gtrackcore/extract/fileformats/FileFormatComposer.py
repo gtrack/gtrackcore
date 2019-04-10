@@ -6,6 +6,7 @@ from gtrackcore.input.wrappers.GEDependentAttributesHolder import GEDependentAtt
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import isNan, ensurePathExists
 from gtrackcore.util.CustomExceptions import InvalidFormatError, AbstractClassError, NotIteratedYetError
+from input.wrappers.GENumpyArrayConverter import GENumpyArrayConverter
 
 MatchResult = namedtuple('MatchResult', ['match', 'trackFormatName'])
 ComposerInfo = namedtuple('ComposerInfo', ['trackFormatName','fileFormatName','fileSuffix'])
@@ -35,9 +36,12 @@ def getComposerClsFromFileSuffix(fileSuffix):
 class FileFormatComposer(object):
     FILE_SUFFIXES = ['']
     FILE_FORMAT_NAME = ''
+    _supportsSliceSources = False
     
     def __init__(self, geSource):
         try:
+            if geSource.isSliceSource() and not self._supportsSliceSources:
+                geSource = GENumpyArrayConverter(geSource)
             if not geSource.hasBoundingRegionTuples():
                 self._geSource = GEDependentAttributesHolder(geSource)
             else:

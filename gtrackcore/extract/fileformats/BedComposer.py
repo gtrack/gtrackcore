@@ -51,11 +51,6 @@ class BedComposer(FileFormatComposer):
     # Compose methods
 
     def _compose(self, out):
-        trackName = self._geSource.getTrackName()
-        if trackName is not None:
-            name = ':'.join(self._geSource.getTrackName()).replace(' ','_')
-            print >>out, 'track' + ' name=' + name
-
         numCols = self._findNumCols()
         bedColumnsList = list(self._bedColumnsDict.iteritems())
 
