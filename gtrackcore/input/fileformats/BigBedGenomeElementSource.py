@@ -90,10 +90,10 @@ class BigBedGenomeElementSource(GenomeElementSource):
                 values = values.reshape((1,))
             tmpColNames = self._extraColNames[:]
             if 'score' in self._extraColNames:
-                ge.val = self._parseValVec(values['score'])
+                ge.val = np.array(self._parseValVec(values['score']), dtype=np.int32)
                 tmpColNames.remove('score')
             if 'strand' in self._extraColNames:
-                ge.strand = np.array(self._getStrandFromStringVec(values['strand']), dtype=np.int32)
+                ge.strand = np.array(self._getStrandFromStringVec(values['strand']), dtype=np.int8)
                 tmpColNames.remove('strand')
             for colName in tmpColNames:
                 setattr(ge, colName, values[colName].astype(str))
