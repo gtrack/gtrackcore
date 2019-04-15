@@ -89,11 +89,11 @@ class BigWigGenomeElementSource(GenomeElementSource):
         chrName = str(self._currentChrom[0])
         if self._fixedStep:
             br = self.createBoundingRegion(header, chrName)
-            print br
             self._boundingRegionTuples.append(br)
 
             if self._isFunction:
                 values = self._bw.values(chrName, header.start, header.start + header.numOfVals, numpy=True)
+                values = np.float64(values)
                 ge = GenomeElement(genome=self._genome, chr=chrName, val=values)
                 print ge
 
@@ -117,7 +117,7 @@ class BigWigGenomeElementSource(GenomeElementSource):
             start = None
 
         ge = GenomeElement(genome=self._genome, chr=chrName, start=start, end=end, val=val)
-        print ge
+        #print ge
 
         return ge
 

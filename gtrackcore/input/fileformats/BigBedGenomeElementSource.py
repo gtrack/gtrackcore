@@ -98,7 +98,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
             for colName in tmpColNames:
                 setattr(ge, colName, values[colName].astype(str))
 
-        print ge
+        #print ge
 
         return ge
 

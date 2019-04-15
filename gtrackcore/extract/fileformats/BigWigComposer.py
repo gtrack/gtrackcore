@@ -53,7 +53,6 @@ class BigWigComposer(FileFormatComposer):
                 chroms.add(ge.chr)
 
         brGes = sorted(brGes, key=lambda a: a[0])
-        print brGes
         genome = brGes[0][1][0].genome
         chroms = sorted(list(chroms))
 
