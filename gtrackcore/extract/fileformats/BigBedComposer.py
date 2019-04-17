@@ -2,8 +2,11 @@ import subprocess
 import tempfile
 from collections import OrderedDict
 
+from subprocess32 import CalledProcessError
+
 from extract.fileformats.BedComposer import BedComposer, ColumnInfo
 from metadata.GenomeInfo import GenomeInfo
+from util.CustomExceptions import InvalidFormatError
 
 
 class BigBedComposer(BedComposer):
@@ -46,28 +49,16 @@ class BigBedComposer(BedComposer):
         self._init()
 
     def _createColumnsDict(self, geCols):
-        cols = []
-        lowercasePrefixMap = {}
-        geCols.append('chr')
-        for p in geCols:
-            lowercasePrefixMap[p.lower()] = p
+        # handle alternative column names and case sensitivity (lowercase/camelCase)
+        # returns mapped columns and extra columns that were not mapped
+        cols, extraCols = self._mapColsToStandardCols(geCols)
 
-        for colDefTuple in self._BED_COLUMNS_LIST:
-            if colDefTuple[0] in lowercasePrefixMap:
-                cols.append((lowercasePrefixMap[colDefTuple[0]],) + colDefTuple[1:])
-                geCols.remove(lowercasePrefixMap[colDefTuple[0]])
-            elif isinstance(colDefTuple[0], tuple):
-                for item in colDefTuple[0]:
-                    if item in lowercasePrefixMap:
-                        cols.append((lowercasePrefixMap[item],) + colDefTuple[1:])
-                        geCols.remove(lowercasePrefixMap[item])
+        lastColIndex = cols[-1][1]
+        for extraCol in extraCols:
+            lastColIndex += 1
+            cols.append((extraCol, lastColIndex, '.', ()))
 
-        lastIndex = cols[-1][1]
-        for extraCol in geCols:
-            lastIndex += 1
-            cols.append((extraCol, lastIndex, '.', ()))
-
-        self._extraCols = geCols
+        self._extraCols = extraCols
 
         columnsDict = OrderedDict([(colName, ColumnInfo(colIdx, defaultVal, checkExtra)) for
                                             colName, colIdx, defaultVal, checkExtra in cols])
@@ -75,20 +66,12 @@ class BigBedComposer(BedComposer):
         return columnsDict
 
     def _compose(self, out):
-        tmpFile = tempfile.NamedTemporaryFile(suffix='.bed')
-        BedComposer._compose(self, tmpFile)
-        tmpFile.flush()
+        tmpBedFile = self._getBedFile()
+        tmpChromSizes = self._getChromSizesFile()
 
-        genome = self._geSource.getGenome()
-        chromSizes = GenomeInfo.getStdChrLengthDict(genome)
-        tmpChromSizes = tempfile.NamedTemporaryFile(suffix='.sizes')
-        for chrom, size in chromSizes.iteritems():
-            tmpChromSizes.write(chrom + '\t' + str(size) + '\n')
-
-        tmpChromSizes.flush()
         cmds = [
             'bedToBigBed',
-            tmpFile.name,
+            tmpBedFile.name,
             tmpChromSizes.name,
             out.name
         ]
@@ -103,12 +86,13 @@ class BigBedComposer(BedComposer):
             cmds.append('-as=%s' % tmpAutoSql.name)
         cmds.append('-type=%s' % bedtype)
 
-        subprocess.call(cmds)
+        try:
+            subprocess.check_call(cmds)
+        except CalledProcessError:
+            self._closeFiles(tmpBedFile, tmpChromSizes, tmpAutoSql)
+            raise InvalidFormatError('There was an error while composing the BigBed file.')
 
-        tmpFile.close()
-        tmpChromSizes.close()
-        if tmpAutoSql:
-            tmpAutoSql.close()
+        self._closeFiles(tmpBedFile, tmpChromSizes, tmpAutoSql)
 
     def returnComposed(self, ignoreEmpty=False, **kwArgs):
         tmpOut = tempfile.NamedTemporaryFile(suffix='.bb')
@@ -122,6 +106,38 @@ class BigBedComposer(BedComposer):
     def _findNumCols(self):
         return len(self._bedColumnsDict)
 
+    def _mapColsToStandardCols(self, geCols):
+        geCols.append('chr')
+        cols = []
+        lowercasePrefixMap = {}
+
+        for p in geCols:
+            lowercasePrefixMap[p.lower()] = p
+
+        for colDefTuple in self._BED_COLUMNS_LIST:
+            colName = colDefTuple[0]
+            if colName in lowercasePrefixMap:
+                self._handleStandardCol(cols, geCols, lowercasePrefixMap[colName], colDefTuple)
+            elif isinstance(colName, tuple):
+                for item in colName:
+                    if item in lowercasePrefixMap:
+                        self._handleStandardCol(cols, geCols, lowercasePrefixMap[item], colDefTuple)
+
+        return cols, geCols
+
+    def _handleStandardCol(self, cols, geCols, colName, colDefTuple):
+        cols.append((colName,) + colDefTuple[1:])
+        geCols.remove(colName)
+
+    def _getChromSizesFile(self):
+        chromSizes = GenomeInfo.getStdChrLengthDict(self._geSource.getGenome())
+        tmpChromSizes = tempfile.NamedTemporaryFile(suffix='.sizes')
+        for chrom, size in chromSizes.iteritems():
+            tmpChromSizes.write(chrom + '\t' + str(size) + '\n')
+        tmpChromSizes.flush()
+
+        return tmpChromSizes
+
     def _createAutoSql(self):
         autoSqlStr = 'table FromBigBedComposer\n'
         autoSqlStr += '"Automatically genearated"\n(\n'
@@ -132,3 +148,16 @@ class BigBedComposer(BedComposer):
         autoSqlStr += ')'
 
         return autoSqlStr
+
+    def _getBedFile(self):
+        tmpFile = tempfile.NamedTemporaryFile(suffix='.bed')
+        BedComposer._compose(self, tmpFile)
+        tmpFile.flush()
+
+        return tmpFile
+
+    def _closeFiles(self, tmpBedFile, tmpChromSizes, tmpAutoSql):
+        tmpBedFile.close()
+        tmpChromSizes.close()
+        if tmpAutoSql:
+            tmpAutoSql.close()

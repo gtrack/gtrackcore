@@ -1,17 +1,26 @@
-from extract.fileformats.FileFormatComposer import FileFormatComposer, MatchResult
-from input.wrappers.GEDependentAttributesHolder import iterateOverBRTuplesWithContainedGEs
-from gtrackcore.track.format.TrackFormat import TrackFormat
-import pyBigWig
-from gtrackcore.metadata.GenomeInfo import GenomeInfo
-from gtrackcore.util.CommonFunctions import ensurePathExists
-import numpy as np
 import tempfile
+
+import numpy as np
+import pyBigWig
+
+from extract.fileformats.FileFormatComposer import FileFormatComposer, MatchResult
+from gtrackcore.metadata.GenomeInfo import GenomeInfo
+from gtrackcore.track.format.TrackFormat import TrackFormat
+from gtrackcore.util.CommonFunctions import ensurePathExists
+from input.wrappers.GEDependentAttributesHolder import iterateOverBRTuplesWithContainedGEs
 
 
 class BigWigComposer(FileFormatComposer):
     FILE_SUFFIXES = ['bw', 'bigwig']
     FILE_FORMAT_NAME = 'BigWig'
     _supportsSliceSources = True
+
+    def __init__(self, geSource):
+        FileFormatComposer.__init__(self, geSource)
+        self._span = geSource.getFixedLength()
+        self._step = geSource.getFixedGapSize() + self._span
+        self._tf = TrackFormat.createInstanceFromGeSource(geSource)
+        self._isFixedStep = (self._tf.reprIsDense() or self._step > 1 or (self._step == 1 and self._span != 1))
 
     @staticmethod
     def matchesTrackFormat(trackFormat):
@@ -39,12 +48,6 @@ class BigWigComposer(FileFormatComposer):
         return composedStr
 
     def _compose(self, out):
-        tf = TrackFormat.createInstanceFromGeSource(self._geSource)
-        span = self._geSource.getFixedLength()
-        step = self._geSource.getFixedGapSize() + span
-
-        isFixedStep = (tf.reprIsDense() or step > 1 or (step == 1 and span != 1))
-
         brGes = []
         chroms = set()
         for br, geList in iterateOverBRTuplesWithContainedGEs(self._geSource):
@@ -52,47 +55,55 @@ class BigWigComposer(FileFormatComposer):
             for ge in geList:
                 chroms.add(ge.chr)
 
+        self._composeHeader(chroms, out)
+
         brGes = sorted(brGes, key=lambda a: a[0])
-        genome = brGes[0][1][0].genome
-        chroms = sorted(list(chroms))
-
-        chrLengths = []
-        for ch in chroms:
-            chrLengths.append((ch, GenomeInfo.getChrLen(genome, ch)))
-
-        out.addHeader(chrLengths)
-
         for br, geList in brGes:
             if len(geList) == 0:
                 continue
 
             geList = sorted(geList)
-            if isFixedStep:
-                vals = np.array([], dtype=np.float64)
-                for ge in geList:
-                    vals = np.append(vals, ge.val)
-
-                if tf.isDense() and tf.isInterval() and self._geSource.addsStartElementToDenseIntervals():
-                    vals = np.delete(vals, 0)
-
-                out.addEntries(ge.chr, br.region.start, values=vals, span=span, step=step)
+            if self._isFixedStep:
+                self._composeFixedStep(geList, br, out)
             else:
-                for ge in geList:
-                    vals = np.array([], dtype=np.float64)
-                    starts = np.array([], dtype=np.int32)
-                    chrs = np.array([])
-                    ends = np.array([], dtype=np.int32)
-                    starts = np.append(starts, ge.start)
-                    vals = np.append(vals, ge.val)
-                    if tf.isPoints():
-                        out.addEntries(ge.chr, starts, values=vals, span=1)
-                    else:
-                        end = ge.end
-                        if end is None:
-                            end = ge.start + 1
-                        ends = np.append(ends, end)
-                        ch = ge.chr
-                        if isinstance(ge.val, np.ndarray):
-                            ch = [ge.chr] * ge.val.size
-                        chrs = np.append(chrs, ch)
-                        out.addEntries(chrs, starts, ends=ends, values=vals)
+                self._composeVariableStep(geList, out)
+
+    def _composeHeader(self, chroms, out):
+        chroms = sorted(list(chroms))
+
+        chrLengths = []
+        for ch in chroms:
+            chrLengths.append((ch, GenomeInfo.getChrLen(self._geSource.getGenome(), ch)))
+        out.addHeader(chrLengths)
+
+    def _composeFixedStep(self, geList, br, out):
+        vals = np.array([], dtype=np.float64)
+        for ge in geList:
+            vals = np.append(vals, ge.val)
+
+        if self._tf.isDense() and self._tf.isInterval() and self._geSource.addsStartElementToDenseIntervals():
+            vals = np.delete(vals, 0)
+
+        out.addEntries(ge.chr, br.region.start, values=vals, span=self._span, step=self._step)
+
+    def _composeVariableStep(self, geList, out):
+        for ge in geList:
+            vals = np.array([], dtype=np.float64)
+            starts = np.array([], dtype=np.int32)
+            chrs = np.array([])
+            ends = np.array([], dtype=np.int32)
+            starts = np.append(starts, ge.start)
+            vals = np.append(vals, ge.val)
+            # compose points as varible step, rest as bedgraph
+            if self._tf.isPoints():
+                out.addEntries(ge.chr, starts, values=vals, span=1)
+            else:
+                end = ge.end
+                if end is None:
+                    end = ge.start + 1
+                ends = np.append(ends, end)
+                ch = ge.chr
+                if isinstance(ge.val, np.ndarray):
+                    ch = [ge.chr] * ge.val.size
+                chrs = np.append(chrs, ch)
+                out.addEntries(chrs, starts, ends=ends, values=vals)

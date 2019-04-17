@@ -2,6 +2,7 @@ from copy import copy
 
 import numpy as np
 import pyBigWig
+from plastid.readers.autosql import AutoSqlDeclaration
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from input.core.GenomeElement import GenomeElement
@@ -28,23 +29,20 @@ class BigBedGenomeElementSource(GenomeElementSource):
 
     def __init__(self, *args, **kwArgs):
         GenomeElementSource.__init__(self, *args, **kwArgs)
-        self._boundingRegionTuples = []
         self._bigBedFile = pyBigWig.open(self._fn)
         self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
-        self._currentChrom = None
-        self._values = iter([])
-        self._parseValVec = np.vectorize(self._parseVal)
-        self._getStrandFromStringVec = np.vectorize(self._getStrandFromString)
-        self._numOfExtraCols = 0
+
         self._extraColNames = self._initColumnNames()
+        self._numOfExtraCols = 0
         if self._extraColNames:
             self._numOfExtraCols = len(self._extraColNames)
+
+        self._parseValVec = np.vectorize(self._parseVal)
+        self._getStrandFromStringVec = np.vectorize(self._getStrandFromString)
 
     def __iter__(self):
         self._bigBedFile = pyBigWig.open(self._fn)
         self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
-        self._boundingRegionTuples = []
-        self._values = iter([])
         geIter = copy(self)
 
         return geIter
@@ -52,7 +50,6 @@ class BigBedGenomeElementSource(GenomeElementSource):
     def _initColumnNames(self):
         autoSql = self._bigBedFile.SQL()
         if autoSql:
-            from plastid.readers.autosql import AutoSqlDeclaration
             autoSqlParser = AutoSqlDeclaration(self._bigBedFile.SQL())
             colNames = autoSqlParser.field_formatters.keys()
             return colNames[3:]
@@ -61,27 +58,22 @@ class BigBedGenomeElementSource(GenomeElementSource):
         return self
 
     def next(self):
-        self._currentChrom = next(self._chrIter, None)
-        if not self._currentChrom:
+        currentChrom = next(self._chrIter, None)
+        if not currentChrom:
             self._bigBedFile.close()
             raise StopIteration
 
-        entries = self._bigBedFile.entries(str(self._currentChrom[0]), 0, self._currentChrom[1])
+        chrName, chrLengths = currentChrom
+
+        entries = self._bigBedFile.entries(str(chrName), 0, chrLengths)
         # self._extraColNames are initialized during the first iteration
         if self._extraColNames is None:
-            numOfCols = len(entries[0])
-            if numOfCols >= 2 and entries[0][2]:
-                extraCols = entries[0][2].split('\t')
-                self._extraColNames = self.BED_EXTRA_COLUMNS[:len(extraCols)]
-                self._numOfExtraCols = len(extraCols)
-            else:
-                self._extraColNames = []
+            self._initExtraCols()
 
-        tupleVals = [(x[0], x[1]) for x in entries]
-        intervals = np.array(tupleVals, dtype=np.dtype([('start', 'int32'), ('end', 'int32')]))
+        start, end = self._parseStartAndEnd(entries)
 
-        ge = GenomeElement(genome=self._genome, chr=self._currentChrom[0],
-                           start=intervals['start'], end=intervals['end'])
+        ge = GenomeElement(genome=self._genome, chr=chrName,
+                           start=start, end=end)
 
         if self._numOfExtraCols != 0:
             strVals = [x[2] for x in entries]
@@ -101,6 +93,24 @@ class BigBedGenomeElementSource(GenomeElementSource):
         #print ge
 
         return ge
+
+    def _initExtraCols(self, entries):
+        numOfCols = len(entries[0])
+        if numOfCols >= 2 and entries[0][2]:
+            extraCols = entries[0][2].split('\t')
+            self._extraColNames = self.BED_EXTRA_COLUMNS[:len(extraCols)]
+            self._numOfExtraCols = len(extraCols)
+        else:
+            self._extraColNames = []
+
+        self._extraColNames = self.BED_EXTRA_COLUMNS[:len(extraCols)]
+        self._numOfExtraCols = len(extraCols)
+
+    def _parseStartAndEnd(self, entries):
+        tupleVals = [(x[0], x[1]) for x in entries]
+        intervals = np.array(tupleVals, dtype=np.dtype([('start', 'int32'), ('end', 'int32')]))
+
+        return intervals['start'], intervals['end']
 
     def _parseVal(self, strVal):
         if strVal in ['-', '.']:

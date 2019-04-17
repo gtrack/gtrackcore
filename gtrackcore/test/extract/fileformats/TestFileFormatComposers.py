@@ -1,25 +1,24 @@
 import sys
 import unittest
-
 from tempfile import NamedTemporaryFile
 
-import gtrackcore.test
-from gtrackcore.extract.fileformats.BigBedComposer import BigBedComposer
-from gtrackcore.extract.fileformats.GtrackComposer import StdGtrackComposer, ExtendedGtrackComposer
-from gtrackcore.extract.fileformats.BedComposer import BedComposer, PointBedComposer, CategoryBedComposer, ValuedBedComposer
+from gtrackcore.extract.fileformats.BedComposer import BedComposer, PointBedComposer, \
+    CategoryBedComposer, ValuedBedComposer
 from gtrackcore.extract.fileformats.BedGraphComposer import BedGraphComposer
-from gtrackcore.extract.fileformats.WigComposer import WigComposer
-from gtrackcore.extract.fileformats.GffComposer import GffComposer
-from gtrackcore.extract.fileformats.FastaComposer import FastaComposer
+from gtrackcore.extract.fileformats.BigBedComposer import BigBedComposer
 from gtrackcore.extract.fileformats.BigWigComposer import BigWigComposer
+from gtrackcore.extract.fileformats.FastaComposer import FastaComposer
+from gtrackcore.extract.fileformats.GffComposer import GffComposer
+from gtrackcore.extract.fileformats.GtrackComposer import StdGtrackComposer, ExtendedGtrackComposer
+from gtrackcore.extract.fileformats.WigComposer import WigComposer
 from gtrackcore.input.adapters.TrackGenomeElementSource import TrackGenomeElementSource
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.input.userbins.UserBinSource import GlobalBinSource
 from gtrackcore.input.wrappers.GEDependentAttributesHolder import GEDependentAttributesHolder
 from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
-from gtrackcore.util.CommonFunctions import createDirPath
 from gtrackcore.test.common.Asserts import TestCaseWithImprovedAsserts
 from gtrackcore.test.common.TestWithGeSourceData import TestWithGeSourceData
+from gtrackcore.util.CommonFunctions import createDirPath
 
 PreProcessAllTracksJob.PASS_ON_EXCEPTIONS = True
 

@@ -2,8 +2,8 @@ from collections import namedtuple
 from copy import copy
 
 import numpy as np
-from bx.bbi.bigwig_file import BigWigFile
 import pyBigWig
+from bx.bbi.bigwig_file import BigWigFile
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
 from input.core.GenomeElement import GenomeElement
@@ -31,23 +31,26 @@ class BigWigGenomeElementSource(GenomeElementSource):
 
     def __init__(self, *args, **kwArgs):
         GenomeElementSource.__init__(self, *args, **kwArgs)
-        self._currentChrom = None
+        self._file = open(self._fn, 'r')
+        self._bxpythonFile = BigWigFile(file=self._file)
+        self._bw = pyBigWig.open(self._fn)
+
         self._fixedStep = False
         self._span = 1
         self._step = None
         self._isPoints = None
         self._isFunction = False
         self._isStepFunction = False
-        self._file = open(self._fn, 'r')
-        self._bxpythonFile = BigWigFile(file=self._file)
-        self._boundingRegionTuples = []
-        self._bw = pyBigWig.open(self._fn)
-        self._chrs = sorted(self._bw.chroms().items())
-        header = self._getHeaderForChrom(self._chrs[0])[0]
-        self._initFileVariables(header)
-        self._headers = iter([])
 
-    def _initFileVariables(self, header):
+        self._chrs = sorted(self._bw.chroms().items())
+        self._headers = iter([])
+        self._boundingRegionTuples = []
+        self._currentChrom = None
+        self._chrName = None
+        self._initFileVariables()
+
+    def _initFileVariables(self):
+        header = self._getHeaderForChrom(self._chrs[0])[0]
         self._span = header.span
         self._step = header.step
         self._fixedStep = self._isFixedStep(header)
@@ -78,45 +81,28 @@ class BigWigGenomeElementSource(GenomeElementSource):
         if not header:
             self._currentChrom = next(self._chrIter, None)
             if not self._currentChrom:
-                self._file.close()
-                self._bw.close()
+                self._closeFiles()
                 raise StopIteration
 
+            self._chrName = str(self._currentChrom[0])
             self._headers = iter(self._getHeaderForChrom(self._currentChrom))
             header = next(self._headers, None)
 
         self._checkHeader(header)
-        chrName = str(self._currentChrom[0])
         if self._fixedStep:
-            br = self.createBoundingRegion(header, chrName)
+            br = self.createBoundingRegion(header)
             self._boundingRegionTuples.append(br)
 
             if self._isFunction:
-                values = self._bw.values(chrName, header.start, header.start + header.numOfVals, numpy=True)
+                values = self._bw.values(self._chrName, header.start, header.start + header.numOfVals, numpy=True)
                 values = np.float64(values)
-                ge = GenomeElement(genome=self._genome, chr=chrName, val=values)
-                print ge
+                ge = GenomeElement(genome=self._genome, chr=self._chrName, val=values)
+                # print ge
 
                 return ge
 
-        intervals = list(self._bw.intervals(chrName, header.start, header.end))
-        if len(intervals) != header.numOfVals:
-            raise InvalidFormatError(
-                'Mismatch between number of values in header and number of values got: %s != %s.' % (
-                    len(intervals), header.numOfVals))
-
-        intervalsArray = np.array(intervals, dtype=np.dtype([('start', 'int32'), ('end', 'int32'), ('val', 'float64')]))
-
-        val = intervalsArray['val']
-        start = intervalsArray['start']
-        end = None
-        if not self._isPoints:
-            end = intervalsArray['end']
-        if self._isStepFunction:
-            val, end = self._handleStepFunction(val, start, end)
-            start = None
-
-        ge = GenomeElement(genome=self._genome, chr=chrName, start=start, end=end, val=val)
+        start, end, val = self._parseBigWigFile(header)
+        ge = GenomeElement(genome=self._genome, chr=self._chrName, start=start, end=end, val=val)
         #print ge
 
         return ge
@@ -135,8 +121,33 @@ class BigWigGenomeElementSource(GenomeElementSource):
             raise InvalidFormatError(
                 'fixedStep and variableStep/bedGraph formats are not allowed to mix within the same file.')
 
-    def createBoundingRegion(self, header, chr):
-        boundingRegion = GenomeRegion(genome=self._genome, chr=chr, start=header.start,
+    def _parseBigWigFile(self, header):
+        intervals = list(self._bw.intervals(self._chrName, header.start, header.end))
+        if len(intervals) != header.numOfVals:
+            raise InvalidFormatError(
+                'Mismatch between number of values in header and number of values got: %s != %s.' % (
+                    len(intervals), header.numOfVals))
+
+        intervalsArray = np.array(intervals, dtype=np.dtype(
+            [('start', 'int32'), ('end', 'int32'), ('val', 'float64')]))
+
+        val = intervalsArray['val']
+        start = intervalsArray['start']
+        end = None
+        if not self._isPoints:
+            end = intervalsArray['end']
+        if self._isStepFunction:
+            val, end = self._handleStepFunction(val, start, end)
+            start = None
+
+        return start, end, val
+
+    def _closeFiles(self):
+        self._file.close()
+        self._bw.close()
+
+    def createBoundingRegion(self, header):
+        boundingRegion = GenomeRegion(genome=self._genome, chr=self._chrName, start=header.start,
                                       end=header.end)
         br = BoundingRegionTuple(boundingRegion, header.numOfVals)
 
@@ -187,8 +198,8 @@ class BigWigGenomeElementSourceForPreproc(BigWigGenomeElementSource):
 
         return val, end
 
-    def createBoundingRegion(self, header, chrName):
-        boundingRegion = GenomeRegion(genome=self._genome, chr=chrName, start=header.start,
+    def createBoundingRegion(self, header):
+        boundingRegion = GenomeRegion(genome=self._genome, chr=self._chrName, start=header.start,
                                       end=header.end)
         br = BoundingRegionTuple(boundingRegion, header.numOfVals + 1)
 
