@@ -57,9 +57,6 @@ class VcfGenomeElementSource(GenomeElementSource):
             raise StopIteration
 
         print record
-        print record.samples
-        print record.genotype
-        print record.FORMAT
 
         val = np.zeros(self._altMaxLength, dtype=str)
 
@@ -86,8 +83,15 @@ class VcfGenomeElementSource(GenomeElementSource):
                 val = str(record.INFO[col])
             setattr(ge, col, val)
 
-
-
+        for sample in self._samplesCols:
+            item = record.genotype(sample)
+            for colName in record.FORMAT.split(':'):
+                val = getattr(item.data, colName)
+                if isinstance(val, list):
+                    val = ';'.join(map(str, val))
+                else:
+                    val = str(val)
+                setattr(ge, colName, val)
 
         return ge
 
