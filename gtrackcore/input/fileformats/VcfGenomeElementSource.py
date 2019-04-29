@@ -1,9 +1,9 @@
 from copy import copy
 
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
-import vcf
 import numpy as np
+import vcf
 
+from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from input.core.GenomeElement import GenomeElement
 
 
@@ -24,25 +24,34 @@ class VcfGenomeElementSource(GenomeElementSource):
         self._vcfReader = vcf.Reader(self._vcfFile)
         self._altMaxLength = 0
         self._isPoints = False
-        self._initFileInfo()
         self._samplesCols = self._vcfReader.samples
+        self._altItemMaxLenght = 0
+        self._initFileInfo()
 
     def _initFileInfo(self):
         refMaxLength = 0
+        altItemMaxLength = 0
         initReader = vcf.Reader(open(self._fn, 'r'))
         for record in initReader:
             if len(record.ALT) > self._altMaxLength:
                 self._altMaxLength = len(record.ALT)
+
+            for altItem in record.ALT:
+                if altItem and len(altItem) > altItemMaxLength:
+                    altItemMaxLength = len(altItem)
 
             if record.REF and len(record.REF) > refMaxLength:
                 refMaxLength = len(record.REF)
 
         if refMaxLength == 1:
             self._isPoints = True
+        self._altItemMaxLenght = altItemMaxLength
 
     def __iter__(self):
         self._boundingRegionTuples = []
-        self._values = iter([])
+        self._vcfFile = open(self._fn, 'r')
+        self._vcfReader = vcf.Reader(self._vcfFile)
+        self._samplesCols = self._vcfReader.samples
         geIter = copy(self)
 
         return geIter
@@ -56,10 +65,6 @@ class VcfGenomeElementSource(GenomeElementSource):
             self._vcfFile.close()
             raise StopIteration
 
-        print record
-
-        val = np.zeros(self._altMaxLength, dtype=str)
-
         ge = GenomeElement(genome=self._genome, chr=record.CHROM, start=record.POS)
         if not self._isPoints:
             if record.REF:
@@ -67,7 +72,11 @@ class VcfGenomeElementSource(GenomeElementSource):
             else:
                 ge.end = ge.start + 1
 
-        val[:len(record.ALT)] = record.ALT
+        val = np.zeros(self._altMaxLength, dtype='S' + str(self._altItemMaxLenght))
+
+        #if ALT is missing, record.ALT will be [None] so check for it here
+        if record.ALT and record.ALT[0]:
+            val[:len(record.ALT)] = record.ALT
 
         ge.val = val
 
@@ -76,23 +85,36 @@ class VcfGenomeElementSource(GenomeElementSource):
             if attrVal:
                 setattr(ge, colName, str(attrVal))
 
-        for col in record.INFO:
-            if isinstance(record.INFO[col], list):
-                val = ';'.join(map(str, record.INFO[col]))
-            else:
-                val = str(record.INFO[col])
-            setattr(ge, col, val)
+        for colName in record.INFO:
+            strVal = self._getStrValue(record.INFO[colName])
+            setattr(ge, colName, strVal)
 
         for sample in self._samplesCols:
             item = record.genotype(sample)
+            vals = []
             for colName in record.FORMAT.split(':'):
                 val = getattr(item.data, colName)
-                if isinstance(val, list):
-                    val = ';'.join(map(str, val))
-                else:
-                    val = str(val)
-                setattr(ge, colName, val)
+                if val:
+                    strVal = self._getStrValue(val)
+                    vals.append(strVal)
 
+            setattr(ge, item.sample, ':'.join(vals))
+
+        print ge
         return ge
+
+    def _getStrValue(self, val):
+        if isinstance(val, list):
+            strVal = ','.join(map(str, val))
+        else:
+            strVal = str(val)
+
+        return strVal
+
+    def getValDataType(self):
+        return 'S'
+
+    def getValDim(self):
+        return self._altMaxLength
 
 

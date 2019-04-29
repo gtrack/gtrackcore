@@ -33,6 +33,7 @@ from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CustomExceptions import (InvalidFormatWarning, InvalidFormatError,
                                               Warning, ArgumentValueError)
 from gtrackcore.input.fileformats.BigBedGenomeElementSource import BigBedGenomeElementSource
+from input.fileformats.VcfGenomeElementSource import VcfGenomeElementSource
 
 
 class BaseCase(object):
@@ -1997,6 +1998,57 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                  1,
                  'float64',
                  1)
+
+        self.cases['vcf_points_onedim'] = \
+            Case(VcfGenomeElementSource,
+                 'TestGenome',
+                 [],
+                 ['''##fileformat=VCFv4.2
+                    ##FORMAT=<ID=GT,Number=1,Type=Integer,Description="Genotype">
+                    ##FORMAT=<ID=GP,Number=G,Type=Float,Description="Genotype Probabilities">
+                    ##FORMAT=<ID=PL,Number=G,Type=Float,Description="Phred-scaled Genotype Likelihoods">
+                    #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMP001	SAMP002
+                    chr21	1291018	rs11449	G	A	.	PASS	.	GT  0/0	0/1
+                    chr21	2300608 rs84825 C	T	.	PASS	.	GT:GP	0/1:.	0/1:0.03,0.97,0
+                    chr21	2301308 rs84823 T	G	.	PASS	.	GT:PL	./.:.	1/1:10,5,0'''],
+                 '.vcf',
+                 ['My', 'vcf-points-track'],
+                 [GenomeElement('TestGenome', 'chr21', val=numpy.array(['A'], dtype='S1'), start=1291018, extra=OrderedDict([('ID','rs11449'),('REF', 'G'),('FORMAT','GT'),('SAMP001','0/0'),('SAMP002','0/1')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['T'], dtype='S1'), start=2300608, extra=OrderedDict([('ID','rs84825'),('REF','C'),('FORMAT','GT:GP'),('SAMP001','0/1'),('SAMP002','0/1:0.03,0.97,0.0')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['G'], dtype='S1'), start=2301308,  extra=OrderedDict([('ID','rs84823'),('REF','T'),('FORMAT','GT:PL'),('SAMP001','./.'),('SAMP002','1/1:10.0,5.0,0.0')]))],
+                 [],
+                 VcfGenomeElementSource,
+                 ['start', 'val', 'ID', 'REF', 'FORMAT', 'SAMP001', 'SAMP002'],
+                 'S',
+                 1,
+                 'float64',
+                 1)
+
+        self.cases['vcf_segments'] = \
+            Case(VcfGenomeElementSource,
+                 'TestGenome',
+                 [],
+                 ['''##fileformat=VCFv4.2
+                   ##FORMAT=<ID=GT,Number=1,Type=Integer,Description="Genotype">
+                   ##FORMAT=<ID=GP,Number=G,Type=Float,Description="Genotype Probabilities">
+                   ##FORMAT=<ID=PL,Number=G,Type=Float,Description="Phred-scaled Genotype Likelihoods">
+                   #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMP001	SAMP002
+                   chr21	1291018	rs11449	G	A	.	PASS	.	GT  0/0	0/1
+                   chr21	2300608 rs84825 C	T,G	.	PASS	.	GT:GP	0/1:.	0/1:0.03,0.97,0
+                   chr21	2301308 rs84823 GTC	G,GTCT	.	PASS	.	GT:PL	./.:.	1/1:10,5,0'''],
+                 '.vcf',
+                 ['My', 'vcf-segments-track'],
+                 [GenomeElement('TestGenome', 'chr21', val=numpy.array(['A',''], dtype='S1'), start=1291018, end=1291019, extra=OrderedDict([('ID', 'rs11449'), ('REF', 'G'), ('FORMAT', 'GT'), ('SAMP001', '0/0'), ('SAMP002', '0/1')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['T','G'], dtype='S1'), start=2300608,end=2300609, extra=OrderedDict([('ID', 'rs84825'), ('REF', 'C'), ('FORMAT', 'GT:GP'), ('SAMP001', '0/1'), ('SAMP002', '0/1:0.03,0.97,0.0')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['G','GTCT'], dtype='S1'), start=2301308,end=2301311, extra=OrderedDict([('ID', 'rs84823'), ('REF', 'GTC'), ('FORMAT', 'GT:PL'), ('SAMP001', './.'), ('SAMP002', '1/1:10.0,5.0,0.0')]))],
+                 [],
+                 VcfGenomeElementSource,
+                 ['start', 'end', 'val', 'ID', 'REF', 'FORMAT', 'SAMP001', 'SAMP002'],
+                 'S',
+                 2,
+                 'float64',
+                 1)
+
 
 
         self.cases['gff'] = \
