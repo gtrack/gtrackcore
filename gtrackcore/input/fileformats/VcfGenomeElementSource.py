@@ -12,7 +12,7 @@ class VcfGenomeElementSource(GenomeElementSource):
     FILE_SUFFIXES = ['vcf']
     FILE_FORMAT_NAME = 'VCF'
 
-    vcfStandardColumns = ['ID', 'REF', 'QUAL', 'FILTER', 'FORMAT']
+    vcfStandardColumns = ['ID', 'REF', 'QUAL', 'FILTER']
 
     def __new__(cls, *args, **kwArgs):
         return object.__new__(cls)
@@ -37,8 +37,8 @@ class VcfGenomeElementSource(GenomeElementSource):
                 self._altMaxLength = len(record.ALT)
 
             for altItem in record.ALT:
-                if altItem and len(altItem) > altItemMaxLength:
-                    altItemMaxLength = len(altItem)
+                if altItem and len(str(altItem)) > altItemMaxLength:
+                    altItemMaxLength = len(str(altItem))
 
             if record.REF and len(record.REF) > refMaxLength:
                 refMaxLength = len(record.REF)
@@ -83,29 +83,59 @@ class VcfGenomeElementSource(GenomeElementSource):
         for colName in self.vcfStandardColumns:
             attrVal = getattr(record, colName)
             if attrVal:
-                setattr(ge, colName, str(attrVal))
+                if isinstance(attrVal, list):
+                    setattr(ge, colName, ';'.join(attrVal))
+                else:
+                    setattr(ge, colName, str(attrVal))
+            else:
+                if colName == 'FILTER' and isinstance(attrVal, list):
+                    setattr(ge, colName, 'PASS')
+                else:
+                    setattr(ge, colName, '')
 
-        for colName in record.INFO:
-            strVal = self._getStrValue(record.INFO[colName])
-            setattr(ge, colName, strVal)
+        infoVals = []
+        for colName in self._vcfReader.infos:
+            if colName in record.INFO:
+                strVal = self._getStrValue(record.INFO[colName])
+                if strVal == 'True':
+                    infoVals.append(colName)
+                else:
+                    infoVals.append(colName + '=' + strVal)
 
-        for sample in self._samplesCols:
-            item = record.genotype(sample)
-            vals = []
-            for colName in record.FORMAT.split(':'):
-                val = getattr(item.data, colName)
-                if val:
-                    strVal = self._getStrValue(val)
-                    vals.append(strVal)
+        if infoVals:
+            setattr(ge, 'INFO', ';'.join(infoVals))
+        else:
+            setattr(ge, 'INFO', '')
 
-            setattr(ge, item.sample, ':'.join(vals))
+        if self._samplesCols:
+            setattr(ge, 'FORMAT', record.FORMAT)
+
+            for sample in self._samplesCols:
+                item = record.genotype(sample)
+                vals = []
+                for colName in record.FORMAT.split(':'):
+                    val = getattr(item.data, colName)
+                    if val is None:
+                        vals.append('.')
+                    else:
+                        strVal = self._getStrValue(val)
+                        vals.append(strVal)
+
+                setattr(ge, item.sample, ':'.join(vals))
 
         print ge
         return ge
 
     def _getStrValue(self, val):
         if isinstance(val, list):
-            strVal = ','.join(map(str, val))
+            valItems = []
+            for item in val:
+                if item is None:
+                    item = '.'
+                else:
+                    item = str(item)
+                valItems.append(item)
+            strVal = ','.join(valItems)
         else:
             strVal = str(val)
 
