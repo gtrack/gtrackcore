@@ -2008,14 +2008,14 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                     ##FORMAT=<ID=GP,Number=G,Type=Float,Description="Genotype Probabilities">
                     ##FORMAT=<ID=PL,Number=G,Type=Float,Description="Phred-scaled Genotype Likelihoods">
                     #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMP001	SAMP002
-                    chr21	1291018	rs11449	G	A	.	PASS	.	GT  0/0	0/1
-                    chr21	2300608 rs84825 C	T	.	PASS	.	GT:GP	0/1:.	0/1:0.03,0.97,0
-                    chr21	2301308 rs84823 T	G	.	PASS	.	GT:PL	./.:.	1/1:10,5,0'''],
+                    chr21	1291018	rs11449	G	A	.	PASS	.	GT	0/0	0/1
+                    chr21	2300608	rs84825	C	T	.	PASS	.	GT:GP	0/1:.	0/1:0.03,0.97,0
+                    chr21	2301308	rs84823	T	G	.	PASS	.	GT:PL	./.:.	1/1:10,5,0'''],
                  '.vcf',
                  ['My', 'vcf-points-track'],
-                 [GenomeElement('TestGenome', 'chr21', val=numpy.array(['A'], dtype='S1'), start=1291018, extra=OrderedDict([('ID','rs11449'),('REF', 'G'), ('QUAL', ''), ('FILTER', 'PASS'), ('INFO',''), ('FORMAT','GT'),('SAMP001','0/0'),('SAMP002','0/1')])),
-                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['T'], dtype='S1'), start=2300608, extra=OrderedDict([('ID','rs84825'),('REF','C'), ('QUAL', ''), ('FILTER', 'PASS'), ('INFO',''),('FORMAT','GT:GP'),('SAMP001','0/1:.'),('SAMP002','0/1:0.03,0.97,0.0')])),
-                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['G'], dtype='S1'), start=2301308,  extra=OrderedDict([('ID','rs84823'),('REF','T'), ('QUAL', ''), ('FILTER', 'PASS'), ('INFO',''),('FORMAT','GT:PL'),('SAMP001','./.:.'),('SAMP002','1/1:10.0,5.0,0.0')]))],
+                 [GenomeElement('TestGenome', 'chr21', val=numpy.array(['A'], dtype='S1'), start=1291018, extra=OrderedDict([('ID','rs11449'),('REF', 'G'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'), ('FORMAT','GT'),('SAMP001','0/0'),('SAMP002','0/1')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['T'], dtype='S1'), start=2300608, extra=OrderedDict([('ID','rs84825'),('REF','C'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'),('FORMAT','GT:GP'),('SAMP001','0/1:.'),('SAMP002','0/1:0.03,0.97,0')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['G'], dtype='S1'), start=2301308,  extra=OrderedDict([('ID','rs84823'),('REF','T'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'),('FORMAT','GT:PL'),('SAMP001','./.:.'),('SAMP002','1/1:10,5,0')]))],
                  [],
                  VcfGenomeElementSource,
                  ['start', 'val', 'ID', 'REF', 'QUAL', 'FILTER', 'INFO', 'FORMAT', 'SAMP001', 'SAMP002'],
@@ -2032,15 +2032,15 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                    ##FORMAT=<ID=GT,Number=1,Type=Integer,Description="Genotype">
                    ##FORMAT=<ID=GP,Number=G,Type=Float,Description="Genotype Probabilities">
                    ##FORMAT=<ID=PL,Number=G,Type=Float,Description="Phred-scaled Genotype Likelihoods">
-                   #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMP001	SAMP002
-                   chr21	1291018	rs11449	G	A	.	PASS	.	GT  0/0	0/1
-                   chr21	2300608 rs84825 C	T,G	.	PASS	.	GT:GP	0/1:.	0/1:0.03,0.97,0
-                   chr21	2301308 rs84823 GTC	G,GTCT	.	PASS	.	GT:PL	./.:.	1/1:10,5,0'''],
+                    #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMP001	SAMP002
+                   chr21	1291018	rs11449	G	A	.	PASS	.	GT	0/0	0/1
+                   chr21	2300608	rs84825	C	T,G	.	PASS	.	GT:GP	0/1:.	0/1:0.03,0.97,0
+                   chr21	2301308	rs84823	GTC	G,GTCT	.	PASS	.	GT:PL	./.:.	1/1:10,5,0'''],
                  '.vcf',
                  ['My', 'vcf-segments-track'],
-                 [GenomeElement('TestGenome', 'chr21', val=numpy.array(['A',''], dtype='S4'), start=1291018, end=1291019, extra=OrderedDict([('ID', 'rs11449'), ('REF', 'G'), ('QUAL', ''), ('FILTER', 'PASS'), ('INFO',''), ('FORMAT', 'GT'), ('SAMP001', '0/0'), ('SAMP002', '0/1')])),
-                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['T','G'], dtype='S4'), start=2300608,end=2300609, extra=OrderedDict([('ID', 'rs84825'), ('REF', 'C'), ('QUAL', ''), ('FILTER', 'PASS'), ('INFO',''), ('FORMAT', 'GT:GP'), ('SAMP001', '0/1:.'), ('SAMP002', '0/1:0.03,0.97,0.0')])),
-                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['G','GTCT'], dtype='S4'), start=2301308,end=2301311, extra=OrderedDict([('ID', 'rs84823'), ('REF', 'GTC'), ('QUAL', ''), ('FILTER', 'PASS'), ('INFO',''), ('FORMAT', 'GT:PL'), ('SAMP001', './.:.'), ('SAMP002', '1/1:10.0,5.0,0.0')]))],
+                 [GenomeElement('TestGenome', 'chr21', val=numpy.array(['A',''], dtype='S4'), start=1291018, end=1291019, extra=OrderedDict([('ID', 'rs11449'), ('REF', 'G'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'), ('FORMAT', 'GT'), ('SAMP001', '0/0'), ('SAMP002', '0/1')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['T','G'], dtype='S4'), start=2300608,end=2300609, extra=OrderedDict([('ID', 'rs84825'), ('REF', 'C'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'), ('FORMAT', 'GT:GP'), ('SAMP001', '0/1:.'), ('SAMP002', '0/1:0.03,0.97,0')])),
+                  GenomeElement('TestGenome', 'chr21', val=numpy.array(['G','GTCT'], dtype='S4'), start=2301308,end=2301311, extra=OrderedDict([('ID', 'rs84823'), ('REF', 'GTC'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'), ('FORMAT', 'GT:PL'), ('SAMP001', './.:.'), ('SAMP002', '1/1:10,5,0')]))],
                  [],
                  VcfGenomeElementSource,
                  ['start', 'end', 'val', 'ID', 'REF', 'QUAL', 'FILTER', 'INFO', 'FORMAT', 'SAMP001', 'SAMP002'],
@@ -2072,34 +2072,34 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                     ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
                     ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
                     ##FORMAT=<ID=HQ,Number=2,Type=Integer,Description="Haplotype Quality">
-                    #CHROM POS      ID         REF   ALT    QUAL  FILTER   INFO                             FORMAT       NA00001         NA00002          NA00003
-                    chr21     14370    rs6054257  G     [17:198983[A      29    .    NS=3;DP=14;AF=0.5;DB;H2           GT:GQ:DP:HQ  0|0:48:1:51,51  1|0:48:8:51,51   1/1:43:5:.,.
-                    chr21     17330    .          T     <DEL>     3     q10     NS=3;DP=11;AF=0.017               GT:GQ:DP:HQ  0|0:49:3:58,50  0|1:3:5:65,3     0/0:41:3
-                    chr21     1110696  rs6040355  A     G,T    67    PASS    NS=2;DP=10;AF=0.333,0.667;AA=T;DB GT:GQ:DP:HQ  1|2:21:6:23,27  2|1:2:0:18,2     2/2:35:4
-                    chr21     1230237  .          T     .      47    PASS    NS=3;DP=13;AA=T                   GT:GQ:DP:HQ  0|0:54:7:56,60  0|0:48:4:51,51   0/0:61:2
-                    chr21     1234567  microsat1  GTC   G,GTCT 50    PASS    NS=3;DP=9;AA=G                    GT:GQ:DP     0/1:35:4        0/2:17:2         1/1:40:3'''],
+                    #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA00001	NA00002	NA00003
+                    chr21	14370	rs6054257	G	[17:198983[A	29	.	NS=3;DP=14;AF=0.5;DB;H2	GT:GQ:DP:HQ	0|0:48:1:51,51	1|0:48:8:51,51	1/1:43:5:.,.
+                    chr21	17330	.	T	<DEL>	3	q10	NS=3;DP=11;AF=0.017	GT:GQ:DP:HQ	0|0:49:3:58,50	0|1:3:5:65,3	0/0:41:3
+                    chr21	1110696	rs6040355	A	G,T	67	PASS	NS=2;DP=10;AF=0.333,0.667;AA=T;DB	GT:GQ:DP:HQ	1|2:21:6:23,27	2|1:2:0:18,2	2/2:35:4
+                    chr21	1230237	.	T	.	47	PASS	NS=3;DP=13;AA=T	GT:GQ:DP:HQ	0|0:54:7:56,60	0|0:48:4:51,51	0/0:61:2
+                    chr21	1234567	microsat1	GTC	G,GTCT	50	PASS	NS=3;DP=9;AA=G	GT:GQ:DP	0/1:35:4	0/2:17:2	1/1:40:3'''],
                  '.vcf',
                  ['My', 'vcf-all-cols-track'],
                  [GenomeElement('TestGenome', 'chr21', val=numpy.array(['[17:198983[A', ''], dtype='S12'),
                                 start=14370, end=14371, extra=OrderedDict(
-                         [('ID', 'rs6054257'), ('REF', 'G'), ('QUAL', '29'), ('FILTER', ''),
+                         [('ID', 'rs6054257'), ('REF', 'G'), ('QUAL', '29'), ('FILTER', '.'),
                           ('INFO', 'NS=3;DP=14;AF=0.5;DB;H2'), ('FORMAT', 'GT:GQ:DP:HQ'), ('NA00001', '0|0:48:1:51,51'),
                           ('NA00002', '1|0:48:8:51,51'), ('NA00003', '1/1:43:5:.,.')])),
                   GenomeElement('TestGenome', 'chr21', val=numpy.array(['<DEL>', ''], dtype='S4'),
                                 start=17330, end=17331, extra=OrderedDict(
-                          [('ID', ''), ('REF', 'T'), ('QUAL', '3'), ('FILTER', 'q10'),
+                          [('ID', '.'), ('REF', 'T'), ('QUAL', '3'), ('FILTER', 'q10'),
                            ('INFO', 'NS=3;DP=11;AF=0.017'), ('FORMAT', 'GT:GQ:DP:HQ'), ('NA00001', '0|0:49:3:58,50'),
-                          ('NA00002', '0|1:3:5:65,3'), ('NA00003', '0/0:41:3:.')])),
+                          ('NA00002', '0|1:3:5:65,3'), ('NA00003', '0/0:41:3')])),
                   GenomeElement('TestGenome', 'chr21', val=numpy.array(['G', 'T'], dtype='S1'),
                                 start=1110696, end=1110697, extra=OrderedDict(
                           [('ID', 'rs6040355'), ('REF', 'A'), ('QUAL', '67'), ('FILTER', 'PASS'),
                            ('INFO', 'NS=2;DP=10;AF=0.333,0.667;AA=T;DB'), ('FORMAT', 'GT:GQ:DP:HQ'), ('NA00001', '1|2:21:6:23,27'),
-                          ('NA00002', '2|1:2:0:18,2'), ('NA00003', '2/2:35:4:.')])),
+                          ('NA00002', '2|1:2:0:18,2'), ('NA00003', '2/2:35:4')])),
                   GenomeElement('TestGenome', 'chr21', val=numpy.array(['', ''], dtype='S1'),
                                 start=1230237, end=1230238, extra=OrderedDict(
-                          [('ID', ''), ('REF', 'T'), ('QUAL', '47'), ('FILTER', 'PASS'),
+                          [('ID', '.'), ('REF', 'T'), ('QUAL', '47'), ('FILTER', 'PASS'),
                            ('INFO', 'NS=3;DP=13;AA=T'), ('FORMAT', 'GT:GQ:DP:HQ'), ('NA00001', '0|0:54:7:56,60'),
-                          ('NA00002', '0|0:48:4:51,51'), ('NA00003', '0/0:61:2:.')])),
+                          ('NA00002', '0|0:48:4:51,51'), ('NA00003', '0/0:61:2')])),
                   GenomeElement('TestGenome', 'chr21', val=numpy.array(['G', 'GTCT'], dtype='S4'),
                                 start=1234567, end=1234570, extra=OrderedDict(
                           [('ID', 'microsat1'), ('REF', 'GTC'), ('QUAL', '50'), ('FILTER', 'PASS'),

@@ -1,7 +1,4 @@
-from copy import copy
-
 import numpy as np
-import vcf
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from input.core.GenomeElement import GenomeElement
@@ -12,8 +9,6 @@ class VcfGenomeElementSource(GenomeElementSource):
     FILE_SUFFIXES = ['vcf']
     FILE_FORMAT_NAME = 'VCF'
 
-    vcfStandardColumns = ['ID', 'REF', 'QUAL', 'FILTER']
-
     def __new__(cls, *args, **kwArgs):
         return object.__new__(cls)
 
@@ -21,125 +16,78 @@ class VcfGenomeElementSource(GenomeElementSource):
         GenomeElementSource.__init__(self, *args, **kwArgs)
         self._boundingRegionTuples = []
         self._vcfFile = open(self._fn, 'r')
-        self._vcfReader = vcf.Reader(self._vcfFile)
+        self._numHeaderLines = 0
         self._altMaxLength = 0
         self._isPoints = False
-        self._samplesCols = self._vcfReader.samples
         self._altItemMaxLenght = 0
+        self._headerLines = []
+        self._colNames = 0
         self._initFileInfo()
 
     def _initFileInfo(self):
+        CHROM, POS, ID, REF, ALT = range(5)
         refMaxLength = 0
         altItemMaxLength = 0
-        initReader = vcf.Reader(open(self._fn, 'r'))
-        for record in initReader:
-            if len(record.ALT) > self._altMaxLength:
-                self._altMaxLength = len(record.ALT)
+        for line in self._vcfFile:
+            line = line.strip()
+            if line.startswith('##'):
+                # header line
+                self._numHeaderLines+= 1
+                self._headerLines.append(line)
+            elif line.startswith('#'):
+                # column specification
+                self._numHeaderLines += 1
+                self._colNames = line.split('\t')
+            else:
+                # data lines
+                cols = line.split('\t')
+                if len(cols) == 1:
+                    cols = line.split()
 
-            for altItem in record.ALT:
-                if altItem and len(str(altItem)) > altItemMaxLength:
-                    altItemMaxLength = len(str(altItem))
+                altItems = cols[ALT].split(',')
+                if len(altItems) > self._altMaxLength:
+                    self._altMaxLength = len(altItems)
+                for altItem in altItems:
+                    if len(altItem) > altItemMaxLength:
+                        altItemMaxLength = len(altItem)
 
-            if record.REF and len(record.REF) > refMaxLength:
-                refMaxLength = len(record.REF)
+                if len(cols[REF]) > refMaxLength:
+                    refMaxLength = len(cols[REF])
 
         if refMaxLength == 1:
             self._isPoints = True
         self._altItemMaxLenght = altItemMaxLength
 
-    def __iter__(self):
-        self._boundingRegionTuples = []
-        self._vcfFile = open(self._fn, 'r')
-        self._vcfReader = vcf.Reader(self._vcfFile)
-        self._samplesCols = self._vcfReader.samples
-        geIter = copy(self)
-
-        return geIter
-
     def _iter(self):
         return self
 
-    def next(self):
-        record = next(self._vcfReader, None)
-        if not record:
-            self._vcfFile.close()
-            raise StopIteration
-
-        ge = GenomeElement(genome=self._genome, chr=record.CHROM, start=record.POS)
+    def _next(self, line):
+        CHROM, POS, ID, REF, ALT = range(5)
+        cols = line.strip().split('\t')
+        if len(cols) == 1:
+            cols = line.strip().split()
+        ge = GenomeElement(genome=self._genome, chr=cols[CHROM], start=int(cols[POS]))
         if not self._isPoints:
-            if record.REF:
-                ge.end = ge.start + len(record.REF)
+            if cols[REF] != '.':
+                ge.end = ge.start + len(cols[REF])
             else:
                 ge.end = ge.start + 1
 
         val = np.zeros(self._altMaxLength, dtype='S' + str(self._altItemMaxLenght))
 
-        #if ALT is missing, record.ALT will be [None] so check for it here
-        if record.ALT and record.ALT[0]:
-            val[:len(record.ALT)] = record.ALT
+        if cols[ALT] != '.':
+            val[:len(cols[ALT])] = cols[ALT]
 
         ge.val = val
 
-        for colName in self.vcfStandardColumns:
-            attrVal = getattr(record, colName)
-            if attrVal:
-                if isinstance(attrVal, list):
-                    setattr(ge, colName, ';'.join(attrVal))
-                else:
-                    setattr(ge, colName, str(attrVal))
-            else:
-                if colName == 'FILTER' and isinstance(attrVal, list):
-                    setattr(ge, colName, 'PASS')
-                else:
-                    setattr(ge, colName, '')
+        setattr(ge, 'ID', cols[ID])
+        setattr(ge, 'REF', cols[REF])
 
-        infoVals = []
-        for colName in self._vcfReader.infos:
-            if colName in record.INFO:
-                strVal = self._getStrValue(record.INFO[colName])
-                if strVal == 'True':
-                    infoVals.append(colName)
-                else:
-                    infoVals.append(colName + '=' + strVal)
-
-        if infoVals:
-            setattr(ge, 'INFO', ';'.join(infoVals))
-        else:
-            setattr(ge, 'INFO', '')
-
-        if self._samplesCols:
-            setattr(ge, 'FORMAT', record.FORMAT)
-
-            for sample in self._samplesCols:
-                item = record.genotype(sample)
-                vals = []
-                for colName in record.FORMAT.split(':'):
-                    val = getattr(item.data, colName)
-                    if val is None:
-                        vals.append('.')
-                    else:
-                        strVal = self._getStrValue(val)
-                        vals.append(strVal)
-
-                setattr(ge, item.sample, ':'.join(vals))
+        for i, colName in enumerate(self._colNames[5:], 5):
+            setattr(ge, colName, cols[i])
 
         print ge
         return ge
-
-    def _getStrValue(self, val):
-        if isinstance(val, list):
-            valItems = []
-            for item in val:
-                if item is None:
-                    item = '.'
-                else:
-                    item = str(item)
-                valItems.append(item)
-            strVal = ','.join(valItems)
-        else:
-            strVal = str(val)
-
-        return strVal
 
     def getValDataType(self):
         return 'S'
