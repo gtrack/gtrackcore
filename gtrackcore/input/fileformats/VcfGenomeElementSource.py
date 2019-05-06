@@ -8,6 +8,7 @@ class VcfGenomeElementSource(GenomeElementSource):
     _VERSION = '1.0'
     FILE_SUFFIXES = ['vcf']
     FILE_FORMAT_NAME = 'VCF'
+    _addsStartElementToDenseIntervals = False
 
     def __new__(cls, *args, **kwArgs):
         return object.__new__(cls)
@@ -15,7 +16,6 @@ class VcfGenomeElementSource(GenomeElementSource):
     def __init__(self, *args, **kwArgs):
         GenomeElementSource.__init__(self, *args, **kwArgs)
         self._boundingRegionTuples = []
-        self._vcfFile = open(self._fn, 'r')
         self._numHeaderLines = 0
         self._altMaxLength = 0
         self._isPoints = False
@@ -27,36 +27,35 @@ class VcfGenomeElementSource(GenomeElementSource):
     def _initFileInfo(self):
         CHROM, POS, ID, REF, ALT = range(5)
         refMaxLength = 0
-        altItemMaxLength = 0
-        for line in self._vcfFile:
-            line = line.strip()
-            if line.startswith('##'):
-                # header line
-                self._numHeaderLines+= 1
-                self._headerLines.append(line)
-            elif line.startswith('#'):
-                # column specification
-                self._numHeaderLines += 1
-                self._colNames = line.split('\t')
-            else:
-                # data lines
-                cols = line.split('\t')
-                if len(cols) == 1:
-                    cols = line.split()
+        with open(self._fn, 'r') as vcfFile:
+            for line in vcfFile:
+                line = line.strip()
+                if line.startswith('##'):
+                    # header line
+                    self._numHeaderLines += 1
+                    self._headerLines.append(line)
+                elif line.startswith('#'):
+                    # column specification
+                    self._numHeaderLines += 1
+                    self._colNames = line[1:].split('\t')
+                else:
+                    # data lines
+                    cols = line.split('\t')
+                    if len(cols) == 1:
+                        cols = line.split()
 
-                altItems = cols[ALT].split(',')
-                if len(altItems) > self._altMaxLength:
-                    self._altMaxLength = len(altItems)
-                for altItem in altItems:
-                    if len(altItem) > altItemMaxLength:
-                        altItemMaxLength = len(altItem)
+                    altItems = cols[ALT].split(',')
+                    if len(altItems) > self._altMaxLength:
+                        self._altMaxLength = len(altItems)
+                    for altItem in altItems:
+                        if len(altItem) > self._altItemMaxLenght:
+                            self._altItemMaxLenght = len(altItem)
 
-                if len(cols[REF]) > refMaxLength:
-                    refMaxLength = len(cols[REF])
+                    if len(cols[REF]) > refMaxLength:
+                        refMaxLength = len(cols[REF])
 
         if refMaxLength == 1:
             self._isPoints = True
-        self._altItemMaxLenght = altItemMaxLength
 
     def _iter(self):
         return self
@@ -94,5 +93,4 @@ class VcfGenomeElementSource(GenomeElementSource):
 
     def getValDim(self):
         return self._altMaxLength
-
 

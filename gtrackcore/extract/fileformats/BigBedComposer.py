@@ -2,8 +2,6 @@ import subprocess
 import tempfile
 from collections import OrderedDict
 
-from subprocess32 import CalledProcessError
-
 from extract.fileformats.BedComposer import BedComposer, ColumnInfo
 from metadata.GenomeInfo import GenomeInfo
 from util.CustomExceptions import InvalidFormatError
@@ -88,7 +86,7 @@ class BigBedComposer(BedComposer):
 
         try:
             subprocess.check_call(cmds)
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
             self._closeFiles(tmpBedFile, tmpChromSizes, tmpAutoSql)
             raise InvalidFormatError('There was an error while composing the BigBed file.')
 
