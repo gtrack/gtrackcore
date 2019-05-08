@@ -104,7 +104,8 @@ def getAllComposers():
     from gtrackcore.extract.fileformats.FastaComposer import FastaComposer
     from gtrackcore.extract.fileformats.BigWigComposer import BigWigComposer
     from gtrackcore.extract.fileformats.BigBedComposer import BigBedComposer
+    from gtrackcore.extract.fileformats.VcfComposer import VcfComposer
     
     return [BedComposer, PointBedComposer, CategoryBedComposer, ValuedBedComposer, BedGraphComposer, \
             BedGraphTargetControlComposer, GffComposer, WigComposer, FastaComposer, StdGtrackComposer, \
-            ExtendedGtrackComposer, BigWigComposer, BigBedComposer]
+            ExtendedGtrackComposer, BigWigComposer, BigBedComposer, VcfComposer]

@@ -2,6 +2,7 @@ import sys
 import unittest
 from tempfile import NamedTemporaryFile
 
+from extract.fileformats.VcfComposer import VcfComposer
 from gtrackcore.extract.fileformats.BedComposer import BedComposer, PointBedComposer, \
     CategoryBedComposer, ValuedBedComposer
 from gtrackcore.extract.fileformats.BedGraphComposer import BedGraphComposer
@@ -109,6 +110,12 @@ class TestFileFormatComposers(TestWithGeSourceData, TestCaseWithImprovedAsserts)
 
     def testBigBedFromTrackComposer(self):
         self._commonTestComposer(withTrackGESource=True, composerCls=BigBedComposer, suffix='bigbed')
+
+    def testVcfComposer(self):
+        self._commonTestComposer(withTrackGESource=False, composerCls=VcfComposer, suffix='vcf')
+
+    def testVcfFromTrackComposer(self):
+        self._commonTestComposer(withTrackGESource=True, composerCls=VcfComposer, suffix='vcf')
 
     def _commonTestComposer(self, withTrackGESource, composerCls, suffix):
         geSourceTest = self._commonSetup()
