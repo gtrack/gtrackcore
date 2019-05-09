@@ -201,6 +201,9 @@ class BigWigGenomeElementSourceForPreproc(BigWigGenomeElementSource):
     def createBoundingRegion(self, header):
         boundingRegion = GenomeRegion(genome=self._genome, chr=self._chrName, start=header.start,
                                       end=header.end)
-        br = BoundingRegionTuple(boundingRegion, header.numOfVals + 1)
+        if self._isStepFunction:
+            br = BoundingRegionTuple(boundingRegion, header.numOfVals + 1)
+        else:
+            br = BoundingRegionTuple(boundingRegion, header.numOfVals)
 
         return br

@@ -131,7 +131,7 @@ class TrackView(object):
         if self.trackFormat.isDense() and not self.trackFormat.reprIsDense():
             self._startList = self._endList[:-1]
             self._endList = self._endList[1:]
-            if self._valList != None:
+            if self._valList is not None:
                 self._valList = self._valList[1:]
             if self._strandList != None:
                 self._strandList = self._strandList[1:]
