@@ -10,6 +10,8 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
 from gtrackcore.track.format.TrackFormat import TrackFormat, TrackFormatReq
 from gtrackcore.track.memmap.TrackSource import TrackSource
+from input.core.HeaderShelve import HeaderShelve
+
 
 class TrackGenomeElementSource(GenomeElementSource):
     FILE_FORMAT_NAME = 'Track'
@@ -47,6 +49,8 @@ class TrackGenomeElementSource(GenomeElementSource):
         self._fixedLength = None
         self._fixedGapSize = None
         self._reprIsDense = None
+        self._headers = None
+        self._initHeaders()
 
     def _calcTrackViewBasedValues(self):
         if self._doneCalculatingTrackViewBasedValues:
@@ -122,6 +126,11 @@ class TrackGenomeElementSource(GenomeElementSource):
         for region,tv in ((region, self._getTrackView(track, region)) for region in self._boundingRegions):
             for te in tv:
                 yield GenomeElement.createGeFromTrackEl(te, tv.trackFormat, globalCoords=self._globalCoords)
+
+    def _initHeaders(self):
+        headerShelve = HeaderShelve(self._genome, self._trackName, self._allowOverlaps)
+        if headerShelve.fileExists():
+            self._headers = headerShelve.getHeaders()
 
     def next(self):
         return self._generator.next()
@@ -242,6 +251,9 @@ class TrackGenomeElementSource(GenomeElementSource):
     def hasUndirectedEdges(self):
         self._findTrackInfoBasedMetaData()
         return self._undirectedEdges
+
+    def getHeaders(self):
+        return self._headers
 
 
 class FullTrackGenomeElementSource(TrackGenomeElementSource):

@@ -39,6 +39,7 @@ class PreProcMetaDataCollector(object):
         self._undirectedEdges = None
         self._preProcVersion = ''
         self._id = None
+        self._headers = None
         
         self._numElements = defaultdict(int)
         self._boundingRegionTuples = defaultdict(list)
@@ -63,7 +64,7 @@ class PreProcMetaDataCollector(object):
         return constructKey(genome, trackName) in cls._preProcMetaDataStorage
         
     def updateMetaDataForFinalization(self, fileSuffix, prefixList, valDataType, valDim, weightDataType, weightDim, undirectedEdges, \
-                                      preProcVersion, id, numElements, boundingRegionTuples, valCategories, edgeWeightCategories, allowOverlaps):
+                                      preProcVersion, id, numElements, boundingRegionTuples, valCategories, edgeWeightCategories, allowOverlaps, headers):
         
         self._checkAndUpdateAttribute('_fileSuffix', fileSuffix, mayBeEmptyString=True, isGeSourceAttr=False)
         self._checkAndUpdateAttribute('_prefixList', set(prefixList), mayBeEmptyString=False, isGeSourceAttr=False, extraErrorMsg='Different formats?')
@@ -85,6 +86,7 @@ class PreProcMetaDataCollector(object):
         self._boundingRegionTuples[allowOverlaps] += boundingRegionTuples
         self._valCategories[allowOverlaps] |= valCategories
         self._edgeWeightCategories[allowOverlaps] |= edgeWeightCategories
+        self._headers = headers
         
     def flagChrsAsPreProcessed(self, allowOverlaps, chrList):
         for chr in chrList:
@@ -157,6 +159,9 @@ class PreProcMetaDataCollector(object):
         
     def getId(self):
         return self._id
+
+    def getHeaders(self):
+        return self._headers
                 
     def finalize(self, username, printMsg):
         ti = TrackInfo(self._genome, self._trackName)

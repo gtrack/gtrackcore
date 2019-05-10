@@ -4,6 +4,8 @@ from gtrackcore.track.memmap.CommonMemmapFunctions import parseMemmapFileFn
 from gtrackcore.track.memmap.SmartMemmap import SmartMemmap
 from gtrackcore.track.memmap.BoundingRegionShelve import BoundingRegionShelve, isBoundingRegionFileName
 from gtrackcore.util.CommonFunctions import createDirPath
+from input.core.HeaderShelve import isHeaderShelveFilename
+
 
 class TrackData(dict):
     def __init__(self, other=None):
@@ -39,11 +41,12 @@ class TrackSource:
                     self._fileDict[fullFn] = brShelve
                 trackData.boundingRegionShelve = self._fileDict[fullFn]
                 continue
+
+            if not isHeaderShelveFilename(fn):
+                prefix, elementDim, dtypeDim, dtype = parseMemmapFileFn(fn)
             
-            prefix, elementDim, dtypeDim, dtype = parseMemmapFileFn(fn)
-            
-            assert prefix not in trackData
-            trackData[prefix] = self._getFile(chr, dir, fullFn, elementDim, dtype, dtypeDim)
+                assert prefix not in trackData
+                trackData[prefix] = self._getFile(chr, dir, fullFn, elementDim, dtype, dtypeDim)
         
         return trackData
     

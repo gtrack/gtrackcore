@@ -9,15 +9,18 @@ class VcfComposer(FileFormatComposer):
 
     def __init__(self, geSource):
         FileFormatComposer.__init__(self, geSource)
-        colNames = self._geSource.getPrefixList()
-        lastIndex = colNames.index('INFO')
-        self._colNames = self.VCF_STANDARD_COLUMNS + colNames[lastIndex+1:]
+        self._colNames = self._getColNames()
 
     @staticmethod
     def matchesTrackFormat(trackFormat):
         return MatchResult(match=True, trackFormatName=trackFormat.getFormatName())
 
     def _compose(self, out):
+        headersDict = self._geSource.getHeaders()
+        for headerId, headerVals in headersDict.iteritems():
+            for headerVal in headerVals:
+                print >> out, '##' + headerId + '=' + headerVal
+
         print >> out, '#' + '\t'.join(self._colNames)
 
         for ge in self._geSource:
@@ -35,7 +38,20 @@ class VcfComposer(FileFormatComposer):
 
                 composedLine.append(val)
 
-            print >> out, '\t'.join([str(x) for x in composedLine])
+            print >> out, '\t'.join([str(col) for col in composedLine])
 
+    def _getColNames(self):
+        colNames = self._geSource.getPrefixList()
+        for stdCol in self.VCF_STANDARD_COLUMNS:
+            if stdCol in colNames:
+                colNames.remove(stdCol)
 
+        colNames.remove('start')
+        colNames.remove('val')
+        if 'end' in colNames:
+            colNames.remove('end')
+        if colNames:
+            colNames = sorted(colNames)
+            colNames.insert(0, colNames.pop(colNames.index('FORMAT')))
 
+        return self.VCF_STANDARD_COLUMNS + colNames

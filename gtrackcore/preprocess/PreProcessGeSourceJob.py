@@ -33,7 +33,7 @@ class PreProcessGeSourceJob(object):
                                                 self._geSourceManager.getBoundingRegionTuples(), \
                                                 self._geSourceManager.getValCategories(), \
                                                 self._geSourceManager.getEdgeWeightCategories(), \
-                                                self._allowOverlaps)
+                                                self._allowOverlaps, self._geSourceManager.getHeaders())
 
         if self._geSourceManager.getNumElements() == 0:
             return

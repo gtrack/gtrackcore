@@ -1,17 +1,15 @@
 import os
-import sys
-
-from copy import copy
-from collections import OrderedDict
 from cStringIO import StringIO
+from copy import copy
 
 from gtrackcore.core.LogSetup import logException
 from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
+from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import getFileSuffix
-from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL, RESERVED_PREFIXES
 from gtrackcore.util.CustomExceptions import NotSupportedError, InvalidFormatError, \
-                                         InvalidFormatWarning, Warning
+    InvalidFormatWarning, Warning
+
 
 class BoundingRegionTuple:
     def __init__(self, region, elCount):
@@ -172,6 +170,9 @@ class GenomeElementSource(object):
 
     def _handleBlankLine(self):
         pass
+
+    def getHeaders(self):
+        return None
 
     def _readHeaders(self, file):
         self.headers = [file.readline() for i in xrange(self._numHeaderLines)]

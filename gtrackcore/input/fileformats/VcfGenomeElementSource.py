@@ -1,4 +1,4 @@
-import numpy as np
+from collections import OrderedDict
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from input.core.GenomeElement import GenomeElement
@@ -17,44 +17,36 @@ class VcfGenomeElementSource(GenomeElementSource):
         GenomeElementSource.__init__(self, *args, **kwArgs)
         self._boundingRegionTuples = []
         self._numHeaderLines = 0
-        self._altMaxLength = 0
+        # altMaxLength is used to determine size of the val list, it has to always be at least two
+        # otherwise the track format is wrongly determined as 'category' insetad of 'category_vector'
+        self._altMaxLength = 2
         self._isPoints = False
-        self._altItemMaxLenght = 0
-        self._headerLines = []
+        self._headersDict = OrderedDict()
         self._colNames = 0
+        self._refMaxLength = 0
         self._initFileInfo()
 
     def _initFileInfo(self):
-        CHROM, POS, ID, REF, ALT = range(5)
-        refMaxLength = 0
         with open(self._fn, 'r') as vcfFile:
             for line in vcfFile:
                 line = line.strip()
                 if line.startswith('##'):
                     # header line
                     self._numHeaderLines += 1
-                    self._headerLines.append(line)
+                    headerId, headerVal = line[2:].split('=', 1)
+                    if headerId in self._headersDict:
+                        self._headersDict[headerId].append(headerVal)
+                    else:
+                        self._headersDict[headerId] = [headerVal]
                 elif line.startswith('#'):
                     # column specification
                     self._numHeaderLines += 1
                     self._colNames = line[1:].split('\t')
                 else:
                     # data lines
-                    cols = line.split('\t')
-                    if len(cols) == 1:
-                        cols = line.split()
+                    self._initDataInfo(line)
 
-                    altItems = cols[ALT].split(',')
-                    if len(altItems) > self._altMaxLength:
-                        self._altMaxLength = len(altItems)
-                    for altItem in altItems:
-                        if len(altItem) > self._altItemMaxLenght:
-                            self._altItemMaxLenght = len(altItem)
-
-                    if len(cols[REF]) > refMaxLength:
-                        refMaxLength = len(cols[REF])
-
-        if refMaxLength == 1:
+        if self._refMaxLength == 1:
             self._isPoints = True
 
     def _iter(self):
@@ -72,10 +64,11 @@ class VcfGenomeElementSource(GenomeElementSource):
             else:
                 ge.end = ge.start + 1
 
-        val = np.zeros(self._altMaxLength, dtype='S' + str(self._altItemMaxLenght))
+        val = [''] * self._altMaxLength
 
         if cols[ALT] != '.':
-            val[:len(cols[ALT])] = cols[ALT]
+            altVals = cols[ALT].split(',')
+            val[:len(altVals)] = altVals
 
         ge.val = val
 
@@ -85,7 +78,6 @@ class VcfGenomeElementSource(GenomeElementSource):
         for i, colName in enumerate(self._colNames[5:], 5):
             setattr(ge, colName, cols[i])
 
-        print ge
         return ge
 
     def getValDataType(self):
@@ -93,4 +85,20 @@ class VcfGenomeElementSource(GenomeElementSource):
 
     def getValDim(self):
         return self._altMaxLength
+
+    def getHeaders(self):
+        return self._headersDict
+
+    def _initDataInfo(self, line):
+        CHROM, POS, ID, REF, ALT = range(5)
+        cols = line.split('\t')
+        if len(cols) == 1:
+            cols = line.split()
+
+        altItems = cols[ALT].split(',')
+        if len(altItems) > self._altMaxLength:
+            self._altMaxLength = len(altItems)
+
+        if len(cols[REF]) > self._refMaxLength:
+            self._refMaxLength = len(cols[REF])
 

@@ -104,6 +104,9 @@ class GESourceWrapper(object):
         
     def getLastWarning(self):
         return self._geSource.getLastWarning()
+
+    def getHeaders(self):
+        return self._geSource.getHeaders()
     
     genome = property(getGenome)
 

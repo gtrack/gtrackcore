@@ -21,6 +21,8 @@ from gtrackcore.util.CommonFunctions import createOrigPath, createDirPath, prett
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
 from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning, ShouldNotOccurError
+from input.core.HeaderShelve import HeaderShelve
+
 
 class PreProcessTracksJob(object):
     VERSION = '1.0'
@@ -79,6 +81,10 @@ class PreProcessTracksJob(object):
 
                             self._status = 'Trying to remove chromosome folders'
                             PreProcessUtils.removeChrMemmapFolders(self._genome, trackName, allowOverlaps)
+
+                        # Create header shelve
+                        headerShelve = HeaderShelve(self._genome, trackName, allowOverlaps)
+                        headerShelve.storeHeaders(collector.getHeaders())
 
                         self._status = 'Trying to check whether 3D data is correct'
                         PreProcessUtils.checkIfEdgeIdsExist(self._genome, trackName, allowOverlaps)
