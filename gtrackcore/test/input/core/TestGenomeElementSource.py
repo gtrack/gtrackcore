@@ -2013,14 +2013,14 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
                     'chr21	2301308	rs84823	T	G	.	PASS	.	GT:PL	./.:.	1/1:10,5,0'],
                  '.vcf',
                  ['My', 'vcf-points-track'],
-                 [GenomeElement('TestGenome', 'chr21', val=['A'], start=1291018, extra=OrderedDict([('ID','rs11449'),('REF', 'G'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'), ('FORMAT','GT'),('SAMP001','0/0'),('SAMP002','0/1')])),
-                  GenomeElement('TestGenome', 'chr21', val=['T'], start=2300608, extra=OrderedDict([('ID','rs84825'),('REF','C'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'),('FORMAT','GT:GP'),('SAMP001','0/1:.'),('SAMP002','0/1:0.03,0.97,0')])),
-                  GenomeElement('TestGenome', 'chr21', val=['G'], start=2301308,  extra=OrderedDict([('ID','rs84823'),('REF','T'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'),('FORMAT','GT:PL'),('SAMP001','./.:.'),('SAMP002','1/1:10,5,0')]))],
+                 [GenomeElement('TestGenome', 'chr21', val=['A', ''], start=1291018, extra=OrderedDict([('ID','rs11449'),('REF', 'G'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'), ('FORMAT','GT'),('SAMP001','0/0'),('SAMP002','0/1')])),
+                  GenomeElement('TestGenome', 'chr21', val=['T', ''], start=2300608, extra=OrderedDict([('ID','rs84825'),('REF','C'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'),('FORMAT','GT:GP'),('SAMP001','0/1:.'),('SAMP002','0/1:0.03,0.97,0')])),
+                  GenomeElement('TestGenome', 'chr21', val=['G', ''], start=2301308,  extra=OrderedDict([('ID','rs84823'),('REF','T'), ('QUAL', '.'), ('FILTER', 'PASS'), ('INFO','.'),('FORMAT','GT:PL'),('SAMP001','./.:.'),('SAMP002','1/1:10,5,0')]))],
                  [],
                  VcfGenomeElementSource,
                  ['start', 'val', 'ID', 'REF', 'QUAL', 'FILTER', 'INFO', 'FORMAT', 'SAMP001', 'SAMP002'],
                  'S',
-                 1,
+                 2,
                  'float64',
                  1)
 

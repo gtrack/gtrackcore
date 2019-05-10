@@ -86,14 +86,13 @@ def iterateOverBRTuplesWithContainedGEs(geSource, onlyYieldTwoGEs=False, returnI
         geElCount = 0
 
         for i, ge in enumerate(geSource):
+            geList.append(ge.getCopy())
             if isinstance(ge.val, np.ndarray):
                 geElCount += ge.val.size
             elif isinstance(ge.start, np.ndarray):
                 geElCount += ge.start.size
             else:
                 geElCount = len(geList)
-
-            geList.append(ge.getCopy())
 
             if len(brTuples) > curBrIndex + 1 and geElCount == brTuples[curBrIndex].elCount:
                     yield brTuples[curBrIndex], geList
