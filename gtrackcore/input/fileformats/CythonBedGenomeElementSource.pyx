@@ -1,10 +1,15 @@
+
+# cython: infer_types=True
 import numpy
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
-from gtrackcore.input.core.GenomeElement import GenomeElement
+import pyximport; pyximport.install(setup_args={"include_dirs":numpy.get_include()},
+                                    reload_support=True, language_level=2)
+from gtrackcore.input.core.CythonGenomeElementExt import CythonGenomeElementExt
 from gtrackcore.util.CustomExceptions import InvalidFormatError
 
-class BedGenomeElementSource(GenomeElementSource):
+class CythonBedGenomeElementSource(GenomeElementSource):
+    BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
     _VERSION = '1.2'
     FILE_SUFFIXES = ['bed']
     FILE_FORMAT_NAME = 'BED'
@@ -12,8 +17,6 @@ class BedGenomeElementSource(GenomeElementSource):
 
     MIN_NUM_COLS = 3
     MAX_NUM_COLS = 12
-
-    BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
 
 
     def __new__(cls, *args, **kwArgs):
@@ -28,7 +31,7 @@ class BedGenomeElementSource(GenomeElementSource):
         self._numCols = None
         self._geClass = geClass
 
-    def _next(self, line):
+    def _next(self, str line):
         if line.startswith('#'):
             return
 
@@ -60,7 +63,7 @@ class BedGenomeElementSource(GenomeElementSource):
 
         return ge
 
-    def _parseEnd(self, ge, end):
+    def _parseEnd(self, ge, int end):
         ge.end = end
 
     def _parseName(self, ge, cols):
@@ -82,42 +85,42 @@ class BedGenomeElementSource(GenomeElementSource):
     def getValDataType(self):
         return 'int32'
 
-class PointBedGenomeElementSource(BedGenomeElementSource):
-    FILE_SUFFIXES = ['point.bed']
-    FILE_FORMAT_NAME = 'Point BED'
-
-    def _parseEnd(self, ge, end):
-        if end != ge.start + 1:
-            raise InvalidFormatError('Error: point BED files can only have segments of length 1')
-
-class BedValuedGenomeElementSource(BedGenomeElementSource):
-    _VERSION = '1.1'
-    FILE_SUFFIXES = ['valued.bed', 'marked.bed']
-    FILE_FORMAT_NAME = 'Valued BED'
-
-    MIN_NUM_COLS = 5
-
-    def _parseVal(self, ge, cols):
-        ge.val = numpy.float(self._handleNan(cols[4]))
-
-    def getValDataType(self):
-        return 'float64'
-
-class BedCategoryGenomeElementSource(BedGenomeElementSource):
-    _VERSION = '1.5'
-    FILE_SUFFIXES = ['category.bed']
-    FILE_FORMAT_NAME = 'Category BED'
-
-    MIN_NUM_COLS = 4
-
-    def _parseVal(self, ge, cols):
-        if self._numCols >= 5:
-            ge.score = cols[4]
-
-        ge.val = cols[3]
-
-    def _parseName(self, ge, cols):
-        pass
-
-    def getValDataType(self):
-        return 'S'
+# class PointBedGenomeElementSource(CythonBedGenomeElementSource):
+#     FILE_SUFFIXES = ['point.bed']
+#     FILE_FORMAT_NAME = 'Point BED'
+#
+#     def _parseEnd(self, ge, end):
+#         if end != ge.start + 1:
+#             raise InvalidFormatError('Error: point BED files can only have segments of length 1')
+#
+# class BedValuedGenomeElementSource(CythonBedGenomeElementSource):
+#     _VERSION = '1.1'
+#     FILE_SUFFIXES = ['valued.bed', 'marked.bed']
+#     FILE_FORMAT_NAME = 'Valued BED'
+#
+#     MIN_NUM_COLS = 5
+#
+#     def _parseVal(self, ge, cols):
+#         ge.val = numpy.float(self._handleNan(cols[4]))
+#
+#     def getValDataType(self):
+#         return 'float64'
+#
+# class BedCategoryGenomeElementSource(CythonBedGenomeElementSource):
+#     _VERSION = '1.5'
+#     FILE_SUFFIXES = ['category.bed']
+#     FILE_FORMAT_NAME = 'Category BED'
+#
+#     MIN_NUM_COLS = 4
+#
+#     def _parseVal(self, ge, cols):
+#         if self._numCols >= 5:
+#             ge.score = cols[4]
+#
+#         ge.val = cols[3]
+#
+#     def _parseName(self, ge, cols):
+#         pass
+#
+#     def getValDataType(self):
+#         return 'S'
