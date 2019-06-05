@@ -1,8 +1,13 @@
+# cython: profile=True
+# cython: infer_types=True
+
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import isNan
 from gtrackcore.util.CustomExceptions import NotSupportedError
 import numpy as np
+from cpython.object cimport PyObject_GenericSetAttr
+from cpython.object cimport PyObject_GenericGetAttr
 
 
 cdef class CythonGenomeElementExt():
@@ -61,58 +66,21 @@ cdef class CythonGenomeElementExt():
         return CythonGenomeElementExt(self.genome, self.chr, self.start, self.end, self.val, self.strand, self.id, self.edges, self.weights, extraCopy, orderedExtraKeysCopy)
 
     def __getattr__(self, name):
-        try:
-            if name not in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+        if name in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+            return PyObject_GenericGetAttr(self, name)
+        else:
+            try:
                 return self.__dict__['extra'][name]
-            elif name == 'genome':
-                return self.genome
-            elif name == 'chr':
-                return self.chr
-            elif name == 'start':
-                return self.start
-            elif name == 'end':
-                return self.end
-            elif name == 'val':
-                return self.val
-            elif name == 'strand':
-                return self.strand
-            elif name == 'id':
-                return self.id
-            elif name == 'edges':
-                return self.edges
-            elif name == 'weights':
-                return self.weights
-            elif name == 'isBlankElement':
-                return self.isBlankElement
-        except KeyError:
-            raise AttributeError
+            except KeyError:
+                raise AttributeError
 
     def __setattr__(self, name, value):
-        if name not in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+        if name in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+            PyObject_GenericSetAttr(self, name, value)
+        else:
             if name not in self.extra:
                 self.orderedExtraKeys.append(name)
             self.extra[name] = value
-        elif name == 'genome':
-            self.genome = value
-        elif name == 'chr':
-            self.chr = value
-        elif name == 'start':
-            self.start = value
-        elif name == 'end':
-            self.end = value
-        elif name == 'val':
-            self.val = value
-        elif name == 'strand':
-            self.strand = value
-        elif name == 'id':
-            self.id = value
-        elif name == 'edges':
-            self.edges = value
-        elif name == 'weights':
-            self.weights = value
-        elif name == 'isBlankElement':
-            self.isBlankElement = value
-
 
     def __str__(self):
         #return self.toStr()
@@ -196,25 +164,25 @@ cdef class CythonGenomeElementExt():
     def validAsRegion(self):
         return not None in [self.genome, self.chr, self.start, self.end]
 
-#    @staticmethod
-#    def createGeFromTrackEl(trackEl, tf, globalCoords=True):
-#        genomeAnchor = trackEl._trackView.genomeAnchor
-#        genome = genomeAnchor.genome
-#        start = None if (tf.isDense() and tf.isInterval()) else trackEl.start()
-#        end = None if (not tf.isInterval() and not tf.isDense()) else trackEl.end()
-#        edges = trackEl.edges()[trackEl.edges() != ''] if trackEl.edges() is not None else None
-#        weights = trackEl.weights()[trackEl.edges() != ''] if trackEl.weights() is not None else None
-#
-#        if globalCoords:
-#            chr = genomeAnchor.chr
-#            if start is not None:
-#                start += genomeAnchor.start
-#            if end is not None:
-#                end += genomeAnchor.start
-#        else:
-#            chr = str(genomeAnchor)
-#
-#        return GenomeElement(genome, chr, start, end, trackEl.val(), trackEl.strand(), \
-#                             id=trackEl.id(), edges=edges, weights=weights, \
-#                             extra=dict([(key, getattr(trackEl, key)()) for key in trackEl.getAllExtraKeysInOrder()]), \
-#                             orderedExtraKeys=trackEl.getAllExtraKeysInOrder())
+    @staticmethod
+    def createGeFromTrackEl(trackEl, tf, globalCoords=True):
+        genomeAnchor = trackEl._trackView.genomeAnchor
+        genome = genomeAnchor.genome
+        start = None if (tf.isDense() and tf.isInterval()) else trackEl.start()
+        end = None if (not tf.isInterval() and not tf.isDense()) else trackEl.end()
+        edges = trackEl.edges()[trackEl.edges() != ''] if trackEl.edges() is not None else None
+        weights = trackEl.weights()[trackEl.edges() != ''] if trackEl.weights() is not None else None
+
+        if globalCoords:
+            chr = genomeAnchor.chr
+            if start is not None:
+                start += genomeAnchor.start
+            if end is not None:
+                end += genomeAnchor.start
+        else:
+            chr = str(genomeAnchor)
+
+        return CythonGenomeElementExt(genome, chr, start, end, trackEl.val(), trackEl.strand(), \
+                             id=trackEl.id(), edges=edges, weights=weights, \
+                             extra=dict([(key, getattr(trackEl, key)()) for key in trackEl.getAllExtraKeysInOrder()]), \
+                             orderedExtraKeys=trackEl.getAllExtraKeysInOrder())

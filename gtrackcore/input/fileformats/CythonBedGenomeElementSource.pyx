@@ -1,14 +1,18 @@
 
 # cython: infer_types=True
+# cython: profile=True
 import numpy
-
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 import pyximport; pyximport.install(setup_args={"include_dirs":numpy.get_include()},
                                     reload_support=True, language_level=2)
+
+from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
+from gtrackcore.input.core.CythonGenomeElementSource import CythonGenomeElementSource
+from gtrackcore.input.core.CythonGenomeElementSourceExt import CythonGenomeElementSourceExt
+
 from gtrackcore.input.core.CythonGenomeElementExt import CythonGenomeElementExt
 from gtrackcore.util.CustomExceptions import InvalidFormatError
 
-class CythonBedGenomeElementSource(GenomeElementSource):
+class CythonBedGenomeElementSource(CythonGenomeElementSource):
     BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
     _VERSION = '1.2'
     FILE_SUFFIXES = ['bed']
@@ -19,11 +23,11 @@ class CythonBedGenomeElementSource(GenomeElementSource):
     MAX_NUM_COLS = 12
 
 
-    def __new__(cls, *args, **kwArgs):
-        return object.__new__(cls)
+#    def __new__(cls, *args, **kwArgs):
+#        return object.__new__(cls)
 
     def __init__(self, fn, geClass, *args, **kwArgs):
-        GenomeElementSource.__init__(self, fn, *args, **kwArgs)
+        CythonGenomeElementSource.__init__(self, fn, *args, **kwArgs)
         f = open(fn)
         possibleHeader = f.readline()
         if possibleHeader.startswith('track'):
@@ -32,6 +36,7 @@ class CythonBedGenomeElementSource(GenomeElementSource):
         self._geClass = geClass
 
     def _next(self, str line):
+        cdef list cols
         if line.startswith('#'):
             return
 
