@@ -1,5 +1,5 @@
-# cython: infer_types=True
 # cython: profile=True
+# cython: infer_types=True
 
 import os
 from cStringIO import StringIO
@@ -14,22 +14,33 @@ from gtrackcore.util.CustomExceptions import NotSupportedError, InvalidFormatErr
     InvalidFormatWarning, Warning
 
 
-class CythonGenomeElementSource(object):
-    _VERSION = '0.0'
-    FILE_SUFFIXES = []
-    FILE_FORMAT_NAME = ''
+cdef class CythonGenomeElementSource(object):
+    cdef str _VERSION
+    cdef list FILE_SUFFIXES
+    cdef str FILE_FORMAT_NAME
 
-    _hasOrigFile = True
-    _isSliceSource = False
-    _addsStartElementToDenseIntervals = True
-    _isSorted = False
-    _hasCircularElements = False
-    _fixedLength = 1
-    _fixedGapSize = 0
-    _hasNoOverlappingElements = False
-    _hasUndirectedEdges = False
-    _inputIsOneIndexed = False
-    _inputIsEndInclusive = False
+    cdef bint _hasOrigFile
+    cdef bint _isSliceSource
+    cdef bint _addsStartElementToDenseIntervals
+    cdef bint _isSorted
+    cdef bint _hasCircularElements
+    cdef int _fixedLength
+    cdef int _fixedGapSize
+    cdef bint _hasNoOverlappingElements
+    cdef bint _hasUndirectedEdges
+    cdef bint _inputIsOneIndexed
+    cdef bint _inputIsEndInclusive
+
+    cdef public str _genome
+    cdef object _genomeElement
+    cdef str _trackName
+    cdef bint external
+    cdef list _prefixList
+    cdef bint _printWarnings
+    cdef str _strToUseInsteadOfFn
+    cdef str _lastWarning
+    cdef str _currentChr
+    cdef int _currentChrLen
 
 #    def __new__(cls, fn, genome=None, trackName=None, suffix=None, forPreProcessor=False, *args, **kwArgs):
 #        geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
@@ -48,6 +59,22 @@ class CythonGenomeElementSource(object):
         self._currentChr = ''
         self._currentChrLen = 0
 
+    def initDefaultVals(self):
+        self._VERSION = '0.0'
+        self.FILE_SUFFIXES = []
+        self.FILE_FORMAT_NAME = ''
+
+        self._hasOrigFile = True
+        self._isSliceSource = False
+        self._addsStartElementToDenseIntervals = True
+        self._isSorted = False
+        self._hasCircularElements = False
+        self._fixedLength = 1
+        self._fixedGapSize = 0
+        self._hasNoOverlappingElements = False
+        self._hasUndirectedEdges = False
+        self._inputIsOneIndexed = False
+        self. _inputIsEndInclusive = False
 
     def getFileFormatName(self):
         return self.FILE_FORMAT_NAME
@@ -110,6 +137,8 @@ class CythonGenomeElementSource(object):
         return self._lastWarning
 
     def next(self):
+        cdef str line, lineStripped
+        cdef object ge
         while True:
             line = self._file.readline()
             lineStripped = line.rstrip('\r\n')
@@ -193,11 +222,12 @@ class CythonGenomeElementSource(object):
         return self
 
     def _checkValidChr(self, chr):
-        if chr == self._currentChr:
+        if self._currentChr and chr == self._currentChr:
             return chr
-        if self.genome and not GenomeInfo.isValidChr(self.genome, chr):
-            raise InvalidFormatWarning('Chromosome incorrectly specified: ' + chr)
-        self._currentChr = chr
+        if self.genome:
+            if not GenomeInfo.isValidChr(self.genome, chr):
+                raise InvalidFormatWarning('Chromosome incorrectly specified: ' + chr)
+            self._currentChr = chr
 
         return chr
 
@@ -205,17 +235,18 @@ class CythonGenomeElementSource(object):
         if start < 0:
             raise InvalidFormatError('Error: start position is negative: %s' % start)
 
-        if chr == self._currentChr and self._currentChrLen != 0:
+        if self._currentChr and chr == self._currentChr and self._currentChrLen != 0:
             if start < self._currentChrLen:
                 return start
 
-        if self.genome and \
-            GenomeInfo.isValidChr(self.genome, chr) and \
-                start > GenomeInfo.getChrLen(self.genome, chr):
-                    raise InvalidFormatError('Error: start position is larger than the size of chromosome "%s" (%s > %s)' % \
-                                            (chr, start, GenomeInfo.getChrLen(self.genome, chr)))
-        self._currentChr = chr
-        self._currentChrLen = GenomeInfo.getChrLen(self.genome, chr)
+        if self.genome:
+            if GenomeInfo.isValidChr(self.genome, chr) and start > GenomeInfo.getChrLen(self.genome, chr):
+                raise InvalidFormatError(
+                'Error: start position is larger than the size of chromosome "%s" (%s > %s)' % \
+                (chr, start, GenomeInfo.getChrLen(self.genome, chr)))
+
+            self._currentChr = chr
+            self._currentChrLen = GenomeInfo.getChrLen(self.genome, chr)
 
         return start
 
@@ -225,20 +256,22 @@ class CythonGenomeElementSource(object):
 
         if start is not None and end <= start:
             if not start == end == 1:
-                raise InvalidFormatError('Error: end position (end-exclusive) is smaller than or equal to start position: %d <= %d' % (end, start))
+                raise InvalidFormatError(
+                    'Error: end position (end-exclusive) is smaller than or equal to start position: %d <= %d' % (
+                    end, start))
 
-        if chr == self._currentChr and self._currentChrLen != 0:
-            if end-1 < self._currentChrLen:
+        if self._currentChr and chr == self._currentChr and self._currentChrLen != 0:
+            if end - 1 < self._currentChrLen:
                 return end
 
-        if self.genome and \
-            GenomeInfo.isValidChr(self.genome, chr) and \
-                end-1 > GenomeInfo.getChrLen(self.genome, chr):
-                    raise InvalidFormatError('Error: end position is larger than the size of chromosome "%s" (%s > %s)' % \
-                                             (chr, end-1, GenomeInfo.getChrLen(self.genome, chr)))
+        if self.genome:
+            if GenomeInfo.isValidChr(self.genome, chr) and end - 1 > GenomeInfo.getChrLen(self.genome, chr):
+                raise InvalidFormatError(
+            'Error: end position is larger than the size of chromosome "%s" (%s > %s)' % \
+            (chr, end - 1, GenomeInfo.getChrLen(self.genome, chr)))
 
-        self._currentChr = chr
-        self._currentChrLen = GenomeInfo.getChrLen(self.genome, chr)
+            self._currentChr = chr
+            self._currentChrLen = GenomeInfo.getChrLen(self.genome, chr)
 
         return end
 

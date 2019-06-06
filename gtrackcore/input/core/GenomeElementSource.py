@@ -56,6 +56,8 @@ class GenomeElementSource(object):
         self._printWarnings = printWarnings
         self._strToUseInsteadOfFn = strToUseInsteadOfFn
         self._lastWarning = None
+        self._currentChr = ''
+        self._currentChrLen = 0
 
     def getFileFormatName(self):
         return self.FILE_FORMAT_NAME
@@ -195,39 +197,64 @@ class GenomeElementSource(object):
         geIter._file = geIter._getFileNoHeaders()
         geIter._handledEof = False
         self._lastWarning = None
+        geIter._currentChr = ''
+        geIter._currentChrLen = 0
         return geIter._iter()
 
     def _iter(self):
         return self
 
     def _checkValidChr(self, chr):
-        if self.genome and not GenomeInfo.isValidChr(self.genome, chr):
-            raise InvalidFormatWarning('Chromosome incorrectly specified: ' + chr)
+        if self._currentChr and chr == self._currentChr:
+            return chr
+        if self.genome:
+            if not GenomeInfo.isValidChr(self.genome, chr):
+                raise InvalidFormatWarning('Chromosome incorrectly specified: ' + chr)
+            self._currentChr = chr
+
         return chr
 
     def _checkValidStart(self, chr, start):
         if start < 0:
             raise InvalidFormatError('Error: start position is negative: %s' % start)
 
-        if self.genome and \
-            GenomeInfo.isValidChr(self.genome, chr) and \
-                start > GenomeInfo.getChrLen(self.genome, chr):
-                    raise InvalidFormatError('Error: start position is larger than the size of chromosome "%s" (%s > %s)' % \
-                                             (chr, start, GenomeInfo.getChrLen(self.genome, chr)))
+        if self._currentChr and chr == self._currentChr and self._currentChrLen != 0:
+            if start < self._currentChrLen:
+                return start
+
+        if self.genome:
+            if GenomeInfo.isValidChr(self.genome, chr) and start > GenomeInfo.getChrLen(self.genome, chr):
+                raise InvalidFormatError(
+                'Error: start position is larger than the size of chromosome "%s" (%s > %s)' % \
+                (chr, start, GenomeInfo.getChrLen(self.genome, chr)))
+
+            self._currentChr = chr
+            self._currentChrLen = GenomeInfo.getChrLen(self.genome, chr)
+
         return start
 
     def _checkValidEnd(self, chr, end, start=None):
         if end < 0:
             raise InvalidFormatError('Error: end position is negative: %s' % end)
 
-        if self.genome and \
-            GenomeInfo.isValidChr(self.genome, chr) and \
-                end-1 > GenomeInfo.getChrLen(self.genome, chr):
-                    raise InvalidFormatError('Error: end position is larger than the size of chromosome "%s" (%s > %s)' % \
-                                             (chr, end-1, GenomeInfo.getChrLen(self.genome, chr)))
         if start is not None and end <= start:
             if not start == end == 1:
-                raise InvalidFormatError('Error: end position (end-exclusive) is smaller than or equal to start position: %d <= %d' % (end, start))
+                raise InvalidFormatError(
+                    'Error: end position (end-exclusive) is smaller than or equal to start position: %d <= %d' % (
+                    end, start))
+
+        if self._currentChr and chr == self._currentChr and self._currentChrLen != 0:
+            if end - 1 < self._currentChrLen:
+                return end
+
+        if self.genome:
+            if GenomeInfo.isValidChr(self.genome, chr) and end - 1 > GenomeInfo.getChrLen(self.genome, chr):
+                raise InvalidFormatError(
+            'Error: end position is larger than the size of chromosome "%s" (%s > %s)' % \
+            (chr, end - 1, GenomeInfo.getChrLen(self.genome, chr)))
+
+            self._currentChr = chr
+            self._currentChrLen = GenomeInfo.getChrLen(self.genome, chr)
 
         return end
 

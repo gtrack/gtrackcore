@@ -1,61 +1,58 @@
+# cython: profile=True
+# cython: infer_types=True
+
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import isNan
 from gtrackcore.util.CustomExceptions import NotSupportedError
 import numpy as np
+from cpython.object cimport PyObject_GenericSetAttr
+from cpython.object cimport PyObject_GenericGetAttr
 
 
-class CythonGenomeElement(GenomeRegion):
-#    @staticmethod
-#    def createGeFromTrackEl(trackEl, tf, globalCoords=True):
-#        genomeAnchor = trackEl._trackView.genomeAnchor
-#        genome = genomeAnchor.genome
-#        start = None if (tf.isDense() and tf.isInterval()) else trackEl.start()
-#        end = None if (not tf.isInterval() and not tf.isDense()) else trackEl.end()
-#        edges = trackEl.edges()[trackEl.edges() != ''] if trackEl.edges() is not None else None
-#        weights = trackEl.weights()[trackEl.edges() != ''] if trackEl.weights() is not None else None
-#
-#        if globalCoords:
-#            chr = genomeAnchor.chr
-#            if start is not None:
-#                start += genomeAnchor.start
-#            if end is not None:
-#                end += genomeAnchor.start
-#        else:
-#            chr = str(genomeAnchor)
-#
-#        return GenomeElement(genome, chr, start, end, trackEl.val(), trackEl.strand(), \
-#                             id=trackEl.id(), edges=edges, weights=weights, \
-#                             extra=dict([(key, getattr(trackEl, key)()) for key in trackEl.getAllExtraKeysInOrder()]), \
-#                             orderedExtraKeys=trackEl.getAllExtraKeysInOrder())
+cdef class CythonGenomeElement():
 
-    def __init__(self, genome=None, chr=None, start=None, end=None, val=None, strand=None, id=None, edges=None, weights=None, extra=None, orderedExtraKeys=None, isBlankElement=False, **kwArgs):
+    cdef public str genome
+    cdef public str chr #sequence id (string)
+    cdef public int start #start posision (int, 0-indexed)
+    cdef public int end #end position (int, 0-indexed, end-exclusive)
+    cdef public int val #value (float (number), string (category (n>1) or character (n=1)), int (1 for case, 0 for control, -1 for missing) or lists of the same)
+    cdef public int strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
+    cdef public str id #unique id (string)
+    cdef public list edges #ids of linked elements (list of strings)
+    cdef public list weights #resp. weights of edges (list of values, using similar types as for 'value' above)
+    cdef public bint isBlankElement
+    cdef public list orderedExtraKeys
+    cdef public dict extra
+
+
+    def __init__(self, genome=None, chr=None, start=0, end=0, val=0, strand=0, id=None, edges=None, weights=None, extra=None, orderedExtraKeys=None, isBlankElement=False, **kwArgs):
         # __dict__ is used for speedup, so that __setattr__ is not called
-        members = self.__dict__
-        members['genome'] = genome
-        members['chr'] = chr #sequence id (string)
-        members['start'] = start #start posision (int, 0-indexed)
-        members['end'] = end #end position (int, 0-indexed, end-exclusive)
-        members['val'] = val #value (float (number), string (category (n>1) or character (n=1)), int (1 for case, 0 for control, -1 for missing) or lists of the same)
-        members['strand'] = strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
-        members['id'] = id #unique id (string)
-        members['edges'] = edges #ids of linked elements (list of strings)
-        members['weights'] = weights #resp. weights of edges (list of values, using similar types as for 'value' above)
-        members['isBlankElement'] = isBlankElement
+        self.genome = genome
+        self.chr = chr #sequence id (string)
+        self.start = start #start posision (int, 0-indexed)
+        self.end = end #end position (int, 0-indexed, end-exclusive)
+        self.val = val #value (float (number), string (category (n>1) or character (n=1)), int (1 for case, 0 for control, -1 for missing) or lists of the same)
+        self.strand = strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
+        self.id = id #unique id (string)
+        self.edges = edges #ids of linked elements (list of strings)
+        self.weights = weights #resp. weights of edges (list of values, using similar types as for 'value' above)
+        self.isBlankElement = isBlankElement
+
 
         if extra is None:
-            members['orderedExtraKeys'] = [] #keys in extra dict in correct order. Is used instead of OrderedDict because of performance issues
-            members['extra'] = {}
+           self.orderedExtraKeys = [] #keys in extra dict in correct order. Is used instead of OrderedDict because of performance issues
+           self.extra = {}
         else:
             if orderedExtraKeys is None:
-                members['orderedExtraKeys'] = extra.keys()
+                self.orderedExtraKeys = extra.keys()
             else:
-                members['orderedExtraKeys'] = orderedExtraKeys
-            members['extra'] = dict(extra) #dict of extra columns, from column name (str) -> contents (str)
+               self.orderedExtraKeys = orderedExtraKeys
+            self.extra = dict(extra) #dict of extra columns, from column name (str) -> contents (str)
 
         for kw in kwArgs:
-            members['orderedExtraKeys'].append(kw)
-            members['extra'][kw] = kwArgs[kw]
+            self.orderedExtraKeys.append(kw)
+            self.extra[kw] = kwArgs[kw]
 
     def __copy__(self):
         raise NotSupportedError('Shallow copy.copy() of GenomeElement objects is not supported, '
@@ -68,19 +65,22 @@ class CythonGenomeElement(GenomeRegion):
         orderedExtraKeysCopy = list(self.orderedExtraKeys)
         return CythonGenomeElement(self.genome, self.chr, self.start, self.end, self.val, self.strand, self.id, self.edges, self.weights, extraCopy, orderedExtraKeysCopy)
 
-    def __getattr__(self, item):
-        try:
-            return self.__dict__['extra'][item]
-        except KeyError:
-            raise AttributeError
-
-    def __setattr__(self, item, value):
-        if item not in self.__dict__ and 'extra' in self.__dict__:
-            if item not in self.__dict__['extra']:
-                self.__dict__['orderedExtraKeys'].append(item)
-            self.__dict__['extra'][item] = value
+    def __getattr__(self, name):
+        if name in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+            return PyObject_GenericGetAttr(self, name)
         else:
-            object.__setattr__(self, item, value)
+            try:
+                return self.__dict__['extra'][name]
+            except KeyError:
+                raise AttributeError
+
+    def __setattr__(self, name, value):
+        if name in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+            PyObject_GenericSetAttr(self, name, value)
+        else:
+            if name not in self.extra:
+                self.orderedExtraKeys.append(name)
+            self.extra[name] = value
 
     def __str__(self):
         #return self.toStr()
@@ -163,3 +163,26 @@ class CythonGenomeElement(GenomeRegion):
 
     def validAsRegion(self):
         return not None in [self.genome, self.chr, self.start, self.end]
+
+    @staticmethod
+    def createGeFromTrackEl(trackEl, tf, globalCoords=True):
+        genomeAnchor = trackEl._trackView.genomeAnchor
+        genome = genomeAnchor.genome
+        start = None if (tf.isDense() and tf.isInterval()) else trackEl.start()
+        end = None if (not tf.isInterval() and not tf.isDense()) else trackEl.end()
+        edges = trackEl.edges()[trackEl.edges() != ''] if trackEl.edges() is not None else None
+        weights = trackEl.weights()[trackEl.edges() != ''] if trackEl.weights() is not None else None
+
+        if globalCoords:
+            chr = genomeAnchor.chr
+            if start is not None:
+                start += genomeAnchor.start
+            if end is not None:
+                end += genomeAnchor.start
+        else:
+            chr = str(genomeAnchor)
+
+        return CythonGenomeElement(genome, chr, start, end, trackEl.val(), trackEl.strand(), \
+                             id=trackEl.id(), edges=edges, weights=weights, \
+                             extra=dict([(key, getattr(trackEl, key)()) for key in trackEl.getAllExtraKeysInOrder()]), \
+                             orderedExtraKeys=trackEl.getAllExtraKeysInOrder())
