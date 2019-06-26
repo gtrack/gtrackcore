@@ -15,7 +15,6 @@ class BedGenomeElementSource(GenomeElementSource):
 
     BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
 
-
     def __new__(cls, *args, **kwArgs):
         return object.__new__(cls)
 
@@ -26,7 +25,6 @@ class BedGenomeElementSource(GenomeElementSource):
         if possibleHeader.startswith('track'):
             self._numHeaderLines = 1
         self._numCols = None
-        self._geClass = geClass
 
     def _next(self, line):
         if line.startswith('#'):

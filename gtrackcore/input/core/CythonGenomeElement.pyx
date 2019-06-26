@@ -27,7 +27,7 @@ cdef class CythonGenomeElement():
 
 
     def __init__(self, genome=None, chr=None, start=0, end=0, val=0, strand=0, id=None, edges=None, weights=None, extra=None, orderedExtraKeys=None, isBlankElement=False, **kwArgs):
-        # __dict__ is used for speedup, so that __setattr__ is not called
+        self._standardColumns = set(['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement'])
         self.genome = genome
         self.chr = chr #sequence id (string)
         self.start = start #start posision (int, 0-indexed)
@@ -38,6 +38,7 @@ cdef class CythonGenomeElement():
         self.edges = edges #ids of linked elements (list of strings)
         self.weights = weights #resp. weights of edges (list of values, using similar types as for 'value' above)
         self.isBlankElement = isBlankElement
+        self.__dict__['val'] = None
 
 
         if extra is None:
@@ -66,7 +67,7 @@ cdef class CythonGenomeElement():
         return CythonGenomeElement(self.genome, self.chr, self.start, self.end, self.val, self.strand, self.id, self.edges, self.weights, extraCopy, orderedExtraKeysCopy)
 
     def __getattr__(self, name):
-        if name in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+        if name in self._standardColumns:
             return PyObject_GenericGetAttr(self, name)
         else:
             try:
@@ -75,7 +76,7 @@ cdef class CythonGenomeElement():
                 raise AttributeError
 
     def __setattr__(self, name, value):
-        if name in ['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement']:
+        if name in self._standardColumns:
             PyObject_GenericSetAttr(self, name, value)
         else:
             if name not in self.extra:

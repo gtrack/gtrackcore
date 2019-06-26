@@ -81,42 +81,42 @@ class CythonBedGenomeElementSource(CythonGenomeElementSource):
     def getValDataType(self):
         return 'int32'
 
-# class PointBedGenomeElementSource(CythonBedGenomeElementSource):
-#     FILE_SUFFIXES = ['point.bed']
-#     FILE_FORMAT_NAME = 'Point BED'
-#
-#     def _parseEnd(self, ge, end):
-#         if end != ge.start + 1:
-#             raise InvalidFormatError('Error: point BED files can only have segments of length 1')
-#
-# class BedValuedGenomeElementSource(CythonBedGenomeElementSource):
-#     _VERSION = '1.1'
-#     FILE_SUFFIXES = ['valued.bed', 'marked.bed']
-#     FILE_FORMAT_NAME = 'Valued BED'
-#
-#     MIN_NUM_COLS = 5
-#
-#     def _parseVal(self, ge, cols):
-#         ge.val = numpy.float(self._handleNan(cols[4]))
-#
-#     def getValDataType(self):
-#         return 'float64'
-#
-# class BedCategoryGenomeElementSource(CythonBedGenomeElementSource):
-#     _VERSION = '1.5'
-#     FILE_SUFFIXES = ['category.bed']
-#     FILE_FORMAT_NAME = 'Category BED'
-#
-#     MIN_NUM_COLS = 4
-#
-#     def _parseVal(self, ge, cols):
-#         if self._numCols >= 5:
-#             ge.score = cols[4]
-#
-#         ge.val = cols[3]
-#
-#     def _parseName(self, ge, cols):
-#         pass
-#
-#     def getValDataType(self):
-#         return 'S'
+class PointBedGenomeElementSource(CythonBedGenomeElementSource):
+ FILE_SUFFIXES = ['point.bed']
+ FILE_FORMAT_NAME = 'Point BED'
+
+ def _parseEnd(self, ge, end):
+     if end != ge.start + 1:
+         raise InvalidFormatError('Error: point BED files can only have segments of length 1')
+
+class BedValuedGenomeElementSource(CythonBedGenomeElementSource):
+ _VERSION = '1.1'
+ FILE_SUFFIXES = ['valued.bed', 'marked.bed']
+ FILE_FORMAT_NAME = 'Valued BED'
+
+ MIN_NUM_COLS = 5
+
+ def _parseVal(self, ge, cols):
+     ge.val = numpy.float(self._handleNan(cols[4]))
+
+ def getValDataType(self):
+     return 'float64'
+
+class BedCategoryGenomeElementSource(CythonBedGenomeElementSource):
+ _VERSION = '1.5'
+ FILE_SUFFIXES = ['category.bed']
+ FILE_FORMAT_NAME = 'Category BED'
+
+ MIN_NUM_COLS = 4
+
+ def _parseVal(self, ge, cols):
+     if self._numCols >= 5:
+         ge.score = cols[4]
+
+     ge.val = cols[3]
+
+ def _parseName(self, ge, cols):
+     pass
+
+ def getValDataType(self):
+     return 'S'

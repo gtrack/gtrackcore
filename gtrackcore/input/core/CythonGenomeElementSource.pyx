@@ -12,6 +12,7 @@ from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import getFileSuffix
 from gtrackcore.util.CustomExceptions import NotSupportedError, InvalidFormatError, \
     InvalidFormatWarning, Warning
+from input.core.CythonGenomeElement import CythonGenomeElement
 
 
 cdef class CythonGenomeElementSource(object):
@@ -49,7 +50,7 @@ cdef class CythonGenomeElementSource(object):
     def __init__(self, fn, genome=None, trackName=None, external=False, printWarnings=True, strToUseInsteadOfFn='', *args, **kwArgs): #, depth=0
         self._fn = fn
         self._genome = genome
-        self._genomeElement = GenomeElement(genome)
+        self._genomeElement = CythonGenomeElement(genome)
         self._trackName = trackName
         self._external = external
         self._prefixList = None
