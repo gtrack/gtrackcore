@@ -4,6 +4,7 @@ from urllib import unquote
 from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.util.CustomExceptions import InvalidFormatError
+from util.CommonConstants import BINARY_MISSING_VAL
 
 class GffGenomeElementSource(GenomeElementSource):
     _VERSION = '1.2'

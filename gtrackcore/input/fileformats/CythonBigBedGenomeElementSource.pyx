@@ -1,18 +1,27 @@
+
+# cython: infer_types=True
+# cython: profile=True
+
 from copy import copy
 
 import numpy as np
 import pyBigWig
 from plastid.readers.autosql import AutoSqlDeclaration
 
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
-from input.core.GenomeElement import GenomeElement
 from util.CommonConstants import BINARY_MISSING_VAL
-from util.CustomExceptions import InvalidFormatError
 import pandas as pd
-#from StringIO import StringIO
 from pandas.compat import StringIO
+from gtrackcore.util.CustomExceptions import InvalidFormatError
 
-class CythonBigBedGenomeElementSource(GenomeElementSource):
+import numpy
+import pyximport; pyximport.install(setup_args={"include_dirs":numpy.get_include()},
+                                    reload_support=True, language_level=2)
+
+
+from input.core.CythonGenomeElement import CythonGenomeElement
+from input.core.CythonGenomeElementSource import CythonGenomeElementSource
+
+class CythonBigBedGenomeElementSource(CythonGenomeElementSource):
     _VERSION = '1.0'
     FILE_SUFFIXES = ['bb', 'bigbed']
     FILE_FORMAT_NAME = 'BigBed'
@@ -26,11 +35,8 @@ class CythonBigBedGenomeElementSource(GenomeElementSource):
     _inputIsEndInclusive = True
     _addsStartElementToDenseIntervals = False
 
-    def __new__(cls, *args, **kwArgs):
-        return object.__new__(cls)
-
     def __init__(self, *args, **kwArgs):
-        GenomeElementSource.__init__(self, *args, **kwArgs)
+        CythonGenomeElementSource.__init__(self, *args, **kwArgs)
         self._bigBedFile = pyBigWig.open(self._fn)
         self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
 
@@ -74,7 +80,7 @@ class CythonBigBedGenomeElementSource(GenomeElementSource):
 
         start, end = self._parseStartAndEnd(entries)
 
-        ge = GenomeElement(genome=self._genome, chr=chrName,
+        ge = CythonGenomeElement(genome=self._genome, chr=chrName,
                            start=start, end=end)
 
         if self._numOfExtraCols != 0:

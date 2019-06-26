@@ -1,3 +1,7 @@
+
+# cython: infer_types=True
+# cython: profile=True
+
 import numpy
 import os
 import re

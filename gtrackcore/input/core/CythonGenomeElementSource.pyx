@@ -6,7 +6,6 @@ from cStringIO import StringIO
 from copy import copy
 
 from gtrackcore.core.LogSetup import logException
-from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import getFileSuffix
