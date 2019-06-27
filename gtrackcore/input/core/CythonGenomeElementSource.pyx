@@ -32,7 +32,7 @@ cdef class CythonGenomeElementSource(object):
     cdef bint _inputIsEndInclusive
 
     cdef public str _genome
-    cdef object _genomeElement
+    cdef public object _genomeElement
     cdef str _trackName
     cdef bint external
     cdef list _prefixList
@@ -41,6 +41,8 @@ cdef class CythonGenomeElementSource(object):
     cdef str _lastWarning
     cdef str _currentChr
     cdef int _currentChrLen
+    cdef bint handledEof
+    cdef int _numWarningLines
 
 #    def __new__(cls, fn, genome=None, trackName=None, suffix=None, forPreProcessor=False, *args, **kwArgs):
 #        geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
