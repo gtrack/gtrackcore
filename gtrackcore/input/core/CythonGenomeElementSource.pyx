@@ -13,8 +13,7 @@ from gtrackcore.util.CustomExceptions import NotSupportedError, InvalidFormatErr
     InvalidFormatWarning, Warning
 from input.core.CythonGenomeElement import CythonGenomeElement
 
-
-cdef class CythonGenomeElementSource(object):
+cdef class CythonGenomeElementSource:
     cdef str _VERSION
     cdef list FILE_SUFFIXES
     cdef str FILE_FORMAT_NAME
@@ -44,9 +43,9 @@ cdef class CythonGenomeElementSource(object):
     cdef bint handledEof
     cdef int _numWarningLines
 
-#    def __new__(cls, fn, genome=None, trackName=None, suffix=None, forPreProcessor=False, *args, **kwArgs):
-#        geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
-#        return geSourceCls.__new__(geSourceCls, fn, genome=genome, trackName=trackName, *args, **kwArgs)
+    # def __new__(cls, fn, genome=None, trackName=None, suffix=None, forPreProcessor=False, *args, **kwArgs):
+    #    geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
+    #    return geSourceCls.__new__(geSourceCls, fn, genome=genome, trackName=trackName, *args, **kwArgs)
 
     def __init__(self, fn, genome=None, trackName=None, external=False, printWarnings=True, strToUseInsteadOfFn='', *args, **kwArgs): #, depth=0
         self._fn = fn
@@ -60,8 +59,11 @@ cdef class CythonGenomeElementSource(object):
         self._lastWarning = None
         self._currentChr = ''
         self._currentChrLen = 0
+        self._initDefaultVals()
+        self._handledEof = False
+        self._numWarningLines = 0
 
-    def initDefaultVals(self):
+    def _initDefaultVals(self):
         self._VERSION = '0.0'
         self.FILE_SUFFIXES = []
         self.FILE_FORMAT_NAME = ''

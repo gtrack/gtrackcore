@@ -18,7 +18,7 @@ class BedGenomeElementSource(GenomeElementSource):
     def __new__(cls, *args, **kwArgs):
         return object.__new__(cls)
 
-    def __init__(self, fn, geClass, *args, **kwArgs):
+    def __init__(self, fn, *args, **kwArgs):
         GenomeElementSource.__init__(self, fn, *args, **kwArgs)
         f = open(fn)
         possibleHeader = f.readline()
@@ -30,7 +30,7 @@ class BedGenomeElementSource(GenomeElementSource):
         if line.startswith('#'):
             return
 
-        ge = self._geClass(self._genome)
+        ge = GenomeElement(self._genome)
         cols = line.split('\t')
 
         if self._numCols is not None:

@@ -2,29 +2,34 @@
 # cython: infer_types=True
 # cython: profile=True
 
+import numpy
+import pyximport; pyximport.install(setup_args={"include_dirs":numpy.get_include()},
+                                    reload_support=True, language_level=2)
+
 from gtrackcore.util.CustomExceptions import InvalidFormatError
 from input.core.CythonGenomeElement import CythonGenomeElement
 from input.core.CythonGenomeElementSource import CythonGenomeElementSource
 
 
 class CythonBedGenomeElementSource(CythonGenomeElementSource):
-    BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
-    _VERSION = '1.2'
-    FILE_SUFFIXES = ['bed']
-    FILE_FORMAT_NAME = 'BED'
-    _numHeaderLines = 0
-
-    MIN_NUM_COLS = 3
-    MAX_NUM_COLS = 12
-
-
-    def __init__(self, fn, *args, **kwArgs):
+    def __init__(self, str fn, *args, **kwArgs):
         CythonGenomeElementSource.__init__(self, fn, *args, **kwArgs)
         f = open(fn)
         possibleHeader = f.readline()
         if possibleHeader.startswith('track'):
             self._numHeaderLines = 1
         self._numCols = None
+        self._initVals()
+
+    def _initVals(self):
+         self.BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
+         self._VERSION = '1.2'
+         self.FILE_SUFFIXES = ['bed']
+         self.FILE_FORMAT_NAME = 'BED'
+         self._numHeaderLines = 0
+
+         self.MIN_NUM_COLS = 3
+         self.MAX_NUM_COLS = 12
 
     def _next(self, str line):
         cdef list cols

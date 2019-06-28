@@ -14,16 +14,15 @@ cdef class CythonGenomeElement():
 
     cdef public str genome
     cdef public str chr #sequence id (string)
-    cdef public int start #start posision (int, 0-indexed)
-    cdef public int end #end position (int, 0-indexed, end-exclusive)
-    cdef public int val #value (float (number), string (category (n>1) or character (n=1)), int (1 for case, 0 for control, -1 for missing) or lists of the same)
-    cdef public int strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
+    cdef int strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
     cdef public str id #unique id (string)
     cdef public list edges #ids of linked elements (list of strings)
     cdef public list weights #resp. weights of edges (list of values, using similar types as for 'value' above)
     cdef public bint isBlankElement
     cdef public list orderedExtraKeys
     cdef public dict extra
+    cdef dict __dict__
+    cdef public set _standardColumns
 
 
     def __init__(self, genome=None, chr=None, start=0, end=0, val=0, strand=0, id=None, edges=None, weights=None, extra=None, orderedExtraKeys=None, isBlankElement=False, **kwArgs):
@@ -32,7 +31,6 @@ cdef class CythonGenomeElement():
         self.chr = chr #sequence id (string)
         self.start = start #start posision (int, 0-indexed)
         self.end = end #end position (int, 0-indexed, end-exclusive)
-        self.val = val #value (float (number), string (category (n>1) or character (n=1)), int (1 for case, 0 for control, -1 for missing) or lists of the same)
         self.strand = strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
         self.id = id #unique id (string)
         self.edges = edges #ids of linked elements (list of strings)
@@ -69,15 +67,19 @@ cdef class CythonGenomeElement():
     def __getattr__(self, name):
         if name in self._standardColumns:
             return PyObject_GenericGetAttr(self, name)
+        elif name == 'val':
+            return self.__dict__['val']
         else:
             try:
-                return self.__dict__['extra'][name]
+                return self.extra[name]
             except KeyError:
                 raise AttributeError
 
     def __setattr__(self, name, value):
         if name in self._standardColumns:
             PyObject_GenericSetAttr(self, name, value)
+        elif name == 'val':
+            self.__dict__['val'] = value
         else:
             if name not in self.extra:
                 self.orderedExtraKeys.append(name)

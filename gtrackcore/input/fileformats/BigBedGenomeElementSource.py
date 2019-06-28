@@ -8,8 +8,6 @@ from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from input.core.GenomeElement import GenomeElement
 from util.CommonConstants import BINARY_MISSING_VAL
 from util.CustomExceptions import InvalidFormatError
-import pandas as pd
-from StringIO import StringIO
 
 
 class BigBedGenomeElementSource(GenomeElementSource):
@@ -70,7 +68,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
         entries = self._bigBedFile.entries(str(chrName), 0, chrLengths)
         # self._extraColNames are initialized during the first iteration
         if self._extraColNames is None:
-            self._initExtraCols()
+            self._initExtraCols(entries)
 
         start, end = self._parseStartAndEnd(entries)
 
@@ -78,16 +76,8 @@ class BigBedGenomeElementSource(GenomeElementSource):
                            start=start, end=end)
 
         if self._numOfExtraCols != 0:
-            # strVals = [x[2] for x in entries]
-            #
-            # values = np.genfromtxt(strVals, dtype=None, names=self._extraColNames, delimiter='\t')
-            strVals = ''
-            for x in entries:
-                strVals += x[2] + '\n'
-
-            print 'after x'
-            values = pd.read_csv(StringIO(strVals), dtype=None, names=self._extraColNames, delimiter='\t')
-            values = values.to_records()
+            strVals = [x[2] for x in entries]
+            values = np.genfromtxt(strVals, dtype=None, names=self._extraColNames, delimiter='\t')
             if values.size == 1:
                 values = values.reshape((1,))
             tmpColNames = self._extraColNames[:]
@@ -127,6 +117,8 @@ class BigBedGenomeElementSource(GenomeElementSource):
             val = 0
         else:
             val = int(strVal)
+        if val < 0 or val > 1000:
+            raise InvalidFormatError("Error: BigBed score column must be an integer between 0 and 1000")
         return val
 
     @classmethod
