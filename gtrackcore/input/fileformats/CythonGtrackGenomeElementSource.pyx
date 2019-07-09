@@ -5,7 +5,6 @@
 import numpy
 import os
 import re
-import shutil
 import urllib
 import urllib2
 
@@ -161,7 +160,8 @@ class CythonGtrackGenomeElementSource(CythonGenomeElementSource):
         self._boundingRegionTuples = []
         self._boundingRegionType = None
         self._hasBoundingRegionTuples = None
-
+        self._isOneIndexed = self._headerDict['1-indexed']
+        self._isEndInclusive = self._headerDict['end inclusive']
 
     #
     # Parsing of header lines and column specification line
@@ -856,6 +856,7 @@ class CythonGtrackGenomeElementSource(CythonGenomeElementSource):
             return '__' + key
         return key
 
+    #this is slow
     def _curSeqId(self, cols):
         if self.hasBoundingRegionTuples():
             lastBoundingRegion = self._boundingRegionTuples[-1].region
