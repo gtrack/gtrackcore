@@ -11,8 +11,14 @@ from input.core.CythonGenomeElement import CythonGenomeElement
 from input.core.CythonGenomeElementSource import CythonGenomeElementSource
 
 
-class CythonBedGenomeElementSource(CythonGenomeElementSource):
-    def __init__(self, str fn, *args, **kwArgs):
+class BedGenomeElementSource(CythonGenomeElementSource):
+    BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
+    _VERSION = '1.2'
+    FILE_SUFFIXES = ['bed']
+    FILE_FORMAT_NAME = 'BED'
+    _numHeaderLines = 0
+
+    def __init__(self, fn, *args, **kwArgs):
         CythonGenomeElementSource.__init__(self, fn, *args, **kwArgs)
         f = open(fn)
         possibleHeader = f.readline()
@@ -22,12 +28,6 @@ class CythonBedGenomeElementSource(CythonGenomeElementSource):
         self._initVals()
 
     def _initVals(self):
-         self.BED_EXTRA_COLUMNS = ['thickstart', 'thickend', 'itemrgb', 'blockcount', 'blocksizes', 'blockstarts']
-         self._VERSION = '1.2'
-         self.FILE_SUFFIXES = ['bed']
-         self.FILE_FORMAT_NAME = 'BED'
-         self._numHeaderLines = 0
-
          self.MIN_NUM_COLS = 3
          self.MAX_NUM_COLS = 12
 
@@ -86,7 +86,7 @@ class CythonBedGenomeElementSource(CythonGenomeElementSource):
     def getValDataType(self):
         return 'int32'
 
-class PointBedGenomeElementSource(CythonBedGenomeElementSource):
+class PointBedGenomeElementSource(BedGenomeElementSource):
  FILE_SUFFIXES = ['point.bed']
  FILE_FORMAT_NAME = 'Point BED'
 
@@ -94,7 +94,7 @@ class PointBedGenomeElementSource(CythonBedGenomeElementSource):
      if end != ge.start + 1:
          raise InvalidFormatError('Error: point BED files can only have segments of length 1')
 
-class BedValuedGenomeElementSource(CythonBedGenomeElementSource):
+class BedValuedGenomeElementSource(BedGenomeElementSource):
  _VERSION = '1.1'
  FILE_SUFFIXES = ['valued.bed', 'marked.bed']
  FILE_FORMAT_NAME = 'Valued BED'
@@ -107,7 +107,7 @@ class BedValuedGenomeElementSource(CythonBedGenomeElementSource):
  def getValDataType(self):
      return 'float64'
 
-class BedCategoryGenomeElementSource(CythonBedGenomeElementSource):
+class BedCategoryGenomeElementSource(BedGenomeElementSource):
  _VERSION = '1.5'
  FILE_SUFFIXES = ['category.bed']
  FILE_FORMAT_NAME = 'Category BED'

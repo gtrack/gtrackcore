@@ -10,18 +10,17 @@ from plastid.readers.autosql import AutoSqlDeclaration
 
 from util.CommonConstants import BINARY_MISSING_VAL
 import pandas as pd
-from pandas.compat import StringIO
+from StringIO import StringIO
 from gtrackcore.util.CustomExceptions import InvalidFormatError
 
-import numpy
-import pyximport; pyximport.install(setup_args={"include_dirs":numpy.get_include()},
+import pyximport; pyximport.install(setup_args={"include_dirs":np.get_include()},
                                     reload_support=True, language_level=2)
 
 
 from input.core.CythonGenomeElement import CythonGenomeElement
 from input.core.CythonGenomeElementSource import CythonGenomeElementSource
 
-class CythonBigBedGenomeElementSource(CythonGenomeElementSource):
+class BigBedGenomeElementSource(CythonGenomeElementSource):
     _VERSION = '1.0'
     FILE_SUFFIXES = ['bb', 'bigbed']
     FILE_FORMAT_NAME = 'BigBed'

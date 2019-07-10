@@ -1,7 +1,10 @@
+
+# cython: infer_types=True
+# cython: profile=True
+
 import numpy
 import os
 import re
-import shutil
 import urllib
 import urllib2
 
@@ -9,15 +12,21 @@ from collections import OrderedDict, namedtuple
 from copy import copy
 from operator import itemgetter
 
-from gtrackcore.input.core.GenomeElement import GenomeElement
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
+from gtrackcore.input.core.GenomeElementSource import BoundingRegionTuple
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
 from gtrackcore.util.CommonFunctions import getStringFromStrand, smartRecursiveEquals
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 
-class GtrackGenomeElementSource(GenomeElementSource):
+
+import pyximport;pyximport.install(setup_args={"include_dirs":numpy.get_include()},
+                                    reload_support=True, language_level=2)
+from input.core.CythonGenomeElementSource import CythonGenomeElementSource
+from input.core.CythonGenomeElement import CythonGenomeElement
+import percentcoding
+
+class GtrackGenomeElementSource(CythonGenomeElementSource):
     _VERSION = '1.0'
     FILE_SUFFIXES = ['gtrack']
     FILE_FORMAT_NAME = 'GTrack'
@@ -102,11 +111,13 @@ class GtrackGenomeElementSource(GenomeElementSource):
 
     _addsStartElementToDenseIntervals = False
 
-    def __new__(cls, *args, **kwArgs):
-        return object.__new__(cls)
+    searchRegex = re.compile(r'[^\x20-\x7E\x09\x0A\x0D]').search
+
+    # def __new__(cls, *args, **kwArgs):
+    #     return object.__new__(cls)
 
     def __init__(self, fn, *args, **kwArgs):
-        GenomeElementSource.__init__(self, fn, *args, **kwArgs)
+        CythonGenomeElementSource.__init__(self, fn, *args, **kwArgs)
 
         self._subtype = False if not 'subtype' in kwArgs else kwArgs['subtype']
         #self._printWarnings = False if not 'printWarnings' in kwArgs else kwArgs['printWarnings']
@@ -131,6 +142,7 @@ class GtrackGenomeElementSource(GenomeElementSource):
         self._parseHeaderAndColSpecLines()
         self._updateHeadersAccordingToSubtype()
         self._checkHeaderLines()
+        self._columnSpecKeys = self._columnSpec.keys()
 
     def _initIter(self):
         self._dataLineCountInBlock = 0
@@ -146,7 +158,8 @@ class GtrackGenomeElementSource(GenomeElementSource):
 
         self._boundingRegionTuples = []
         self._boundingRegionType = None
-
+        self._isOneIndexed = self._headerDict['1-indexed']
+        self._isEndInclusive = self._headerDict['end inclusive']
 
     #
     # Parsing of header lines and column specification line
@@ -288,9 +301,12 @@ class GtrackGenomeElementSource(GenomeElementSource):
 
     @classmethod
     def _checkCharUsageOfPhrase(cls, phrase):
-        for char in phrase:
-            if not char in cls.ALLOWED_CHARS:
-                raise InvalidFormatError("Error: Character %s is not allowed in GTrack file. Offending phrase: %s" % (repr(char), repr(phrase)))
+        if cls.searchRegex(phrase):
+            raise InvalidFormatError(
+                "Error: Invalid character in GTrack file. Offending phrase: %s" % (repr(phrase)))
+        # for char in phrase:
+        #     if not char in cls.ALLOWED_CHARS:
+        #         raise InvalidFormatError("Error: Character %s is not allowed in GTrack file. Offending phrase: %s" % (repr(char), repr(phrase)))
 
         if phrase != phrase.strip():
             raise InvalidFormatError("Error: phrase %s is incorrectly specified. Phrase must not start or end with whitespace." % repr(phrase))
@@ -332,7 +348,8 @@ class GtrackGenomeElementSource(GenomeElementSource):
             if typeOfValue == str:
                 headerVal = headerVal.lower()
         else:
-            headerVal = urllib.unquote(headerVal)
+            #headerVal = urllib.unquote(headerVal)
+            headerVal = percentcoding.unquote(headerVal)
 
         return headerKey, headerVal
 
@@ -627,7 +644,9 @@ class GtrackGenomeElementSource(GenomeElementSource):
             raise InvalidFormatError("Error: bounding region incorrectly specified. All attributes must have values (separated by '='), and attributes must be separated by semicolons (';').")
 
         self._checkCharUsageOfPhrase(line)
-        boundingDict = dict((x.lower(), urllib.unquote(y)) for x,y in \
+        # boundingDict = dict((x.lower(), urllib.unquote(y)) for x,y in \
+        #                     [tuple(v.lstrip(' ').split('=')) for v in line.split(';')])
+        boundingDict = dict((x.lower(), percentcoding.unquote(y)) for x,y in \
                             [tuple(v.lstrip(' ').split('=')) for v in line.split(';')])
 
         for key,val in boundingDict.iteritems():
@@ -718,9 +737,10 @@ class GtrackGenomeElementSource(GenomeElementSource):
         for curLine in dataLines:
             self._updateCounts()
 
+            self._checkCharUsageOfPhrase(curLine)
             cols = [x.rstrip() for x in curLine.split('\t')]
-            for col in cols:
-                self._checkCharUsageOfPhrase(col)
+            # for col in cols:
+            #     self._checkCharUsageOfPhrase(col)
 
             self._checkNumberOfCols(cols, curLine)
             cols = self._addFixedCols(cols)
@@ -793,12 +813,13 @@ class GtrackGenomeElementSource(GenomeElementSource):
         return cols
 
     def _createGenomeElement(self, cols):
-        ge = GenomeElement(genome=self._curGenome())
+        ge = CythonGenomeElement(genome=self._curGenome())
         ge.chr = self._curSeqId(cols)
 
-        for key in self._columnSpec.keys():
+        for key in self._columnSpecKeys:
             rawValue = cols[self._columnSpec[key]]
-            value = urllib.unquote(rawValue)
+            #value = urllib.unquote(rawValue)
+            value = percentcoding.unquote(rawValue)
 
             if key=='genome':
                 if self._curGenome() and value != self._curGenome():
@@ -833,12 +854,14 @@ class GtrackGenomeElementSource(GenomeElementSource):
             return '__' + key
         return key
 
+    #this is slow
     def _curSeqId(self, cols):
         if self.hasBoundingRegionTuples():
             lastBoundingRegion = self._boundingRegionTuples[-1].region
 
         if 'seqid' in self._columnSpec:
-            chr = urllib.unquote(cols[self._columnSpec['seqid']])
+            #chr = urllib.unquote(cols[self._columnSpec['seqid']])
+            chr = percentcoding.unquote(cols[self._columnSpec['seqid']])
             if self.hasBoundingRegionTuples() and lastBoundingRegion.chr and chr != lastBoundingRegion.chr:
                 raise InvalidFormatError("Error: sequence id in data line is not equal to sequence id"
                                          " in previous bounding region. %s != %s" % (chr, lastBoundingRegion.chr))
@@ -881,7 +904,8 @@ class GtrackGenomeElementSource(GenomeElementSource):
                         raise InvalidFormatError("Error: edges without weights must not include an equals sign '='. Maybe the header variable 'edge weight' has the wrong value? Edge: " + edgeSpec)
                     edge = edgeSpec
                 self._checkIfNotEmpty('edge', edge)
-                edges.append(urllib.unquote(edge))
+                #edges.append(urllib.unquote(edge))
+                edges.append(percentcoding.unquote(edge))
 
         return edges, weights
 
@@ -910,7 +934,8 @@ class GtrackGenomeElementSource(GenomeElementSource):
             self._checkVal(val, valueOrEdgeWeight, valDim, vectorLength, valLen, valTypeStr, valList)
 
         for i,el in enumerate(valList):
-            valList[i] = valTypeInfo.missingVal if el == '.' else valType(urllib.unquote(el))
+            #valList[i] = valTypeInfo.missingVal if el == '.' else valType(urllib.unquote(el))
+            valList[i] = valTypeInfo.missingVal if el == '.' else valType(percentcoding.unquote(el))
 
         if not isEmptyElement:
             self._setVectorLength(valueOrEdgeWeight, valDim, vectorLength, valLen)
@@ -1072,7 +1097,6 @@ class GtrackGenomeElementSource(GenomeElementSource):
                                          os.linesep.join(["from '%s' to '%s'" % (fromId, toId) + \
                                                           (" with weight '%s'" % weight  if weight != '' else '') \
                                                           for fromId, toId, weight in unmatchedPairs]))
-
 
     #
     # Public get-methods
@@ -1284,14 +1308,14 @@ class HbGtrackGenomeElementSource(GtrackGenomeElementSource):
         self._appendBlankElement(br.chr, end=br.start)
 
     def _checkBoundingRegionSortedPair(self, lastBoundingRegion, br):
-        GenomeElementSource._checkBoundingRegionSortedPair(self, lastBoundingRegion, br)
+        CythonGenomeElementSource._checkBoundingRegionSortedPair(self, lastBoundingRegion, br)
         if br.start is not None and br.end is not None:
             if lastBoundingRegion.end == br.start:
                 raise InvalidFormatError("Error: bounding regions '%s' and '%s' are adjoining (there is no gap between them)." % (lastBoundingRegion, br))
 
     def _appendBlankElement(self, chr, end=None):
         if self._storedBlankElement is None:
-            ge = GenomeElement(isBlankElement=True)
+            ge = CythonGenomeElement(isBlankElement=True)
             for col in self._columnSpec:
                 if col not in ['genome','seqid','end']:
                     if col == 'start':

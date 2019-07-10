@@ -12,7 +12,7 @@ from input.core.CythonGenomeElement import CythonGenomeElement
 from input.core.CythonGenomeElementSource import CythonGenomeElementSource
 
 
-class CythonVcfGenomeElementSource(CythonGenomeElementSource):
+class VcfGenomeElementSource(CythonGenomeElementSource):
     _VERSION = '1.0'
     FILE_SUFFIXES = ['vcf']
     FILE_FORMAT_NAME = 'VCF'

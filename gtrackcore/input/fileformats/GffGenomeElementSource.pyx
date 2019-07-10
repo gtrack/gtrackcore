@@ -1,12 +1,21 @@
-import numpy
-from urllib import unquote
+# cython: infer_types=True
+# cython: profile=True
 
-from gtrackcore.input.core.GenomeElement import GenomeElement
+
+import numpy
+import percentcoding
+
+import pyximport;pyximport.install(setup_args={"include_dirs":numpy.get_include()},
+                                    reload_support=True, language_level=2)
+from input.core.CythonGenomeElement import CythonGenomeElement
+from input.core.CythonGenomeElementSource import CythonGenomeElementSource
+
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.util.CustomExceptions import InvalidFormatError
+
 from util.CommonConstants import BINARY_MISSING_VAL
 
-class GffGenomeElementSource(GenomeElementSource):
+class GffGenomeElementSource(CythonGenomeElementSource):
     _VERSION = '1.2'
     FILE_SUFFIXES = ['gff', 'gff3']
     FILE_FORMAT_NAME = 'GFF'
@@ -14,9 +23,6 @@ class GffGenomeElementSource(GenomeElementSource):
 
     _inputIsOneIndexed = True
     _inputIsEndInclusive = True
-
-    def __new__(cls, *args, **kwArgs):
-        return object.__new__(cls)
 
     def _next(self, line):
         if line.startswith('##FASTA'):
@@ -26,12 +32,12 @@ class GffGenomeElementSource(GenomeElementSource):
             return None
 
         origCols = line.split('\t')
-        cols = [unquote(x) for x in origCols]
+        cols = [percentcoding.unquote(x) for x in origCols]
 
         if len(cols) != 9:
             raise InvalidFormatError("Error: GFF files must contain 9 tab-separated columns")
 
-        ge = GenomeElement(self._genome)
+        ge = CythonGenomeElement(self._genome)
         ge.chr = self._checkValidChr(cols[0])
         ge.source = cols[1]
 
@@ -51,9 +57,9 @@ class GffGenomeElementSource(GenomeElementSource):
             if len(attrSplitted) == 2:
                 key, val = attrSplitted
                 if key.lower() == 'id':
-                    ge.id = unquote(val)
+                    ge.id = percentcoding.unquote(val)
                 elif key.lower() == 'name':
-                    ge.name = unquote(val)
+                    ge.name = percentcoding.unquote(val)
 
         return ge
 
