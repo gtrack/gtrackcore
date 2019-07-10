@@ -14,7 +14,7 @@ cdef class CythonGenomeElement():
 
     cdef public str genome
     cdef public str chr #sequence id (string)
-    cdef int strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
+    #cdef public int strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
     cdef public str id #unique id (string)
     cdef public list edges #ids of linked elements (list of strings)
     cdef public list weights #resp. weights of edges (list of values, using similar types as for 'value' above)
@@ -25,7 +25,7 @@ cdef class CythonGenomeElement():
     cdef public set _standardColumns
 
 
-    def __init__(self, genome=None, chr=None, start=0, end=0, val=0, strand=0, id=None, edges=None, weights=None, extra=None, orderedExtraKeys=None, isBlankElement=False, **kwArgs):
+    def __init__(self, genome=None, chr=None, start=None, end=None, val=None, strand=None, id=None, edges=None, weights=None, extra=None, orderedExtraKeys=None, isBlankElement=False, **kwArgs):
         self._standardColumns = set(['genome', 'chr', 'start', 'end', 'val', 'strand', 'id', 'edges', 'weights', 'isBlankElement'])
         self.genome = genome
         self.chr = chr #sequence id (string)
@@ -36,8 +36,11 @@ cdef class CythonGenomeElement():
         self.edges = edges #ids of linked elements (list of strings)
         self.weights = weights #resp. weights of edges (list of values, using similar types as for 'value' above)
         self.isBlankElement = isBlankElement
-        self.__dict__['val'] = None
-
+        self.val = val
+        #self.__dict__['val'] = val
+        #self.__dict__['strand'] = strand
+        # self.__dict__['start'] = start
+        # self.__dict__['end'] = end
 
         if extra is None:
            self.orderedExtraKeys = [] #keys in extra dict in correct order. Is used instead of OrderedDict because of performance issues
@@ -67,8 +70,6 @@ cdef class CythonGenomeElement():
     def __getattr__(self, name):
         if name in self._standardColumns:
             return PyObject_GenericGetAttr(self, name)
-        elif name == 'val':
-            return self.__dict__['val']
         else:
             try:
                 return self.extra[name]

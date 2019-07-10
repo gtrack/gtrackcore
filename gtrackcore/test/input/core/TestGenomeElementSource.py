@@ -6,8 +6,13 @@ import numpy
 
 from collections import OrderedDict
 
+from gtrackcore.input.fileformats.BigBedGenomeElementSource import BigBedGenomeElementSource
+
+from input.core.GenomeElementSourceResolver import GenomeElementSourceResolver
+import pyximport;pyximport.install(setup_args={"include_dirs":numpy.get_include()},
+                                    reload_support=True, language_level=2)
 from gtrackcore.input.core.GenomeElement import GenomeElement
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
+from gtrackcore.input.core.GenomeElementSource import BoundingRegionTuple
 from gtrackcore.input.fileformats.BedGenomeElementSource import (BedGenomeElementSource,
                                                                  PointBedGenomeElementSource,
                                                                  BedCategoryGenomeElementSource,
@@ -32,7 +37,7 @@ from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CustomExceptions import (InvalidFormatWarning, InvalidFormatError,
                                               Warning, ArgumentValueError)
-from gtrackcore.input.fileformats.BigBedGenomeElementSource import BigBedGenomeElementSource
+
 from input.fileformats.VcfGenomeElementSource import VcfGenomeElementSource
 
 
@@ -3780,7 +3785,7 @@ class TestGenomeElementSource(TestCaseWithImprovedAsserts):
 
     def _getGeSource(self, case, addGEDependentAttributesHolder=True, **kwArgs):
         if case.sourceClass is None:
-            sourceClass = GenomeElementSource
+            sourceClass = GenomeElementSourceResolver
             forPreProcessor = True
         else:
             sourceClass = case.sourceClass

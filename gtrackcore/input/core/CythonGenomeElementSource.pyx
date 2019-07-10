@@ -14,34 +14,36 @@ from gtrackcore.util.CustomExceptions import NotSupportedError, InvalidFormatErr
 from input.core.CythonGenomeElement import CythonGenomeElement
 
 cdef class CythonGenomeElementSource:
-    cdef str _VERSION
-    cdef list FILE_SUFFIXES
-    cdef str FILE_FORMAT_NAME
+    cdef public str _VERSION
+    cdef public str FILE_FORMAT_NAME
 
-    cdef bint _hasOrigFile
-    cdef bint _isSliceSource
-    cdef bint _addsStartElementToDenseIntervals
-    cdef bint _isSorted
-    cdef bint _hasCircularElements
-    cdef int _fixedLength
-    cdef int _fixedGapSize
-    cdef bint _hasNoOverlappingElements
-    cdef bint _hasUndirectedEdges
-    cdef bint _inputIsOneIndexed
-    cdef bint _inputIsEndInclusive
+    cdef public bint _hasOrigFile
+    cdef public bint _isSliceSource
+    cdef public bint _addsStartElementToDenseIntervals
+    cdef public bint _isSorted
+    cdef public bint _hasCircularElements
+    cdef public int _fixedLength
+    cdef public int _fixedGapSize
+    cdef public bint _hasNoOverlappingElements
+    cdef public bint _hasUndirectedEdges
+    cdef public bint _inputIsOneIndexed
+    cdef public bint _inputIsEndInclusive
 
+    cdef public str _fn
     cdef public str _genome
     cdef public object _genomeElement
-    cdef str _trackName
-    cdef bint external
-    cdef list _prefixList
-    cdef bint _printWarnings
-    cdef str _strToUseInsteadOfFn
-    cdef str _lastWarning
-    cdef str _currentChr
-    cdef int _currentChrLen
-    cdef bint handledEof
-    cdef int _numWarningLines
+    cdef public str _trackName
+    cdef public bint external
+    cdef public list _prefixList
+    cdef public bint _printWarnings
+    cdef public str _strToUseInsteadOfFn
+    cdef public str _lastWarning
+    cdef public str _currentChr
+    cdef public int _currentChrLen
+    cdef public bint handledEof
+    cdef public int _numWarningLines
+    cdef public int _numHeaderLines
+    cdef dict __dict__
 
     # def __new__(cls, fn, genome=None, trackName=None, suffix=None, forPreProcessor=False, *args, **kwArgs):
     #    geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
@@ -62,6 +64,7 @@ cdef class CythonGenomeElementSource:
         self._initDefaultVals()
         self._handledEof = False
         self._numWarningLines = 0
+        self._numHeaderLines = 0
 
     def _initDefaultVals(self):
         self._VERSION = '0.0'
@@ -335,7 +338,7 @@ cdef class CythonGenomeElementSource:
     def getPrefixList(self):
         if self._prefixList is None:
             ge, geIter = self.parseFirstDataLine()
-            self._prefixList = [prefix for prefix in ['start', 'end', 'val', 'strand', 'id', 'edges', 'weights'] if ge.__dict__.get(prefix) is not None]
+            self._prefixList = [prefix for prefix in ['start', 'end', 'val', 'strand', 'id', 'edges', 'weights'] if ge.__getattr__(prefix) is not None]
             if ge.extra is not None:
                 self._prefixList += [x for x in ge.orderedExtraKeys]
         return self._prefixList
@@ -366,46 +369,3 @@ cdef class CythonGenomeElementSource:
 
     genome = property(getGenome)
 
-def getGenomeElementSourceClass(fn, suffix=None, forPreProcessor=False):
-    for geSourceCls in getAllGenomeElementSourceClasses(forPreProcessor):
-        for clsSuffix in geSourceCls.FILE_SUFFIXES:
-            if (fn.endswith('.' + clsSuffix) if suffix is None else clsSuffix == suffix):
-                return geSourceCls
-    else:
-        fileSuffix = os.path.splitext(fn)[1] if suffix is None else suffix
-        raise NotSupportedError('File type ' + fileSuffix  + ' not supported.')
-
-
-def getAllGenomeElementSourceClasses(forPreProcessor):
-    from gtrackcore.input.fileformats.BedGenomeElementSource import PointBedGenomeElementSource, BedValuedGenomeElementSource, \
-                                                                BedCategoryGenomeElementSource, BedGenomeElementSource
-    from gtrackcore.input.fileformats.GffGenomeElementSource import GffCategoryGenomeElementSource, GffGenomeElementSource
-    from gtrackcore.input.fileformats.FastaGenomeElementSource import FastaGenomeElementSource
-    from gtrackcore.input.fileformats.HBFunctionGenomeElementSource import HBFunctionGenomeElementSource
-    from gtrackcore.input.fileformats.BedGraphGenomeElementSource import BedGraphTargetControlGenomeElementSource, BedGraphGenomeElementSource
-    from gtrackcore.input.fileformats.MicroarrayGenomeElementSource import MicroarrayGenomeElementSource
-    from gtrackcore.input.fileformats.BigBedGenomeElementSource import BigBedGenomeElementSource
-
-    from input.fileformats.VcfGenomeElementSource import VcfGenomeElementSource
-    allGESourceClasses = [PointBedGenomeElementSource, BedValuedGenomeElementSource, BedCategoryGenomeElementSource, \
-                          BedGenomeElementSource, GffCategoryGenomeElementSource, GffGenomeElementSource, \
-                          FastaGenomeElementSource, HBFunctionGenomeElementSource, \
-                          BedGraphTargetControlGenomeElementSource, BedGraphGenomeElementSource, MicroarrayGenomeElementSource,
-                          BigBedGenomeElementSource, VcfGenomeElementSource]
-
-    if forPreProcessor:
-        from gtrackcore.input.fileformats.WigGenomeElementSource import HbWigGenomeElementSource
-        from gtrackcore.input.fileformats.GtrackGenomeElementSource import HbGzipGtrackGenomeElementSource, HbGtrackGenomeElementSource
-        from gtrackcore.input.fileformats.BigWigGenomeElementSource import BigWigGenomeElementSourceForPreproc
-        allGESourceClasses += [HbWigGenomeElementSource, HbGzipGtrackGenomeElementSource,
-                               HbGtrackGenomeElementSource, BigWigGenomeElementSourceForPreproc]
-    else:
-        from gtrackcore.input.fileformats.WigGenomeElementSource import WigGenomeElementSource
-        from gtrackcore.input.fileformats.GtrackGenomeElementSource import GzipGtrackGenomeElementSource, GtrackGenomeElementSource
-        from gtrackcore.input.fileformats.BigWigGenomeElementSource import BigWigGenomeElementSource
-
-
-        allGESourceClasses += [WigGenomeElementSource, GzipGtrackGenomeElementSource,
-                               GtrackGenomeElementSource, BigWigGenomeElementSource]
-
-    return allGESourceClasses
