@@ -1,12 +1,15 @@
-import os
 import numpy as np
+import pyximport; pyximport.install(setup_args={"include_dirs":np.get_include()},
+                                    reload_support=True, language_level=2)
 
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource, BoundingRegionTuple
+from gtrackcore.input.core.GenomeElementSource import BoundingRegionTuple
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
-from gtrackcore.input.core.GenomeElement import GenomeElement
 from gtrackcore.util.CustomExceptions import InvalidFormatError
+from input.core.CythonGenomeElement import CythonGenomeElement
+from input.core.CythonGenomeElementSource import CythonGenomeElementSource
 
-class FastaGenomeElementSource(GenomeElementSource):
+
+class FastaGenomeElementSource(CythonGenomeElementSource):
     _VERSION = '1.1'
     FILE_SUFFIXES = ['fasta', 'fas', 'fa']
     FILE_FORMAT_NAME = 'FASTA'
@@ -14,11 +17,8 @@ class FastaGenomeElementSource(GenomeElementSource):
     _numHeaderLines = 0
     _isSliceSource = True
 
-    def __new__(cls, *args, **kwArgs):
-        return object.__new__(cls)
-
     def __init__(self, *args, **kwArgs):
-        GenomeElementSource.__init__(self, *args, **kwArgs)
+        CythonGenomeElementSource.__init__(self, *args, **kwArgs)
         self._boundingRegionTuples = []
         self._chr = None
 
@@ -38,31 +38,13 @@ class FastaGenomeElementSource(GenomeElementSource):
                 raise InvalidFormatError('FASTA file does not start with the ">" character.')
 
             self._elCount += len(line)
-            ge = GenomeElement(self._genome, self._chr)
+            ge = CythonGenomeElement(self._genome, self._chr)
             ge.val = np.fromstring(line, dtype='S1')
             return ge
 
     def _handleEndOfFile(self):
         self._appendBoundingRegionTuple()
 
-    #def next(self):
-    #    while True:
-    #        bp = self._file.read(1)
-    #
-    #        if bp == '>':
-    #            self._appendBoundingRegionTuple()
-    #            self._elCount = 0
-    #            line = self._file.readline().rstrip()
-    #            self._genomeElement.chr = self._checkValidChr(line.split()[0])
-    #
-    #        elif bp == '':
-    #            self._appendBoundingRegionTuple()
-    #            raise StopIteration
-    #
-    #        elif bp not in '\r\n':
-    #            self._elCount += 1
-    #            self._genomeElement.val = bp
-    #            return self._genomeElement
 
     def _appendBoundingRegionTuple(self):
         #if self._genomeElement.chr is not None:
