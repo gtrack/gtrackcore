@@ -6,9 +6,8 @@ from gtrackcore.input.core.GenomeElementSource import BoundingRegionTuple, Genom
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.metadata.TrackInfo import TrackInfo
 from gtrackcore.preprocess.PreProcMetaDataCollector import PreProcMetaDataCollector
-from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.track.core.Track import Track
-from gtrackcore.track.format.TrackFormat import TrackFormat, TrackFormatReq
+from gtrackcore.track.format.TrackFormat import TrackFormatReq
 from gtrackcore.track.memmap.TrackSource import TrackSource
 from input.core.HeaderShelve import HeaderShelve
 
@@ -146,7 +145,9 @@ class TrackGenomeElementSource(GenomeElementSource):
             self._boundingRegionTuples = []
 
             for region,tv in ((region, self._getTrackView(track, region)) for region in self._boundingRegions):
-                self._boundingRegionTuples.append(BoundingRegionTuple(region, tv.getNumElements()))
+                # TODO this is not enough to prevent wrong BRs to be added...
+                if tv.getNumElements() != 0:
+                    self._boundingRegionTuples.append(BoundingRegionTuple(region, tv.getNumElements()))
 
             #self._removeBoundingRegionTuplesIfFullChrsAndNotFixedGapSize()
 
