@@ -6,7 +6,7 @@ from copy import copy
 
 import numpy as np
 import pyBigWig
-from plastid.readers.autosql import AutoSqlDeclaration
+from AutoSql import AutoSqlDeclaration
 
 from util.CommonConstants import BINARY_MISSING_VAL
 import pandas as pd

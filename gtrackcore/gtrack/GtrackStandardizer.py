@@ -7,6 +7,8 @@ from gtrackcore.gtrack.GtrackHeaderExpander import expandHeadersOfGtrackFileAndR
 from gtrackcore.input.wrappers.GESourceWrapper import ElementModifierGESourceWrapper
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError, InvalidFormatError
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
+from input.core.GenomeElementSourceResolver import GenomeElementSourceResolver
+
 
 class GtrackElementStandardizer(ElementModifierGESourceWrapper):
     def _iter(self):
@@ -59,7 +61,7 @@ class GtrackElementStandardizer(ElementModifierGESourceWrapper):
         return False
         
 def _commonStandardizeGtrackFile(fn, genome, suffix=None):
-    geSource = GenomeElementSource(fn, genome, suffix=suffix)        
+    geSource = GenomeElementSourceResolver(fn, genome, suffix=suffix)
     composedFile = StdGtrackComposer( GtrackElementStandardizer(geSource)).returnComposed()
     return expandHeadersOfGtrackFileAndReturnComposer('', genome, strToUseInsteadOfFn=composedFile)
        

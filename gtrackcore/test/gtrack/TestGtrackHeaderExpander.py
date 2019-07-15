@@ -11,6 +11,8 @@ from gtrackcore.input.fileformats.GtrackGenomeElementSource import GtrackGenomeE
 from gtrackcore.input.wrappers.GEDependentAttributesHolder import GEDependentAttributesHolder
 from gtrackcore.test.common.Asserts import TestCaseWithImprovedAsserts
 from gtrackcore.test.common.TestWithGeSourceData import TestWithGeSourceData
+from input.core.GenomeElementSourceResolver import GenomeElementSourceResolver
+
 
 class TestGtrackHeaderExpander(TestWithGeSourceData, TestCaseWithImprovedAsserts):
     GENOME = 'TestGenome'
@@ -95,7 +97,7 @@ class TestGtrackHeaderExpander(TestWithGeSourceData, TestCaseWithImprovedAsserts
                     
                 for contents in [expandedContents, expandedContentsOnlyNonDefaults]:
                     
-                    sourceClass = GenomeElementSource if case.sourceClass is None else case.sourceClass
+                    sourceClass = GenomeElementSourceResolver if case.sourceClass is None else case.sourceClass
                     forPreProcessor = True if case.sourceClass is None else False
 
                     stdGeSource = GEDependentAttributesHolder(sourceClass('expanded.gtrack', case.genome, \

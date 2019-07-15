@@ -16,8 +16,8 @@ cdef class CythonGenomeElement():
     cdef public str chr #sequence id (string)
     #cdef public int strand #DNA strand (int, 1 for '+', 0 for '-', -1 for missing)
     cdef public str id #unique id (string)
-    cdef public list edges #ids of linked elements (list of strings)
-    cdef public list weights #resp. weights of edges (list of values, using similar types as for 'value' above)
+    # cdef public list edges #ids of linked elements (list of strings)
+    # cdef public list weights #resp. weights of edges (list of values, using similar types as for 'value' above)
     cdef public bint isBlankElement
     cdef public list orderedExtraKeys
     cdef public dict extra

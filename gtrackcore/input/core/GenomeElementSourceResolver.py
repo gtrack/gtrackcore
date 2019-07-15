@@ -1,4 +1,5 @@
 import os
+import numpy
 
 from util.CustomExceptions import NotSupportedError
 
@@ -26,6 +27,9 @@ def getGenomeElementSourceObject(fn, genome=None, trackName=None, suffix=None, f
 
 
 def getAllGenomeElementSourceClasses(forPreProcessor):
+    import pyximport;
+    pyximport.install(setup_args={"include_dirs": numpy.get_include()},
+                      reload_support=True, language_level=2)
     from gtrackcore.input.fileformats.BedGenomeElementSource import \
         PointBedGenomeElementSource, BedValuedGenomeElementSource, \
         BedCategoryGenomeElementSource, BedGenomeElementSource

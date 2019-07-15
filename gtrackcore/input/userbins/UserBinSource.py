@@ -3,7 +3,9 @@ from gtrackcore.input.wrappers.GESorter import GESorter
 from gtrackcore.util.CommonFunctions import parseRegSpec, parseShortenedSizeSpec, \
                                         convertTNstrToTNListFormat
 from gtrackcore.util.CustomExceptions import ShouldNotOccurError
-    
+from input.core.GenomeElementSourceResolver import GenomeElementSourceResolver
+
+
 class UserBinSource(object):
     '''Possible definitions of UserBinSource, based on (regSpec,binSpec)-tuple:
     ('file',fn) where instead of 'file', a more specific filetype such as 'bed' could be specified
@@ -18,13 +20,13 @@ class UserBinSource(object):
             
             from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
             if regSpec == 'file':
-                geSource = GenomeElementSource(binSpec, genome=genome)
+                geSource = GenomeElementSourceResolver(binSpec, genome=genome)
             elif regSpec == 'track':
                 from gtrackcore.input.adapters.TrackGenomeElementSource import FullTrackGenomeElementSource
                 trackName = convertTNstrToTNListFormat(binSpec)
                 geSource = FullTrackGenomeElementSource(genome, trackName, allowOverlaps=False)
             else:
-                geSource = GenomeElementSource(binSpec, genome=genome, suffix=regSpec)
+                geSource = GenomeElementSourceResolver(binSpec, genome=genome, suffix=regSpec)
             
             if categoryFilterList is not None:
                 from gtrackcore.input.wrappers.GECategoryFilter import GECategoryFilter

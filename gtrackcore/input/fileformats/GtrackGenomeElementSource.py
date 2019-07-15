@@ -16,9 +16,8 @@ from gtrackcore.input.core.GenomeElementSource import BoundingRegionTuple
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.track.core.GenomeRegion import GenomeRegion
 from gtrackcore.util.CustomExceptions import InvalidFormatError, ShouldNotOccurError
-from gtrackcore.util.CommonFunctions import getStringFromStrand, smartRecursiveEquals
+from gtrackcore.util.CommonFunctions import smartRecursiveEquals
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
-
 
 import pyximport;pyximport.install(setup_args={"include_dirs":numpy.get_include()},
                                     reload_support=True, language_level=2)
@@ -112,9 +111,6 @@ class GtrackGenomeElementSource(CythonGenomeElementSource):
     _addsStartElementToDenseIntervals = False
 
     searchRegex = re.compile(r'[^\x20-\x7E\x09\x0A\x0D]').search
-
-    # def __new__(cls, *args, **kwArgs):
-    #     return object.__new__(cls)
 
     def __init__(self, fn, *args, **kwArgs):
         CythonGenomeElementSource.__init__(self, fn, *args, **kwArgs)

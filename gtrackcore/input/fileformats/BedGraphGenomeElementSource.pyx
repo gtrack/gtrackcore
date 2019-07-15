@@ -3,8 +3,6 @@
 
 import numpy
 
-from gtrackcore.input.core.GenomeElement import GenomeElement
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CustomExceptions import InvalidFormatError
 
@@ -18,9 +16,6 @@ class BedGraphGenomeElementSource(CythonGenomeElementSource):
     _VERSION = '1.5'
     FILE_SUFFIXES = ['bedgraph']
     FILE_FORMAT_NAME = 'bedGraph'
-
-    _numHeaderLines = 0
-
 
     def __init__(self, fn, *args, **kwArgs):
         CythonGenomeElementSource.__init__(self, fn, *args, **kwArgs)

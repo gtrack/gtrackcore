@@ -8,6 +8,11 @@ from collections import OrderedDict
 
 from gtrackcore.extract.fileformats.FileFormatComposer import FileFormatComposer, MatchResult
 from gtrackcore.input.wrappers.GEDependentAttributesHolder import iterateOverBRTuplesWithContainedGEs
+
+
+import pyximport; pyximport.install(setup_args={"include_dirs":np.get_include()},
+                                    reload_support=True, language_level=2)
+
 from gtrackcore.input.fileformats.GtrackGenomeElementSource import GtrackGenomeElementSource as Gtrack
 from gtrackcore.track.format.TrackFormat import TrackFormat
 from gtrackcore.util.CommonFunctions import getStringFromStrand, isIter, isNan

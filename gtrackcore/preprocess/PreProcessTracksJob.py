@@ -21,6 +21,7 @@ from gtrackcore.util.CommonFunctions import createOrigPath, createDirPath, prett
                                         reorderTrackNameListFromTopDownToBottomUp, \
                                         replaceIllegalElementsInTrackNames
 from gtrackcore.util.CustomExceptions import NotSupportedError, AbstractClassError, Warning, ShouldNotOccurError
+from input.core.GenomeElementSourceResolver import GenomeElementSourceResolver
 from input.core.HeaderShelve import HeaderShelve
 
 
@@ -235,7 +236,7 @@ class PreProcessAllTracksJob(PreProcessTracksJob):
                 continue
 
             self._status = 'Trying to create geSource from fn: ' + fn
-            yield GenomeElementSource(fn, self._genome, forPreProcessor=True)
+            yield GenomeElementSourceResolver(fn, self._genome, forPreProcessor=True)
 
     def _calcAndStoreSubTrackCount(self, trackName):
         ti = TrackInfo(self._genome, trackName)

@@ -16,7 +16,6 @@ class BigWigGenomeElementSource(GenomeElementSource):
     FILE_SUFFIXES = ['bw', 'bigwig']
     FILE_FORMAT_NAME = 'BigWig'
 
-    _numHeaderLines = 0
     _isSliceSource = True
     _isSorted = True
     _inputIsOneIndexed = True

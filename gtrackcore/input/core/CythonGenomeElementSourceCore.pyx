@@ -9,26 +9,10 @@ from gtrackcore.core.LogSetup import logException
 from gtrackcore.metadata.GenomeInfo import GenomeInfo
 from gtrackcore.util.CommonConstants import BINARY_MISSING_VAL
 from gtrackcore.util.CommonFunctions import getFileSuffix
-from gtrackcore.util.CustomExceptions import NotSupportedError, InvalidFormatError, \
-    InvalidFormatWarning, Warning
+from gtrackcore.util.CustomExceptions import InvalidFormatError, InvalidFormatWarning, Warning
 from input.core.CythonGenomeElement import CythonGenomeElement
 
-cdef class CythonGenomeElementSource:
-    cdef public str _VERSION
-    cdef public str FILE_FORMAT_NAME
-
-    cdef public bint _hasOrigFile
-    cdef public bint _isSliceSource
-    cdef public bint _addsStartElementToDenseIntervals
-    cdef public bint _isSorted
-    cdef public bint _hasCircularElements
-    cdef public int _fixedLength
-    cdef public int _fixedGapSize
-    cdef public bint _hasNoOverlappingElements
-    cdef public bint _hasUndirectedEdges
-    cdef public bint _inputIsOneIndexed
-    cdef public bint _inputIsEndInclusive
-
+cdef class CythonGenomeElementSourceCore:
     cdef public str _fn
     cdef public str _genome
     cdef public object _genomeElement
@@ -45,10 +29,6 @@ cdef class CythonGenomeElementSource:
     cdef public int _numHeaderLines
     cdef dict __dict__
 
-    # def __new__(cls, fn, genome=None, trackName=None, suffix=None, forPreProcessor=False, *args, **kwArgs):
-    #    geSourceCls = getGenomeElementSourceClass(fn, suffix=suffix, forPreProcessor=forPreProcessor)
-    #    return geSourceCls.__new__(geSourceCls, fn, genome=genome, trackName=trackName, *args, **kwArgs)
-
     def __init__(self, fn, genome=None, trackName=None, external=False, printWarnings=True, strToUseInsteadOfFn='', *args, **kwArgs): #, depth=0
         self._fn = fn
         self._genome = genome
@@ -61,33 +41,9 @@ cdef class CythonGenomeElementSource:
         self._lastWarning = None
         self._currentChr = ''
         self._currentChrLen = 0
-        self._initDefaultVals()
         self._handledEof = False
         self._numWarningLines = 0
         self._numHeaderLines = 0
-
-    def _initDefaultVals(self):
-        self._VERSION = '0.0'
-        self.FILE_SUFFIXES = []
-        self.FILE_FORMAT_NAME = ''
-
-        self._hasOrigFile = True
-        self._isSliceSource = False
-        self._addsStartElementToDenseIntervals = True
-        self._isSorted = False
-        self._hasCircularElements = False
-        self._fixedLength = 1
-        self._fixedGapSize = 0
-        self._hasNoOverlappingElements = False
-        self._hasUndirectedEdges = False
-        self._inputIsOneIndexed = False
-        self. _inputIsEndInclusive = False
-
-    def getFileFormatName(self):
-        return self.FILE_FORMAT_NAME
-
-    def getDefaultFileSuffix(self):
-        return self.FILE_SUFFIXES[0]
 
     def getTrackName(self):
         return self._trackName
@@ -100,42 +56,6 @@ cdef class CythonGenomeElementSource:
 
     def getFileSuffix(self):
         return getFileSuffix(self._fn) if self._fn is not None else None
-
-    def isExternal(self):
-        return self._external
-
-    def hasOrigFile(self):
-        return self._hasOrigFile
-
-    def isSliceSource(self):
-        return self._isSliceSource
-
-    def addsStartElementToDenseIntervals(self):
-        return self._addsStartElementToDenseIntervals
-
-    def hasCircularElements(self):
-        return self._hasCircularElements
-
-    def getFixedLength(self):
-        return self._fixedLength
-
-    def getFixedGapSize(self):
-        return self._fixedGapSize
-
-    def isSorted(self):
-        return self._isSorted
-
-    def hasNoOverlappingElements(self):
-        return self._hasNoOverlappingElements
-
-    def hasUndirectedEdges(self):
-        return self._hasUndirectedEdges
-
-    def inputIsOneIndexed(self):
-        return self._inputIsOneIndexed
-
-    def inputIsEndInclusive(self):
-        return self._inputIsEndInclusive
 
     def anyWarnings(self):
         return self._lastWarning is not None
@@ -361,8 +281,7 @@ cdef class CythonGenomeElementSource:
     def getEdgeWeightDim(self):
         return 1
 
-    def getVersion(self):
-        return self._VERSION
+
 
     def getId(self):
         return None

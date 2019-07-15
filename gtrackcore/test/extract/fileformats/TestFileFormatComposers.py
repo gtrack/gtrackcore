@@ -13,13 +13,13 @@ from gtrackcore.extract.fileformats.GffComposer import GffComposer
 from gtrackcore.extract.fileformats.GtrackComposer import StdGtrackComposer, ExtendedGtrackComposer
 from gtrackcore.extract.fileformats.WigComposer import WigComposer
 from gtrackcore.input.adapters.TrackGenomeElementSource import TrackGenomeElementSource
-from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
 from gtrackcore.input.userbins.UserBinSource import GlobalBinSource
 from gtrackcore.input.wrappers.GEDependentAttributesHolder import GEDependentAttributesHolder
 from gtrackcore.preprocess.PreProcessTracksJob import PreProcessAllTracksJob
 from gtrackcore.test.common.Asserts import TestCaseWithImprovedAsserts
 from gtrackcore.test.common.TestWithGeSourceData import TestWithGeSourceData
 from gtrackcore.util.CommonFunctions import createDirPath
+from input.core.GenomeElementSourceResolver import GenomeElementSourceResolver
 
 PreProcessAllTracksJob.PASS_ON_EXCEPTIONS = True
 
@@ -135,7 +135,7 @@ class TestFileFormatComposers(TestWithGeSourceData, TestCaseWithImprovedAsserts)
             case = geSourceTest.cases[caseName]
 
             testFn = self._writeTestFile(case)
-            sourceClass = case.sourceClass if case.sourceClass is not None else GenomeElementSource
+            sourceClass = case.sourceClass if case.sourceClass is not None else GenomeElementSourceResolver
             genome = self.GENOME if withTrackGESource else case.genome
 
             rawCaseGESource = sourceClass(testFn, genome, printWarnings=False)

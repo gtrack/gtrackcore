@@ -133,16 +133,16 @@ class TrackView(object):
             self._endList = self._endList[1:]
             if self._valList is not None:
                 self._valList = self._valList[1:]
-            if self._strandList != None:
+            if self._strandList is not None:
                 self._strandList = self._strandList[1:]
-            if self._idList != None:
+            if self._idList is not None:
                 self._idList = self._idList[1:]
-            if self._edgesList != None:
+            if self._edgesList is not None:
                 self._edgesList = self._edgesList[1:]
-            if self._weightsList != None:
+            if self._weightsList is not None:
                 self._weightsList = self._weightsList[1:]
             for key, extraList in self._extraLists.items():
-                if extraList != None:
+                if extraList is not None:
                     self._extraLists[key] = extraList[1:]
         if not self.trackFormat.isDense() and not self.trackFormat.isInterval():
             self._endList = VirtualPointEnd(self._startList)

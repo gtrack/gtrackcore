@@ -9,6 +9,8 @@ from gtrackcore.input.wrappers.GEDependentAttributesHolder import GEDependentAtt
 from gtrackcore.test.common.TestWithGeSourceData import TestWithGeSourceData
 from gtrackcore.test.common.Asserts import TestCaseWithImprovedAsserts
 from gtrackcore.track.format.TrackFormat import TrackFormat
+from input.core.GenomeElementSourceResolver import GenomeElementSourceResolver
+
 
 class TestGtrackSorter(TestWithGeSourceData, TestCaseWithImprovedAsserts):
     GENOME = 'TestGenome'
@@ -43,7 +45,7 @@ class TestGtrackSorter(TestWithGeSourceData, TestCaseWithImprovedAsserts):
             sortedContents = sortGtrackFileAndReturnContents(testFn, case.genome)
             print sortedContents
 
-            sourceClass = GenomeElementSource if case.sourceClass is None else case.sourceClass
+            sourceClass = GenomeElementSourceResolver if case.sourceClass is None else case.sourceClass
             forPreProcessor = True if case.sourceClass is None else False
             sortedGeSource = GEDependentAttributesHolder(sourceClass('sortedFile.gtrack', case.genome, \
                                                                      forPreProcessor=forPreProcessor, \

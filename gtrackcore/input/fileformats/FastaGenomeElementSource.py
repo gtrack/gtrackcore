@@ -14,7 +14,6 @@ class FastaGenomeElementSource(CythonGenomeElementSource):
     FILE_SUFFIXES = ['fasta', 'fas', 'fa']
     FILE_FORMAT_NAME = 'FASTA'
 
-    _numHeaderLines = 0
     _isSliceSource = True
 
     def __init__(self, *args, **kwArgs):

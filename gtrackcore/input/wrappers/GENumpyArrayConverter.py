@@ -34,3 +34,9 @@ class GENumpyArrayConverter(GESourceWrapper):
             setattr(ge, col, val.item())
 
         return ge
+
+    def getBoundingRegionTuples(self):
+        if self._geSource:
+            return self._geIter.getBoundingRegionTuples()
+        else:
+            return []
