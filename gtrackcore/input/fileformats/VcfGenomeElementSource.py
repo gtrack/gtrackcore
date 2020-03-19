@@ -1,3 +1,4 @@
+import os
 from collections import OrderedDict
 
 from gtrackcore.input.core.GenomeElementSource import GenomeElementSource
@@ -18,13 +19,15 @@ class VcfGenomeElementSource(GenomeElementSource):
         self._boundingRegionTuples = []
         self._numHeaderLines = 0
         # altMaxLength is used to determine size of the val list, it has to always be at least two
-        # otherwise the track format is wrongly determined as 'category' insetad of 'category_vector'
+        # otherwise the track format is wrongly determined as 'category' instead of 'category_vector'
         self._altMaxLength = 2
         self._isPoints = False
         self._headersDict = OrderedDict()
         self._colNames = 0
         self._refMaxLength = 0
-        self._initFileInfo()
+        # using 1 as length because new line character gets added in TestGES
+        if os.stat(self._fn).st_size > 1:
+            self._initFileInfo()
 
     def _initFileInfo(self):
         with open(self._fn, 'r') as vcfFile:

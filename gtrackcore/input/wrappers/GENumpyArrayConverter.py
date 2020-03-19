@@ -30,7 +30,16 @@ class GENumpyArrayConverter(GESourceWrapper):
             vals = next(self._npIter, None)
 
         ge = GenomeElement(genome=self._origGE.genome, chr=self._origGE.chr)
+        # the reshape is here because some Fasta can have only one letter as a value
+        if isinstance(vals, np.ndarray) and vals.size == 1:
+            vals = vals.reshape((1,))
         for val, col in zip(vals, self._colNames):
             setattr(ge, col, val.item())
 
         return ge
+
+    def getBoundingRegionTuples(self):
+        if self._geSource:
+            return self._geIter.getBoundingRegionTuples()
+        else:
+            return []

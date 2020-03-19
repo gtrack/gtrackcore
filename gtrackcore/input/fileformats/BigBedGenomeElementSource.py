@@ -1,3 +1,4 @@
+import os
 from copy import copy
 
 import numpy as np
@@ -29,20 +30,24 @@ class BigBedGenomeElementSource(GenomeElementSource):
 
     def __init__(self, *args, **kwArgs):
         GenomeElementSource.__init__(self, *args, **kwArgs)
-        self._bigBedFile = pyBigWig.open(self._fn)
-        self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
+        if os.stat(self._fn).st_size != 0:
+            self._bigBedFile = pyBigWig.open(self._fn)
+            self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
 
-        self._extraColNames = self._initColumnNames()
-        self._numOfExtraCols = 0
-        if self._extraColNames:
-            self._numOfExtraCols = len(self._extraColNames)
+            self._extraColNames = self._initColumnNames()
+            self._numOfExtraCols = 0
+            if self._extraColNames:
+                self._numOfExtraCols = len(self._extraColNames)
 
-        self._parseValVec = np.vectorize(self._parseVal)
-        self._getStrandFromStringVec = np.vectorize(self._getStrandFromString)
+            self._parseValVec = np.vectorize(self._parseVal)
+            self._getStrandFromStringVec = np.vectorize(self._getStrandFromString)
 
     def __iter__(self):
-        self._bigBedFile = pyBigWig.open(self._fn)
-        self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
+        if os.stat(self._fn).st_size != 0:
+            self._bigBedFile = pyBigWig.open(self._fn)
+            self._chrIter = iter(sorted(self._bigBedFile.chroms().items()))
+        else:
+            self._chrIter = iter([])
         geIter = copy(self)
 
         return geIter
@@ -60,7 +65,8 @@ class BigBedGenomeElementSource(GenomeElementSource):
     def next(self):
         currentChrom = next(self._chrIter, None)
         if not currentChrom:
-            self._bigBedFile.close()
+            if hasattr(self, '_bigBedFile'):
+                self._bigBedFile.close()
             raise StopIteration
 
         chrName, chrLengths = currentChrom
@@ -68,7 +74,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
         entries = self._bigBedFile.entries(str(chrName), 0, chrLengths)
         # self._extraColNames are initialized during the first iteration
         if self._extraColNames is None:
-            self._initExtraCols()
+            self._initExtraCols(entries)
 
         start, end = self._parseStartAndEnd(entries)
 
@@ -90,8 +96,6 @@ class BigBedGenomeElementSource(GenomeElementSource):
             for colName in tmpColNames:
                 setattr(ge, colName, values[colName].astype(str))
 
-        #print ge
-
         return ge
 
     def _initExtraCols(self, entries):
@@ -102,6 +106,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
             self._numOfExtraCols = len(extraCols)
         else:
             self._extraColNames = []
+            extraCols = []
 
         self._extraColNames = self.BED_EXTRA_COLUMNS[:len(extraCols)]
         self._numOfExtraCols = len(extraCols)
@@ -117,8 +122,7 @@ class BigBedGenomeElementSource(GenomeElementSource):
             val = 0
         else:
             val = int(strVal)
-        if val < 0 or val > 1000:
-            raise InvalidFormatError("Error: BigBed score column must be an integer between 0 and 1000")
+
         return val
 
     @classmethod
@@ -129,7 +133,6 @@ class BigBedGenomeElementSource(GenomeElementSource):
             return 0
         elif val == '.':
             return BINARY_MISSING_VAL
-        # val == ''?
         else:
             raise InvalidFormatError(
                 "Error: strand must be either '+', '-' or '.'. Value: %s" % val)

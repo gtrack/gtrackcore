@@ -1,3 +1,4 @@
+import os
 from collections import namedtuple
 from copy import copy
 
@@ -32,22 +33,27 @@ class BigWigGenomeElementSource(GenomeElementSource):
     def __init__(self, *args, **kwArgs):
         GenomeElementSource.__init__(self, *args, **kwArgs)
         self._file = open(self._fn, 'r')
-        self._bxpythonFile = BigWigFile(file=self._file)
-        self._bw = pyBigWig.open(self._fn)
+        if os.stat(self._fn).st_size != 0:
+            self._bxpythonFile = BigWigFile(file=self._file)
+            self._bw = pyBigWig.open(self._fn)
 
-        self._fixedStep = False
-        self._span = 1
-        self._step = None
-        self._isPoints = None
-        self._isFunction = False
-        self._isStepFunction = False
+            self._fixedStep = False
+            self._span = 1
+            self._step = None
+            self._isPoints = None
+            self._isFunction = False
+            self._isStepFunction = False
+            self._chrs = sorted(self._bw.chroms().items())
+            self._initFileVariables()
+        else:
+            self._chrs = []
 
-        self._chrs = sorted(self._bw.chroms().items())
+        self._chrIter = iter([])
         self._headers = iter([])
         self._boundingRegionTuples = []
         self._currentChrom = None
         self._chrName = None
-        self._initFileVariables()
+        self._headers = []
 
     def _initFileVariables(self):
         header = self._getHeaderForChrom(self._chrs[0])[0]
@@ -68,8 +74,9 @@ class BigWigGenomeElementSource(GenomeElementSource):
         geIter._headers = iter([])
         geIter._boundingRegionTuples = []
         self._file = open(self._fn, 'r')
-        self._bxpythonFile = BigWigFile(file=self._file)
-        self._bw = pyBigWig.open(self._fn)
+        if os.stat(self._fn).st_size != 0:
+            self._bxpythonFile = BigWigFile(file=self._file)
+            self._bw = pyBigWig.open(self._fn)
 
         return geIter
 
@@ -97,13 +104,11 @@ class BigWigGenomeElementSource(GenomeElementSource):
                 values = self._bw.values(self._chrName, header.start, header.start + header.numOfVals, numpy=True)
                 values = np.float64(values)
                 ge = GenomeElement(genome=self._genome, chr=self._chrName, val=values)
-                # print ge
 
                 return ge
 
         start, end, val = self._parseBigWigFile(header)
         ge = GenomeElement(genome=self._genome, chr=self._chrName, start=start, end=end, val=val)
-        #print ge
 
         return ge
 
@@ -144,7 +149,8 @@ class BigWigGenomeElementSource(GenomeElementSource):
 
     def _closeFiles(self):
         self._file.close()
-        self._bw.close()
+        if hasattr(self, '_bw'):
+            self._bw.close()
 
     def createBoundingRegion(self, header):
         boundingRegion = GenomeRegion(genome=self._genome, chr=self._chrName, start=header.start,
